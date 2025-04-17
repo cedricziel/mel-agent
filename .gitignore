@@ -1,0 +1,11 @@
+# Go
+bin/
+*.test
+*.out
+
+# Node
+web/node_modules/
+web/dist/
+
+# Environment
+.env
