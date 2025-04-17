@@ -1,5 +1,6 @@
 package main
 
+# Standard library + third‑party imports
 import (
     "log"
     "net/http"
@@ -9,6 +10,7 @@ import (
     "github.com/go-chi/chi/v5/middleware"
 
     "github.com/your-org/agentsaas/internal/api"
+    "github.com/your-org/agentsaas/internal/db"
 )
 
 func main() {
@@ -16,6 +18,9 @@ func main() {
     if port == "" {
         port = "8080"
     }
+
+    // connect database (fatal on error)
+    db.Connect()
 
     r := chi.NewRouter()
     r.Use(middleware.Logger)

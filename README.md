@@ -17,14 +17,30 @@ This repository boot‑straps a **Go backend** and a **React + Tailwind** fron
 
 ## Running the backend
 
+1. Start Postgres + server via Docker Compose (recommended):
+
+```bash
+docker compose up --build
 ```
+
+This automatically exposes:
+
+* Go API on http://localhost:8080  (health at `/health`)
+* Postgres on localhost:5432 (`postgres / postgres`)
+
+2. Alternatively run Postgres yourself, apply migrations in `migrations/`, then:
+
+```bash
+export DATABASE_URL="postgres://postgres:postgres@localhost:5432/agentsaas?sslmode=disable"
 go run ./cmd/server
 ```
 
-The server listens on `:8080` by default and exposes:
+Initial endpoints:
 
-* `GET /health` – health‑check
-* `GET /api/agents` – list stub agents (in‑memory data)
+* `GET /api/agents` – list agents (persisted)
+* `POST /api/agents` – create agent `{name, description, user_id?}`
+* `GET /api/connections` – list connections
+* `POST /api/connections` – create connection
 
 ## Running the frontend
 
