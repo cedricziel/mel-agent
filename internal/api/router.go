@@ -21,6 +21,9 @@ func Handler() http.Handler {
     r.Get("/connections", listConnections)
     r.Post("/connections", createConnection)
 
+    // Integrations (read‑only)
+    r.Get("/integrations", listIntegrations)
+
     return r
 }
 
@@ -42,10 +45,21 @@ type Agent struct {
 }
 
 func listAgents(w http.ResponseWriter, r *http.Request) {
-    var agents []Agent
-    if err := db.DB.Select(&agents, `SELECT id, user_id, name, description, is_active FROM agents ORDER BY created_at DESC`); err != nil {
+    rows, err := db.DB.Query(`SELECT id, user_id, name, description, is_active FROM agents ORDER BY created_at DESC`)
+    if err != nil {
         writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
         return
+    }
+    defer rows.Close()
+
+    var agents []Agent
+    for rows.Next() {
+        var a Agent
+        if err := rows.Scan(&a.ID, &a.UserID, &a.Name, &a.Description, &a.IsActive); err != nil {
+            writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+            return
+        }
+        agents = append(agents, a)
     }
     writeJSON(w, http.StatusOK, agents)
 }
@@ -82,6 +96,30 @@ type Connection struct {
     UserID        string `db:"user_id"        json:"user_id"`
     Name          string `db:"name"          json:"name"`
     IsDefault     bool   `db:"is_default"    json:"is_default"`
+}
+
+type Integration struct {
+    ID   string `db:"id" json:"id"`
+    Name string `db:"name" json:"name"`
+}
+
+func listIntegrations(w http.ResponseWriter, r *http.Request) {
+    var integrations []Integration
+    rows, err := db.DB.Query(`SELECT id, name FROM integrations ORDER BY name`)
+    if err != nil {
+        writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+        return
+    }
+    defer rows.Close()
+    for rows.Next() {
+        var i Integration
+        if err := rows.Scan(&i.ID, &i.Name); err != nil {
+            writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+            return
+        }
+        integrations = append(integrations, i)
+    }
+    writeJSON(w, http.StatusOK, integrations)
 }
 
 func listConnections(w http.ResponseWriter, r *http.Request) {

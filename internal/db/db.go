@@ -2,19 +2,24 @@ package db
 
 import (
     "database/sql"
+    "embed"
+    "fmt"
+    "io/fs"
     "log"
     "os"
+    "sort"
+    "strings"
+    "time"
 
-    _ "github.com/lib/pq" // postgres driver
-    "github.com/jmoiron/sqlx"
+    _ "github.com/lib/pq" // Postgres driver
 )
 
-// DB is a global handle accessed throughout the app.
-var DB *sqlx.DB
+//go:embed ../../migrations/*.sql
+var migrationsFS embed.FS
 
-// Connect initialises the global database handle.
-// It expects DATABASE_URL env var (e.g. postgres://user:pass@host:5432/db?sslmode=disable).
-// Falls back to a sensible local default for docker‑compose dev.
+var DB *sql.DB
+
+// Connect opens the database and applies migrations.
 func Connect() {
     dsn := os.Getenv("DATABASE_URL")
     if dsn == "" {
@@ -22,37 +27,67 @@ func Connect() {
     }
 
     var err error
-    DB, err = sqlx.Open("postgres", dsn)
+    DB, err = sql.Open("postgres", dsn)
     if err != nil {
-        log.Fatalf("db: open connection failed: %v", err)
+        log.Fatalf("db open: %v", err)
     }
-
     if err := DB.Ping(); err != nil {
-        log.Fatalf("db: ping failed: %v", err)
+        log.Fatalf("db ping: %v", err)
     }
 
-    // pool config – small by default, tweak later
-    DB.SetMaxIdleConns(5)
-    DB.SetMaxOpenConns(20)
+    if err := applyMigrations(); err != nil {
+        log.Fatalf("apply migrations: %v", err)
+    }
 }
 
-// Tx helper runs fn inside a transaction.
-func Tx(fn func(*sqlx.Tx) error) error {
-    tx, err := DB.Beginx()
+// applyMigrations reads migration files embedded at build time and applies any not yet run.
+func applyMigrations() error {
+    if _, err := DB.Exec(`
+        CREATE TABLE IF NOT EXISTS schema_migrations (
+            version TEXT PRIMARY KEY,
+            applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )`); err != nil {
+        return fmt.Errorf("create schema_migrations: %w", err)
+    }
+
+    // read applied versions into a set
+    rows, err := DB.Query(`SELECT version FROM schema_migrations`)
     if err != nil {
         return err
     }
-    if err := fn(tx); err != nil {
-        _ = tx.Rollback()
+    defer rows.Close()
+    applied := map[string]struct{}{}
+    for rows.Next() {
+        var v string
+        if err := rows.Scan(&v); err != nil {
+            return err
+        }
+        applied[v] = struct{}{}
+    }
+
+    // collect migration files
+    entries, err := fs.ReadDir(migrationsFS, "../../migrations")
+    if err != nil {
         return err
     }
-    return tx.Commit()
-}
+    sort.Slice(entries, func(i, j int) bool { return entries[i].Name() < entries[j].Name() })
 
-// NullString converts sql.NullString to *string.
-func NullString(s sql.NullString) *string {
-    if !s.Valid {
-        return nil
+    for _, e := range entries {
+        name := e.Name()
+        if _, ok := applied[name]; ok {
+            continue // already applied
+        }
+        sqlBytes, err := migrationsFS.ReadFile("../../migrations/" + name)
+        if err != nil {
+            return err
+        }
+        if _, err := DB.Exec(string(sqlBytes)); err != nil {
+            return fmt.Errorf("exec %s: %w", name, err)
+        }
+        if _, err := DB.Exec(`INSERT INTO schema_migrations (version, applied_at) VALUES ($1, $2)`, name, time.Now()); err != nil {
+            return err
+        }
+        log.Printf("migrated %s", name)
     }
-    return &s.String
+    return nil
 }

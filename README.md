@@ -44,11 +44,12 @@ Initial endpoints:
 
 ## Running the frontend
 
-The frontend is a standard Vite application. Inside `web/` run:
+The frontend is a standard Vite application. Run:
 
-```
+```bash
+cd web
 pnpm install   # or npm / yarn
-pnpm dev
+pnpm dev       # starts Vite on :5173 and proxies to localhost:8080
 ```
 
 It proxies API requests to `localhost:8080` via the `vite.config.js` proxy setting.
