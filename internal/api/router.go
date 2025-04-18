@@ -798,6 +798,11 @@ func testRunHandler(w http.ResponseWriter, r *http.Request) {
 	// Execute nodes in order
     // Execute nodes in order, recording trace
     for _, node := range graphStruct.Nodes {
+        // Broadcast node execution start
+        hub := getHub(agentID)
+        if startMsg, err := json.Marshal(map[string]string{"type":"nodeExecution","nodeId":node.ID,"phase":"start"}); err == nil {
+            hub.broadcast(startMsg)
+        }
         inputItems := currentItems
         var nextItems []Item
         for _, item := range inputItems {
@@ -807,6 +812,10 @@ func testRunHandler(w http.ResponseWriter, r *http.Request) {
             } else if output != nil {
                 nextItems = append(nextItems, Item{ID: item.ID, Data: output})
             }
+        }
+        // Broadcast node execution end
+        if endMsg, err := json.Marshal(map[string]string{"type":"nodeExecution","nodeId":node.ID,"phase":"end"}); err == nil {
+            hub.broadcast(endMsg)
         }
         // Append step to trace
         payload.Trace = append(payload.Trace, Step{

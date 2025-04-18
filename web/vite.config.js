@@ -12,6 +12,11 @@ export default defineConfig({
         target: "http://localhost:8080",
         ws: true,
       },
+      // Proxy webhook endpoints to backend
+      "/webhooks": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
     },
   },
 });

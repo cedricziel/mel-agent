@@ -35,6 +35,8 @@ function BuilderPage({ agentId }) {
   // Test run state
   const [testing, setTesting] = useState(false);
   const [testRunResult, setTestRunResult] = useState(null);
+  // Toggle between Edit and Live modes
+  const [isLiveMode, setIsLiveMode] = useState(false);
   const categories = useMemo(() => {
     const map = {};
     nodeDefs.forEach((def) => {
@@ -65,19 +67,24 @@ function BuilderPage({ agentId }) {
     }),
     [nodes, validationErrors]
   );
-  // Execute full-agent test run
+  // Execute full-agent test run (or live observe in Live mode)
   const onTestRun = useCallback(async () => {
+    if (isLiveMode) {
+      // Clear previous runtime statuses
+      setNodes((nds) => nds.map((n) => ({ ...n, data: { ...n.data, status: undefined } })));
+    }
     setTesting(true);
     try {
       const res = await axios.post(`/api/agents/${agentId}/runs/test`);
-      setTestRunResult(res.data);
+      // Show result only in Edit mode
+      if (!isLiveMode) setTestRunResult(res.data);
     } catch (err) {
       console.error('test run failed', err);
       alert('Test run failed');
     } finally {
       setTesting(false);
     }
-  }, [agentId]);
+  }, [agentId, isLiveMode]);
   // Load latest saved graph for this agent
   useEffect(() => {
     axios.get(`/api/agents/${agentId}/versions/latest`)
@@ -112,6 +119,22 @@ function BuilderPage({ agentId }) {
           case 'connect':
             setEdges((eds) => addEdge(msg.params, eds));
             break;
+          case 'nodeExecution':
+            // Runtime status updates for Live mode
+            const { nodeId, phase } = msg;
+            setNodes((nds) =>
+              nds.map((n) => {
+                if (n.id !== nodeId) return n;
+                const newData = { ...n.data };
+                if (phase === 'start') {
+                  newData.status = 'running';
+                } else if (phase === 'end') {
+                  delete newData.status;
+                }
+                return { ...n, data: newData };
+              })
+            );
+            break;
           default:
         }
       } catch {
@@ -124,35 +147,39 @@ function BuilderPage({ agentId }) {
   // handlers for ReactFlow change events
   const onNodesChange = useCallback(
     (changes) => {
+      if (isLiveMode) return;
       setNodes((nds) => applyNodeChanges(changes, nds));
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({ clientId, type: 'nodesChange', changes }));
       }
     },
-    [clientId]
+    [clientId, isLiveMode]
   );
   const onEdgesChange = useCallback(
     (changes) => {
+      if (isLiveMode) return;
       setEdges((eds) => applyEdgeChanges(changes, eds));
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({ clientId, type: 'edgesChange', changes }));
       }
     },
-    [clientId]
+    [clientId, isLiveMode]
   );
 
   const onConnect = useCallback(
     (params) => {
+      if (isLiveMode) return;
       setEdges((eds) => addEdge(params, eds));
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify({ clientId, type: 'connect', params }));
       }
     },
-    [clientId]
+    [clientId, isLiveMode]
   );
 
   // double-click a node to rename it
   const onNodeDoubleClick = useCallback((event, node) => {
+    if (isLiveMode) return;
     const current = node.data.label || '';
     const name = prompt('Enter node name:', current);
     if (name !== null) {
@@ -167,7 +194,7 @@ function BuilderPage({ agentId }) {
         wsRef.current.send(JSON.stringify(msg));
       }
     }
-  }, [clientId]);
+  }, [clientId, isLiveMode]);
 
   // derive nodeTypes mapping from server definitions, memoized
   const nodeTypes = useMemo(() => {
@@ -295,16 +322,31 @@ function BuilderPage({ agentId }) {
     <div className="flex" style={{ height: "80vh" }}>
       {/* Main builder area */}
       <div className="flex-1 flex flex-col">
-      <div className="mb-2 flex gap-2">
+      <div className="mb-2 flex gap-2 items-center">
+        {/* Mode toggle */}
         <button
-          onClick={() => setModalOpen(true)}
-          className="px-3 py-1 rounded border"
+          onClick={() => setIsLiveMode((prev) => !prev)}
+          className="px-3 py-1 border rounded"
         >
-          + Add Node
+          {isLiveMode ? 'Switch to Edit' : 'Switch to Live'}
         </button>
-        <button onClick={save} className="px-3 py-1 bg-indigo-600 text-white rounded">
-          Save
-        </button>
+        {/* Edit mode controls */}
+        {!isLiveMode && (
+          <>
+            <button
+              onClick={() => setModalOpen(true)}
+              className="px-3 py-1 rounded border"
+            >
+              + Add Node
+            </button>
+            <button
+              onClick={save}
+              className="px-3 py-1 bg-indigo-600 text-white rounded"
+            >
+              Save
+            </button>
+          </>
+        )}
         <button
           onClick={onTestRun}
           disabled={testing}
@@ -340,6 +382,10 @@ function BuilderPage({ agentId }) {
             onNodeClick={onNodeClick}
             onNodeDoubleClick={onNodeDoubleClick}
             onPaneClick={onPaneClick}
+            // Disable editing interactions in Live mode
+            nodesDraggable={!isLiveMode}
+            nodesConnectable={!isLiveMode}
+            nodesSelectable={!isLiveMode}
             fitView
             attributionPosition="bottom-left"
           >
@@ -373,8 +419,8 @@ function BuilderPage({ agentId }) {
           }
         />
       )}
-      {/* Test Run result modal */}
-      {testRunResult && (
+      {/* Test Run result modal (Edit mode only) */}
+      {!isLiveMode && testRunResult && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded shadow-lg w-3/4 max-h-full overflow-auto p-4">
             <h2 className="text-lg font-bold mb-2">Test Run Result</h2>
