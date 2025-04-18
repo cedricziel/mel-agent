@@ -42,24 +42,24 @@ export default function IfNode({ id, data, onAddClick }) {
       {/* Input handle */}
       <Handle
         type="target"
-        position={Position.Top}
+        position={Position.Left}
         id="in"
         className="!bg-yellow-600"
       />
       {/* True/False output handles */}
       <Handle
         type="source"
-        position={Position.Bottom}
+        position={Position.Right}
         id="true"
         className="!bg-green-600"
-        style={{ left: '30%' }}
+        style={{ top: '30%' }}
       />
       <Handle
         type="source"
-        position={Position.Bottom}
+        position={Position.Right}
         id="false"
         className="!bg-red-600"
-        style={{ left: '70%' }}
+        style={{ top: '70%' }}
       />
     </div>
   );

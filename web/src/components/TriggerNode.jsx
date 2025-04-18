@@ -52,7 +52,7 @@ export default function TriggerNode({ data, onAddClick }) {
       {/* Only output handle: no input for trigger nodes */}
       <Handle
         type="source"
-        position={Position.Bottom}
+        position={Position.Right}
         id="out"
         className="!bg-gray-600"
       />

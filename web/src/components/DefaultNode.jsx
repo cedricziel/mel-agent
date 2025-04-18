@@ -51,13 +51,13 @@ export default function DefaultNode({ data, onAddClick }) {
       )}
       <Handle
         type="target"
-        position={Position.Top}
+        position={Position.Left}
         id="in"
         className="!bg-gray-600"
       />
       <Handle
         type="source"
-        position={Position.Bottom}
+        position={Position.Right}
         id="out"
         className="!bg-gray-600"
       />

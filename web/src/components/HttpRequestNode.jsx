@@ -36,14 +36,14 @@ export default function HttpRequestNode({ data, onAddClick }) {
       {/* Input handle */}
       <Handle
         type="target"
-        position={Position.Top}
+        position={Position.Left}
         id="in"
         className="!bg-gray-600"
       />
       {/* Output handle */}
       <Handle
         type="source"
-        position={Position.Bottom}
+        position={Position.Right}
         id="out"
         className="!bg-gray-600"
       />
