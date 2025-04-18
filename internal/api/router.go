@@ -30,8 +30,12 @@ func Handler() http.Handler {
 	r.Get("/node-types", listNodeTypes)
 	// WebSocket for collaborative updates
 	r.Get("/ws/agents/{agentID}", wsHandler)
-	// Test-run an agent workflow
-	r.Post("/agents/{agentID}/runs/test", testRunHandler)
+    // Test-run an agent workflow
+    r.Post("/agents/{agentID}/runs/test", testRunHandler)
+    // List past runs
+    r.Get("/agents/{agentID}/runs", listRunsHandler)
+    // Get specific run details
+    r.Get("/agents/{agentID}/runs/{runID}", getRunHandler)
 	// Fetch latest version (graph) for an agent
 	r.Get("/agents/{agentID}/versions/latest", getLatestAgentVersionHandler)
 	// Execute a single node with provided input data (stub implementation)
@@ -367,11 +371,75 @@ func testRunHandler(w http.ResponseWriter, r *http.Request) {
 		payload.Items = nextItems
 		payload.Meta["lastNode"] = node.ID
 	}
-	writeJSON(w, http.StatusOK, payload)
+    // Persist run record
+    raw, err := json.Marshal(payload)
+    if err != nil {
+        writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+        return
+    }
+    if _, err := db.DB.Exec(`INSERT INTO agent_runs (id, agent_id, payload) VALUES ($1, $2, $3::jsonb)`, payload.RunID, agentID, string(raw)); err != nil {
+        writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+        return
+    }
+    writeJSON(w, http.StatusOK, payload)
 }
 
 // executeNodeLocal invokes the node logic via registered executors.
 func executeNodeLocal(agentID string, node Node, input interface{}) (interface{}, error) {
 	executor := getExecutor(node.Type)
 	return executor.Execute(agentID, node, input)
+}
+// listRunsHandler returns a list of past runs for an agent.
+func listRunsHandler(w http.ResponseWriter, r *http.Request) {
+    agentID := chi.URLParam(r, "agentID")
+    rows, err := db.DB.Query(
+        `SELECT id, created_at FROM agent_runs WHERE agent_id = $1 ORDER BY created_at DESC`, agentID,
+    )
+    if err != nil {
+        writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+        return
+    }
+    defer rows.Close()
+    type runMeta struct {
+        ID        string `json:"id"`
+        CreatedAt string `json:"created_at"`
+    }
+    var runs []runMeta
+    for rows.Next() {
+        var rm runMeta
+        var t sql.NullTime
+        if err := rows.Scan(&rm.ID, &t); err != nil {
+            writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+            return
+        }
+        if t.Valid {
+            rm.CreatedAt = t.Time.UTC().Format(time.RFC3339)
+        }
+        runs = append(runs, rm)
+    }
+    writeJSON(w, http.StatusOK, runs)
+}
+
+// getRunHandler returns the payload of a specific run.
+func getRunHandler(w http.ResponseWriter, r *http.Request) {
+    agentID := chi.URLParam(r, "agentID")
+    runID := chi.URLParam(r, "runID")
+    var payloadRaw []byte
+    err := db.DB.QueryRow(
+        `SELECT payload FROM agent_runs WHERE agent_id = $1 AND id = $2`, agentID, runID,
+    ).Scan(&payloadRaw)
+    if err != nil {
+        if err == sql.ErrNoRows {
+            writeJSON(w, http.StatusNotFound, map[string]string{"error": "run not found"})
+        } else {
+            writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+        }
+        return
+    }
+    var payload interface{}
+    if err := json.Unmarshal(payloadRaw, &payload); err != nil {
+        writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+        return
+    }
+    writeJSON(w, http.StatusOK, payload)
 }
