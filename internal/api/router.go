@@ -1,14 +1,15 @@
 package api
 
 import (
-	"database/sql"
-	"encoding/json"
-	"net/http"
-	"time"
+   "database/sql"
+   "encoding/json"
+   "fmt"
+   "net/http"
+   "time"
 
-	"github.com/cedricziel/mel-agent/internal/db"
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
+   "github.com/cedricziel/mel-agent/internal/db"
+   "github.com/go-chi/chi/v5"
+   "github.com/google/uuid"
 )
 
 // Handler returns a router with API routes mounted.
@@ -30,6 +31,9 @@ func Handler() http.Handler {
    r.Get("/triggers/{triggerID}", getTrigger)
    r.Patch("/triggers/{triggerID}", updateTrigger)
    r.Delete("/triggers/{triggerID}", deleteTrigger)
+  
+  // Webhook entrypoint for external events: POST /webhooks/{provider}/{triggerID}
+  r.Post("/webhooks/{provider}/{triggerID}", WebhookHandler)
 
 	// Integrations (read‑only)
 	r.Get("/integrations", listIntegrations)
@@ -460,6 +464,161 @@ func deleteTrigger(w http.ResponseWriter, r *http.Request) {
        return
    }
    w.WriteHeader(http.StatusNoContent)
+}
+
+// WebhookHandler handles external webhook events and enqueues a run.
+func WebhookHandler(w http.ResponseWriter, r *http.Request) {
+   provider := chi.URLParam(r, "provider")
+   triggerID := chi.URLParam(r, "triggerID")
+   // Lookup trigger instance
+   var enabled bool
+   var agentID, nodeID string
+   var configRaw []byte
+   err := db.DB.QueryRow(
+       `SELECT enabled, agent_id, node_id, config FROM triggers WHERE id=$1 AND provider=$2`,
+       triggerID, provider,
+   ).Scan(&enabled, &agentID, &nodeID, &configRaw)
+   if err != nil {
+       if err == sql.ErrNoRows {
+           writeJSON(w, http.StatusNotFound, map[string]string{"error": "trigger not found"})
+       } else {
+           writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+       }
+       return
+   }
+   if !enabled {
+       writeJSON(w, http.StatusForbidden, map[string]string{"error": "trigger disabled"})
+       return
+   }
+   // Decode JSON payload
+   var payload interface{}
+   if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+       writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+       return
+   }
+   // Parse trigger config for mode and custom responses
+   var cfg map[string]interface{}
+   if err := json.Unmarshal(configRaw, &cfg); err != nil {
+       cfg = map[string]interface{}{}
+   }
+   mode, _ := cfg["mode"].(string)
+   // Synchronous (in-band) execution: run workflow and return its result
+   if mode == "sync" {
+       // Fetch latest agent version and graph
+       var versionID sql.NullString
+       if err := db.DB.QueryRow(`SELECT latest_version_id FROM agents WHERE id = $1`, agentID).Scan(&versionID); err != nil {
+           writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+           return
+       }
+       if !versionID.Valid {
+           writeJSON(w, http.StatusBadRequest, map[string]string{"error": "no version available for agent"})
+           return
+       }
+       var graphRaw []byte
+       if err := db.DB.QueryRow(`SELECT graph FROM agent_versions WHERE id = $1`, versionID.String).Scan(&graphRaw); err != nil {
+           writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+           return
+       }
+       // Unmarshal graph for execution
+       var graphData interface{}
+       _ = json.Unmarshal(graphRaw, &graphData)
+       var graphStruct struct { Nodes []Node `json:"nodes"` }
+       if err := json.Unmarshal(graphRaw, &graphStruct); err != nil {
+           writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+           return
+       }
+       // Prepare execution payload
+       type Item struct { ID string `json:"id"`; Data interface{} `json:"data"` }
+       type Step struct { NodeID string `json:"nodeId"`; Input []Item `json:"input"`; Output []Item `json:"output"` }
+       type Payload struct {
+           RunID   string                   `json:"runId"`
+           Graph   interface{}              `json:"graph"`
+           Context map[string]interface{}   `json:"context"`
+           Meta    map[string]interface{}   `json:"meta"`
+           Trace   []Step                   `json:"trace"`
+       }
+       runID := uuid.New().String()
+       initial := Item{ID: uuid.New().String(), Data: payload}
+       execPayload := Payload{
+           RunID:   runID,
+           Graph:   graphData,
+           Context: map[string]interface{}{},
+           Meta:    map[string]interface{}{"startTime": time.Now().UTC().Format(time.RFC3339)},
+           Trace:   []Step{},
+       }
+       current := []Item{initial}
+       // Execute nodes sequentially
+       for _, node := range graphStruct.Nodes {
+           inputs := current
+           var next []Item
+           for _, it := range inputs {
+               out, err := executeNodeLocal(agentID, node, it.Data)
+               if err != nil {
+                   next = append(next, Item{ID: it.ID, Data: map[string]interface{}{"error": err.Error()}})
+               } else if out != nil {
+                   next = append(next, Item{ID: it.ID, Data: out})
+               }
+           }
+           execPayload.Trace = append(execPayload.Trace, Step{NodeID: node.ID, Input: inputs, Output: next})
+           execPayload.Meta["lastNode"] = node.ID
+           current = next
+       }
+       execPayload.Meta["finalItems"] = current
+       // Persist run record
+       rawExec, err := json.Marshal(execPayload)
+       if err == nil {
+           _, _ = db.DB.Exec(`INSERT INTO agent_runs (id, agent_id, payload) VALUES ($1, $2, $3::jsonb)`, runID, agentID, string(rawExec))
+       }
+       // Determine response status and body
+       statusCode := 200
+       if sc, ok := cfg["statusCode"].(float64); ok {
+           statusCode = int(sc)
+       }
+       // Default to entire execPayload
+       respBody := any(execPayload)
+       if rb, ok := cfg["responseBody"]; ok {
+           respBody = rb
+       }
+       writeJSON(w, statusCode, respBody)
+       return
+   }
+   // Asynchronous execution: enqueue and return immediately
+   _, _ = db.DB.Exec(`UPDATE triggers SET last_checked = now() WHERE id = $1`, triggerID)
+   // Fetch latest agent version
+   var versionID sql.NullString
+   if err := db.DB.QueryRow(
+       `SELECT latest_version_id FROM agents WHERE id = $1`, agentID,
+   ).Scan(&versionID); err != nil {
+       writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+       return
+   }
+   if !versionID.Valid {
+       writeJSON(w, http.StatusBadRequest, map[string]string{"error": "no version available for agent"})
+       return
+   }
+   // Build run payload
+   runPayload := map[string]interface{}{"versionId": versionID.String, "startNodeId": nodeID, "input": payload}
+   raw, err := json.Marshal(runPayload)
+   if err != nil {
+       writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+       return
+   }
+   runID := uuid.New().String()
+   if _, err := db.DB.Exec(`INSERT INTO agent_runs (id, agent_id, payload) VALUES ($1, $2, $3::jsonb)`, runID, agentID, string(raw)); err != nil {
+       writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+       return
+   }
+   // Return configured immediate response
+   statusCode := 202
+   if sc, ok := cfg["statusCode"].(float64); ok {
+       statusCode = int(sc)
+   }
+   resp := map[string]string{"runId": runID}
+   if rb, ok := cfg["responseBody"]; ok {
+       // if responseBody is a string, return raw; else return as JSON object
+       resp = map[string]string{"body": fmt.Sprint(rb)}
+   }
+   writeJSON(w, statusCode, resp)
 }
 
 // executeNodeHandler handles running a single node with provided input (stub implementation)

@@ -29,15 +29,17 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
-	// health endpoint
-	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+   // health endpoint
+   r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"status":"ok"}`))
 	})
 
-	// mount api routes under /api
-	r.Mount("/api", api.Handler())
+   // webhook entrypoint for external events (e.g., GitHub, Stripe)
+   r.Post("/webhooks/{provider}/{triggerID}", api.WebhookHandler)
+   // mount api routes under /api
+   r.Mount("/api", api.Handler())
 
 	log.Printf("server listening on :%s", port)
 	if err := http.ListenAndServe(":"+port, r); err != nil {

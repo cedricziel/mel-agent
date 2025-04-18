@@ -25,11 +25,11 @@ type NodeType struct {
 var nodeTypes = []NodeType{
   // Trigger nodes
   // Trigger nodes (entry points)
-  {Type: "timer", Label: "Timer", Category: "Triggers", EntryPoint: true},
-  {Type: "schedule", Label: "Schedule", Category: "Triggers", Defaults: map[string]string{"cron": ""}, EntryPoint: true},
-  {Type: "webhook", Label: "Webhook", Category: "Triggers", Defaults: map[string]string{"secret": ""}, EntryPoint: true},
-  {Type: "slack", Label: "Slack Slash Command", Category: "Triggers", Defaults: map[string]string{"command": ""}, EntryPoint: true},
-  {Type: "http", Label: "HTTP Request", Category: "Triggers", EntryPoint: true},
+  {Type: "timer", Label: "Timer", Category: "Triggers", Defaults: map[string]string{"mode": "async", "statusCode": "202", "responseBody": ""}, EntryPoint: true},
+  {Type: "schedule", Label: "Schedule", Category: "Triggers", Defaults: map[string]string{"cron": "", "mode": "async", "statusCode": "202", "responseBody": ""}, EntryPoint: true},
+  {Type: "webhook", Label: "Webhook", Category: "Triggers", Defaults: map[string]string{"secret": "", "mode": "async", "statusCode": "202", "responseBody": ""}, EntryPoint: true},
+  {Type: "slack", Label: "Slack Slash Command", Category: "Triggers", Defaults: map[string]string{"command": "", "mode": "async", "statusCode": "202", "responseBody": ""}, EntryPoint: true},
+  {Type: "http", Label: "HTTP Request", Category: "Triggers", Defaults: map[string]string{"mode": "async", "statusCode": "202", "responseBody": ""}, EntryPoint: true},
   {Type: "if", Label: "If", Category: "Basic", Defaults: map[string]string{"condition": ""}, Branching: true},
   {Type: "switch", Label: "Switch", Category: "Basic"},
   {Type: "agent", Label: "Agent", Category: "LLM"},
