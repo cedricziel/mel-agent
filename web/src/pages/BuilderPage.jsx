@@ -18,14 +18,8 @@ import "reactflow/dist/style.css";
 
 function BuilderPage({ agentId }) {
   // graph state: nodes and edges
-  const [nodes, setNodes] = useState([
-    {
-      id: "1",
-      position: { x: 250, y: 5 },
-      data: { label: "Start" },
-      type: "input",
-    },
-  ]);
+  // Graph nodes and edges (loaded from latest agent version)
+  const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   // modal state for selecting new node type
   const [modalOpen, setModalOpen] = useState(false);
@@ -46,6 +40,16 @@ function BuilderPage({ agentId }) {
       .then((res) => setNodeDefs(res.data))
       .catch((err) => console.error('fetch node-types failed:', err));
   }, []);
+  // Load latest saved graph for this agent
+  useEffect(() => {
+    axios.get(`/api/agents/${agentId}/versions/latest`)
+      .then((res) => {
+        const graph = res.data.graph || {};
+        setNodes(graph.nodes || []);
+        setEdges(graph.edges || []);
+      })
+      .catch((err) => console.error('fetch agent graph failed:', err));
+  }, [agentId]);
   // handlers for ReactFlow change events
   const onNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -188,6 +192,7 @@ function BuilderPage({ agentId }) {
               )
             );
           }}
+          onExecute={onExecute}
         />
       )}
       {/* Node type selection dialog */}

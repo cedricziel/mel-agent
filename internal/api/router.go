@@ -26,6 +26,8 @@ func Handler() http.Handler {
     r.Get("/integrations", listIntegrations)
     // Node type definitions for builder
     r.Get("/node-types", listNodeTypes)
+    // Fetch latest version (graph) for an agent
+    r.Get("/agents/{agentID}/versions/latest", getLatestAgentVersionHandler)
     // Execute a single node with provided input data (stub implementation)
     r.Post("/agents/{agentID}/nodes/{nodeID}/execute", executeNodeHandler)
 
@@ -230,4 +232,52 @@ func executeNodeHandler(w http.ResponseWriter, r *http.Request) {
     // TODO: integrate real execution engine. For now, echo input as output.
     result := map[string]interface{}{"agent_id": agentID, "node_id": nodeID, "output": input}
     writeJSON(w, http.StatusOK, result)
+}
+// getLatestAgentVersionHandler returns the latest saved graph for an agent.
+func getLatestAgentVersionHandler(w http.ResponseWriter, r *http.Request) {
+    agentID := chi.URLParam(r, "agentID")
+    var versionID sql.NullString
+    err := db.DB.QueryRow(`SELECT latest_version_id FROM agents WHERE id = $1`, agentID).Scan(&versionID)
+    if err != nil {
+        if err == sql.ErrNoRows {
+            writeJSON(w, http.StatusNotFound, map[string]string{"error": "agent not found"})
+        } else {
+            writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+        }
+        return
+    }
+    if !versionID.Valid {
+        // no version saved yet: return empty graph
+        writeJSON(w, http.StatusOK, map[string]interface{}{"graph": map[string]interface{}{"nodes": []interface{}{}, "edges": []interface{}{}}, "default_params": map[string]interface{}{}})
+        return
+    }
+    var semanticVersion string
+    var graphRaw, defaultRaw []byte
+    err = db.DB.QueryRow(
+        `SELECT semantic_version, graph, default_params FROM agent_versions WHERE id = $1`, versionID.String,
+    ).Scan(&semanticVersion, &graphRaw, &defaultRaw)
+    if err != nil {
+        writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+        return
+    }
+    var graph interface{}
+    if err := json.Unmarshal(graphRaw, &graph); err != nil {
+        writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+        return
+    }
+    var defaultParams interface{}
+    if len(defaultRaw) > 0 {
+        if err := json.Unmarshal(defaultRaw, &defaultParams); err != nil {
+            writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+            return
+        }
+    } else {
+        defaultParams = map[string]interface{}{}
+    }
+    writeJSON(w, http.StatusOK, map[string]interface{}{ 
+        "id": versionID.String,
+        "semantic_version": semanticVersion,
+        "graph": graph,
+        "default_params": defaultParams,
+    })
 }
