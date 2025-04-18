@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import axios from "axios";
 import ReactFlow, {
   Background,
@@ -50,17 +50,66 @@ function BuilderPage({ agentId }) {
       })
       .catch((err) => console.error('fetch agent graph failed:', err));
   }, [agentId]);
+  // WebSocket client for collaborative updates
+  const clientId = useMemo(() => crypto.randomUUID(), []);
+  const wsRef = useRef(null);
+  useEffect(() => {
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const url = `${protocol}://${window.location.host}/ws/agents/${agentId}`;
+    const ws = new WebSocket(url);
+    wsRef.current = ws;
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.clientId === clientId) return;
+        switch (msg.type) {
+          case 'nodesChange':
+            setNodes((nds) => applyNodeChanges(msg.changes, nds));
+            break;
+          case 'edgesChange':
+            setEdges((eds) => applyEdgeChanges(msg.changes, eds));
+            break;
+          case 'connect':
+            setEdges((eds) => addEdge(msg.params, eds));
+            break;
+          default:
+        }
+      } catch {
+        // ignore malformed
+      }
+    };
+    ws.onclose = () => { wsRef.current = null; };
+    return () => { ws.close(); wsRef.current = null; };
+  }, [agentId, clientId]);
   // handlers for ReactFlow change events
   const onNodesChange = useCallback(
-    (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
-    [setNodes]
+    (changes) => {
+      setNodes((nds) => applyNodeChanges(changes, nds));
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ clientId, type: 'nodesChange', changes }));
+      }
+    },
+    [clientId]
   );
   const onEdgesChange = useCallback(
-    (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
-    [setEdges]
+    (changes) => {
+      setEdges((eds) => applyEdgeChanges(changes, eds));
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ clientId, type: 'edgesChange', changes }));
+      }
+    },
+    [clientId]
   );
 
-  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), []);
+  const onConnect = useCallback(
+    (params) => {
+      setEdges((eds) => addEdge(params, eds));
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({ clientId, type: 'connect', params }));
+      }
+    },
+    [clientId]
+  );
 
   // derive nodeTypes mapping from server definitions, memoized
   const nodeTypes = useMemo(() => {

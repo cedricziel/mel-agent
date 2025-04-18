@@ -26,6 +26,8 @@ func Handler() http.Handler {
     r.Get("/integrations", listIntegrations)
     // Node type definitions for builder
     r.Get("/node-types", listNodeTypes)
+    // WebSocket for collaborative updates
+    r.Get("/ws/agents/{agentID}", wsHandler)
     // Fetch latest version (graph) for an agent
     r.Get("/agents/{agentID}/versions/latest", getLatestAgentVersionHandler)
     // Execute a single node with provided input data (stub implementation)
