@@ -3,16 +3,20 @@ import { Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 
 // Custom node for 'if' logic: one input, two outputs (true/false)
-export default function IfNode({ id, data, onAddClick }) {
+export default function IfNode({ id, data, onAddClick, type }) {
   const condition = data.condition || '';
+  // Icon for branching node
+  const icon = '❓';
   return (
     <div
       className={
-        `relative bg-yellow-50 rounded p-2 min-w-[120px] ${
+        `relative bg-yellow-50 rounded p-2 pl-6 min-w-[120px] ${
           data.error ? 'border-2 border-red-500' : 'border border-yellow-400'
         }`
       }
     >
+      {/* Node icon */}
+      <div className="absolute top-1 left-1 text-xs">{icon}</div>
       {/* Quick-add button */}
       {onAddClick && (
         <button
@@ -24,7 +28,7 @@ export default function IfNode({ id, data, onAddClick }) {
       )}
       {/* Status indicator: running */}
       {data.status === 'running' && (
-        <div className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+        <div className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse z-10" />
       )}
       <div className="text-sm font-medium">{data.label}</div>
       {data.nodeTypeLabel && (

@@ -3,16 +3,20 @@ import { Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 
 // HTTP Request node: sends an HTTP request during workflow execution
-export default function HttpRequestNode({ data, onAddClick }) {
+export default function HttpRequestNode({ data, onAddClick, type }) {
   const { label, method, url } = data;
+  // Icon for HTTP request node
+  const icon = '🌐';
   return (
     <div
       className={
-        `relative bg-white rounded p-2 min-w-[140px] ${
+        `relative bg-white rounded p-2 pl-6 min-w-[140px] ${
           data.error ? 'border-2 border-red-500' : 'border'
         }`
       }
     >
+      {/* Node icon */}
+      <div className="absolute top-1 left-1 text-xs">{icon}</div>
       {/* Node label */}
       <div className="text-sm font-medium">{label}</div>
       {/* Subtitle: node type */}
@@ -32,6 +36,10 @@ export default function HttpRequestNode({ data, onAddClick }) {
         >
           +
         </button>
+      )}
+      {/* Status indicator: running */}
+      {data.status === 'running' && (
+        <div className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse z-10" />
       )}
       {/* Input handle */}
       <Handle
