@@ -1,4 +1,4 @@
-module github.com/your-org/agentsaas
+module github.com/cedricziel/mel-agent
 
 go 1.22
 
