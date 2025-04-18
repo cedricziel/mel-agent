@@ -21,20 +21,6 @@ type NodeExecutor interface {
    Execute(agentID string, node Node, input interface{}) (interface{}, error)
 }
 
-var executorRegistry = map[string]NodeExecutor{}
-
-// RegisterExecutor adds an executor for a given node type.
-func RegisterExecutor(nodeType string, executor NodeExecutor) {
-   executorRegistry[nodeType] = executor
-}
-
-// getExecutor retrieves executor for a node type or default.
-func getExecutor(nodeType string) NodeExecutor {
-   if ex, ok := executorRegistry[nodeType]; ok {
-       return ex
-   }
-   return DefaultExecutor{}
-}
 
 // DefaultExecutor performs no-op: returns input unchanged.
 type DefaultExecutor struct{}
@@ -124,14 +110,4 @@ func (ScheduleExecutor) Execute(agentID string, node Node, input interface{}) (i
        "now": time.Now().UTC().Format(time.RFC3339),
        "cron": cronSpec,
    }, nil
-}
-
-// init registers default executors.
-func init() {
-   RegisterExecutor("if", IfExecutor{})
-   // HTTP request action
-   RegisterExecutor("http_request", HTTPRequestExecutor{})
-   RegisterExecutor("timer", TimerExecutor{})
-   RegisterExecutor("schedule", ScheduleExecutor{})
-   // Register other built-in executors as needed
 }

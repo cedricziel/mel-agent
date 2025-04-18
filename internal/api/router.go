@@ -185,14 +185,8 @@ func createAgentVersion(w http.ResponseWriter, r *http.Request) {
        processed := map[string]bool{}
        for _, nd := range graph.Nodes {
            // Only sync entry-point (trigger) node types
-           isEntry := false
-           for _, def := range nodeTypes {
-               if def.Type == nd.Type && def.EntryPoint {
-                   isEntry = true
-                   break
-               }
-           }
-           if !isEntry {
+           def := FindDefinition(nd.Type)
+           if def == nil || !def.Meta().EntryPoint {
                continue
            }
            processed[nd.ID] = true
@@ -837,10 +831,13 @@ func testRunHandler(w http.ResponseWriter, r *http.Request) {
     writeJSON(w, http.StatusOK, payload)
 }
 
-// executeNodeLocal invokes the node logic via registered executors.
+// executeNodeLocal invokes the node logic via the node definitions.
 func executeNodeLocal(agentID string, node Node, input interface{}) (interface{}, error) {
-	executor := getExecutor(node.Type)
-	return executor.Execute(agentID, node, input)
+   if def := FindDefinition(node.Type); def != nil {
+       return def.Execute(agentID, node, input)
+   }
+   // Fallback: return input unchanged
+   return input, nil
 }
 // listRunsHandler returns a list of past runs for an agent.
 func listRunsHandler(w http.ResponseWriter, r *http.Request) {
