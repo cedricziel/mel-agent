@@ -6,6 +6,7 @@ import (
    "errors"
    "io/ioutil"
    "net/http"
+   "time"
 )
 
 // Node represents a workflow node with its configuration.
@@ -102,9 +103,34 @@ func (HTTPRequestExecutor) Execute(agentID string, node Node, input interface{})
    return result, nil
 }
 
+// TimerExecutor produces a timestamp payload for timer triggers.
+type TimerExecutor struct{}
+
+func (TimerExecutor) Execute(agentID string, node Node, input interface{}) (interface{}, error) {
+   now := map[string]interface{}{"now": time.Now().UTC().Format(time.RFC3339)}
+   // optionally include interval if specified (in seconds)
+   if iv, ok := node.Data["interval"].(float64); ok {
+       now["interval"] = iv
+   }
+   return now, nil
+}
+
+// ScheduleExecutor emits a scheduled event with current timestamp and cron spec.
+type ScheduleExecutor struct{}
+
+func (ScheduleExecutor) Execute(agentID string, node Node, input interface{}) (interface{}, error) {
+   cronSpec, _ := node.Data["cron"].(string)
+   return map[string]interface{}{
+       "now": time.Now().UTC().Format(time.RFC3339),
+       "cron": cronSpec,
+   }, nil
+}
+
 // init registers default executors.
 func init() {
    RegisterExecutor("if", IfExecutor{})
    RegisterExecutor("http", HTTPRequestExecutor{})
+   RegisterExecutor("timer", TimerExecutor{})
+   RegisterExecutor("schedule", ScheduleExecutor{})
    // Register other built-in executors as needed
 }
