@@ -4,11 +4,14 @@ import ReactFlow, {
   Background,
   Controls,
   addEdge,
+  applyNodeChanges,
+  applyEdgeChanges,
   MiniMap,
 } from "reactflow";
 import "reactflow/dist/style.css";
 
 function BuilderPage({ agentId }) {
+  // graph state: nodes and edges
   const [nodes, setNodes] = useState([
     {
       id: "1",
@@ -18,6 +21,16 @@ function BuilderPage({ agentId }) {
     },
   ]);
   const [edges, setEdges] = useState([]);
+
+  // handlers for ReactFlow change events
+  const onNodesChange = useCallback(
+    (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
+    [setNodes]
+  );
+  const onEdgesChange = useCallback(
+    (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
+    [setEdges]
+  );
 
   const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), []);
 
@@ -63,8 +76,8 @@ function BuilderPage({ agentId }) {
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        onNodesChange={setNodes}
-        onEdgesChange={setEdges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         fitView
       >

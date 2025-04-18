@@ -2,6 +2,7 @@ import { Link, Route, Routes, NavLink, useParams } from "react-router-dom";
 import AgentsPage from "./pages/AgentsPage";
 import ConnectionsPage from "./pages/ConnectionsPage";
 import BuilderPage from "./pages/BuilderPage";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 function App() {
   return (
@@ -38,7 +39,11 @@ function App() {
           <Route path="/connections" element={<ConnectionsPage />} />
           <Route
             path="/agents/:id/edit"
-            element={<AgentBuilderWrapper />}
+            element={
+              <ErrorBoundary>
+                <AgentBuilderWrapper />
+              </ErrorBoundary>
+            }
           />
         </Routes>
       </main>
