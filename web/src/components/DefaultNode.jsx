@@ -3,7 +3,7 @@ import { Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 
 // Generic node renderer: one input, one output, shows label
-export default function DefaultNode({ data }) {
+export default function DefaultNode({ data, onAddClick }) {
   const summaryKeys = Object.keys(data).filter(
     (k) => k !== 'label' && k !== 'status'
   );
@@ -15,6 +15,15 @@ export default function DefaultNode({ data }) {
         }`
       }
     >
+      {/* Quick-add button */}
+      {onAddClick && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onAddClick(); }}
+          className="absolute top-1 right-1 w-5 h-5 bg-indigo-600 text-white text-xs rounded flex items-center justify-center"
+        >
+          +
+        </button>
+      )}
       {/* Status indicator: running */}
       {data.status === 'running' && (
         <div className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse" />

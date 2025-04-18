@@ -3,7 +3,7 @@ import { Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 
 // HTTP Request node: sends an HTTP request during workflow execution
-export default function HttpRequestNode({ data }) {
+export default function HttpRequestNode({ data, onAddClick }) {
   const { label, method, url } = data;
   return (
     <div
@@ -24,6 +24,15 @@ export default function HttpRequestNode({ data }) {
         <span className="font-semibold">{method || 'GET'}</span>{' '}
         <span className="truncate block" title={url}>{url}</span>
       </div>
+      {/* Quick-add button */}
+      {onAddClick && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onAddClick(); }}
+          className="absolute top-1 right-1 w-5 h-5 bg-indigo-600 text-white text-xs rounded flex items-center justify-center"
+        >
+          +
+        </button>
+      )}
       {/* Input handle */}
       <Handle
         type="target"

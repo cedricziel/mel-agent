@@ -30,6 +30,8 @@ function BuilderPage({ agentId }) {
 
   // Node definitions from server
   const [nodeDefs, setNodeDefs] = useState([]);
+  // For quick-add: node we're adding from
+  const [addingFromNodeId, setAddingFromNodeId] = useState(null);
   // Trigger instances from server
   const [triggers, setTriggers] = useState([]);
   // Test run state
@@ -224,18 +226,18 @@ function BuilderPage({ agentId }) {
   }, [clientId, isLiveMode]);
 
   // derive nodeTypes mapping from server definitions, memoized
+  // Wrap node types to inject quick-add handler
   const nodeTypes = useMemo(() => {
     const m = {};
     nodeDefs.forEach((def) => {
-      if (def.entry_point) {
-        m[def.type] = TriggerNode;
-      } else if (def.branching) {
-        m[def.type] = IfNode;
-      } else if (def.type === 'http_request') {
-        m[def.type] = HttpRequestNode;
-      } else {
-        m[def.type] = DefaultNode;
-      }
+      let Comp;
+      if (def.entry_point) Comp = TriggerNode;
+      else if (def.branching) Comp = IfNode;
+      else if (def.type === 'http_request') Comp = HttpRequestNode;
+      else Comp = DefaultNode;
+      m[def.type] = (props) => (
+        <Comp {...props} onAddClick={() => setAddingFromNodeId(props.id)} />
+      );
     });
     return m;
   }, [nodeDefs]);
@@ -399,7 +401,7 @@ function BuilderPage({ agentId }) {
               </ul>
             </div>
           )}
-          <ReactFlow
+      <ReactFlow
             nodes={displayedNodes}
             edges={edges}
             nodeTypes={nodeTypes}
@@ -413,6 +415,7 @@ function BuilderPage({ agentId }) {
             nodesDraggable={!isLiveMode}
             nodesConnectable={!isLiveMode}
             nodesSelectable={!isLiveMode}
+            connectionRadius={60}
             fitView
             attributionPosition="bottom-left"
           >
@@ -501,25 +504,25 @@ function BuilderPage({ agentId }) {
                               const defaults = {};
                               if (Array.isArray(nt.parameters)) {
                                 nt.parameters.forEach((p) => {
-                                  // use server-provided default if defined
                                   if (p.default !== undefined) {
                                     defaults[p.name] = p.default;
                                   }
                                 });
                               }
-                              setNodes((nds) => [
-                                ...nds,
-                                {
-                                  id,
-                                  position: { x: 100, y: 100 },
-                                  data: {
-                                    label: nt.label,
-                                    nodeTypeLabel: nt.label,
-                                    ...defaults,
-                                  },
-                                  type: nt.type,
-                                },
-                              ]);
+                              // Determine position: to the right of source if quick-adding
+                              let position = { x: 100, y: 100 };
+                              if (addingFromNodeId) {
+                                const src = nodes.find((n) => n.id === addingFromNodeId);
+                                if (src) {
+                                  position = { x: src.position.x + 200, y: src.position.y };
+                                }
+                              }
+                              const newNode = { id, position, data: { label: nt.label, nodeTypeLabel: nt.label, ...defaults }, type: nt.type };
+                              setNodes((nds) => [...nds, newNode]);
+                              if (addingFromNodeId) {
+                                setEdges((eds) => addEdge({ source: addingFromNodeId, target: id }, eds));
+                                setAddingFromNodeId(null);
+                              }
                               setModalOpen(false);
                               setSearch('');
                             }}

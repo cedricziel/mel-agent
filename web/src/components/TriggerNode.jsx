@@ -3,7 +3,7 @@ import { Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 
 // Trigger node: entry point without input handle
-export default function TriggerNode({ data }) {
+export default function TriggerNode({ data, onAddClick }) {
   const summaryKeys = Object.keys(data).filter(
     (k) => k !== 'label' && k !== 'status'
   );
@@ -39,6 +39,15 @@ export default function TriggerNode({ data }) {
             <div className="text-xs text-gray-400">…</div>
           )}
         </div>
+      )}
+      {/* Quick-add button */}
+      {onAddClick && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onAddClick(); }}
+          className="absolute top-1 right-1 w-5 h-5 bg-indigo-600 text-white text-xs rounded flex items-center justify-center"
+        >
+          +
+        </button>
       )}
       {/* Only output handle: no input for trigger nodes */}
       <Handle

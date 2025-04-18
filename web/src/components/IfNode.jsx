@@ -3,7 +3,7 @@ import { Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 
 // Custom node for 'if' logic: one input, two outputs (true/false)
-export default function IfNode({ id, data }) {
+export default function IfNode({ id, data, onAddClick }) {
   const condition = data.condition || '';
   return (
     <div
@@ -13,6 +13,15 @@ export default function IfNode({ id, data }) {
         }`
       }
     >
+      {/* Quick-add button */}
+      {onAddClick && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onAddClick(); }}
+          className="absolute top-1 right-1 w-5 h-5 bg-indigo-600 text-white text-xs rounded flex items-center justify-center"
+        >
+          +
+        </button>
+      )}
       {/* Status indicator: running */}
       {data.status === 'running' && (
         <div className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
