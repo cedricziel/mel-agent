@@ -20,9 +20,16 @@ func Handler() http.Handler {
 	r.Post("/agents", createAgent)
 	r.Post("/agents/{agentID}/versions", createAgentVersion)
 
-	// Connection endpoints.
-	r.Get("/connections", listConnections)
-	r.Post("/connections", createConnection)
+   // Connection endpoints.
+   r.Get("/connections", listConnections)
+   r.Post("/connections", createConnection)
+
+   // Trigger endpoints.
+   r.Get("/triggers", listTriggers)
+   r.Post("/triggers", createTrigger)
+   r.Get("/triggers/{triggerID}", getTrigger)
+   r.Patch("/triggers/{triggerID}", updateTrigger)
+   r.Delete("/triggers/{triggerID}", deleteTrigger)
 
 	// Integrations (read‑only)
 	r.Get("/integrations", listIntegrations)
@@ -229,6 +236,145 @@ func createConnection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusCreated, map[string]string{"id": id})
+}
+
+// --- Trigger handlers ---
+// Trigger represents a user-configured event trigger for starting workflows.
+type Trigger struct {
+   ID          string          `db:"id" json:"id"`
+   UserID      string          `db:"user_id" json:"user_id"`
+   Provider    string          `db:"provider" json:"provider"`
+   Config      json.RawMessage `db:"config" json:"config"`
+   Enabled     bool            `db:"enabled" json:"enabled"`
+   LastChecked *time.Time      `db:"last_checked" json:"last_checked,omitempty"`
+   CreatedAt   time.Time       `db:"created_at" json:"created_at"`
+   UpdatedAt   time.Time       `db:"updated_at" json:"updated_at"`
+}
+
+// listTriggers returns all triggers.
+func listTriggers(w http.ResponseWriter, r *http.Request) {
+   rows, err := db.DB.Query(
+       `SELECT id, user_id, provider, config, enabled, last_checked, created_at, updated_at
+        FROM triggers
+        ORDER BY created_at DESC`,
+   )
+   if err != nil {
+       writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+       return
+   }
+   defer rows.Close()
+
+   triggers := []Trigger{}
+   for rows.Next() {
+       var t Trigger
+       var configBytes []byte
+       var nt sql.NullTime
+       if err := rows.Scan(&t.ID, &t.UserID, &t.Provider, &configBytes, &t.Enabled, &nt, &t.CreatedAt, &t.UpdatedAt); err != nil {
+           writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+           return
+       }
+       t.Config = configBytes
+       if nt.Valid {
+           t.LastChecked = &nt.Time
+       }
+       triggers = append(triggers, t)
+   }
+   writeJSON(w, http.StatusOK, triggers)
+}
+
+// getTrigger fetches a single trigger by ID.
+func getTrigger(w http.ResponseWriter, r *http.Request) {
+   id := chi.URLParam(r, "triggerID")
+   var t Trigger
+   var configBytes []byte
+   var nt sql.NullTime
+   err := db.DB.QueryRow(
+       `SELECT id, user_id, provider, config, enabled, last_checked, created_at, updated_at FROM triggers WHERE id = $1`, id,
+   ).Scan(&t.ID, &t.UserID, &t.Provider, &configBytes, &t.Enabled, &nt, &t.CreatedAt, &t.UpdatedAt)
+   if err != nil {
+       if err == sql.ErrNoRows {
+           writeJSON(w, http.StatusNotFound, map[string]string{"error": "trigger not found"})
+       } else {
+           writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+       }
+       return
+   }
+   t.Config = configBytes
+   if nt.Valid {
+       t.LastChecked = &nt.Time
+   }
+   writeJSON(w, http.StatusOK, t)
+}
+
+// createTrigger registers a new trigger.
+func createTrigger(w http.ResponseWriter, r *http.Request) {
+   var in struct {
+       UserID   string          `json:"user_id"`
+       Provider string          `json:"provider"`
+       Config   json.RawMessage `json:"config"`
+       Enabled  *bool           `json:"enabled,omitempty"`
+   }
+   if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+       writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+       return
+   }
+   if in.UserID == "" {
+       in.UserID = "00000000-0000-0000-0000-000000000001"
+   }
+   enabled := true
+   if in.Enabled != nil {
+       enabled = *in.Enabled
+   }
+   id := uuid.New().String()
+   query := `INSERT INTO triggers (id, user_id, provider, config, enabled) VALUES ($1,$2,$3,$4::jsonb,$5) RETURNING id`
+   if err := db.DB.QueryRow(query, id, in.UserID, in.Provider, string(in.Config), enabled).Scan(&id); err != nil {
+       writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+       return
+   }
+   writeJSON(w, http.StatusCreated, map[string]string{"id": id})
+}
+
+// updateTrigger modifies an existing trigger.
+func updateTrigger(w http.ResponseWriter, r *http.Request) {
+   id := chi.URLParam(r, "triggerID")
+   var in struct {
+       Provider *string         `json:"provider,omitempty"`
+       Config   *json.RawMessage `json:"config,omitempty"`
+       Enabled  *bool           `json:"enabled,omitempty"`
+   }
+   if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+       writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+       return
+   }
+   if in.Provider != nil {
+       if _, err := db.DB.Exec(`UPDATE triggers SET provider=$1, updated_at=now() WHERE id=$2`, *in.Provider, id); err != nil {
+           writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+           return
+       }
+   }
+   if in.Config != nil {
+       if _, err := db.DB.Exec(`UPDATE triggers SET config=$1::jsonb, updated_at=now() WHERE id=$2`, string(*in.Config), id); err != nil {
+           writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+           return
+       }
+   }
+   if in.Enabled != nil {
+       if _, err := db.DB.Exec(`UPDATE triggers SET enabled=$1, updated_at=now() WHERE id=$2`, *in.Enabled, id); err != nil {
+           writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+           return
+       }
+   }
+   writeJSON(w, http.StatusOK, map[string]string{"id": id})
+}
+
+// deleteTrigger removes a trigger.
+func deleteTrigger(w http.ResponseWriter, r *http.Request) {
+   id := chi.URLParam(r, "triggerID")
+   if _, err := db.DB.Exec(`DELETE FROM triggers WHERE id=$1`, id); err != nil {
+       writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+       return
+   }
+   w.WriteHeader(http.StatusNoContent)
 }
 
 // executeNodeHandler handles running a single node with provided input (stub implementation)
