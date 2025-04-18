@@ -5,6 +5,7 @@ import (
    "encoding/json"
    "fmt"
    "net/http"
+   "strings"
    "time"
 
    "github.com/cedricziel/mel-agent/internal/db"
@@ -491,6 +492,20 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
        writeJSON(w, http.StatusForbidden, map[string]string{"error": "trigger disabled"})
        return
    }
+   // Enforce allowed HTTP method from node config
+   var methodCfg map[string]interface{}
+   if err := json.Unmarshal(configRaw, &methodCfg); err != nil {
+       methodCfg = map[string]interface{}{}
+   }
+   methodAllowed, _ := methodCfg["method"].(string)
+   if methodAllowed == "" {
+       methodAllowed = "POST"
+   }
+   if methodAllowed != "ANY" && !strings.EqualFold(r.Method, methodAllowed) {
+       w.Header().Set("Allow", methodAllowed)
+       writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
+       return
+   }
    // Decode JSON payload
    var payload interface{}
    if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -590,6 +605,8 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
        if rb, ok := cfg["responseBody"]; ok {
            respBody = rb
        }
+       // Include run ID in response headers for tracing
+       w.Header().Set("X-Run-Id", runID)
        writeJSON(w, statusCode, respBody)
        return
    }
@@ -629,6 +646,8 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
        // if responseBody is a string, return raw; else return as JSON object
        resp = map[string]string{"body": fmt.Sprint(rb)}
    }
+   // Include run ID in response headers for tracing
+   w.Header().Set("X-Run-Id", runID)
    writeJSON(w, statusCode, resp)
 }
 

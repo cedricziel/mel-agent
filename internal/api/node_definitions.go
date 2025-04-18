@@ -129,12 +129,14 @@ func (webhookDefinition) Meta() NodeType {
 		Label:      "Webhook",
 		Category:   "Triggers",
 		EntryPoint: true,
-		Parameters: []ParameterDefinition{
-			{Name: "secret", Label: "Secret", Type: "string", Required: false, Default: "", Group: "Security", Description: "HMAC or token to validate requests"},
-			{Name: "mode", Label: "Mode", Type: "enum", Required: true, Default: "async", Options: []string{"async", "sync"}, Group: "Execution"},
-			{Name: "statusCode", Label: "Response Status", Type: "number", Required: false, Default: 202, Group: "Response"},
-			{Name: "responseBody", Label: "Response Body", Type: "string", Required: false, Default: "", Group: "Response"},
-		},
+       Parameters: []ParameterDefinition{
+           // Allowed HTTP method for this webhook (ANY to accept all)
+           {Name: "method", Label: "HTTP Method", Type: "enum", Required: true, Default: "POST", Options: []string{"ANY", "GET", "POST", "PUT", "PATCH", "DELETE"}, Group: "HTTP", Description: "Allowed HTTP method for this webhook trigger"},
+           {Name: "secret", Label: "Secret", Type: "string", Required: false, Default: "", Group: "Security", Description: "HMAC or token to validate requests"},
+           {Name: "mode", Label: "Mode", Type: "enum", Required: true, Default: "async", Options: []string{"async", "sync"}, Group: "Execution"},
+           {Name: "statusCode", Label: "Response Status", Type: "number", Required: false, Default: 202, Group: "Response"},
+           {Name: "responseBody", Label: "Response Body", Type: "string", Required: false, Default: "", Group: "Response"},
+       },
 	}
 }
 func (webhookDefinition) Execute(agentID string, node Node, input interface{}) (interface{}, error) {
