@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import ReactFlow, {
   Background,
@@ -17,6 +18,7 @@ import "reactflow/dist/style.css";
 // TODO: node type definitions are fetched from the backend via /api/node-types
 
 function BuilderPage({ agentId }) {
+  const navigate = useNavigate();
   // graph state: nodes and edges
   // Graph nodes and edges (loaded from latest agent version)
   const [nodes, setNodes] = useState([]);
@@ -30,11 +32,6 @@ function BuilderPage({ agentId }) {
   // Test run state
   const [testing, setTesting] = useState(false);
   const [testRunResult, setTestRunResult] = useState(null);
-  // Runs history state
-  const [runsModalOpen, setRunsModalOpen] = useState(false);
-  const [runsList, setRunsList] = useState([]);
-  const [selectedRunID, setSelectedRunID] = useState(null);
-  const [selectedRunDetails, setSelectedRunDetails] = useState(null);
   const categories = useMemo(() => {
     const map = {};
     nodeDefs.forEach((def) => {
@@ -71,28 +68,6 @@ function BuilderPage({ agentId }) {
       })
       .catch((err) => console.error('fetch agent graph failed:', err));
   }, [agentId]);
-  // Fetch runs list when modal opens
-  useEffect(() => {
-    if (runsModalOpen) {
-      axios.get(`/api/agents/${agentId}/runs`)
-        .then((res) => setRunsList(res.data))
-        .catch((err) => console.error('fetch runs failed', err));
-    } else {
-      setRunsList([]);
-      setSelectedRunID(null);
-      setSelectedRunDetails(null);
-    }
-  }, [runsModalOpen, agentId]);
-  // Fetch selected run details
-  useEffect(() => {
-    if (selectedRunID) {
-      axios.get(`/api/agents/${agentId}/runs/${selectedRunID}`)
-        .then((res) => setSelectedRunDetails(res.data))
-        .catch((err) => console.error('fetch run details failed', err));
-    } else {
-      setSelectedRunDetails(null);
-    }
-  }, [selectedRunID, agentId]);
   // WebSocket client for collaborative updates
   const clientId = useMemo(() => crypto.randomUUID(), []);
   const wsRef = useRef(null);
@@ -260,7 +235,7 @@ function BuilderPage({ agentId }) {
           {testing ? 'Running...' : 'Test Run'}
         </button>
         <button
-          onClick={() => setRunsModalOpen(true)}
+          onClick={() => navigate(`/agents/${agentId}/runs`)}
           className="px-3 py-1 bg-gray-600 text-white rounded"
         >
           Runs
@@ -316,46 +291,6 @@ function BuilderPage({ agentId }) {
                 Close
               </button>
             </div>
-          </div>
-        </div>
-      )}
-      {/* Runs history modal */}
-      {runsModalOpen && (
-        <div className="fixed inset-0 bg-black/40 flex items-start justify-center z-50 pt-20">
-          <div className="bg-white rounded shadow-lg w-3/4 h-3/4 flex overflow-hidden relative">
-            <div className="w-1/3 border-r overflow-auto p-4">
-              <h2 className="text-lg font-bold mb-2">Past Runs</h2>
-              <ul className="space-y-2">
-                {runsList.map((run) => (
-                  <li key={run.id}>
-                    <button
-                      onClick={() => setSelectedRunID(run.id)}
-                      className={`w-full text-left px-2 py-1 rounded ${
-                        run.id === selectedRunID ? 'bg-gray-200' : 'hover:bg-gray-100'
-                      }`}
-                    >
-                      {run.created_at} ({run.id})
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="flex-1 overflow-auto p-4">
-              <h2 className="text-lg font-bold mb-2">Run Details</h2>
-              {selectedRunDetails ? (
-                <pre className="text-xs font-mono bg-gray-100 p-2 rounded h-full overflow-auto">
-                  {JSON.stringify(selectedRunDetails, null, 2)}
-                </pre>
-              ) : (
-                <p className="text-sm text-gray-500">Select a run to view details.</p>
-              )}
-            </div>
-            <button
-              onClick={() => setRunsModalOpen(false)}
-              className="absolute top-2 right-2 px-2 py-1 bg-red-500 text-white rounded"
-            >
-              X
-            </button>
           </div>
         </div>
       )}

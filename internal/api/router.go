@@ -334,44 +334,60 @@ func testRunHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		defaultParams = map[string]interface{}{}
 	}
-	// Initialize execution payload
-	type Item struct {
-		ID   string      `json:"id"`
-		Data interface{} `json:"data"`
-	}
-	type Payload struct {
-		RunID   string                 `json:"runId"`
-		Items   []Item                 `json:"items"`
-		Context map[string]interface{} `json:"context"`
-		Meta    map[string]interface{} `json:"meta"`
-	}
+    // Initialize execution payload and trace structures
+    type Item struct {
+        ID   string      `json:"id"`
+        Data interface{} `json:"data"`
+    }
+    type Step struct {
+        NodeID string `json:"nodeId"`
+        Input  []Item `json:"input"`
+        Output []Item `json:"output"`
+    }
+    type Payload struct {
+        RunID   string                   `json:"runId"`
+        Context map[string]interface{}   `json:"context"`
+        Meta    map[string]interface{}   `json:"meta"`
+        Trace   []Step                   `json:"trace"`
+    }
 	runID := uuid.NewString()
-	payload := Payload{
-		RunID:   runID,
-		Items:   []Item{{ID: uuid.NewString(), Data: defaultParams}},
-		Context: map[string]interface{}{},
-		Meta: map[string]interface{}{
-			"startTime": time.Now().UTC().Format(time.RFC3339),
-		},
-	}
+    // Prepare initial payload
+    initialItem := Item{ID: uuid.NewString(), Data: defaultParams}
+    payload := Payload{
+        RunID:   runID,
+        Context: map[string]interface{}{},
+        Meta: map[string]interface{}{
+            "startTime": time.Now().UTC().Format(time.RFC3339),
+        },
+        Trace: []Step{},
+    }
+    currentItems := []Item{initialItem}
 	// Execute nodes in order
-	for _, node := range graph.Nodes {
-		// Process each item through the node
-		var nextItems []Item
-		for _, item := range payload.Items {
-			output, err := executeNodeLocal(agentID, node, item.Data)
-			if err != nil {
-				// propagate error in data field
-				nextItems = append(nextItems, Item{ID: item.ID, Data: map[string]interface{}{"error": err.Error()}})
-			} else if output != nil {
-				nextItems = append(nextItems, Item{ID: item.ID, Data: output})
-			}
-			// if output is nil, item is filtered out
-		}
-		payload.Items = nextItems
-		payload.Meta["lastNode"] = node.ID
-	}
+    // Execute nodes in order, recording trace
+    for _, node := range graph.Nodes {
+        inputItems := currentItems
+        var nextItems []Item
+        for _, item := range inputItems {
+            output, err := executeNodeLocal(agentID, node, item.Data)
+            if err != nil {
+                nextItems = append(nextItems, Item{ID: item.ID, Data: map[string]interface{}{"error": err.Error()}})
+            } else if output != nil {
+                nextItems = append(nextItems, Item{ID: item.ID, Data: output})
+            }
+        }
+        // Append step to trace
+        payload.Trace = append(payload.Trace, Step{
+            NodeID: node.ID,
+            Input:  inputItems,
+            Output: nextItems,
+        })
+        // Prepare for next iteration
+        currentItems = nextItems
+        payload.Meta["lastNode"] = node.ID
+    }
     // Persist run record
+    // Embed final items under meta
+    payload.Meta["finalItems"] = currentItems
     raw, err := json.Marshal(payload)
     if err != nil {
         writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
