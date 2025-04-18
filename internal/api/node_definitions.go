@@ -1,7 +1,7 @@
 package api
 
 import (
-	"net/http"
+   "net/http"
 )
 
 // ParameterDefinition defines a single configuration parameter for a node.
