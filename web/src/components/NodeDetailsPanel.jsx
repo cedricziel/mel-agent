@@ -5,8 +5,9 @@ import CronEditor from './CronEditor';
 export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, publicUrl }) {
   if (!node || !nodeDef) return null;
   const { data } = node;
+  // legacy defaults (unused) and fallback data keys
   const defaults = nodeDef.defaults || {};
-  const paramKeys = Object.keys(defaults);
+  const fallbackKeys = Object.keys(data).filter((k) => k !== 'label' && k !== 'status' && k !== 'lastOutput');
   // execution state
   const [execInput, setExecInput] = useState('{}');
   const [execOutput, setExecOutput] = useState(null);
@@ -45,20 +46,34 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
         </div>
         {/* Parameter groups */}
         {(() => {
+          // parameters may come from schema or legacy defaults
+          // Normalize parameters: use server-defined parameters if available, otherwise fallback
+          const parameters = Array.isArray(nodeDef.parameters) && nodeDef.parameters.length > 0
+            ? nodeDef.parameters
+            : fallbackKeys.map((key) => ({
+                name: key,
+                label: key,
+                type: 'string',
+                required: false,
+                default: data[key] ?? '',
+                group: 'General',
+                description: '',
+                validators: []
+              }));
           // filter visible parameters
-          const visible = nodeDef.parameters.filter((p) => {
-            if (!p.VisibilityCondition) return true;
+          const visible = parameters.filter((p) => {
+            if (!p.visibilityCondition) return true;
             try {
-              // naive evaluation: treat condition as JS
+              // naive evaluation of visibility condition (CEL-like)
               // eslint-disable-next-line no-new-func
-              return new Function('data', `with(data) { return ${p.VisibilityCondition} }`)(data);
+              return new Function('data', `with(data) { return ${p.visibilityCondition} }`)(data);
             } catch {
               return true;
             }
           });
           const groups = {};
           visible.forEach((p) => {
-            const g = p.Group || 'General';
+            const g = p.group || 'General';
             groups[g] = groups[g] || [];
             groups[g].push(p);
           });
@@ -66,108 +81,108 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
             <div key={group} className="mb-4">
               <h4 className="text-sm font-semibold mb-2">{group}</h4>
               {params.map((p) => {
-                const val = data[p.Name] != null ? data[p.Name] : p.Default;
-                const error = p.Required && (val === '' || val == null);
+                const val = data[p.name] != null ? data[p.name] : p.default;
+                const error = p.required && (val === '' || val == null);
                 const baseClass = error ? 'border-red-500' : 'border-gray-300';
-                switch (p.Type) {
+                switch (p.type) {
                   case 'string':
                     // Cron editor for schedule nodes
-                    if (p.Name === 'cron') {
+                    if (p.name === 'cron') {
                       return (
-                        <div key={p.Name} className="mb-3">
+                        <div key={p.name} className="mb-3">
                           <label className="block text-sm mb-1">
-                            {p.Label}{p.Required && <span className="text-red-500">*</span>}
+                            {p.label}{p.required && <span className="text-red-500">*</span>}
                           </label>
                           <CronEditor
                             value={val}
-                            onCronChange={(cron) => onChange(p.Name, cron)}
+                            onCronChange={(cron) => onChange(p.name, cron)}
                           />
                           {error && (
                             <div className="text-xs text-red-600 mt-1">
-                              {p.Label} is required
+                              {p.label} is required
                             </div>
                           )}
                         </div>
                       );
                     }
                     return (
-                      <div key={p.Name} className="mb-3">
+                      <div key={p.name} className="mb-3">
                         <label className="block text-sm mb-1">
-                          {p.Label}{p.Required && <span className="text-red-500">*</span>}
+                          {p.label}{p.required && <span className="text-red-500">*</span>}
                         </label>
                         <input
                           type="text"
                           value={val}
-                          onChange={(e) => onChange(p.Name, e.target.value)}
+                          onChange={(e) => onChange(p.name, e.target.value)}
                           className={`w-full border rounded px-2 py-1 ${baseClass}`}
                         />
                         {error && (
                           <div className="text-xs text-red-600 mt-1">
-                            {p.Label} is required
+                            {p.label} is required
                           </div>
                         )}
                       </div>
                     );
                   case 'number':
                     return (
-                      <div key={p.Name} className="mb-3">
+                      <div key={p.name} className="mb-3">
                         <label className="block text-sm mb-1">
-                          {p.Label}{p.Required && <span className="text-red-500">*</span>}
+                          {p.label}{p.required && <span className="text-red-500">*</span>}
                         </label>
                         <input
                           type="number"
                           value={val}
-                          onChange={(e) => onChange(p.Name, parseFloat(e.target.value) || 0)}
+                          onChange={(e) => onChange(p.name, parseFloat(e.target.value) || 0)}
                           className={`w-full border rounded px-2 py-1 ${baseClass}`}
                         />
                         {error && (
                           <div className="text-xs text-red-600 mt-1">
-                            {p.Label} is required
+                            {p.label} is required
                           </div>
                         )}
                       </div>
                     );
                   case 'boolean':
                     return (
-                      <div key={p.Name} className="flex items-center mb-3">
+                      <div key={p.name} className="flex items-center mb-3">
                         <input
                           type="checkbox"
                           checked={!!val}
-                          onChange={(e) => onChange(p.Name, e.target.checked)}
+                          onChange={(e) => onChange(p.name, e.target.checked)}
                           className="mr-2"
                         />
                         <label className="text-sm">
-                          {p.Label}{p.Required && <span className="text-red-500">*</span>}
+                          {p.label}{p.required && <span className="text-red-500">*</span>}
                         </label>
                       </div>
                     );
                   case 'enum':
                     return (
-                      <div key={p.Name} className="mb-3">
+                      <div key={p.name} className="mb-3">
                         <label className="block text-sm mb-1">
-                          {p.Label}{p.Required && <span className="text-red-500">*</span>}
+                          {p.label}{p.required && <span className="text-red-500">*</span>}
                         </label>
                         <select
                           value={val}
-                          onChange={(e) => onChange(p.Name, e.target.value)}
+                          onChange={(e) => onChange(p.name, e.target.value)}
                           className={`w-full border rounded px-2 py-1 ${baseClass}`}
                         >
-                          {p.Options.map((opt) => (
+                          {p.options.map((opt) => (
                             <option key={opt} value={opt}>{opt}</option>
                           ))}
                         </select>
                         {error && (
                           <div className="text-xs text-red-600 mt-1">
-                            {p.Label} is required
+                            {p.label} is required
                           </div>
                         )}
                       </div>
                     );
                   case 'json':
                     return (
-                      <div key={p.Name} className="mb-3">
+                      <div key={p.name} className="mb-3">
                         <label className="block text-sm mb-1">
-                          {p.Label}{p.Required && <span className="text-red-500">*</span>}
+                          {p.label}{p.required && <span className="text-red-500">*</span>}
                         </label>
                         <textarea
                           rows={4}
@@ -175,17 +190,17 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
                           onChange={(e) => {
                             try {
                               const v = JSON.parse(e.target.value);
-                              onChange(p.Name, v);
+                              onChange(p.name, v);
                             } catch {
                               // ignore parse error
-                              onChange(p.Name, e.target.value);
+                              onChange(p.name, e.target.value);
                             }
                           }}
                           className={`w-full border rounded px-2 py-1 font-mono text-xs ${baseClass}`}
                         />
                         {error && (
                           <div className="text-xs text-red-600 mt-1">
-                            {p.Label} is required
+                            {p.label} is required
                           </div>
                         )}
                       </div>
