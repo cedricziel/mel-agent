@@ -36,15 +36,8 @@ func main() {
 		w.Write([]byte(`{"status":"ok"}`))
 	})
 
-   // webhook entrypoint for external events (e.g., GitHub, Stripe)
-   // POST triggers the execution; GET returns Method Not Allowed with our header for diagnostics
-   r.Post("/webhooks/{provider}/{triggerID}", api.WebhookHandler)
-  r.Get("/webhooks/{provider}/{triggerID}", func(w http.ResponseWriter, r *http.Request) {
-      // Indicate the request hit our engine
-      w.Header().Set("X-Agent-Processed", "true")
-      w.Header().Set("Allow", "POST")
-      http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-  })
+   // webhook entrypoint for external events (e.g., GitHub, Stripe) – accept all HTTP methods
+   r.HandleFunc("/webhooks/{provider}/{triggerID}", api.WebhookHandler)
    // mount api routes under /api
    r.Mount("/api", api.Handler())
 

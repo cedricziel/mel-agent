@@ -4,6 +4,7 @@ import (
    "database/sql"
    "encoding/json"
    "fmt"
+   "io"
    "net/http"
    "strings"
    "time"
@@ -506,9 +507,9 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
        writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
        return
    }
-   // Decode JSON payload
+   // Decode JSON payload (tolerate empty body)
    var payload interface{}
-   if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+   if err := json.NewDecoder(r.Body).Decode(&payload); err != nil && err != io.EOF {
        writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
        return
    }
