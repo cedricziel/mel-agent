@@ -139,7 +139,42 @@
 
  - Register new providers via plugin or code registration.
 
- ## 12. Open Questions & Next Steps
+## Graph ↔ Trigger Persistence ↔ Scheduler Lifecycle
+
+This section describes how trigger nodes defined in an agent graph flow through persistence into the active scheduler and back to workflow execution.
+
+1. Graph Authoring
+   - In the visual builder, users drag a Trigger node (cron, webhook, poller, etc.) onto the canvas and configure its parameters.
+   - The node has an internal `nodeId`, and its properties include provider type and `config` JSON.
+
+2. Persisting on Version Save
+   - When a new agent version is saved via `POST /agents/{agentID}/versions`, the server stores the full graph in `agent_versions.graph`.
+   - A post-save hook inspects the graph JSON, extracts all Trigger nodes (identified by type and `nodeId`).
+
+3. Trigger Sync
+   - For each Trigger node in the latest graph:  
+     • If no matching `triggers` row exists (by `agent_id` + `node_id`), INSERT a new record.  
+     • If the node’s `config` or `enabled` flag changed, UPDATE the corresponding row.  
+   - Any existing `triggers` rows for this `agent_id` whose `node_id` is no longer present are DELETED (or marked `enabled=false`).
+
+4. Scheduling Service
+   - A long‑running Trigger Engine (separate process or Go routine) polls or subscribes to the `triggers` table for active rows.
+   - For each active trigger it:  
+     • Initializes the correct TriggerProvider (cron scheduler, HTTP webhook router, poll loop, pub/sub consumer, etc.) with the stored `config`.  
+     • Registers callback handlers that will fire when an event is received.
+
+5. Event Dispatch & Run Creation
+   - When a provider detects an event, it invokes the Runner API (`POST /agents/{agentID}/runs`) with:  
+     • `versionId` (latest version),  
+     • `startNodeId` (the trigger’s nodeId),  
+     • `input` payload (event data).
+   - The run service creates a new Run record, and the execution engine begins at that trigger node, passing the event envelope into the graph.
+
+6. Cleanup & Updates
+   - When the user updates the graph (adds/removes trigger nodes) and publishes a new version, the sync logic enables/disables or recreates trigger rows automatically.  
+   - The Trigger Engine watches for changes (via notifications or periodic reload) and will start/stop provider instances accordingly.
+
+## 12. Open Questions & Next Steps
 
  1. DSL choice for conditions: JSONPath vs CEL vs Lua vs JavaScript.
  2. Multi-tenancy: shared vs per-tenant event topics.
