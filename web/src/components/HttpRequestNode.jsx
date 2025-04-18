@@ -3,10 +3,9 @@ import { Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 
 // HTTP Request node: sends an HTTP request during workflow execution
-export default function HttpRequestNode({ data, onAddClick, type }) {
+export default function HttpRequestNode({ data, onAddClick, icon }) {
   const { label, method, url } = data;
-  // Icon for HTTP request node
-  const icon = '🌐';
+  const nodeIcon = icon || '🌐';
   return (
     <div
       className={
@@ -15,8 +14,7 @@ export default function HttpRequestNode({ data, onAddClick, type }) {
         }`
       }
     >
-      {/* Node icon */}
-      <div className="absolute top-1 left-1 text-xs">{icon}</div>
+      <div className="absolute top-1 left-1 text-xs">{nodeIcon}</div>
       {/* Node label */}
       <div className="text-sm font-medium">{label}</div>
       {/* Subtitle: node type */}

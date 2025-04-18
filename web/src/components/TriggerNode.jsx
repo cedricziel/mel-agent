@@ -3,18 +3,11 @@ import { Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 
 // Trigger node: entry point without input handle
-export default function TriggerNode({ data, onAddClick, type }) {
+export default function TriggerNode({ data, onAddClick, icon }) {
   const summaryKeys = Object.keys(data).filter(
     (k) => k !== 'label' && k !== 'status'
   );
-  // Icon mapping for trigger node types
-  const iconMap = {
-    timer: '⏰',
-    schedule: '🗓️',
-    webhook: '🔌',
-    slack: '💬',
-  };
-  const icon = iconMap[type] || '🔔';
+  const nodeIcon = icon || '🔔';
   return (
     <div
       className={
@@ -23,8 +16,7 @@ export default function TriggerNode({ data, onAddClick, type }) {
         }`
       }
     >
-      {/* Node icon */}
-      <div className="absolute top-1 left-1 text-xs">{icon}</div>
+      <div className="absolute top-1 left-1 text-xs">{nodeIcon}</div>
       {/* Status indicator: running */}
       {data.status === 'running' && (
         <div className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse z-10" />

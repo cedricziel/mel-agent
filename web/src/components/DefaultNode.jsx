@@ -3,16 +3,11 @@ import { Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 
 // Generic node renderer: one input, one output, shows label
-export default function DefaultNode({ data, onAddClick, type }) {
+export default function DefaultNode({ data, onAddClick, icon }) {
   const summaryKeys = Object.keys(data).filter(
     (k) => k !== 'label' && k !== 'status'
   );
-  // Icon mapping for node types
-  const iconMap = {
-    switch: '🔀',
-    agent: '🤖',
-  };
-  const icon = iconMap[type] || '📦';
+  const nodeIcon = icon || '📦';
   return (
     <div
       className={
@@ -21,8 +16,7 @@ export default function DefaultNode({ data, onAddClick, type }) {
         }`
       }
     >
-      {/* Node icon */}
-      <div className="absolute top-1 left-1 text-xs">{icon}</div>
+      <div className="absolute top-1 left-1 text-xs">{nodeIcon}</div>
       {/* Quick-add button */}
       {onAddClick && (
         <button

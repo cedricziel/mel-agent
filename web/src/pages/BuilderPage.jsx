@@ -238,6 +238,7 @@ function BuilderPage({ agentId }) {
       m[def.type] = (props) => (
         <Comp
           {...props}
+          icon={def.icon}
           onAddClick={() => {
             setAddingFromNodeId(props.id);
             setModalOpen(true);
@@ -566,6 +567,7 @@ function BuilderPage({ agentId }) {
                               setSearch('');
                             }}
                           >
+                            {nt.icon && <span className="mr-1">{nt.icon}</span>}
                             {nt.label}
                           </button>
                         </li>

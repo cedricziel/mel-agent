@@ -28,6 +28,7 @@ type ValidatorSpec struct {
 type NodeType struct {
 	Type       string                `json:"type"`
 	Label      string                `json:"label"`
+	Icon       string                `json:"icon,omitempty"`
 	Category   string                `json:"category"`
 	EntryPoint bool                  `json:"entry_point,omitempty"`
 	Branching  bool                  `json:"branching,omitempty"`
@@ -85,6 +86,7 @@ func (timerDefinition) Meta() NodeType {
 	return NodeType{
 		Type:       "timer",
 		Label:      "Timer",
+		Icon:       "⏰",
 		Category:   "Triggers",
 		EntryPoint: true,
 		Parameters: []ParameterDefinition{
@@ -106,6 +108,7 @@ func (scheduleDefinition) Meta() NodeType {
 	return NodeType{
 		Type:       "schedule",
 		Label:      "Schedule",
+		Icon:       "🗓️",
 		Category:   "Triggers",
 		EntryPoint: true,
 		Parameters: []ParameterDefinition{
@@ -127,6 +130,7 @@ func (webhookDefinition) Meta() NodeType {
 	return NodeType{
 		Type:       "webhook",
 		Label:      "Webhook",
+		Icon:       "🔌",
 		Category:   "Triggers",
 		EntryPoint: true,
        Parameters: []ParameterDefinition{
@@ -151,6 +155,7 @@ func (slackDefinition) Meta() NodeType {
 	return NodeType{
 		Type:       "slack",
 		Label:      "Slack Slash Command",
+		Icon:       "💬",
 		Category:   "Triggers",
 		EntryPoint: true,
 		Parameters: []ParameterDefinition{
@@ -172,6 +177,7 @@ func (httpRequestDefinition) Meta() NodeType {
 	return NodeType{
 		Type:     "http_request",
 		Label:    "HTTP Request",
+		Icon:     "🌐",
 		Category: "Integration",
 		Parameters: []ParameterDefinition{
 			{Name: "url", Label: "URL", Type: "string", Required: true, Default: "", Group: "Request", Description: "Endpoint to call", Validators: []ValidatorSpec{{Type: "notEmpty"}, {Type: "url"}}},
@@ -193,6 +199,7 @@ func (ifDefinition) Meta() NodeType {
 	return NodeType{
 		Type:      "if",
 		Label:     "If",
+		Icon:      "❓",
 		Category:  "Basic",
 		Branching: true,
 		Parameters: []ParameterDefinition{
@@ -211,6 +218,7 @@ func (switchDefinition) Meta() NodeType {
 	return NodeType{
 		Type:       "switch",
 		Label:      "Switch",
+		Icon:       "🔀",
 		Category:   "Basic",
 		Parameters: []ParameterDefinition{},
 	}
@@ -226,6 +234,7 @@ func (agentDefinition) Meta() NodeType {
 	return NodeType{
 		Type:       "agent",
 		Label:      "Agent",
+		Icon:       "🤖",
 		Category:   "LLM",
 		Parameters: []ParameterDefinition{},
 	}

@@ -3,10 +3,9 @@ import { Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 
 // Custom node for 'if' logic: one input, two outputs (true/false)
-export default function IfNode({ id, data, onAddClick, type }) {
+export default function IfNode({ id, data, onAddClick, icon }) {
   const condition = data.condition || '';
-  // Icon for branching node
-  const icon = '❓';
+  const nodeIcon = icon || '❓';
   return (
     <div
       className={
@@ -15,8 +14,7 @@ export default function IfNode({ id, data, onAddClick, type }) {
         }`
       }
     >
-      {/* Node icon */}
-      <div className="absolute top-1 left-1 text-xs">{icon}</div>
+      <div className="absolute top-1 left-1 text-xs">{nodeIcon}</div>
       {/* Quick-add button */}
       {onAddClick && (
         <button
