@@ -129,7 +129,8 @@ func (ScheduleExecutor) Execute(agentID string, node Node, input interface{}) (i
 // init registers default executors.
 func init() {
    RegisterExecutor("if", IfExecutor{})
-   RegisterExecutor("http", HTTPRequestExecutor{})
+   // HTTP request action
+   RegisterExecutor("http_request", HTTPRequestExecutor{})
    RegisterExecutor("timer", TimerExecutor{})
    RegisterExecutor("schedule", ScheduleExecutor{})
    // Register other built-in executors as needed

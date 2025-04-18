@@ -12,6 +12,7 @@ import ReactFlow, {
 import IfNode from "../components/IfNode";
 import DefaultNode from "../components/DefaultNode";
 import TriggerNode from "../components/TriggerNode";
+import HttpRequestNode from "../components/HttpRequestNode";
 import NodeDetailsPanel from "../components/NodeDetailsPanel";
 import "reactflow/dist/style.css";
 
@@ -53,6 +54,17 @@ function BuilderPage({ agentId }) {
       .then((res) => setTriggers(res.data))
       .catch((err) => console.error('fetch triggers failed:', err));
   }, []);
+  // Validation errors per nodeId
+  const [validationErrors, setValidationErrors] = useState({});
+  // Decorate nodes with error flag for highlighting
+  const displayedNodes = useMemo(
+    () => nodes.map((n) => {
+      const errs = validationErrors[n.id];
+      const hasError = Array.isArray(errs) && errs.length > 0;
+      return { ...n, data: { ...n.data, error: hasError } };
+    }),
+    [nodes, validationErrors]
+  );
   // Execute full-agent test run
   const onTestRun = useCallback(async () => {
     setTesting(true);
@@ -159,11 +171,12 @@ function BuilderPage({ agentId }) {
   const nodeTypes = useMemo(() => {
     const m = {};
     nodeDefs.forEach((def) => {
-      // EntryPoint nodes (no input) use TriggerNode
       if (def.entry_point) {
         m[def.type] = TriggerNode;
       } else if (def.branching) {
         m[def.type] = IfNode;
+      } else if (def.type === 'http_request') {
+        m[def.type] = HttpRequestNode;
       } else {
         m[def.type] = DefaultNode;
       }
@@ -173,6 +186,26 @@ function BuilderPage({ agentId }) {
 
   async function save() {
     const graph = { nodes, edges };
+    // Validate nodes before saving
+    const errorsMap = {};
+    nodes.forEach((n) => {
+      if (n.type === 'http_request') {
+        const url = n.data.url || '';
+        const method = n.data.method || '';
+        if (!url.trim()) {
+          (errorsMap[n.id] = errorsMap[n.id] || []).push(`Node "${n.data.label || n.id}" is missing a URL`);
+        }
+        if (!method.trim()) {
+          (errorsMap[n.id] = errorsMap[n.id] || []).push(`Node "${n.data.label || n.id}" is missing a method`);
+        }
+      }
+      // TODO: Add other node type validations here
+    });
+    if (Object.keys(errorsMap).length > 0) {
+      setValidationErrors(errorsMap);
+      return;
+    }
+    setValidationErrors({});
     try {
       await axios.post(`/api/agents/${agentId}/versions`, {
         semantic_version: "0.1.0",
@@ -285,8 +318,18 @@ function BuilderPage({ agentId }) {
         </button>
       </div>
         <div className="flex-1">
+          {/* Validation errors */}
+          {Object.keys(validationErrors).length > 0 && (
+            <div className="p-2 mb-2 bg-red-100 text-red-800 rounded">
+              <ul className="list-disc list-inside text-sm">
+                {Object.entries(validationErrors).flatMap(([nodeId, errs]) =>
+                  errs.map((msg, idx) => <li key={`${nodeId}-${idx}`}>{msg}</li>)
+                )}
+              </ul>
+            </div>
+          )}
           <ReactFlow
-            nodes={nodes}
+            nodes={displayedNodes}
             edges={edges}
             nodeTypes={nodeTypes}
             onNodesChange={onNodesChange}

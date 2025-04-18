@@ -6,7 +6,13 @@ import 'reactflow/dist/style.css';
 export default function IfNode({ id, data }) {
   const condition = data.condition || '';
   return (
-    <div className="relative bg-yellow-50 border border-yellow-400 rounded p-2 min-w-[120px]">
+    <div
+      className={
+        `relative bg-yellow-50 rounded p-2 min-w-[120px] ${
+          data.error ? 'border-2 border-red-500' : 'border border-yellow-400'
+        }`
+      }
+    >
       {/* Status indicator: running */}
       {data.status === 'running' && (
         <div className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse" />

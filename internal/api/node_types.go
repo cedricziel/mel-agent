@@ -29,6 +29,8 @@ var nodeTypes = []NodeType{
   {Type: "schedule", Label: "Schedule", Category: "Triggers", Defaults: map[string]string{"cron": "", "mode": "async", "statusCode": "202", "responseBody": ""}, EntryPoint: true},
   {Type: "webhook", Label: "Webhook", Category: "Triggers", Defaults: map[string]string{"secret": "", "mode": "async", "statusCode": "202", "responseBody": ""}, EntryPoint: true},
   {Type: "slack", Label: "Slack Slash Command", Category: "Triggers", Defaults: map[string]string{"command": "", "mode": "async", "statusCode": "202", "responseBody": ""}, EntryPoint: true},
+  // Action nodes
+  {Type: "http_request", Label: "HTTP Request", Category: "Integration", Defaults: map[string]string{"url": "", "method": "GET", "headers": "", "body": ""}},
   {Type: "if", Label: "If", Category: "Basic", Defaults: map[string]string{"condition": ""}, Branching: true},
   {Type: "switch", Label: "Switch", Category: "Basic"},
   {Type: "agent", Label: "Agent", Category: "LLM"},

@@ -8,7 +8,13 @@ export default function DefaultNode({ data }) {
     (k) => k !== 'label' && k !== 'status'
   );
   return (
-    <div className="relative bg-white border rounded p-2 min-w-[100px]">
+    <div
+      className={
+        `relative bg-white rounded p-2 min-w-[100px] ${
+          data.error ? 'border-2 border-red-500' : 'border'
+        }`
+      }
+    >
       {/* Status indicator: running */}
       {data.status === 'running' && (
         <div className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
