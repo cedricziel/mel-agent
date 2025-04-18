@@ -17,11 +17,15 @@ export default function DefaultNode({ data }) {
       {/* Parameter summary */}
       {summaryKeys.length > 0 && (
         <div className="mt-1 space-y-0.5">
-          {summaryKeys.slice(0, 2).map((key) => (
-            <div key={key} className="text-xs text-gray-600">
-              {key}: {data[key]}
-            </div>
-          ))}
+          {summaryKeys.slice(0, 2).map((key) => {
+            const val = data[key];
+            const display = val !== null && typeof val === 'object' ? JSON.stringify(val) : String(val);
+            return (
+              <div key={key} className="text-xs text-gray-600">
+                {key}: {display}
+              </div>
+            );
+          })}
           {summaryKeys.length > 2 && (
             <div className="text-xs text-gray-400">…</div>
           )}
