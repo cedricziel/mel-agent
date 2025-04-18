@@ -8,6 +8,7 @@ import ReactFlow, {
   applyEdgeChanges,
   MiniMap,
 } from "reactflow";
+import IfNode from "../components/IfNode";
 import "reactflow/dist/style.css";
 
 // Available node categories and types for insertion dialog
@@ -61,6 +62,9 @@ function BuilderPage({ agentId }) {
 
   const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), []);
 
+  // register custom node types for ReactFlow
+  const nodeTypes = { if: IfNode };
+
   async function save() {
     const graph = { nodes, edges };
     try {
@@ -93,6 +97,7 @@ function BuilderPage({ agentId }) {
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
@@ -138,7 +143,9 @@ function BuilderPage({ agentId }) {
                                 {
                                   id,
                                   position: { x: 100, y: 100 },
-                                  data: { label: nt.label },
+                                  data: nt.type === 'if'
+                                    ? { label: nt.label, condition: '' }
+                                    : { label: nt.label },
                                   type: nt.type,
                                 },
                               ]);
