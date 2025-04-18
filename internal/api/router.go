@@ -37,8 +37,10 @@ func Handler() http.Handler {
 
 	// Integrations (read‑only)
 	r.Get("/integrations", listIntegrations)
-	// Node type definitions for builder
-	r.Get("/node-types", listNodeTypes)
+   // Node type definitions for builder
+   r.Get("/node-types", listNodeTypes)
+  // JSON Schema for node types
+   r.Get("/node-types/schema/{type}", getNodeTypeSchemaHandler)
 	// WebSocket for collaborative updates
 	r.Get("/ws/agents/{agentID}", wsHandler)
    // Create a run via trigger or API
