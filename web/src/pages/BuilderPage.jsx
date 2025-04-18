@@ -104,6 +104,43 @@ function BuilderPage({ agentId }) {
   const onPaneClick = useCallback(() => {
     setSelectedNodeId(null);
   }, []);
+  // Execute selected node with given input data
+  const onExecute = useCallback(
+    async (inputData) => {
+      if (!selectedNodeId) return;
+      try {
+        // mark node as running
+        setNodes((nds) =>
+          nds.map((n) =>
+            n.id === selectedNodeId
+              ? { ...n, data: { ...n.data, status: 'running' } }
+              : n
+          )
+        );
+        const res = await axios.post(
+          `/api/agents/${agentId}/nodes/${selectedNodeId}/execute`,
+          inputData
+        );
+        const output = res.data.output;
+        // update node with output and mark completed
+        setNodes((nds) =>
+          nds.map((n) =>
+            n.id === selectedNodeId
+              ? {
+                  ...n,
+                  data: { ...n.data, lastOutput: output, status: 'completed' },
+                }
+              : n
+          )
+        );
+        return output;
+      } catch (err) {
+        console.error(err);
+        alert('Execution failed');
+      }
+    },
+    [agentId, selectedNodeId]
+  );
 
   return (
     <div className="flex" style={{ height: "80vh" }}>

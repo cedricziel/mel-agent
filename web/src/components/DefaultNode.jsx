@@ -4,9 +4,29 @@ import 'reactflow/dist/style.css';
 
 // Generic node renderer: one input, one output, shows label
 export default function DefaultNode({ data }) {
+  const summaryKeys = Object.keys(data).filter(
+    (k) => k !== 'label' && k !== 'status'
+  );
   return (
-    <div className="bg-white border rounded p-2 min-w-[100px]">
+    <div className="relative bg-white border rounded p-2 min-w-[100px]">
+      {/* Status indicator: running */}
+      {data.status === 'running' && (
+        <div className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+      )}
       <div className="text-sm font-medium">{data.label}</div>
+      {/* Parameter summary */}
+      {summaryKeys.length > 0 && (
+        <div className="mt-1 space-y-0.5">
+          {summaryKeys.slice(0, 2).map((key) => (
+            <div key={key} className="text-xs text-gray-600">
+              {key}: {data[key]}
+            </div>
+          ))}
+          {summaryKeys.length > 2 && (
+            <div className="text-xs text-gray-400">…</div>
+          )}
+        </div>
+      )}
       <Handle
         type="target"
         position={Position.Top}

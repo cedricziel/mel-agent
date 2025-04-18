@@ -26,6 +26,8 @@ func Handler() http.Handler {
     r.Get("/integrations", listIntegrations)
     // Node type definitions for builder
     r.Get("/node-types", listNodeTypes)
+    // Execute a single node with provided input data (stub implementation)
+    r.Post("/agents/{agentID}/nodes/{nodeID}/execute", executeNodeHandler)
 
     return r
 }
@@ -215,4 +217,17 @@ func createConnection(w http.ResponseWriter, r *http.Request) {
         return
     }
     writeJSON(w, http.StatusCreated, map[string]string{"id": id})
+}
+// executeNodeHandler handles running a single node with provided input (stub implementation)
+func executeNodeHandler(w http.ResponseWriter, r *http.Request) {
+    agentID := chi.URLParam(r, "agentID")
+    nodeID := chi.URLParam(r, "nodeID")
+    var input interface{}
+    if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+        writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+        return
+    }
+    // TODO: integrate real execution engine. For now, echo input as output.
+    result := map[string]interface{}{"agent_id": agentID, "node_id": nodeID, "output": input}
+    writeJSON(w, http.StatusOK, result)
 }

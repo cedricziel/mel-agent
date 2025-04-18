@@ -6,7 +6,11 @@ import 'reactflow/dist/style.css';
 export default function IfNode({ id, data }) {
   const condition = data.condition || '';
   return (
-    <div className="bg-yellow-50 border border-yellow-400 rounded p-2 min-w-[120px]">
+    <div className="relative bg-yellow-50 border border-yellow-400 rounded p-2 min-w-[120px]">
+      {/* Status indicator: running */}
+      {data.status === 'running' && (
+        <div className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+      )}
       <div className="font-bold text-sm mb-1">If</div>
       <div className="mb-2">
         <input
