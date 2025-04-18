@@ -236,7 +236,13 @@ function BuilderPage({ agentId }) {
       else if (def.type === 'http_request') Comp = HttpRequestNode;
       else Comp = DefaultNode;
       m[def.type] = (props) => (
-        <Comp {...props} onAddClick={() => setAddingFromNodeId(props.id)} />
+        <Comp
+          {...props}
+          onAddClick={() => {
+            setAddingFromNodeId(props.id);
+            setModalOpen(true);
+          }}
+        />
       );
     });
     return m;
@@ -538,7 +544,7 @@ function BuilderPage({ agentId }) {
             </div>
             <div className="text-right mt-4">
               <button
-                onClick={() => setModalOpen(false)}
+                onClick={() => { setModalOpen(false); setAddingFromNodeId(null); }}
                 className="px-3 py-1 border rounded"
               >
                 Cancel
