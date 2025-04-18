@@ -315,15 +315,20 @@ func testRunHandler(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	// Unmarshal graph nodes
-	var graph struct {
-		Nodes []Node `json:"nodes"`
-		// Edges ignored for linear execution
-	}
-	if err := json.Unmarshal(graphRaw, &graph); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
+    // Unmarshal full graph (nodes + edges) for rendering
+    var graphData interface{}
+    if err := json.Unmarshal(graphRaw, &graphData); err != nil {
+        writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+        return
+    }
+    // Unmarshal nodes sequence for execution order
+    var graphStruct struct {
+        Nodes []Node `json:"nodes"`
+    }
+    if err := json.Unmarshal(graphRaw, &graphStruct); err != nil {
+        writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+        return
+    }
 	// Unmarshal default params into initial data
 	var defaultParams map[string]interface{}
 	if len(defaultRaw) > 0 {
@@ -334,7 +339,7 @@ func testRunHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		defaultParams = map[string]interface{}{}
 	}
-    // Initialize execution payload and trace structures
+    // Define execution payload with full graph and trace
     type Item struct {
         ID   string      `json:"id"`
         Data interface{} `json:"data"`
@@ -346,6 +351,7 @@ func testRunHandler(w http.ResponseWriter, r *http.Request) {
     }
     type Payload struct {
         RunID   string                   `json:"runId"`
+        Graph   interface{}              `json:"graph"`
         Context map[string]interface{}   `json:"context"`
         Meta    map[string]interface{}   `json:"meta"`
         Trace   []Step                   `json:"trace"`
@@ -355,6 +361,7 @@ func testRunHandler(w http.ResponseWriter, r *http.Request) {
     initialItem := Item{ID: uuid.NewString(), Data: defaultParams}
     payload := Payload{
         RunID:   runID,
+        Graph:   graphData,
         Context: map[string]interface{}{},
         Meta: map[string]interface{}{
             "startTime": time.Now().UTC().Format(time.RFC3339),
@@ -364,7 +371,7 @@ func testRunHandler(w http.ResponseWriter, r *http.Request) {
     currentItems := []Item{initialItem}
 	// Execute nodes in order
     // Execute nodes in order, recording trace
-    for _, node := range graph.Nodes {
+    for _, node := range graphStruct.Nodes {
         inputItems := currentItems
         var nextItems []Item
         for _, item := range inputItems {
