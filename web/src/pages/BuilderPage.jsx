@@ -92,9 +92,11 @@ function BuilderPage({ agentId }) {
   const clientId = useMemo(() => crypto.randomUUID(), []);
   const wsRef = useRef(null);
   useEffect(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const url = `${protocol}://${window.location.host}/ws/agents/${agentId}`;
-    const ws = new WebSocket(url);
+    // Establish WebSocket connection for live updates (collaborative editing)
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    // Proxy through /api/ws for backend WebSocket endpoint
+    const wsUrl = `${wsProtocol}//${window.location.host}/api/ws/agents/${agentId}`;
+    const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
     ws.onmessage = (event) => {
       try {
