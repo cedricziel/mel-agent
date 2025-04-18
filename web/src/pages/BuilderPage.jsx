@@ -534,11 +534,11 @@ function BuilderPage({ agentId }) {
                       {cat.category}
                     </div>
                     <ul>
-                      {filtered.map((nt) => (
+                        {filtered.map((nt) => (
                         <li key={nt.type}>
                           <button
-                            className="w-full text-left px-2 py-1 hover:bg-gray-100 rounded"
-                        onClick={() => {
+                            className="w-full flex items-center px-2 py-1 hover:bg-gray-100 rounded"
+                            onClick={() => {
                               const id = Date.now().toString();
                               // populate parameter defaults from server metadata
                               const defaults = {};
@@ -567,7 +567,7 @@ function BuilderPage({ agentId }) {
                               setSearch('');
                             }}
                           >
-                            {nt.icon && <span className="mr-1">{nt.icon}</span>}
+                            {nt.icon && <span className="mr-2">{nt.icon}</span>}
                             {nt.label}
                           </button>
                         </li>
