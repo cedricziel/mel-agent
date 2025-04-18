@@ -13,6 +13,7 @@ import (
    _ "github.com/cedricziel/mel-agent/internal/api/nodes"
    "github.com/cedricziel/mel-agent/internal/db"
    "github.com/cedricziel/mel-agent/internal/triggers"
+   "github.com/cedricziel/mel-agent/internal/runs"
 )
 
 func main() {
@@ -26,6 +27,9 @@ func main() {
     // start trigger scheduler engine
     scheduler := triggers.NewEngine()
     scheduler.Start()
+    // start run processor to execute enqueued workflows
+    runner := runs.NewRunner()
+    runner.Start()
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)

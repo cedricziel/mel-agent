@@ -77,6 +77,7 @@ func init() {
 	RegisterNodeDefinition(ifDefinition{})
 	RegisterNodeDefinition(switchDefinition{})
 	RegisterNodeDefinition(agentDefinition{})
+	RegisterNodeDefinition(injectDefinition{})
 }
 
 // --- Timer Node Definition ---
@@ -241,4 +242,28 @@ func (agentDefinition) Meta() NodeType {
 }
 func (agentDefinition) Execute(agentID string, node Node, input interface{}) (interface{}, error) {
 	return DefaultExecutor{}.Execute(agentID, node, input)
+}
+// --- Inject Node Definition ---
+// Inject node for manually starting workflows (e.g., like Node-RED Inject)
+type injectDefinition struct{}
+
+func (injectDefinition) Meta() NodeType {
+   return NodeType{
+       Type:       "inject",
+       Label:      "Inject",
+       Icon:       "▶️",
+       Category:   "Debug",
+       EntryPoint: true,
+       Parameters: []ParameterDefinition{
+           {Name: "payload", Label: "Payload", Type: "json", Required: false, Default: "{}", Group: "Inject", Description: "Data to inject"},
+       },
+   }
+}
+
+func (injectDefinition) Execute(agentID string, node Node, input interface{}) (interface{}, error) {
+   // Return configured payload as the output
+   if p, ok := node.Data["payload"]; ok {
+       return p, nil
+   }
+   return nil, nil
 }

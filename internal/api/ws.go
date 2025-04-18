@@ -22,8 +22,8 @@ var (
    }
 )
 
-// getHub returns the Hub for a given agentID, creating it if necessary.
-func getHub(agentID string) *Hub {
+// GetHub returns the Hub for a given agentID, creating it if necessary.
+func GetHub(agentID string) *Hub {
    hubsMu.Lock()
    defer hubsMu.Unlock()
    h, ok := hubs[agentID]
@@ -41,7 +41,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
    if err != nil {
        return
    }
-   hub := getHub(agentID)
+   hub := GetHub(agentID)
    hub.addClient(conn)
    // Start reading messages from this client
    go hub.readPump(conn)
@@ -69,6 +69,10 @@ func (h *Hub) broadcast(message []byte) {
    for conn := range h.clients {
        conn.WriteMessage(websocket.TextMessage, message)
    }
+}
+// Broadcast sends a message to all registered clients (exported).
+func (h *Hub) Broadcast(message []byte) {
+   h.broadcast(message)
 }
 
 // readPump listens for incoming messages and broadcasts them to other clients.

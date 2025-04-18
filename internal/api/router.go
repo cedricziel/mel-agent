@@ -566,7 +566,7 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
        current := []Item{initial}
        // Execute nodes sequentially
        // Broadcast execution events on WS hub
-       hub := getHub(agentID)
+       hub := GetHub(agentID)
        for _, node := range graphStruct.Nodes {
            // Notify start of node execution
            if startMsg, err := json.Marshal(map[string]string{"type":"nodeExecution","nodeId":node.ID,"phase":"start"}); err == nil {
@@ -831,7 +831,7 @@ func testRunHandler(w http.ResponseWriter, r *http.Request) {
     // Execute nodes in order, recording trace
     for _, node := range graphStruct.Nodes {
         // Broadcast node execution start
-        hub := getHub(agentID)
+        hub := GetHub(agentID)
         if startMsg, err := json.Marshal(map[string]string{"type":"nodeExecution","nodeId":node.ID,"phase":"start"}); err == nil {
             hub.broadcast(startMsg)
         }
