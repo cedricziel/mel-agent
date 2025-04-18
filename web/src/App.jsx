@@ -1,6 +1,7 @@
-import { Link, Route, Routes, NavLink } from "react-router-dom";
+import { Link, Route, Routes, NavLink, useParams } from "react-router-dom";
 import AgentsPage from "./pages/AgentsPage";
 import ConnectionsPage from "./pages/ConnectionsPage";
+import BuilderPage from "./pages/BuilderPage";
 
 function App() {
   return (
@@ -35,6 +36,10 @@ function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/agents" element={<AgentsPage />} />
           <Route path="/connections" element={<ConnectionsPage />} />
+          <Route
+            path="/agents/:id/edit"
+            element={<AgentBuilderWrapper />}
+          />
         </Routes>
       </main>
     </div>
@@ -51,3 +56,8 @@ function Landing() {
 }
 
 export default App;
+
+function AgentBuilderWrapper() {
+  const { id } = useParams();
+  return <BuilderPage agentId={id} />;
+}

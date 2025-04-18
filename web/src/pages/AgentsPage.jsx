@@ -60,7 +60,11 @@ function AgentsPage() {
           </thead>
           <tbody>
             {agents.map((a) => (
-              <tr key={a.id} className="border-t">
+              <tr
+                key={a.id}
+                className="border-t cursor-pointer hover:bg-gray-50"
+                onClick={() => (window.location.href = `/agents/${a.id}/edit`)}
+              >
                 <td className="px-4 py-2">{a.name}</td>
                 <td className="px-4 py-2 text-gray-600">{a.description}</td>
               </tr>

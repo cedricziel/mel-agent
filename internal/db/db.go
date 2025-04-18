@@ -2,20 +2,17 @@ package db
 
 import (
     "database/sql"
-    "embed"
     "fmt"
     "io/fs"
     "log"
     "os"
     "sort"
-    "strings"
     "time"
 
     _ "github.com/lib/pq" // Postgres driver
-)
 
-//go:embed ../../migrations/*.sql
-var migrationsFS embed.FS
+    "github.com/your-org/agentsaas/migrations"
+)
 
 var DB *sql.DB
 
@@ -65,8 +62,8 @@ func applyMigrations() error {
         applied[v] = struct{}{}
     }
 
-    // collect migration files
-    entries, err := fs.ReadDir(migrationsFS, "../../migrations")
+    // collect migration files from embed FS
+    entries, err := fs.ReadDir(migrations.FS, ".")
     if err != nil {
         return err
     }
@@ -77,9 +74,10 @@ func applyMigrations() error {
         if _, ok := applied[name]; ok {
             continue // already applied
         }
-        sqlBytes, err := migrationsFS.ReadFile("../../migrations/" + name)
+        // read migration SQL from embedded migrations FS
+        sqlBytes, err := migrations.FS.ReadFile(name)
         if err != nil {
-            return err
+            return fmt.Errorf("read migration %s: %w", name, err)
         }
         if _, err := DB.Exec(string(sqlBytes)); err != nil {
             return fmt.Errorf("exec %s: %w", name, err)
@@ -90,4 +88,17 @@ func applyMigrations() error {
         log.Printf("migrated %s", name)
     }
     return nil
+}
+
+// Tx runs fn inside a SQL transaction.
+func Tx(fn func(*sql.Tx) error) error {
+    tx, err := DB.Begin()
+    if err != nil {
+        return err
+    }
+    if err := fn(tx); err != nil {
+        _ = tx.Rollback()
+        return err
+    }
+    return tx.Commit()
 }

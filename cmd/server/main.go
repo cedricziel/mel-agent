@@ -1,6 +1,6 @@
 package main
 
-# Standard library + third‑party imports
+// Standard library + third‑party imports
 import (
     "log"
     "net/http"
