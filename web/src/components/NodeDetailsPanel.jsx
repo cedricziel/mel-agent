@@ -30,75 +30,173 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
           )}
         </div>
       )}
+      {/* Configuration form generated from nodeDef.parameters */}
       <div className="mb-6">
         <h3 className="font-semibold mb-2">Configuration</h3>
-        <label className="block text-sm mb-1">Label</label>
-        <input
-          type="text"
-          value={data.label || ''}
-          onChange={(e) => onChange('label', e.target.value)}
-          className="w-full border rounded px-2 py-1 mb-3"
-        />
-        {paramKeys.map((key) => {
-          const val = data[key] ?? '';
-          // Mode selector
-          if (key === 'mode') {
-            return (
-              <div key={key} className="mb-3">
-                <label className="block text-sm mb-1">Mode</label>
-                <select
-                  value={val}
-                  onChange={(e) => onChange('mode', e.target.value)}
-                  className="w-full border rounded px-2 py-1"
-                >
-                  <option value="async">Async (return immediately)</option>
-                  <option value="sync">Sync (inline workflow)</option>
-                </select>
-              </div>
-            );
-          }
-          // Schedule cron editor
-          if (nodeDef.type === 'schedule' && key === 'cron') {
-            return (
-              <div key={key} className="mb-3">
-                <label className="block text-sm mb-1">Schedule</label>
-                <CronEditor
-                  value={val}
-                  onCronChange={(cron) => onChange('cron', cron)}
-                />
-              </div>
-            );
-          }
-          // Disable statusCode and responseBody when async
-          const isTrigger = nodeDef.entry_point;
-          const currentMode = data.mode || '';
-          if ((key === 'statusCode' || key === 'responseBody') && isTrigger) {
-            return (
-              <div key={key} className="mb-3">
-                <label className="block text-sm mb-1">{key}</label>
-                <input
-                  type="text"
-                  value={val}
-                  disabled={currentMode === 'async'}
-                  onChange={(e) => onChange(key, e.target.value)}
-                  className="w-full border rounded px-2 py-1"
-                />
-              </div>
-            );
-          }
-          // Default text input
-          return (
-            <div key={key} className="mb-3">
-              <label className="block text-sm mb-1">{key}</label>
-              <input
-                type="text"
-                value={val}
-                onChange={(e) => onChange(key, e.target.value)}
-                className="w-full border rounded px-2 py-1"
-              />
+        {/* Rename field */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-1">Name</label>
+          <input
+            type="text"
+            value={data.label || ''}
+            onChange={(e) => onChange('label', e.target.value)}
+            className="w-full border rounded px-2 py-1"
+          />
+        </div>
+        {/* Parameter groups */}
+        {(() => {
+          // filter visible parameters
+          const visible = nodeDef.parameters.filter((p) => {
+            if (!p.VisibilityCondition) return true;
+            try {
+              // naive evaluation: treat condition as JS
+              // eslint-disable-next-line no-new-func
+              return new Function('data', `with(data) { return ${p.VisibilityCondition} }`)(data);
+            } catch {
+              return true;
+            }
+          });
+          const groups = {};
+          visible.forEach((p) => {
+            const g = p.Group || 'General';
+            groups[g] = groups[g] || [];
+            groups[g].push(p);
+          });
+          return Object.entries(groups).map(([group, params]) => (
+            <div key={group} className="mb-4">
+              <h4 className="text-sm font-semibold mb-2">{group}</h4>
+              {params.map((p) => {
+                const val = data[p.Name] != null ? data[p.Name] : p.Default;
+                const error = p.Required && (val === '' || val == null);
+                const baseClass = error ? 'border-red-500' : 'border-gray-300';
+                switch (p.Type) {
+                  case 'string':
+                    // Cron editor for schedule nodes
+                    if (p.Name === 'cron') {
+                      return (
+                        <div key={p.Name} className="mb-3">
+                          <label className="block text-sm mb-1">
+                            {p.Label}{p.Required && <span className="text-red-500">*</span>}
+                          </label>
+                          <CronEditor
+                            value={val}
+                            onCronChange={(cron) => onChange(p.Name, cron)}
+                          />
+                          {error && (
+                            <div className="text-xs text-red-600 mt-1">
+                              {p.Label} is required
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+                    return (
+                      <div key={p.Name} className="mb-3">
+                        <label className="block text-sm mb-1">
+                          {p.Label}{p.Required && <span className="text-red-500">*</span>}
+                        </label>
+                        <input
+                          type="text"
+                          value={val}
+                          onChange={(e) => onChange(p.Name, e.target.value)}
+                          className={`w-full border rounded px-2 py-1 ${baseClass}`}
+                        />
+                        {error && (
+                          <div className="text-xs text-red-600 mt-1">
+                            {p.Label} is required
+                          </div>
+                        )}
+                      </div>
+                    );
+                  case 'number':
+                    return (
+                      <div key={p.Name} className="mb-3">
+                        <label className="block text-sm mb-1">
+                          {p.Label}{p.Required && <span className="text-red-500">*</span>}
+                        </label>
+                        <input
+                          type="number"
+                          value={val}
+                          onChange={(e) => onChange(p.Name, parseFloat(e.target.value) || 0)}
+                          className={`w-full border rounded px-2 py-1 ${baseClass}`}
+                        />
+                        {error && (
+                          <div className="text-xs text-red-600 mt-1">
+                            {p.Label} is required
+                          </div>
+                        )}
+                      </div>
+                    );
+                  case 'boolean':
+                    return (
+                      <div key={p.Name} className="flex items-center mb-3">
+                        <input
+                          type="checkbox"
+                          checked={!!val}
+                          onChange={(e) => onChange(p.Name, e.target.checked)}
+                          className="mr-2"
+                        />
+                        <label className="text-sm">
+                          {p.Label}{p.Required && <span className="text-red-500">*</span>}
+                        </label>
+                      </div>
+                    );
+                  case 'enum':
+                    return (
+                      <div key={p.Name} className="mb-3">
+                        <label className="block text-sm mb-1">
+                          {p.Label}{p.Required && <span className="text-red-500">*</span>}
+                        </label>
+                        <select
+                          value={val}
+                          onChange={(e) => onChange(p.Name, e.target.value)}
+                          className={`w-full border rounded px-2 py-1 ${baseClass}`}
+                        >
+                          {p.Options.map((opt) => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                        {error && (
+                          <div className="text-xs text-red-600 mt-1">
+                            {p.Label} is required
+                          </div>
+                        )}
+                      </div>
+                    );
+                  case 'json':
+                    return (
+                      <div key={p.Name} className="mb-3">
+                        <label className="block text-sm mb-1">
+                          {p.Label}{p.Required && <span className="text-red-500">*</span>}
+                        </label>
+                        <textarea
+                          rows={4}
+                          value={JSON.stringify(val, null, 2)}
+                          onChange={(e) => {
+                            try {
+                              const v = JSON.parse(e.target.value);
+                              onChange(p.Name, v);
+                            } catch {
+                              // ignore parse error
+                              onChange(p.Name, e.target.value);
+                            }
+                          }}
+                          className={`w-full border rounded px-2 py-1 font-mono text-xs ${baseClass}`}
+                        />
+                        {error && (
+                          <div className="text-xs text-red-600 mt-1">
+                            {p.Label} is required
+                          </div>
+                        )}
+                      </div>
+                    );
+                  default:
+                    return null;
+                }
+              })}
             </div>
-          );
-        })}
+          ));
+        })()}
       </div>
       <div>
         <h3 className="font-semibold mb-2">Preview</h3>
