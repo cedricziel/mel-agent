@@ -24,6 +24,8 @@ func Handler() http.Handler {
 
     // Integrations (read‑only)
     r.Get("/integrations", listIntegrations)
+    // Node type definitions for builder
+    r.Get("/node-types", listNodeTypes)
 
     return r
 }

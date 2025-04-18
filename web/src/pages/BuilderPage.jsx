@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import axios from "axios";
 import ReactFlow, {
   Background,
@@ -9,31 +9,10 @@ import ReactFlow, {
   MiniMap,
 } from "reactflow";
 import IfNode from "../components/IfNode";
+import DefaultNode from "../components/DefaultNode";
 import "reactflow/dist/style.css";
 
-// Available node categories and types for insertion dialog
-const NODE_CATEGORIES = [
-  {
-    category: 'Triggers',
-    types: [
-      { type: 'timer', label: 'Timer' },
-      { type: 'http', label: 'HTTP Request' },
-    ],
-  },
-  {
-    category: 'Basic',
-    types: [
-      { type: 'if', label: 'If' },
-      { type: 'switch', label: 'Switch' },
-    ],
-  },
-  {
-    category: 'LLM',
-    types: [
-      { type: 'agent', label: 'Agent' },
-    ],
-  },
-];
+// TODO: node type definitions are fetched from the backend via /api/node-types
 
 function BuilderPage({ agentId }) {
   // graph state: nodes and edges
@@ -50,6 +29,21 @@ function BuilderPage({ agentId }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [search, setSearch] = useState('');
 
+  // Node definitions from server
+  const [nodeDefs, setNodeDefs] = useState([]);
+  const categories = useMemo(() => {
+    const map = {};
+    nodeDefs.forEach((def) => {
+      if (!map[def.category]) map[def.category] = [];
+      map[def.category].push(def);
+    });
+    return Object.entries(map).map(([category, types]) => ({ category, types }));
+  }, [nodeDefs]);
+  useEffect(() => {
+    axios.get('/api/node-types')
+      .then((res) => setNodeDefs(res.data))
+      .catch((err) => console.error('fetch node-types failed:', err));
+  }, []);
   // handlers for ReactFlow change events
   const onNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -62,8 +56,14 @@ function BuilderPage({ agentId }) {
 
   const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), []);
 
-  // register custom node types for ReactFlow
-  const nodeTypes = { if: IfNode };
+  // derive nodeTypes mapping from server definitions, memoized
+  const nodeTypes = useMemo(() => {
+    const m = {};
+    nodeDefs.forEach((def) => {
+      m[def.type] = def.type === 'if' ? IfNode : DefaultNode;
+    });
+    return m;
+  }, [nodeDefs]);
 
   async function save() {
     const graph = { nodes, edges };
@@ -119,7 +119,7 @@ function BuilderPage({ agentId }) {
               className="w-full border rounded px-2 py-1 mb-2"
             />
             <div className="space-y-4">
-              {NODE_CATEGORIES.map((cat) => {
+              {categories.map((cat) => {
                 const filtered = cat.types.filter(
                   (nt) =>
                     nt.label.toLowerCase().includes(search.toLowerCase()) ||
@@ -138,14 +138,14 @@ function BuilderPage({ agentId }) {
                             className="w-full text-left px-2 py-1 hover:bg-gray-100 rounded"
                             onClick={() => {
                               const id = Date.now().toString();
+                              // merge defaults from server if provided
+                              const defaults = nt.defaults || {};
                               setNodes((nds) => [
                                 ...nds,
                                 {
                                   id,
                                   position: { x: 100, y: 100 },
-                                  data: nt.type === 'if'
-                                    ? { label: nt.label, condition: '' }
-                                    : { label: nt.label },
+                                  data: { label: nt.label, ...defaults },
                                   type: nt.type,
                                 },
                               ]);
