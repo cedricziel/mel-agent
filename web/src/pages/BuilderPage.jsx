@@ -419,10 +419,18 @@ function BuilderPage({ agentId }) {
                         <li key={nt.type}>
                           <button
                             className="w-full text-left px-2 py-1 hover:bg-gray-100 rounded"
-                            onClick={() => {
+                        onClick={() => {
                               const id = Date.now().toString();
-                              // merge defaults from server if provided
-                              const defaults = nt.defaults || {};
+                              // populate parameter defaults from server metadata
+                              const defaults = {};
+                              if (Array.isArray(nt.parameters)) {
+                                nt.parameters.forEach((p) => {
+                                  // use server-provided default if defined
+                                  if (p.default !== undefined) {
+                                    defaults[p.name] = p.default;
+                                  }
+                                });
+                              }
                               setNodes((nds) => [
                                 ...nds,
                                 {
