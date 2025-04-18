@@ -29,6 +29,8 @@ function BuilderPage({ agentId }) {
 
   // Node definitions from server
   const [nodeDefs, setNodeDefs] = useState([]);
+  // Trigger instances from server
+  const [triggers, setTriggers] = useState([]);
   // Test run state
   const [testing, setTesting] = useState(false);
   const [testRunResult, setTestRunResult] = useState(null);
@@ -44,6 +46,12 @@ function BuilderPage({ agentId }) {
     axios.get('/api/node-types')
       .then((res) => setNodeDefs(res.data))
       .catch((err) => console.error('fetch node-types failed:', err));
+  }, []);
+  // Fetch trigger instances for this agent
+  useEffect(() => {
+    axios.get('/api/triggers')
+      .then((res) => setTriggers(res.data))
+      .catch((err) => console.error('fetch triggers failed:', err));
   }, []);
   // Execute full-agent test run
   const onTestRun = useCallback(async () => {
@@ -129,6 +137,24 @@ function BuilderPage({ agentId }) {
     [clientId]
   );
 
+  // double-click a node to rename it
+  const onNodeDoubleClick = useCallback((event, node) => {
+    const current = node.data.label || '';
+    const name = prompt('Enter node name:', current);
+    if (name !== null) {
+      setNodes((nds) =>
+        nds.map((n) =>
+          n.id === node.id ? { ...n, data: { ...n.data, label: name } } : n
+        )
+      );
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        // broadcast the node data change
+        const msg = { clientId, type: 'nodesChange', changes: [{ id: node.id, type: 'reset', position: node.position, data: { ...node.data, label: name } }] };
+        wsRef.current.send(JSON.stringify(msg));
+      }
+    }
+  }, [clientId]);
+
   // derive nodeTypes mapping from server definitions, memoized
   const nodeTypes = useMemo(() => {
     const m = {};
@@ -154,6 +180,13 @@ function BuilderPage({ agentId }) {
         default_params: {},
       });
       alert("Saved!");
+      // Refresh triggers to update public URLs
+      try {
+        const res = await axios.get('/api/triggers');
+        setTriggers(res.data);
+      } catch (err) {
+        console.error('refresh triggers failed:', err);
+      }
     } catch (err) {
       console.error(err);
       alert("Save failed");
@@ -169,6 +202,16 @@ function BuilderPage({ agentId }) {
     () => nodeDefs.find((def) => def.type === selectedNode?.type),
     [nodeDefs, selectedNode]
   );
+  // Map of nodeId to trigger instance for this agent
+  const triggersMap = useMemo(() => {
+    const map = {};
+    triggers.forEach((t) => {
+      if (t.agent_id === agentId && t.node_id) {
+        map[t.node_id] = t;
+      }
+    });
+    return map;
+  }, [triggers, agentId]);
   const onNodeClick = useCallback((event, node) => {
     setSelectedNodeId(node.id);
   }, []);
@@ -250,6 +293,7 @@ function BuilderPage({ agentId }) {
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             onNodeClick={onNodeClick}
+            onNodeDoubleClick={onNodeDoubleClick}
             onPaneClick={onPaneClick}
             fitView
             attributionPosition="bottom-left"
@@ -273,6 +317,15 @@ function BuilderPage({ agentId }) {
             );
           }}
           onExecute={onExecute}
+          publicUrl={
+            selectedNodeDef.entry_point
+              ? (
+                  triggersMap[selectedNode.id]
+                    ? `${window.location.origin}/webhooks/${selectedNode.type}/${triggersMap[selectedNode.id].id}`
+                    : null
+                )
+              : undefined
+          }
         />
       )}
       {/* Test Run result modal */}
@@ -332,7 +385,11 @@ function BuilderPage({ agentId }) {
                                 {
                                   id,
                                   position: { x: 100, y: 100 },
-                                  data: { label: nt.label, ...defaults },
+                                  data: {
+                                    label: nt.label,
+                                    nodeTypeLabel: nt.label,
+                                    ...defaults,
+                                  },
                                   type: nt.type,
                                 },
                               ]);

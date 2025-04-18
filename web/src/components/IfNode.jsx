@@ -11,7 +11,10 @@ export default function IfNode({ id, data }) {
       {data.status === 'running' && (
         <div className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
       )}
-      <div className="font-bold text-sm mb-1">If</div>
+      <div className="text-sm font-medium">{data.label}</div>
+      {data.nodeTypeLabel && (
+        <div className="text-xs text-gray-500 mb-1">{data.nodeTypeLabel}</div>
+      )}
       <div className="mb-2">
         <input
           type="text"

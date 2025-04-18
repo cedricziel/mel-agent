@@ -335,6 +335,8 @@ type Trigger struct {
    Provider    string          `db:"provider" json:"provider"`
    Config      json.RawMessage `db:"config" json:"config"`
    Enabled     bool            `db:"enabled" json:"enabled"`
+   NodeID      string          `db:"node_id" json:"node_id"`
+   AgentID     string          `db:"agent_id" json:"agent_id"`
    LastChecked *time.Time      `db:"last_checked" json:"last_checked,omitempty"`
    CreatedAt   time.Time       `db:"created_at" json:"created_at"`
    UpdatedAt   time.Time       `db:"updated_at" json:"updated_at"`
@@ -343,7 +345,7 @@ type Trigger struct {
 // listTriggers returns all triggers.
 func listTriggers(w http.ResponseWriter, r *http.Request) {
    rows, err := db.DB.Query(
-       `SELECT id, user_id, provider, config, enabled, last_checked, created_at, updated_at
+       `SELECT id, user_id, provider, config, enabled, node_id, agent_id, last_checked, created_at, updated_at
         FROM triggers
         ORDER BY created_at DESC`,
    )
@@ -358,7 +360,7 @@ func listTriggers(w http.ResponseWriter, r *http.Request) {
        var t Trigger
        var configBytes []byte
        var nt sql.NullTime
-       if err := rows.Scan(&t.ID, &t.UserID, &t.Provider, &configBytes, &t.Enabled, &nt, &t.CreatedAt, &t.UpdatedAt); err != nil {
+       if err := rows.Scan(&t.ID, &t.UserID, &t.Provider, &configBytes, &t.Enabled, &t.NodeID, &t.AgentID, &nt, &t.CreatedAt, &t.UpdatedAt); err != nil {
            writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
            return
        }
@@ -378,8 +380,9 @@ func getTrigger(w http.ResponseWriter, r *http.Request) {
    var configBytes []byte
    var nt sql.NullTime
    err := db.DB.QueryRow(
-       `SELECT id, user_id, provider, config, enabled, last_checked, created_at, updated_at FROM triggers WHERE id = $1`, id,
-   ).Scan(&t.ID, &t.UserID, &t.Provider, &configBytes, &t.Enabled, &nt, &t.CreatedAt, &t.UpdatedAt)
+       `SELECT id, user_id, provider, config, enabled, node_id, agent_id, last_checked, created_at, updated_at
+        FROM triggers WHERE id = $1`, id,
+   ).Scan(&t.ID, &t.UserID, &t.Provider, &configBytes, &t.Enabled, &t.NodeID, &t.AgentID, &nt, &t.CreatedAt, &t.UpdatedAt)
    if err != nil {
        if err == sql.ErrNoRows {
            writeJSON(w, http.StatusNotFound, map[string]string{"error": "trigger not found"})

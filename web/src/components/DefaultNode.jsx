@@ -14,6 +14,9 @@ export default function DefaultNode({ data }) {
         <div className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
       )}
       <div className="text-sm font-medium">{data.label}</div>
+      {data.nodeTypeLabel && (
+        <div className="text-xs text-gray-500">{data.nodeTypeLabel}</div>
+      )}
       {/* Parameter summary */}
       {summaryKeys.length > 0 && (
         <div className="mt-1 space-y-0.5">

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import CronEditor from './CronEditor';
 
 // Panel to configure node details and preview data flow
-export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute }) {
+export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, publicUrl }) {
   if (!node || !nodeDef) return null;
   const { data } = node;
   const defaults = nodeDef.defaults || {};
@@ -15,6 +15,21 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute })
   return (
     <div className="w-80 bg-gray-50 border-l p-4 overflow-auto">
       <h2 className="text-lg font-bold mb-4">{nodeDef.label} Details</h2>
+      {nodeDef.entry_point && (
+        <div className="mb-4">
+          <h3 className="font-semibold mb-1">Public URL</h3>
+          {publicUrl ? (
+            <input
+              type="text"
+              readOnly
+              value={publicUrl}
+              className="w-full border rounded px-2 py-1 text-sm bg-gray-100"
+            />
+          ) : (
+            <div className="text-sm text-gray-500">Save version to generate URL</div>
+          )}
+        </div>
+      )}
       <div className="mb-6">
         <h3 className="font-semibold mb-2">Configuration</h3>
         <label className="block text-sm mb-1">Label</label>
@@ -25,23 +40,59 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute })
           className="w-full border rounded px-2 py-1 mb-3"
         />
         {paramKeys.map((key) => {
+          const val = data[key] ?? '';
+          // Mode selector
+          if (key === 'mode') {
+            return (
+              <div key={key} className="mb-3">
+                <label className="block text-sm mb-1">Mode</label>
+                <select
+                  value={val}
+                  onChange={(e) => onChange('mode', e.target.value)}
+                  className="w-full border rounded px-2 py-1"
+                >
+                  <option value="async">Async (return immediately)</option>
+                  <option value="sync">Sync (inline workflow)</option>
+                </select>
+              </div>
+            );
+          }
+          // Schedule cron editor
           if (nodeDef.type === 'schedule' && key === 'cron') {
             return (
               <div key={key} className="mb-3">
                 <label className="block text-sm mb-1">Schedule</label>
                 <CronEditor
-                  value={data.cron || ''}
-                  onCronChange={(val) => onChange('cron', val)}
+                  value={val}
+                  onCronChange={(cron) => onChange('cron', cron)}
                 />
               </div>
             );
           }
+          // Disable statusCode and responseBody when async
+          const isTrigger = nodeDef.entry_point;
+          const currentMode = data.mode || '';
+          if ((key === 'statusCode' || key === 'responseBody') && isTrigger) {
+            return (
+              <div key={key} className="mb-3">
+                <label className="block text-sm mb-1">{key}</label>
+                <input
+                  type="text"
+                  value={val}
+                  disabled={currentMode === 'async'}
+                  onChange={(e) => onChange(key, e.target.value)}
+                  className="w-full border rounded px-2 py-1"
+                />
+              </div>
+            );
+          }
+          // Default text input
           return (
             <div key={key} className="mb-3">
               <label className="block text-sm mb-1">{key}</label>
               <input
                 type="text"
-                value={data[key] || ''}
+                value={val}
                 onChange={(e) => onChange(key, e.target.value)}
                 className="w-full border rounded px-2 py-1"
               />
