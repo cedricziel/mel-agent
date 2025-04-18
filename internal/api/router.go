@@ -467,6 +467,8 @@ func deleteTrigger(w http.ResponseWriter, r *http.Request) {
 
 // WebhookHandler handles external webhook events and enqueues a run.
 func WebhookHandler(w http.ResponseWriter, r *http.Request) {
+   // Indicate this webhook request is handled by our agent engine
+   w.Header().Set("X-Agent-Processed", "true")
    provider := chi.URLParam(r, "provider")
    triggerID := chi.URLParam(r, "triggerID")
    // Lookup trigger instance
@@ -547,7 +549,13 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
        }
        current := []Item{initial}
        // Execute nodes sequentially
+       // Broadcast execution events on WS hub
+       hub := getHub(agentID)
        for _, node := range graphStruct.Nodes {
+           // Notify start of node execution
+           if startMsg, err := json.Marshal(map[string]string{"type":"nodeExecution","nodeId":node.ID,"phase":"start"}); err == nil {
+               hub.broadcast(startMsg)
+           }
            inputs := current
            var next []Item
            for _, it := range inputs {
@@ -557,6 +565,10 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
                } else if out != nil {
                    next = append(next, Item{ID: it.ID, Data: out})
                }
+           }
+           // Notify end of node execution
+           if endMsg, err := json.Marshal(map[string]string{"type":"nodeExecution","nodeId":node.ID,"phase":"end"}); err == nil {
+               hub.broadcast(endMsg)
            }
            execPayload.Trace = append(execPayload.Trace, Step{NodeID: node.ID, Input: inputs, Output: next})
            execPayload.Meta["lastNode"] = node.ID

@@ -2,9 +2,48 @@ import React, { useState } from 'react';
 import CronEditor from './CronEditor';
 
 // Panel to configure node details and preview data flow
-export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, publicUrl }) {
+export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, publicUrl, readOnly }) {
   if (!node || !nodeDef) return null;
   const { data } = node;
+  // In live/read-only mode, show config but disable edits
+  if (readOnly) {
+    const fallbackKeys = Object.keys(data).filter(
+      (k) => k !== 'label' && k !== 'status' && k !== 'lastOutput'
+    );
+    return (
+      <div className="w-80 bg-gray-50 border-l p-4 overflow-auto">
+        <h2 className="text-lg font-bold mb-4">{nodeDef.label} Details</h2>
+        {nodeDef.entry_point && publicUrl && (
+          <div className="mb-4">
+            <h3 className="font-semibold mb-1">Public URL</h3>
+            <input
+              type="text"
+              readOnly
+              value={publicUrl}
+              className="w-full border rounded px-2 py-1 text-sm bg-gray-100"
+            />
+          </div>
+        )}
+        <div className="mb-4">
+          <h3 className="font-semibold mb-2">Name</h3>
+          <div className="text-sm text-gray-700">{data.label}</div>
+        </div>
+        <div className="mb-4">
+          <h3 className="font-semibold mb-2">Configuration</h3>
+          <ul className="list-disc list-inside text-sm text-gray-600">
+            {fallbackKeys.map((key) => (
+              <li key={key}>
+                <strong>{key}:</strong> {JSON.stringify(data[key])}
+              </li>
+            ))}
+            {fallbackKeys.length === 0 && (
+              <li className="text-gray-400">No parameters</li>
+            )}
+          </ul>
+        </div>
+      </div>
+    );
+  }
   // legacy defaults (unused) and fallback data keys
   const defaults = nodeDef.defaults || {};
   const fallbackKeys = Object.keys(data).filter((k) => k !== 'label' && k !== 'status' && k !== 'lastOutput');

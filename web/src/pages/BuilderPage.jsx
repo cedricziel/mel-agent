@@ -400,6 +400,7 @@ function BuilderPage({ agentId }) {
         <NodeDetailsPanel
           node={selectedNode}
           nodeDef={selectedNodeDef}
+          readOnly={isLiveMode}
           onChange={(key, value) => {
             setNodes((nds) =>
               nds.map((n) =>
