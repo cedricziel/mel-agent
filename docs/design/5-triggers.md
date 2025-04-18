@@ -89,7 +89,6 @@
    user_id UUID REFERENCES users(id),
    provider TEXT NOT NULL,      -- e.g. 'webhook', 'cron'
    config JSONB NOT NULL,       -- provider-specific parameters
-   condition JSONB,             -- filter logic (e.g. JSONPath, CEL)
    enabled BOOLEAN DEFAULT TRUE,
    last_checked TIMESTAMPTZ,
    created_at TIMESTAMPTZ DEFAULT now(),
