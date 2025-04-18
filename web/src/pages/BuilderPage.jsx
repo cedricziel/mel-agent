@@ -10,6 +10,30 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 
+// Available node categories and types for insertion dialog
+const NODE_CATEGORIES = [
+  {
+    category: 'Triggers',
+    types: [
+      { type: 'timer', label: 'Timer' },
+      { type: 'http', label: 'HTTP Request' },
+    ],
+  },
+  {
+    category: 'Basic',
+    types: [
+      { type: 'if', label: 'If' },
+      { type: 'switch', label: 'Switch' },
+    ],
+  },
+  {
+    category: 'LLM',
+    types: [
+      { type: 'agent', label: 'Agent' },
+    ],
+  },
+];
+
 function BuilderPage({ agentId }) {
   // graph state: nodes and edges
   const [nodes, setNodes] = useState([
@@ -21,6 +45,9 @@ function BuilderPage({ agentId }) {
     },
   ]);
   const [edges, setEdges] = useState([]);
+  // modal state for selecting new node type
+  const [modalOpen, setModalOpen] = useState(false);
+  const [search, setSearch] = useState('');
 
   // handlers for ReactFlow change events
   const onNodesChange = useCallback(
@@ -53,17 +80,7 @@ function BuilderPage({ agentId }) {
     <div style={{ height: "80vh" }}>
       <div className="mb-2 flex gap-2">
         <button
-          onClick={() => {
-            const id = Date.now().toString();
-            setNodes((nds) => [
-              ...nds,
-              {
-                id,
-                position: { x: 100, y: 100 },
-                data: { label: "LLM" },
-              },
-            ]);
-          }}
+          onClick={() => setModalOpen(true)}
           className="px-3 py-1 rounded border"
         >
           + Add Node
@@ -85,6 +102,70 @@ function BuilderPage({ agentId }) {
         <MiniMap />
         <Controls />
       </ReactFlow>
+      {/* Node type selection dialog */}
+      {modalOpen && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded shadow-lg w-80 max-h-full overflow-auto">
+            <input
+              type="text"
+              placeholder="Search nodes..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full border rounded px-2 py-1 mb-2"
+            />
+            <div className="space-y-4">
+              {NODE_CATEGORIES.map((cat) => {
+                const filtered = cat.types.filter(
+                  (nt) =>
+                    nt.label.toLowerCase().includes(search.toLowerCase()) ||
+                    nt.type.toLowerCase().includes(search.toLowerCase())
+                );
+                if (filtered.length === 0) return null;
+                return (
+                  <div key={cat.category}>
+                    <div className="text-sm font-semibold text-gray-700 mb-1">
+                      {cat.category}
+                    </div>
+                    <ul>
+                      {filtered.map((nt) => (
+                        <li key={nt.type}>
+                          <button
+                            className="w-full text-left px-2 py-1 hover:bg-gray-100 rounded"
+                            onClick={() => {
+                              const id = Date.now().toString();
+                              setNodes((nds) => [
+                                ...nds,
+                                {
+                                  id,
+                                  position: { x: 100, y: 100 },
+                                  data: { label: nt.label },
+                                  type: nt.type,
+                                },
+                              ]);
+                              setModalOpen(false);
+                              setSearch('');
+                            }}
+                          >
+                            {nt.label}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="text-right mt-4">
+              <button
+                onClick={() => setModalOpen(false)}
+                className="px-3 py-1 border rounded"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
