@@ -37,8 +37,10 @@ func Handler() http.Handler {
 	r.Get("/node-types", listNodeTypes)
 	// WebSocket for collaborative updates
 	r.Get("/ws/agents/{agentID}", wsHandler)
-    // Test-run an agent workflow
-    r.Post("/agents/{agentID}/runs/test", testRunHandler)
+   // Create a run via trigger or API
+   r.Post("/agents/{agentID}/runs", createRunHandler)
+   // Test-run an agent workflow
+   r.Post("/agents/{agentID}/runs/test", testRunHandler)
     // List past runs
     r.Get("/agents/{agentID}/runs", listRunsHandler)
     // Get specific run details
@@ -135,15 +137,98 @@ func createAgentVersion(w http.ResponseWriter, r *http.Request) {
 		in.SemanticVersion = "0.1.0"
 	}
 	var versionID string
-	err := db.Tx(func(tx *sql.Tx) error {
-		if err := tx.QueryRow(`INSERT INTO agent_versions (agent_id, semantic_version, graph, default_params) VALUES ($1,$2,$3::jsonb,$4::jsonb) RETURNING id`, agentID, in.SemanticVersion, string(in.Graph), string(in.DefaultParams)).Scan(&versionID); err != nil {
-			return err
-		}
-		if _, err := tx.Exec(`UPDATE agents SET latest_version_id=$1 WHERE id=$2`, versionID, agentID); err != nil {
-			return err
-		}
-		return nil
-	})
+   err := db.Tx(func(tx *sql.Tx) error {
+       // Insert new agent version and update latest pointer
+       if err := tx.QueryRow(
+           `INSERT INTO agent_versions (agent_id, semantic_version, graph, default_params) VALUES ($1,$2,$3::jsonb,$4::jsonb) RETURNING id`,
+           agentID, in.SemanticVersion, string(in.Graph), string(in.DefaultParams),
+       ).Scan(&versionID); err != nil {
+           return err
+       }
+       if _, err := tx.Exec(`UPDATE agents SET latest_version_id=$1 WHERE id=$2`, versionID, agentID); err != nil {
+           return err
+       }
+       // Sync triggers based on graph's entry-point nodes
+       type graphNode struct {
+           ID   string                 `json:"id"`
+           Type string                 `json:"type"`
+           Data map[string]interface{} `json:"data"`
+       }
+       var graph struct { Nodes []graphNode `json:"nodes"` }
+       if err := json.Unmarshal(in.Graph, &graph); err != nil {
+           return err
+       }
+       // Load existing triggers for this agent
+       existing := map[string]string{} // node_id -> trigger_id
+       rows, err := tx.Query(`SELECT id, node_id FROM triggers WHERE agent_id = $1`, agentID)
+       if err != nil {
+           return err
+       }
+       defer rows.Close()
+       for rows.Next() {
+           var tid, nid string
+           if err := rows.Scan(&tid, &nid); err != nil {
+               return err
+           }
+           existing[nid] = tid
+       }
+       // Get agent's user_id for new triggers
+       var userID string
+       if err := tx.QueryRow(`SELECT user_id FROM agents WHERE id = $1`, agentID).Scan(&userID); err != nil {
+           return err
+       }
+       // Track processed node IDs
+       processed := map[string]bool{}
+       for _, nd := range graph.Nodes {
+           // Only sync entry-point (trigger) node types
+           isEntry := false
+           for _, def := range nodeTypes {
+               if def.Type == nd.Type && def.EntryPoint {
+                   isEntry = true
+                   break
+               }
+           }
+           if !isEntry {
+               continue
+           }
+           processed[nd.ID] = true
+           // Encode node Data as JSON
+           cfgBytes, err := json.Marshal(nd.Data)
+           if err != nil {
+               return err
+           }
+           if tid, ok := existing[nd.ID]; ok {
+               // Update existing trigger row
+               if _, err := tx.Exec(
+                   `UPDATE triggers SET config=$1::jsonb, provider=$2, enabled=true, updated_at=now() WHERE id=$3`,
+                   string(cfgBytes), nd.Type, tid,
+               ); err != nil {
+                   return err
+               }
+           } else {
+               // Insert new trigger row
+               newID := uuid.New().String()
+               if _, err := tx.Exec(
+                   `INSERT INTO triggers (id, user_id, agent_id, node_id, provider, config, enabled) VALUES ($1,$2,$3,$4,$5,$6::jsonb,$7)`,
+                   newID, userID, agentID, nd.ID, nd.Type, string(cfgBytes), true,
+               ); err != nil {
+                   return err
+               }
+           }
+       }
+       // Disable triggers removed from graph
+       for nid, tid := range existing {
+           if !processed[nid] {
+               if _, err := tx.Exec(
+                   `UPDATE triggers SET enabled=false, updated_at=now() WHERE id=$1`,
+                   tid,
+               ); err != nil {
+                   return err
+               }
+           }
+       }
+       return nil
+   })
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
@@ -440,6 +525,43 @@ func getLatestAgentVersionHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// createRunHandler starts a new run for an agent triggered by external event or scheduler.
+func createRunHandler(w http.ResponseWriter, r *http.Request) {
+   agentID := chi.URLParam(r, "agentID")
+   var in struct {
+       VersionID   string      `json:"versionId"`
+       StartNodeID string      `json:"startNodeId"`
+       Input       interface{} `json:"input"`
+   }
+   if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+       writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+       return
+   }
+   // Verify version belongs to agent
+   var exists bool
+   if err := db.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM agent_versions WHERE id = $1 AND agent_id = $2)`, in.VersionID, agentID).Scan(&exists); err != nil || !exists {
+       writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid versionId"})
+       return
+   }
+   // Prepare payload for run
+   payload := map[string]interface{}{
+       "versionId":   in.VersionID,
+       "startNodeId": in.StartNodeID,
+       "input":       in.Input,
+   }
+   raw, err := json.Marshal(payload)
+   if err != nil {
+       writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+       return
+   }
+   runID := uuid.New().String()
+   if _, err := db.DB.Exec(`INSERT INTO agent_runs (id, agent_id, payload) VALUES ($1, $2, $3::jsonb)`, runID, agentID, string(raw)); err != nil {
+       writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+       return
+   }
+   writeJSON(w, http.StatusCreated, map[string]string{"runId": runID})
+}
+
 // testRunHandler executes the entire agent workflow sequentially.
 func testRunHandler(w http.ResponseWriter, r *http.Request) {
 	agentID := chi.URLParam(r, "agentID")
@@ -605,10 +727,24 @@ func getRunHandler(w http.ResponseWriter, r *http.Request) {
         }
         return
     }
-    var payload interface{}
-    if err := json.Unmarshal(payloadRaw, &payload); err != nil {
-        writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-        return
-    }
-    writeJSON(w, http.StatusOK, payload)
+   // Decode payload into a map to allow enriching with graph when absent
+   var payloadMap map[string]interface{}
+   if err := json.Unmarshal(payloadRaw, &payloadMap); err != nil {
+       writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+       return
+   }
+   // If graph structure is not embedded, attach it from the agent_versions table
+   if _, hasGraph := payloadMap["graph"]; !hasGraph {
+       if ver, ok := payloadMap["versionId"].(string); ok && ver != "" {
+           var graphRaw []byte
+           // fetch the stored graph JSON
+           if err := db.DB.QueryRow(`SELECT graph FROM agent_versions WHERE id = $1`, ver).Scan(&graphRaw); err == nil {
+               var graph interface{}
+               if err2 := json.Unmarshal(graphRaw, &graph); err2 == nil {
+                   payloadMap["graph"] = graph
+               }
+           }
+       }
+   }
+   writeJSON(w, http.StatusOK, payloadMap)
 }

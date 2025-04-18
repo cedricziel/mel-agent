@@ -2,15 +2,16 @@ package main
 
 // Standard library + third‑party imports
 import (
-	"log"
-	"net/http"
-	"os"
+   "log"
+   "net/http"
+   "os"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+   "github.com/go-chi/chi/v5"
+   "github.com/go-chi/chi/v5/middleware"
 
-	"github.com/cedricziel/mel-agent/internal/api"
-	"github.com/cedricziel/mel-agent/internal/db"
+   "github.com/cedricziel/mel-agent/internal/api"
+   "github.com/cedricziel/mel-agent/internal/db"
+   "github.com/cedricziel/mel-agent/internal/triggers"
 )
 
 func main() {
@@ -19,8 +20,11 @@ func main() {
 		port = "8080"
 	}
 
-	// connect database (fatal on error)
-	db.Connect()
+    // connect database (fatal on error)
+    db.Connect()
+    // start trigger scheduler engine
+    scheduler := triggers.NewEngine()
+    scheduler.Start()
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
