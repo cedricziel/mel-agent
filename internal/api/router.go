@@ -308,17 +308,11 @@ func testRunHandler(w http.ResponseWriter, r *http.Request) {
         writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
         return
     }
-    // Unmarshal graph
-    type Node struct {
-        ID   string                 `json:"id"`
-        Type string                 `json:"type"`
-        Data map[string]interface{} `json:"data"`
-    }
-    type Graph struct {
+    // Unmarshal graph nodes
+    var graph struct {
         Nodes []Node `json:"nodes"`
-        // Edges can be ignored for linear execution
+        // Edges ignored for linear execution
     }
-    var graph Graph
     if err := json.Unmarshal(graphRaw, &graph); err != nil {
         writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
         return
@@ -356,15 +350,16 @@ func testRunHandler(w http.ResponseWriter, r *http.Request) {
     // Execute nodes in order
     for _, node := range graph.Nodes {
         // Process each item through the node
-        nextItems := make([]Item, 0, len(payload.Items))
+        var nextItems []Item
         for _, item := range payload.Items {
-            output, err := executeNodeLocal(agentID, node.ID, item.Data)
+            output, err := executeNodeLocal(agentID, node, item.Data)
             if err != nil {
                 // propagate error in data field
                 nextItems = append(nextItems, Item{ID: item.ID, Data: map[string]interface{}{"error": err.Error()}})
-            } else {
+            } else if output != nil {
                 nextItems = append(nextItems, Item{ID: item.ID, Data: output})
             }
+            // if output is nil, item is filtered out
         }
         payload.Items = nextItems
         payload.Meta["lastNode"] = node.ID
@@ -372,8 +367,8 @@ func testRunHandler(w http.ResponseWriter, r *http.Request) {
     writeJSON(w, http.StatusOK, payload)
 }
 
-// executeNodeLocal invokes the node logic; stub implementation echoes input.
-func executeNodeLocal(agentID, nodeID string, input interface{}) (interface{}, error) {
-    // TODO: dispatch to real executors or Wasm sandbox
-    return input, nil
+// executeNodeLocal invokes the node logic via registered executors.
+func executeNodeLocal(agentID string, node Node, input interface{}) (interface{}, error) {
+    executor := getExecutor(node.Type)
+    return executor.Execute(agentID, node, input)
 }

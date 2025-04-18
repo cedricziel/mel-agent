@@ -12,3 +12,4 @@ web/dist/
 .gocache
 .gomodcache
 .cache
+/server
