@@ -98,6 +98,8 @@ function BuilderPage({ agentId }) {
   // WebSocket client for collaborative updates
   const clientId = useMemo(() => crypto.randomUUID(), []);
   const wsRef = useRef(null);
+  // Track execution timers per node to enforce minimum animation duration
+  const execTimersRef = useRef({});
   useEffect(() => {
     // Establish WebSocket connection for live updates (collaborative editing)
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -119,22 +121,47 @@ function BuilderPage({ agentId }) {
           case 'connect':
             setEdges((eds) => addEdge(msg.params, eds));
             break;
-          case 'nodeExecution':
-            // Runtime status updates for Live mode
+        case 'nodeExecution': {
+            // Runtime status updates for Live mode with min animation (500ms)
             const { nodeId, phase } = msg;
-            setNodes((nds) =>
-              nds.map((n) => {
-                if (n.id !== nodeId) return n;
-                const newData = { ...n.data };
-                if (phase === 'start') {
-                  newData.status = 'running';
-                } else if (phase === 'end') {
-                  delete newData.status;
+            if (phase === 'start') {
+                // record start time and set running status
+                execTimersRef.current[nodeId] = { start: Date.now(), timeoutId: null };
+                setNodes((nds) =>
+                    nds.map((n) =>
+                        n.id === nodeId ? { ...n, data: { ...n.data, status: 'running' } } : n
+                    )
+                );
+            } else if (phase === 'end') {
+                const timer = execTimersRef.current[nodeId];
+                const now = Date.now();
+                const clearStatus = () => {
+                    setNodes((nds) =>
+                        nds.map((n) =>
+                            n.id === nodeId
+                                ? { ...n, data: { ...n.data, status: undefined } }
+                                : n
+                        )
+                    );
+                    delete execTimersRef.current[nodeId];
+                };
+                if (timer) {
+                    const elapsed = now - timer.start;
+                    const remaining = 500 - elapsed;
+                    if (timer.timeoutId) clearTimeout(timer.timeoutId);
+                    if (remaining <= 0) {
+                        clearStatus();
+                    } else {
+                        const tid = setTimeout(clearStatus, remaining);
+                        execTimersRef.current[nodeId].timeoutId = tid;
+                    }
+                } else {
+                    // no start record, clear immediately
+                    clearStatus();
                 }
-                return { ...n, data: newData };
-              })
-            );
+            }
             break;
+        }
           default:
         }
       } catch {
