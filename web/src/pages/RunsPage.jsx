@@ -80,7 +80,7 @@ export default function RunsPage() {
   return (
     <div className="flex h-full">
       {/* Runs list */}
-      <div className="w-1/4 border-r p-4 overflow-auto">
+      <div className="w-1/4 border-r p-4 overflow-auto h-full">
         <h2 className="text-xl font-bold mb-4">Runs for Agent {agentId}</h2>
         <ul className="space-y-2">
           {runs.map(run => (
@@ -102,7 +102,7 @@ export default function RunsPage() {
       </div>
 
       {/* Graph & Node details */}
-      <div className="flex-1 flex">
+      <div className="flex-1 flex h-full min-h-0">
         <div className="w-1/2 h-full">
           {runDetails && (
             <ReactFlow
@@ -123,7 +123,7 @@ export default function RunsPage() {
           )}
           {!runDetails && <p className="p-4 text-gray-500">Select a run to view graph.</p>}
         </div>
-        <div className="w-1/2 p-4 overflow-auto">
+        <div className="w-1/2 p-4 overflow-auto h-full">
           {runDetails && selectedRunNodeID && selectedRunStep && selectedRunNodeDef ? (
             <RunDetailsPanel nodeDef={selectedRunNodeDef} step={selectedRunStep} />
           ) : (
