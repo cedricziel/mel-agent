@@ -3,6 +3,7 @@ package runs
 import (
    "database/sql"
    "encoding/json"
+   "fmt"
    "log"
    "time"
 
@@ -82,9 +83,17 @@ func (r *Runner) runOne(runID, agentID string, payloadRaw []byte) {
        StartNodeID string      `json:"startNodeId"`
        Input       interface{} `json:"input"`
    }
+   // Parse run payload
    var in RunPayload
    if err := json.Unmarshal(payloadRaw, &in); err != nil {
        log.Printf("runner unmarshal payload error for run %s: %v", runID, err)
+       r.markFailed(runID, err)
+       return
+   }
+   // Skip runs with missing versionId
+   if in.VersionID == "" {
+       err := fmt.Errorf("missing versionId in run payload")
+       log.Printf("runner missing versionId for run %s", runID)
        r.markFailed(runID, err)
        return
    }

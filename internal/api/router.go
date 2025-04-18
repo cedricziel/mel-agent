@@ -1,17 +1,17 @@
 package api
 
 import (
-   "database/sql"
-   "encoding/json"
-   "fmt"
-   "io"
-   "net/http"
-   "strings"
-   "time"
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"strings"
+	"time"
 
-   "github.com/cedricziel/mel-agent/internal/db"
-   "github.com/go-chi/chi/v5"
-   "github.com/google/uuid"
+	"github.com/cedricziel/mel-agent/internal/db"
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 // Handler returns a router with API routes mounted.
@@ -23,36 +23,36 @@ func Handler() http.Handler {
 	r.Post("/agents", createAgent)
 	r.Post("/agents/{agentID}/versions", createAgentVersion)
 
-   // Connection endpoints.
-   r.Get("/connections", listConnections)
-   r.Post("/connections", createConnection)
+	// Connection endpoints.
+	r.Get("/connections", listConnections)
+	r.Post("/connections", createConnection)
 
-   // Trigger endpoints.
-   r.Get("/triggers", listTriggers)
-   r.Post("/triggers", createTrigger)
-   r.Get("/triggers/{triggerID}", getTrigger)
-   r.Patch("/triggers/{triggerID}", updateTrigger)
-   r.Delete("/triggers/{triggerID}", deleteTrigger)
-  
-  // Webhook entrypoint for external events: POST /webhooks/{provider}/{triggerID}
-  r.Post("/webhooks/{provider}/{triggerID}", WebhookHandler)
+	// Trigger endpoints.
+	r.Get("/triggers", listTriggers)
+	r.Post("/triggers", createTrigger)
+	r.Get("/triggers/{triggerID}", getTrigger)
+	r.Patch("/triggers/{triggerID}", updateTrigger)
+	r.Delete("/triggers/{triggerID}", deleteTrigger)
+
+	// Webhook entrypoint for external events: POST /webhooks/{provider}/{triggerID}
+	r.Post("/webhooks/{provider}/{triggerID}", WebhookHandler)
 
 	// Integrations (read‑only)
 	r.Get("/integrations", listIntegrations)
-   // Node type definitions for builder
-   r.Get("/node-types", listNodeTypes)
-  // JSON Schema for node types
-   r.Get("/node-types/schema/{type}", getNodeTypeSchemaHandler)
+	// Node type definitions for builder
+	r.Get("/node-types", listNodeTypes)
+	// JSON Schema for node types
+	r.Get("/node-types/schema/{type}", getNodeTypeSchemaHandler)
 	// WebSocket for collaborative updates
 	r.Get("/ws/agents/{agentID}", wsHandler)
-   // Create a run via trigger or API
-   r.Post("/agents/{agentID}/runs", createRunHandler)
-   // Test-run an agent workflow
-   r.Post("/agents/{agentID}/runs/test", testRunHandler)
-    // List past runs
-    r.Get("/agents/{agentID}/runs", listRunsHandler)
-    // Get specific run details
-    r.Get("/agents/{agentID}/runs/{runID}", getRunHandler)
+	// Create a run via trigger or API
+	r.Post("/agents/{agentID}/runs", createRunHandler)
+	// Test-run an agent workflow
+	r.Post("/agents/{agentID}/runs/test", testRunHandler)
+	// List past runs
+	r.Get("/agents/{agentID}/runs", listRunsHandler)
+	// Get specific run details
+	r.Get("/agents/{agentID}/runs/{runID}", getRunHandler)
 	// Fetch latest version (graph) for an agent
 	r.Get("/agents/{agentID}/versions/latest", getLatestAgentVersionHandler)
 	// Execute a single node with provided input data (stub implementation)
@@ -145,92 +145,94 @@ func createAgentVersion(w http.ResponseWriter, r *http.Request) {
 		in.SemanticVersion = "0.1.0"
 	}
 	var versionID string
-   err := db.Tx(func(tx *sql.Tx) error {
-       // Insert new agent version and update latest pointer
-       if err := tx.QueryRow(
-           `INSERT INTO agent_versions (agent_id, semantic_version, graph, default_params) VALUES ($1,$2,$3::jsonb,$4::jsonb) RETURNING id`,
-           agentID, in.SemanticVersion, string(in.Graph), string(in.DefaultParams),
-       ).Scan(&versionID); err != nil {
-           return err
-       }
-       if _, err := tx.Exec(`UPDATE agents SET latest_version_id=$1 WHERE id=$2`, versionID, agentID); err != nil {
-           return err
-       }
-       // Sync triggers based on graph's entry-point nodes
-       type graphNode struct {
-           ID   string                 `json:"id"`
-           Type string                 `json:"type"`
-           Data map[string]interface{} `json:"data"`
-       }
-       var graph struct { Nodes []graphNode `json:"nodes"` }
-       if err := json.Unmarshal(in.Graph, &graph); err != nil {
-           return err
-       }
-       // Load existing triggers for this agent
-       existing := map[string]string{} // node_id -> trigger_id
-       rows, err := tx.Query(`SELECT id, node_id FROM triggers WHERE agent_id = $1`, agentID)
-       if err != nil {
-           return err
-       }
-       defer rows.Close()
-       for rows.Next() {
-           var tid, nid string
-           if err := rows.Scan(&tid, &nid); err != nil {
-               return err
-           }
-           existing[nid] = tid
-       }
-       // Get agent's user_id for new triggers
-       var userID string
-       if err := tx.QueryRow(`SELECT user_id FROM agents WHERE id = $1`, agentID).Scan(&userID); err != nil {
-           return err
-       }
-       // Track processed node IDs
-       processed := map[string]bool{}
-       for _, nd := range graph.Nodes {
-           // Only sync entry-point (trigger) node types
-           def := FindDefinition(nd.Type)
-           if def == nil || !def.Meta().EntryPoint {
-               continue
-           }
-           processed[nd.ID] = true
-           // Encode node Data as JSON
-           cfgBytes, err := json.Marshal(nd.Data)
-           if err != nil {
-               return err
-           }
-           if tid, ok := existing[nd.ID]; ok {
-               // Update existing trigger row
-               if _, err := tx.Exec(
-                   `UPDATE triggers SET config=$1::jsonb, provider=$2, enabled=true, updated_at=now() WHERE id=$3`,
-                   string(cfgBytes), nd.Type, tid,
-               ); err != nil {
-                   return err
-               }
-           } else {
-               // Insert new trigger row
-               newID := uuid.New().String()
-               if _, err := tx.Exec(
-                   `INSERT INTO triggers (id, user_id, agent_id, node_id, provider, config, enabled) VALUES ($1,$2,$3,$4,$5,$6::jsonb,$7)`,
-                   newID, userID, agentID, nd.ID, nd.Type, string(cfgBytes), true,
-               ); err != nil {
-                   return err
-               }
-           }
-       }
-       // Disable triggers removed from graph
-       for nid, tid := range existing {
-           if !processed[nid] {
-               if _, err := tx.Exec(
-                   `UPDATE triggers SET enabled=false, updated_at=now() WHERE id=$1`,
-                   tid,
-               ); err != nil {
-                   return err
-               }
-           }
-       }
-       return nil
-   })
+	err := db.Tx(func(tx *sql.Tx) error {
+		// Insert new agent version and update latest pointer
+		if err := tx.QueryRow(
+			`INSERT INTO agent_versions (agent_id, semantic_version, graph, default_params) VALUES ($1,$2,$3::jsonb,$4::jsonb) RETURNING id`,
+			agentID, in.SemanticVersion, string(in.Graph), string(in.DefaultParams),
+		).Scan(&versionID); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(`UPDATE agents SET latest_version_id=$1 WHERE id=$2`, versionID, agentID); err != nil {
+			return err
+		}
+		// Sync triggers based on graph's entry-point nodes
+		type graphNode struct {
+			ID   string                 `json:"id"`
+			Type string                 `json:"type"`
+			Data map[string]interface{} `json:"data"`
+		}
+		var graph struct {
+			Nodes []graphNode `json:"nodes"`
+		}
+		if err := json.Unmarshal(in.Graph, &graph); err != nil {
+			return err
+		}
+		// Load existing triggers for this agent
+		existing := map[string]string{} // node_id -> trigger_id
+		rows, err := tx.Query(`SELECT id, node_id FROM triggers WHERE agent_id = $1`, agentID)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var tid, nid string
+			if err := rows.Scan(&tid, &nid); err != nil {
+				return err
+			}
+			existing[nid] = tid
+		}
+		// Get agent's user_id for new triggers
+		var userID string
+		if err := tx.QueryRow(`SELECT user_id FROM agents WHERE id = $1`, agentID).Scan(&userID); err != nil {
+			return err
+		}
+		// Track processed node IDs
+		processed := map[string]bool{}
+		for _, nd := range graph.Nodes {
+			// Only sync entry-point (trigger) node types
+			def := FindDefinition(nd.Type)
+			if def == nil || !def.Meta().EntryPoint {
+				continue
+			}
+			processed[nd.ID] = true
+			// Encode node Data as JSON
+			cfgBytes, err := json.Marshal(nd.Data)
+			if err != nil {
+				return err
+			}
+			if tid, ok := existing[nd.ID]; ok {
+				// Update existing trigger row
+				if _, err := tx.Exec(
+					`UPDATE triggers SET config=$1::jsonb, provider=$2, enabled=true, updated_at=now() WHERE id=$3`,
+					string(cfgBytes), nd.Type, tid,
+				); err != nil {
+					return err
+				}
+			} else {
+				// Insert new trigger row
+				newID := uuid.New().String()
+				if _, err := tx.Exec(
+					`INSERT INTO triggers (id, user_id, agent_id, node_id, provider, config, enabled) VALUES ($1,$2,$3,$4,$5,$6::jsonb,$7)`,
+					newID, userID, agentID, nd.ID, nd.Type, string(cfgBytes), true,
+				); err != nil {
+					return err
+				}
+			}
+		}
+		// Disable triggers removed from graph
+		for nid, tid := range existing {
+			if !processed[nid] {
+				if _, err := tx.Exec(
+					`UPDATE triggers SET enabled=false, updated_at=now() WHERE id=$1`,
+					tid,
+				); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	})
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
@@ -328,328 +330,347 @@ func createConnection(w http.ResponseWriter, r *http.Request) {
 // --- Trigger handlers ---
 // Trigger represents a user-configured event trigger for starting workflows.
 type Trigger struct {
-   ID          string          `db:"id" json:"id"`
-   UserID      string          `db:"user_id" json:"user_id"`
-   Provider    string          `db:"provider" json:"provider"`
-   Config      json.RawMessage `db:"config" json:"config"`
-   Enabled     bool            `db:"enabled" json:"enabled"`
-   NodeID      string          `db:"node_id" json:"node_id"`
-   AgentID     string          `db:"agent_id" json:"agent_id"`
-   LastChecked *time.Time      `db:"last_checked" json:"last_checked,omitempty"`
-   CreatedAt   time.Time       `db:"created_at" json:"created_at"`
-   UpdatedAt   time.Time       `db:"updated_at" json:"updated_at"`
+	ID          string          `db:"id" json:"id"`
+	UserID      string          `db:"user_id" json:"user_id"`
+	Provider    string          `db:"provider" json:"provider"`
+	Config      json.RawMessage `db:"config" json:"config"`
+	Enabled     bool            `db:"enabled" json:"enabled"`
+	NodeID      string          `db:"node_id" json:"node_id"`
+	AgentID     string          `db:"agent_id" json:"agent_id"`
+	LastChecked *time.Time      `db:"last_checked" json:"last_checked,omitempty"`
+	CreatedAt   time.Time       `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time       `db:"updated_at" json:"updated_at"`
 }
 
 // listTriggers returns all triggers.
 func listTriggers(w http.ResponseWriter, r *http.Request) {
-   rows, err := db.DB.Query(
-       `SELECT id, user_id, provider, config, enabled, node_id, agent_id, last_checked, created_at, updated_at
+	rows, err := db.DB.Query(
+		`SELECT id, user_id, provider, config, enabled, node_id, agent_id, last_checked, created_at, updated_at
         FROM triggers
         ORDER BY created_at DESC`,
-   )
-   if err != nil {
-       writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-       return
-   }
-   defer rows.Close()
+	)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	defer rows.Close()
 
-   triggers := []Trigger{}
-   for rows.Next() {
-       var t Trigger
-       var configBytes []byte
-       var nt sql.NullTime
-       if err := rows.Scan(&t.ID, &t.UserID, &t.Provider, &configBytes, &t.Enabled, &t.NodeID, &t.AgentID, &nt, &t.CreatedAt, &t.UpdatedAt); err != nil {
-           writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-           return
-       }
-       t.Config = configBytes
-       if nt.Valid {
-           t.LastChecked = &nt.Time
-       }
-       triggers = append(triggers, t)
-   }
-   writeJSON(w, http.StatusOK, triggers)
+	triggers := []Trigger{}
+	for rows.Next() {
+		var t Trigger
+		var configBytes []byte
+		var nt sql.NullTime
+		if err := rows.Scan(&t.ID, &t.UserID, &t.Provider, &configBytes, &t.Enabled, &t.NodeID, &t.AgentID, &nt, &t.CreatedAt, &t.UpdatedAt); err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+		t.Config = configBytes
+		if nt.Valid {
+			t.LastChecked = &nt.Time
+		}
+		triggers = append(triggers, t)
+	}
+	writeJSON(w, http.StatusOK, triggers)
 }
 
 // getTrigger fetches a single trigger by ID.
 func getTrigger(w http.ResponseWriter, r *http.Request) {
-   id := chi.URLParam(r, "triggerID")
-   var t Trigger
-   var configBytes []byte
-   var nt sql.NullTime
-   err := db.DB.QueryRow(
-       `SELECT id, user_id, provider, config, enabled, node_id, agent_id, last_checked, created_at, updated_at
+	id := chi.URLParam(r, "triggerID")
+	var t Trigger
+	var configBytes []byte
+	var nt sql.NullTime
+	err := db.DB.QueryRow(
+		`SELECT id, user_id, provider, config, enabled, node_id, agent_id, last_checked, created_at, updated_at
         FROM triggers WHERE id = $1`, id,
-   ).Scan(&t.ID, &t.UserID, &t.Provider, &configBytes, &t.Enabled, &t.NodeID, &t.AgentID, &nt, &t.CreatedAt, &t.UpdatedAt)
-   if err != nil {
-       if err == sql.ErrNoRows {
-           writeJSON(w, http.StatusNotFound, map[string]string{"error": "trigger not found"})
-       } else {
-           writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-       }
-       return
-   }
-   t.Config = configBytes
-   if nt.Valid {
-       t.LastChecked = &nt.Time
-   }
-   writeJSON(w, http.StatusOK, t)
+	).Scan(&t.ID, &t.UserID, &t.Provider, &configBytes, &t.Enabled, &t.NodeID, &t.AgentID, &nt, &t.CreatedAt, &t.UpdatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			writeJSON(w, http.StatusNotFound, map[string]string{"error": "trigger not found"})
+		} else {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+		return
+	}
+	t.Config = configBytes
+	if nt.Valid {
+		t.LastChecked = &nt.Time
+	}
+	writeJSON(w, http.StatusOK, t)
 }
 
 // createTrigger registers a new trigger.
 func createTrigger(w http.ResponseWriter, r *http.Request) {
-   var in struct {
-       UserID   string          `json:"user_id"`
-       Provider string          `json:"provider"`
-       Config   json.RawMessage `json:"config"`
-       Enabled  *bool           `json:"enabled,omitempty"`
-   }
-   if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-       writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
-       return
-   }
-   if in.UserID == "" {
-       in.UserID = "00000000-0000-0000-0000-000000000001"
-   }
-   enabled := true
-   if in.Enabled != nil {
-       enabled = *in.Enabled
-   }
-   id := uuid.New().String()
-   query := `INSERT INTO triggers (id, user_id, provider, config, enabled) VALUES ($1,$2,$3,$4::jsonb,$5) RETURNING id`
-   if err := db.DB.QueryRow(query, id, in.UserID, in.Provider, string(in.Config), enabled).Scan(&id); err != nil {
-       writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-       return
-   }
-   writeJSON(w, http.StatusCreated, map[string]string{"id": id})
+	var in struct {
+		UserID   string          `json:"user_id"`
+		Provider string          `json:"provider"`
+		Config   json.RawMessage `json:"config"`
+		Enabled  *bool           `json:"enabled,omitempty"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+	if in.UserID == "" {
+		in.UserID = "00000000-0000-0000-0000-000000000001"
+	}
+	enabled := true
+	if in.Enabled != nil {
+		enabled = *in.Enabled
+	}
+	id := uuid.New().String()
+	query := `INSERT INTO triggers (id, user_id, provider, config, enabled) VALUES ($1,$2,$3,$4::jsonb,$5) RETURNING id`
+	if err := db.DB.QueryRow(query, id, in.UserID, in.Provider, string(in.Config), enabled).Scan(&id); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]string{"id": id})
 }
 
 // updateTrigger modifies an existing trigger.
 func updateTrigger(w http.ResponseWriter, r *http.Request) {
-   id := chi.URLParam(r, "triggerID")
-   var in struct {
-       Provider *string         `json:"provider,omitempty"`
-       Config   *json.RawMessage `json:"config,omitempty"`
-       Enabled  *bool           `json:"enabled,omitempty"`
-   }
-   if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-       writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
-       return
-   }
-   if in.Provider != nil {
-       if _, err := db.DB.Exec(`UPDATE triggers SET provider=$1, updated_at=now() WHERE id=$2`, *in.Provider, id); err != nil {
-           writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-           return
-       }
-   }
-   if in.Config != nil {
-       if _, err := db.DB.Exec(`UPDATE triggers SET config=$1::jsonb, updated_at=now() WHERE id=$2`, string(*in.Config), id); err != nil {
-           writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-           return
-       }
-   }
-   if in.Enabled != nil {
-       if _, err := db.DB.Exec(`UPDATE triggers SET enabled=$1, updated_at=now() WHERE id=$2`, *in.Enabled, id); err != nil {
-           writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-           return
-       }
-   }
-   writeJSON(w, http.StatusOK, map[string]string{"id": id})
+	id := chi.URLParam(r, "triggerID")
+	var in struct {
+		Provider *string          `json:"provider,omitempty"`
+		Config   *json.RawMessage `json:"config,omitempty"`
+		Enabled  *bool            `json:"enabled,omitempty"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+	if in.Provider != nil {
+		if _, err := db.DB.Exec(`UPDATE triggers SET provider=$1, updated_at=now() WHERE id=$2`, *in.Provider, id); err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+	}
+	if in.Config != nil {
+		if _, err := db.DB.Exec(`UPDATE triggers SET config=$1::jsonb, updated_at=now() WHERE id=$2`, string(*in.Config), id); err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+	}
+	if in.Enabled != nil {
+		if _, err := db.DB.Exec(`UPDATE triggers SET enabled=$1, updated_at=now() WHERE id=$2`, *in.Enabled, id); err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"id": id})
 }
 
 // deleteTrigger removes a trigger.
 func deleteTrigger(w http.ResponseWriter, r *http.Request) {
-   id := chi.URLParam(r, "triggerID")
-   if _, err := db.DB.Exec(`DELETE FROM triggers WHERE id=$1`, id); err != nil {
-       writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-       return
-   }
-   w.WriteHeader(http.StatusNoContent)
+	id := chi.URLParam(r, "triggerID")
+	if _, err := db.DB.Exec(`DELETE FROM triggers WHERE id=$1`, id); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // WebhookHandler handles external webhook events and enqueues a run.
 func WebhookHandler(w http.ResponseWriter, r *http.Request) {
-   // Indicate this webhook request is handled by our agent engine
-   w.Header().Set("X-Agent-Processed", "true")
-   provider := chi.URLParam(r, "provider")
-   triggerID := chi.URLParam(r, "triggerID")
-   // Lookup trigger instance
-   var enabled bool
-   var agentID, nodeID string
-   var configRaw []byte
-   err := db.DB.QueryRow(
-       `SELECT enabled, agent_id, node_id, config FROM triggers WHERE id=$1 AND provider=$2`,
-       triggerID, provider,
-   ).Scan(&enabled, &agentID, &nodeID, &configRaw)
-   if err != nil {
-       if err == sql.ErrNoRows {
-           writeJSON(w, http.StatusNotFound, map[string]string{"error": "trigger not found"})
-       } else {
-           writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-       }
-       return
-   }
-   if !enabled {
-       writeJSON(w, http.StatusForbidden, map[string]string{"error": "trigger disabled"})
-       return
-   }
-   // Enforce allowed HTTP method from node config
-   var methodCfg map[string]interface{}
-   if err := json.Unmarshal(configRaw, &methodCfg); err != nil {
-       methodCfg = map[string]interface{}{}
-   }
-   methodAllowed, _ := methodCfg["method"].(string)
-   if methodAllowed == "" {
-       methodAllowed = "POST"
-   }
-   if methodAllowed != "ANY" && !strings.EqualFold(r.Method, methodAllowed) {
-       w.Header().Set("Allow", methodAllowed)
-       writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
-       return
-   }
-   // Decode JSON payload (tolerate empty body)
-   var payload interface{}
-   if err := json.NewDecoder(r.Body).Decode(&payload); err != nil && err != io.EOF {
-       writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
-       return
-   }
-   // Parse trigger config for mode and custom responses
-   var cfg map[string]interface{}
-   if err := json.Unmarshal(configRaw, &cfg); err != nil {
-       cfg = map[string]interface{}{}
-   }
-   mode, _ := cfg["mode"].(string)
-   // Synchronous (in-band) execution: run workflow and return its result
-   if mode == "sync" {
-       // Fetch latest agent version and graph
-       var versionID sql.NullString
-       if err := db.DB.QueryRow(`SELECT latest_version_id FROM agents WHERE id = $1`, agentID).Scan(&versionID); err != nil {
-           writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-           return
-       }
-       if !versionID.Valid {
-           writeJSON(w, http.StatusBadRequest, map[string]string{"error": "no version available for agent"})
-           return
-       }
-       var graphRaw []byte
-       if err := db.DB.QueryRow(`SELECT graph FROM agent_versions WHERE id = $1`, versionID.String).Scan(&graphRaw); err != nil {
-           writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-           return
-       }
-       // Unmarshal graph for execution
-       var graphData interface{}
-       _ = json.Unmarshal(graphRaw, &graphData)
-       var graphStruct struct { Nodes []Node `json:"nodes"` }
-       if err := json.Unmarshal(graphRaw, &graphStruct); err != nil {
-           writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-           return
-       }
-       // Prepare execution payload
-       type Item struct { ID string `json:"id"`; Data interface{} `json:"data"` }
-       type Step struct { NodeID string `json:"nodeId"`; Input []Item `json:"input"`; Output []Item `json:"output"` }
-       type Payload struct {
-           RunID   string                   `json:"runId"`
-           Graph   interface{}              `json:"graph"`
-           Context map[string]interface{}   `json:"context"`
-           Meta    map[string]interface{}   `json:"meta"`
-           Trace   []Step                   `json:"trace"`
-       }
-       runID := uuid.New().String()
-       initial := Item{ID: uuid.New().String(), Data: payload}
-       execPayload := Payload{
-           RunID:   runID,
-           Graph:   graphData,
-           Context: map[string]interface{}{},
-           Meta:    map[string]interface{}{"startTime": time.Now().UTC().Format(time.RFC3339)},
-           Trace:   []Step{},
-       }
-       current := []Item{initial}
-       // Execute nodes sequentially
-       // Broadcast execution events on WS hub
-       hub := GetHub(agentID)
-       for _, node := range graphStruct.Nodes {
-           // Notify start of node execution
-           if startMsg, err := json.Marshal(map[string]string{"type":"nodeExecution","nodeId":node.ID,"phase":"start"}); err == nil {
-               hub.broadcast(startMsg)
-           }
-           inputs := current
-           var next []Item
-           for _, it := range inputs {
-               out, err := executeNodeLocal(agentID, node, it.Data)
-               if err != nil {
-                   next = append(next, Item{ID: it.ID, Data: map[string]interface{}{"error": err.Error()}})
-               } else if out != nil {
-                   next = append(next, Item{ID: it.ID, Data: out})
-               }
-           }
-           // Notify end of node execution
-           if endMsg, err := json.Marshal(map[string]string{"type":"nodeExecution","nodeId":node.ID,"phase":"end"}); err == nil {
-               hub.broadcast(endMsg)
-           }
-           execPayload.Trace = append(execPayload.Trace, Step{NodeID: node.ID, Input: inputs, Output: next})
-           execPayload.Meta["lastNode"] = node.ID
-           current = next
-       }
-       execPayload.Meta["finalItems"] = current
-       // Persist run record
-       rawExec, err := json.Marshal(execPayload)
-       if err == nil {
-           _, _ = db.DB.Exec(`INSERT INTO agent_runs (id, agent_id, payload) VALUES ($1, $2, $3::jsonb)`, runID, agentID, string(rawExec))
-       }
-       // Determine response status and body
-       statusCode := 200
-       if sc, ok := cfg["statusCode"].(float64); ok {
-           statusCode = int(sc)
-       }
-       // Default to entire execPayload
-       respBody := any(execPayload)
-       if rb, ok := cfg["responseBody"]; ok {
-           respBody = rb
-       }
-       // Include run ID in response headers for tracing
-       w.Header().Set("X-Run-Id", runID)
-       writeJSON(w, statusCode, respBody)
-       return
-   }
-   // Asynchronous execution: enqueue and return immediately
-   _, _ = db.DB.Exec(`UPDATE triggers SET last_checked = now() WHERE id = $1`, triggerID)
-   // Fetch latest agent version
-   var versionID sql.NullString
-   if err := db.DB.QueryRow(
-       `SELECT latest_version_id FROM agents WHERE id = $1`, agentID,
-   ).Scan(&versionID); err != nil {
-       writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-       return
-   }
-   if !versionID.Valid {
-       writeJSON(w, http.StatusBadRequest, map[string]string{"error": "no version available for agent"})
-       return
-   }
-   // Build run payload
-   runPayload := map[string]interface{}{"versionId": versionID.String, "startNodeId": nodeID, "input": payload}
-   raw, err := json.Marshal(runPayload)
-   if err != nil {
-       writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-       return
-   }
-   runID := uuid.New().String()
-   if _, err := db.DB.Exec(`INSERT INTO agent_runs (id, agent_id, payload) VALUES ($1, $2, $3::jsonb)`, runID, agentID, string(raw)); err != nil {
-       writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-       return
-   }
-   // Return configured immediate response
-   statusCode := 202
-   if sc, ok := cfg["statusCode"].(float64); ok {
-       statusCode = int(sc)
-   }
-   resp := map[string]string{"runId": runID}
-   if rb, ok := cfg["responseBody"]; ok {
-       // if responseBody is a string, return raw; else return as JSON object
-       resp = map[string]string{"body": fmt.Sprint(rb)}
-   }
-   // Include run ID in response headers for tracing
-   w.Header().Set("X-Run-Id", runID)
-   writeJSON(w, statusCode, resp)
+	// Indicate this webhook request is handled by our agent engine
+	w.Header().Set("X-Agent-Processed", "true")
+	provider := chi.URLParam(r, "provider")
+	triggerID := chi.URLParam(r, "triggerID")
+	// Lookup trigger instance
+	var enabled bool
+	var agentID, nodeID string
+	var configRaw []byte
+	err := db.DB.QueryRow(
+		`SELECT enabled, agent_id, node_id, config FROM triggers WHERE id=$1 AND provider=$2`,
+		triggerID, provider,
+	).Scan(&enabled, &agentID, &nodeID, &configRaw)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			writeJSON(w, http.StatusNotFound, map[string]string{"error": "trigger not found"})
+		} else {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+		return
+	}
+	if !enabled {
+		writeJSON(w, http.StatusForbidden, map[string]string{"error": "trigger disabled"})
+		return
+	}
+	// Enforce allowed HTTP method from node config
+	var methodCfg map[string]interface{}
+	if err := json.Unmarshal(configRaw, &methodCfg); err != nil {
+		methodCfg = map[string]interface{}{}
+	}
+	methodAllowed, _ := methodCfg["method"].(string)
+	if methodAllowed == "" {
+		methodAllowed = "POST"
+	}
+	if methodAllowed != "ANY" && !strings.EqualFold(r.Method, methodAllowed) {
+		w.Header().Set("Allow", methodAllowed)
+		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
+		return
+	}
+	// Decode JSON payload (tolerate empty body)
+	var payload interface{}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil && err != io.EOF {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+	// Parse trigger config for mode and custom responses
+	var cfg map[string]interface{}
+	if err := json.Unmarshal(configRaw, &cfg); err != nil {
+		cfg = map[string]interface{}{}
+	}
+	mode, _ := cfg["mode"].(string)
+	// Synchronous (in-band) execution: run workflow and return its result
+	if mode == "sync" {
+		// Fetch latest agent version and graph
+		var versionID sql.NullString
+		if err := db.DB.QueryRow(`SELECT latest_version_id FROM agents WHERE id = $1`, agentID).Scan(&versionID); err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+		if !versionID.Valid {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "no version available for agent"})
+			return
+		}
+		// Record run in agent_runs as running
+		// runID already defined above for synchronous execution
+		syncPayload := map[string]interface{}{
+			"versionId":   versionID.String,
+			"startNodeId": nodeID,
+			"input":       payload,
+		}
+		rawSync, _ := json.Marshal(syncPayload)
+		runID := uuid.New().String()
+		_, _ = db.DB.Exec(`INSERT INTO agent_runs (id, agent_id, payload, status) VALUES ($1, $2, $3::jsonb, 'running')`, runID, agentID, string(rawSync))
+		var graphRaw []byte
+		if err := db.DB.QueryRow(`SELECT graph FROM agent_versions WHERE id = $1`, versionID.String).Scan(&graphRaw); err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+		// Unmarshal graph for execution
+		var graphData interface{}
+		_ = json.Unmarshal(graphRaw, &graphData)
+		var graphStruct struct {
+			Nodes []Node `json:"nodes"`
+		}
+		if err := json.Unmarshal(graphRaw, &graphStruct); err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+		// Prepare execution payload
+		type Item struct {
+			ID   string      `json:"id"`
+			Data interface{} `json:"data"`
+		}
+		type Step struct {
+			NodeID string `json:"nodeId"`
+			Input  []Item `json:"input"`
+			Output []Item `json:"output"`
+		}
+		type Payload struct {
+			RunID   string                 `json:"runId"`
+			Graph   interface{}            `json:"graph"`
+			Context map[string]interface{} `json:"context"`
+			Meta    map[string]interface{} `json:"meta"`
+			Trace   []Step                 `json:"trace"`
+		}
+
+		initial := Item{ID: uuid.New().String(), Data: payload}
+		execPayload := Payload{
+			RunID:   runID,
+			Graph:   graphData,
+			Context: map[string]interface{}{},
+			Meta:    map[string]interface{}{"startTime": time.Now().UTC().Format(time.RFC3339)},
+			Trace:   []Step{},
+		}
+		current := []Item{initial}
+		// Execute nodes sequentially
+		// Broadcast execution events on WS hub
+		hub := GetHub(agentID)
+		for _, node := range graphStruct.Nodes {
+			// Notify start of node execution
+			if startMsg, err := json.Marshal(map[string]string{"type": "nodeExecution", "nodeId": node.ID, "phase": "start"}); err == nil {
+				hub.Broadcast(startMsg)
+			}
+			inputs := current
+			var next []Item
+			for _, it := range inputs {
+				out, err := executeNodeLocal(agentID, node, it.Data)
+				if err != nil {
+					next = append(next, Item{ID: it.ID, Data: map[string]interface{}{"error": err.Error()}})
+				} else if out != nil {
+					next = append(next, Item{ID: it.ID, Data: out})
+				}
+			}
+			// Notify end of node execution
+			if endMsg, err := json.Marshal(map[string]string{"type": "nodeExecution", "nodeId": node.ID, "phase": "end"}); err == nil {
+				hub.Broadcast(endMsg)
+			}
+			execPayload.Trace = append(execPayload.Trace, Step{NodeID: node.ID, Input: inputs, Output: next})
+			execPayload.Meta["lastNode"] = node.ID
+			current = next
+		}
+		execPayload.Meta["finalItems"] = current
+		// Persist run record
+		rawExec, err := json.Marshal(execPayload)
+		if err == nil {
+			_, _ = db.DB.Exec(`INSERT INTO agent_runs (id, agent_id, payload) VALUES ($1, $2, $3::jsonb)`, runID, agentID, string(rawExec))
+		}
+		// Determine response status and body
+		statusCode := 200
+		if sc, ok := cfg["statusCode"].(float64); ok {
+			statusCode = int(sc)
+		}
+		// Default to entire execPayload
+		respBody := any(execPayload)
+		if rb, ok := cfg["responseBody"]; ok {
+			respBody = rb
+		}
+		// Include run ID in response headers for tracing
+		w.Header().Set("X-Run-Id", runID)
+		writeJSON(w, statusCode, respBody)
+		return
+	}
+	// Asynchronous execution: enqueue and return immediately
+	_, _ = db.DB.Exec(`UPDATE triggers SET last_checked = now() WHERE id = $1`, triggerID)
+	// Fetch latest agent version
+	var versionID sql.NullString
+	if err := db.DB.QueryRow(
+		`SELECT latest_version_id FROM agents WHERE id = $1`, agentID,
+	).Scan(&versionID); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	if !versionID.Valid {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "no version available for agent"})
+		return
+	}
+	// Build run payload
+	runPayload := map[string]interface{}{"versionId": versionID.String, "startNodeId": nodeID, "input": payload}
+	raw, err := json.Marshal(runPayload)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	runID := uuid.New().String()
+	if _, err := db.DB.Exec(`INSERT INTO agent_runs (id, agent_id, payload) VALUES ($1, $2, $3::jsonb)`, runID, agentID, string(raw)); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	// Return configured immediate response
+	statusCode := 202
+	if sc, ok := cfg["statusCode"].(float64); ok {
+		statusCode = int(sc)
+	}
+	resp := map[string]string{"runId": runID}
+	if rb, ok := cfg["responseBody"]; ok {
+		// if responseBody is a string, return raw; else return as JSON object
+		resp = map[string]string{"body": fmt.Sprint(rb)}
+	}
+	// Include run ID in response headers for tracing
+	w.Header().Set("X-Run-Id", runID)
+	writeJSON(w, statusCode, resp)
 }
 
 // executeNodeHandler handles running a single node with provided input (stub implementation)
@@ -717,39 +738,39 @@ func getLatestAgentVersionHandler(w http.ResponseWriter, r *http.Request) {
 
 // createRunHandler starts a new run for an agent triggered by external event or scheduler.
 func createRunHandler(w http.ResponseWriter, r *http.Request) {
-   agentID := chi.URLParam(r, "agentID")
-   var in struct {
-       VersionID   string      `json:"versionId"`
-       StartNodeID string      `json:"startNodeId"`
-       Input       interface{} `json:"input"`
-   }
-   if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-       writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
-       return
-   }
-   // Verify version belongs to agent
-   var exists bool
-   if err := db.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM agent_versions WHERE id = $1 AND agent_id = $2)`, in.VersionID, agentID).Scan(&exists); err != nil || !exists {
-       writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid versionId"})
-       return
-   }
-   // Prepare payload for run
-   payload := map[string]interface{}{
-       "versionId":   in.VersionID,
-       "startNodeId": in.StartNodeID,
-       "input":       in.Input,
-   }
-   raw, err := json.Marshal(payload)
-   if err != nil {
-       writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-       return
-   }
-   runID := uuid.New().String()
-   if _, err := db.DB.Exec(`INSERT INTO agent_runs (id, agent_id, payload) VALUES ($1, $2, $3::jsonb)`, runID, agentID, string(raw)); err != nil {
-       writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-       return
-   }
-   writeJSON(w, http.StatusCreated, map[string]string{"runId": runID})
+	agentID := chi.URLParam(r, "agentID")
+	var in struct {
+		VersionID   string      `json:"versionId"`
+		StartNodeID string      `json:"startNodeId"`
+		Input       interface{} `json:"input"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+	// Verify version belongs to agent
+	var exists bool
+	if err := db.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM agent_versions WHERE id = $1 AND agent_id = $2)`, in.VersionID, agentID).Scan(&exists); err != nil || !exists {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid versionId"})
+		return
+	}
+	// Prepare payload for run
+	payload := map[string]interface{}{
+		"versionId":   in.VersionID,
+		"startNodeId": in.StartNodeID,
+		"input":       in.Input,
+	}
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	runID := uuid.New().String()
+	if _, err := db.DB.Exec(`INSERT INTO agent_runs (id, agent_id, payload) VALUES ($1, $2, $3::jsonb)`, runID, agentID, string(raw)); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]string{"runId": runID})
 }
 
 // testRunHandler executes the entire agent workflow sequentially.
@@ -773,20 +794,20 @@ func testRunHandler(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-    // Unmarshal full graph (nodes + edges) for rendering
-    var graphData interface{}
-    if err := json.Unmarshal(graphRaw, &graphData); err != nil {
-        writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-        return
-    }
-    // Unmarshal nodes sequence for execution order
-    var graphStruct struct {
-        Nodes []Node `json:"nodes"`
-    }
-    if err := json.Unmarshal(graphRaw, &graphStruct); err != nil {
-        writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-        return
-    }
+	// Unmarshal full graph (nodes + edges) for rendering
+	var graphData interface{}
+	if err := json.Unmarshal(graphRaw, &graphData); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	// Unmarshal nodes sequence for execution order
+	var graphStruct struct {
+		Nodes []Node `json:"nodes"`
+	}
+	if err := json.Unmarshal(graphRaw, &graphStruct); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
 	// Unmarshal default params into initial data
 	var defaultParams map[string]interface{}
 	if len(defaultRaw) > 0 {
@@ -797,156 +818,157 @@ func testRunHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		defaultParams = map[string]interface{}{}
 	}
-    // Define execution payload with full graph and trace
-    type Item struct {
-        ID   string      `json:"id"`
-        Data interface{} `json:"data"`
-    }
-    type Step struct {
-        NodeID string `json:"nodeId"`
-        Input  []Item `json:"input"`
-        Output []Item `json:"output"`
-    }
-    type Payload struct {
-        RunID   string                   `json:"runId"`
-        Graph   interface{}              `json:"graph"`
-        Context map[string]interface{}   `json:"context"`
-        Meta    map[string]interface{}   `json:"meta"`
-        Trace   []Step                   `json:"trace"`
-    }
+	// Define execution payload with full graph and trace
+	type Item struct {
+		ID   string      `json:"id"`
+		Data interface{} `json:"data"`
+	}
+	type Step struct {
+		NodeID string `json:"nodeId"`
+		Input  []Item `json:"input"`
+		Output []Item `json:"output"`
+	}
+	type Payload struct {
+		RunID   string                 `json:"runId"`
+		Graph   interface{}            `json:"graph"`
+		Context map[string]interface{} `json:"context"`
+		Meta    map[string]interface{} `json:"meta"`
+		Trace   []Step                 `json:"trace"`
+	}
 	runID := uuid.NewString()
-    // Prepare initial payload
-    initialItem := Item{ID: uuid.NewString(), Data: defaultParams}
-    payload := Payload{
-        RunID:   runID,
-        Graph:   graphData,
-        Context: map[string]interface{}{},
-        Meta: map[string]interface{}{
-            "startTime": time.Now().UTC().Format(time.RFC3339),
-        },
-        Trace: []Step{},
-    }
-    currentItems := []Item{initialItem}
+	// Prepare initial payload
+	initialItem := Item{ID: uuid.NewString(), Data: defaultParams}
+	payload := Payload{
+		RunID:   runID,
+		Graph:   graphData,
+		Context: map[string]interface{}{},
+		Meta: map[string]interface{}{
+			"startTime": time.Now().UTC().Format(time.RFC3339),
+		},
+		Trace: []Step{},
+	}
+	currentItems := []Item{initialItem}
 	// Execute nodes in order
-    // Execute nodes in order, recording trace
-    for _, node := range graphStruct.Nodes {
-        // Broadcast node execution start
-        hub := GetHub(agentID)
-        if startMsg, err := json.Marshal(map[string]string{"type":"nodeExecution","nodeId":node.ID,"phase":"start"}); err == nil {
-            hub.broadcast(startMsg)
-        }
-        inputItems := currentItems
-        var nextItems []Item
-        for _, item := range inputItems {
-            output, err := executeNodeLocal(agentID, node, item.Data)
-            if err != nil {
-                nextItems = append(nextItems, Item{ID: item.ID, Data: map[string]interface{}{"error": err.Error()}})
-            } else if output != nil {
-                nextItems = append(nextItems, Item{ID: item.ID, Data: output})
-            }
-        }
-        // Broadcast node execution end
-        if endMsg, err := json.Marshal(map[string]string{"type":"nodeExecution","nodeId":node.ID,"phase":"end"}); err == nil {
-            hub.broadcast(endMsg)
-        }
-        // Append step to trace
-        payload.Trace = append(payload.Trace, Step{
-            NodeID: node.ID,
-            Input:  inputItems,
-            Output: nextItems,
-        })
-        // Prepare for next iteration
-        currentItems = nextItems
-        payload.Meta["lastNode"] = node.ID
-    }
-    // Persist run record
-    // Embed final items under meta
-    payload.Meta["finalItems"] = currentItems
-    raw, err := json.Marshal(payload)
-    if err != nil {
-        writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-        return
-    }
-    if _, err := db.DB.Exec(`INSERT INTO agent_runs (id, agent_id, payload) VALUES ($1, $2, $3::jsonb)`, payload.RunID, agentID, string(raw)); err != nil {
-        writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-        return
-    }
-    writeJSON(w, http.StatusOK, payload)
+	// Execute nodes in order, recording trace
+	for _, node := range graphStruct.Nodes {
+		// Broadcast node execution start
+		hub := GetHub(agentID)
+		if startMsg, err := json.Marshal(map[string]string{"type": "nodeExecution", "nodeId": node.ID, "phase": "start"}); err == nil {
+			hub.broadcast(startMsg)
+		}
+		inputItems := currentItems
+		var nextItems []Item
+		for _, item := range inputItems {
+			output, err := executeNodeLocal(agentID, node, item.Data)
+			if err != nil {
+				nextItems = append(nextItems, Item{ID: item.ID, Data: map[string]interface{}{"error": err.Error()}})
+			} else if output != nil {
+				nextItems = append(nextItems, Item{ID: item.ID, Data: output})
+			}
+		}
+		// Broadcast node execution end
+		if endMsg, err := json.Marshal(map[string]string{"type": "nodeExecution", "nodeId": node.ID, "phase": "end"}); err == nil {
+			hub.broadcast(endMsg)
+		}
+		// Append step to trace
+		payload.Trace = append(payload.Trace, Step{
+			NodeID: node.ID,
+			Input:  inputItems,
+			Output: nextItems,
+		})
+		// Prepare for next iteration
+		currentItems = nextItems
+		payload.Meta["lastNode"] = node.ID
+	}
+	// Persist run record
+	// Embed final items under meta
+	payload.Meta["finalItems"] = currentItems
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	if _, err := db.DB.Exec(`INSERT INTO agent_runs (id, agent_id, payload) VALUES ($1, $2, $3::jsonb)`, payload.RunID, agentID, string(raw)); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, payload)
 }
 
 // executeNodeLocal invokes the node logic via the node definitions.
 func executeNodeLocal(agentID string, node Node, input interface{}) (interface{}, error) {
-   if def := FindDefinition(node.Type); def != nil {
-       return def.Execute(agentID, node, input)
-   }
-   // Fallback: return input unchanged
-   return input, nil
+	if def := FindDefinition(node.Type); def != nil {
+		return def.Execute(agentID, node, input)
+	}
+	// Fallback: return input unchanged
+	return input, nil
 }
+
 // listRunsHandler returns a list of past runs for an agent.
 func listRunsHandler(w http.ResponseWriter, r *http.Request) {
-    agentID := chi.URLParam(r, "agentID")
-    rows, err := db.DB.Query(
-        `SELECT id, created_at FROM agent_runs WHERE agent_id = $1 ORDER BY created_at DESC`, agentID,
-    )
-    if err != nil {
-        writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-        return
-    }
-    defer rows.Close()
-    type runMeta struct {
-        ID        string `json:"id"`
-        CreatedAt string `json:"created_at"`
-    }
-    var runs []runMeta
-    for rows.Next() {
-        var rm runMeta
-        var t sql.NullTime
-        if err := rows.Scan(&rm.ID, &t); err != nil {
-            writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-            return
-        }
-        if t.Valid {
-            rm.CreatedAt = t.Time.UTC().Format(time.RFC3339)
-        }
-        runs = append(runs, rm)
-    }
-    writeJSON(w, http.StatusOK, runs)
+	agentID := chi.URLParam(r, "agentID")
+	rows, err := db.DB.Query(
+		`SELECT id, created_at FROM agent_runs WHERE agent_id = $1 ORDER BY created_at DESC`, agentID,
+	)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	defer rows.Close()
+	type runMeta struct {
+		ID        string `json:"id"`
+		CreatedAt string `json:"created_at"`
+	}
+	var runs []runMeta
+	for rows.Next() {
+		var rm runMeta
+		var t sql.NullTime
+		if err := rows.Scan(&rm.ID, &t); err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+		if t.Valid {
+			rm.CreatedAt = t.Time.UTC().Format(time.RFC3339)
+		}
+		runs = append(runs, rm)
+	}
+	writeJSON(w, http.StatusOK, runs)
 }
 
 // getRunHandler returns the payload of a specific run.
 func getRunHandler(w http.ResponseWriter, r *http.Request) {
-    agentID := chi.URLParam(r, "agentID")
-    runID := chi.URLParam(r, "runID")
-    var payloadRaw []byte
-    err := db.DB.QueryRow(
-        `SELECT payload FROM agent_runs WHERE agent_id = $1 AND id = $2`, agentID, runID,
-    ).Scan(&payloadRaw)
-    if err != nil {
-        if err == sql.ErrNoRows {
-            writeJSON(w, http.StatusNotFound, map[string]string{"error": "run not found"})
-        } else {
-            writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-        }
-        return
-    }
-   // Decode payload into a map to allow enriching with graph when absent
-   var payloadMap map[string]interface{}
-   if err := json.Unmarshal(payloadRaw, &payloadMap); err != nil {
-       writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-       return
-   }
-   // If graph structure is not embedded, attach it from the agent_versions table
-   if _, hasGraph := payloadMap["graph"]; !hasGraph {
-       if ver, ok := payloadMap["versionId"].(string); ok && ver != "" {
-           var graphRaw []byte
-           // fetch the stored graph JSON
-           if err := db.DB.QueryRow(`SELECT graph FROM agent_versions WHERE id = $1`, ver).Scan(&graphRaw); err == nil {
-               var graph interface{}
-               if err2 := json.Unmarshal(graphRaw, &graph); err2 == nil {
-                   payloadMap["graph"] = graph
-               }
-           }
-       }
-   }
-   writeJSON(w, http.StatusOK, payloadMap)
+	agentID := chi.URLParam(r, "agentID")
+	runID := chi.URLParam(r, "runID")
+	var payloadRaw []byte
+	err := db.DB.QueryRow(
+		`SELECT payload FROM agent_runs WHERE agent_id = $1 AND id = $2`, agentID, runID,
+	).Scan(&payloadRaw)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			writeJSON(w, http.StatusNotFound, map[string]string{"error": "run not found"})
+		} else {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+		return
+	}
+	// Decode payload into a map to allow enriching with graph when absent
+	var payloadMap map[string]interface{}
+	if err := json.Unmarshal(payloadRaw, &payloadMap); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	// If graph structure is not embedded, attach it from the agent_versions table
+	if _, hasGraph := payloadMap["graph"]; !hasGraph {
+		if ver, ok := payloadMap["versionId"].(string); ok && ver != "" {
+			var graphRaw []byte
+			// fetch the stored graph JSON
+			if err := db.DB.QueryRow(`SELECT graph FROM agent_versions WHERE id = $1`, ver).Scan(&graphRaw); err == nil {
+				var graph interface{}
+				if err2 := json.Unmarshal(graphRaw, &graph); err2 == nil {
+					payloadMap["graph"] = graph
+				}
+			}
+		}
+	}
+	writeJSON(w, http.StatusOK, payloadMap)
 }
