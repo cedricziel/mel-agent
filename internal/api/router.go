@@ -38,11 +38,11 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 // --- Agent handlers ---
 
 type Agent struct {
-    ID          string         `db:"id"          json:"id"`
-    UserID      string         `db:"user_id"      json:"user_id"`
-    Name        string         `db:"name"         json:"name"`
-    Description sql.NullString `db:"description"  json:"description,omitempty"`
-    IsActive    bool           `db:"is_active"    json:"is_active"`
+    ID          string  `db:"id" json:"id"`
+    UserID      string  `db:"user_id" json:"user_id"`
+    Name        string  `db:"name" json:"name"`
+    Description *string `json:"description,omitempty"`
+    IsActive    bool    `db:"is_active" json:"is_active"`
 }
 
 func listAgents(w http.ResponseWriter, r *http.Request) {
@@ -57,9 +57,13 @@ func listAgents(w http.ResponseWriter, r *http.Request) {
     agents := []Agent{}
     for rows.Next() {
         var a Agent
-        if err := rows.Scan(&a.ID, &a.UserID, &a.Name, &a.Description, &a.IsActive); err != nil {
+        var desc sql.NullString
+        if err := rows.Scan(&a.ID, &a.UserID, &a.Name, &desc, &a.IsActive); err != nil {
             writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
             return
+        }
+        if desc.Valid {
+            a.Description = &desc.String
         }
         agents = append(agents, a)
     }
