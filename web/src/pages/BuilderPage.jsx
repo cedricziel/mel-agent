@@ -27,6 +27,9 @@ function BuilderPage({ agentId }) {
 
   // Node definitions from server
   const [nodeDefs, setNodeDefs] = useState([]);
+  // Test run state
+  const [testing, setTesting] = useState(false);
+  const [testRunResult, setTestRunResult] = useState(null);
   const categories = useMemo(() => {
     const map = {};
     nodeDefs.forEach((def) => {
@@ -40,6 +43,19 @@ function BuilderPage({ agentId }) {
       .then((res) => setNodeDefs(res.data))
       .catch((err) => console.error('fetch node-types failed:', err));
   }, []);
+  // Execute full-agent test run
+  const onTestRun = useCallback(async () => {
+    setTesting(true);
+    try {
+      const res = await axios.post(`/api/agents/${agentId}/runs/test`);
+      setTestRunResult(res.data);
+    } catch (err) {
+      console.error('test run failed', err);
+      alert('Test run failed');
+    } finally {
+      setTesting(false);
+    }
+  }, [agentId]);
   // Load latest saved graph for this agent
   useEffect(() => {
     axios.get(`/api/agents/${agentId}/versions/latest`)
@@ -199,16 +215,23 @@ function BuilderPage({ agentId }) {
     <div className="flex" style={{ height: "80vh" }}>
       {/* Main builder area */}
       <div className="flex-1 flex flex-col">
-        <div className="mb-2 flex gap-2">
-          <button
-            onClick={() => setModalOpen(true)}
-            className="px-3 py-1 rounded border"
-          >
-            + Add Node
-          </button>
-          <button onClick={save} className="px-3 py-1 bg-indigo-600 text-white rounded">
-            Save
-          </button>
+      <div className="mb-2 flex gap-2">
+        <button
+          onClick={() => setModalOpen(true)}
+          className="px-3 py-1 rounded border"
+        >
+          + Add Node
+        </button>
+        <button onClick={save} className="px-3 py-1 bg-indigo-600 text-white rounded">
+          Save
+        </button>
+        <button
+          onClick={onTestRun}
+          disabled={testing}
+          className="px-3 py-1 bg-green-600 text-white rounded disabled:opacity-50"
+        >
+          {testing ? 'Running...' : 'Test Run'}
+        </button>
         </div>
         <div className="flex-1">
           <ReactFlow
@@ -243,6 +266,25 @@ function BuilderPage({ agentId }) {
           }}
           onExecute={onExecute}
         />
+      )}
+      {/* Test Run result modal */}
+      {testRunResult && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded shadow-lg w-3/4 max-h-full overflow-auto p-4">
+            <h2 className="text-lg font-bold mb-2">Test Run Result</h2>
+            <pre className="text-xs font-mono bg-gray-100 p-2 rounded h-96 overflow-auto">
+              {JSON.stringify(testRunResult, null, 2)}
+            </pre>
+            <div className="mt-2 text-right">
+              <button
+                onClick={() => setTestRunResult(null)}
+                className="px-3 py-1 bg-indigo-600 text-white rounded"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       {/* Node type selection dialog */}
       {modalOpen && (

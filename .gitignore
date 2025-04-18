@@ -11,3 +11,4 @@ web/dist/
 .env
 .gocache
 .gomodcache
+.cache

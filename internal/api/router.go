@@ -4,8 +4,10 @@ import (
     "database/sql"
     "encoding/json"
     "net/http"
+    "time"
 
     "github.com/go-chi/chi/v5"
+    "github.com/google/uuid"
     "github.com/your-org/agentsaas/internal/db"
 )
 
@@ -28,6 +30,8 @@ func Handler() http.Handler {
     r.Get("/node-types", listNodeTypes)
     // WebSocket for collaborative updates
     r.Get("/ws/agents/{agentID}", wsHandler)
+    // Test-run an agent workflow
+    r.Post("/agents/{agentID}/runs/test", testRunHandler)
     // Fetch latest version (graph) for an agent
     r.Get("/agents/{agentID}/versions/latest", getLatestAgentVersionHandler)
     // Execute a single node with provided input data (stub implementation)
@@ -282,4 +286,94 @@ func getLatestAgentVersionHandler(w http.ResponseWriter, r *http.Request) {
         "graph": graph,
         "default_params": defaultParams,
     })
+}
+// testRunHandler executes the entire agent workflow sequentially.
+func testRunHandler(w http.ResponseWriter, r *http.Request) {
+    agentID := chi.URLParam(r, "agentID")
+    // Fetch latest version ID
+    var versionID sql.NullString
+    if err := db.DB.QueryRow(`SELECT latest_version_id FROM agents WHERE id = $1`, agentID).Scan(&versionID); err != nil {
+        writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+        return
+    }
+    if !versionID.Valid {
+        writeJSON(w, http.StatusBadRequest, map[string]string{"error": "no version available for agent"})
+        return
+    }
+    // Load graph and default params
+    var graphRaw, defaultRaw []byte
+    if err := db.DB.QueryRow(
+        `SELECT graph, default_params FROM agent_versions WHERE id = $1`, versionID.String,
+    ).Scan(&graphRaw, &defaultRaw); err != nil {
+        writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+        return
+    }
+    // Unmarshal graph
+    type Node struct {
+        ID   string                 `json:"id"`
+        Type string                 `json:"type"`
+        Data map[string]interface{} `json:"data"`
+    }
+    type Graph struct {
+        Nodes []Node `json:"nodes"`
+        // Edges can be ignored for linear execution
+    }
+    var graph Graph
+    if err := json.Unmarshal(graphRaw, &graph); err != nil {
+        writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+        return
+    }
+    // Unmarshal default params into initial data
+    var defaultParams map[string]interface{}
+    if len(defaultRaw) > 0 {
+        if err := json.Unmarshal(defaultRaw, &defaultParams); err != nil {
+            writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+            return
+        }
+    } else {
+        defaultParams = map[string]interface{}{}
+    }
+    // Initialize execution payload
+    type Item struct {
+        ID   string      `json:"id"`
+        Data interface{} `json:"data"`
+    }
+    type Payload struct {
+        RunID   string                 `json:"runId"`
+        Items   []Item                 `json:"items"`
+        Context map[string]interface{} `json:"context"`
+        Meta    map[string]interface{} `json:"meta"`
+    }
+    runID := uuid.NewString()
+    payload := Payload{
+        RunID:   runID,
+        Items:   []Item{{ID: uuid.NewString(), Data: defaultParams}},
+        Context: map[string]interface{}{},
+        Meta: map[string]interface{}{
+            "startTime": time.Now().UTC().Format(time.RFC3339),
+        },
+    }
+    // Execute nodes in order
+    for _, node := range graph.Nodes {
+        // Process each item through the node
+        nextItems := make([]Item, 0, len(payload.Items))
+        for _, item := range payload.Items {
+            output, err := executeNodeLocal(agentID, node.ID, item.Data)
+            if err != nil {
+                // propagate error in data field
+                nextItems = append(nextItems, Item{ID: item.ID, Data: map[string]interface{}{"error": err.Error()}})
+            } else {
+                nextItems = append(nextItems, Item{ID: item.ID, Data: output})
+            }
+        }
+        payload.Items = nextItems
+        payload.Meta["lastNode"] = node.ID
+    }
+    writeJSON(w, http.StatusOK, payload)
+}
+
+// executeNodeLocal invokes the node logic; stub implementation echoes input.
+func executeNodeLocal(agentID, nodeID string, input interface{}) (interface{}, error) {
+    // TODO: dispatch to real executors or Wasm sandbox
+    return input, nil
 }
