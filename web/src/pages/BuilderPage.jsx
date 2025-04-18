@@ -265,6 +265,39 @@ function BuilderPage({ agentId }) {
       }
       // TODO: Add other node type validations here
     });
+    // Validate async-mode webhook flows have a terminating HTTP Response node
+    // Build node lookup
+    const nodeMap = Object.fromEntries(nodes.map((n) => [n.id, n]));
+    nodes.forEach((n) => {
+      if (n.type === 'webhook' && n.data.mode === 'async') {
+        const visited = new Set();
+        const queue = [n.id];
+        let found = false;
+        while (queue.length && !found) {
+          const curr = queue.shift();
+          visited.add(curr);
+          edges.forEach((e) => {
+            if (e.source === curr) {
+              const tgt = e.target;
+              if (visited.has(tgt)) return;
+              const child = nodeMap[tgt];
+              if (child) {
+                if (child.type === 'http_response') {
+                  found = true;
+                  return;
+                }
+                queue.push(tgt);
+              }
+            }
+          });
+        }
+        if (!found) {
+          (errorsMap[n.id] = errorsMap[n.id] || []).push(
+            `Async Webhook node \"${n.data.label || n.id}\" must be followed by a Webhook Response node`
+          );
+        }
+      }
+    });
     if (Object.keys(errorsMap).length > 0) {
       setValidationErrors(errorsMap);
       return;
