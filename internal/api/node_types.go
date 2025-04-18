@@ -5,18 +5,32 @@ import (
 )
 
 // NodeType defines metadata for a builder node.
+// NodeType defines metadata for a builder node.
 type NodeType struct {
-  Type     string            `json:"type"`
-  Label    string            `json:"label"`
-  Category string            `json:"category"`
-  Defaults map[string]string `json:"defaults,omitempty"`
+  // Unique identifier for the node type
+  Type       string            `json:"type"`
+  // Display label in the builder palette
+  Label      string            `json:"label"`
+  // Category groups node types in the palette
+  Category   string            `json:"category"`
+  // Default param values for new nodes
+  Defaults   map[string]string `json:"defaults,omitempty"`
+  // EntryPoint marks nodes that have no inputs (trigger nodes)
+  EntryPoint bool              `json:"entry_point,omitempty"`
+  // Branching marks nodes that have multiple outputs (e.g. If node)
+  Branching bool              `json:"branching,omitempty"`
 }
 
 // all node types; extendable via plugins
 var nodeTypes = []NodeType{
-  {Type: "timer", Label: "Timer", Category: "Triggers"},
-  {Type: "http", Label: "HTTP Request", Category: "Triggers"},
-  {Type: "if", Label: "If", Category: "Basic", Defaults: map[string]string{"condition": ""}},
+  // Trigger nodes
+  // Trigger nodes (entry points)
+  {Type: "timer", Label: "Timer", Category: "Triggers", EntryPoint: true},
+  {Type: "schedule", Label: "Schedule", Category: "Triggers", Defaults: map[string]string{"cron": ""}, EntryPoint: true},
+  {Type: "webhook", Label: "Webhook", Category: "Triggers", Defaults: map[string]string{"secret": ""}, EntryPoint: true},
+  {Type: "slack", Label: "Slack Slash Command", Category: "Triggers", Defaults: map[string]string{"command": ""}, EntryPoint: true},
+  {Type: "http", Label: "HTTP Request", Category: "Triggers", EntryPoint: true},
+  {Type: "if", Label: "If", Category: "Basic", Defaults: map[string]string{"condition": ""}, Branching: true},
   {Type: "switch", Label: "Switch", Category: "Basic"},
   {Type: "agent", Label: "Agent", Category: "LLM"},
 }
