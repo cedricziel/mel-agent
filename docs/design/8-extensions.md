@@ -95,7 +95,8 @@ type ModelSpec struct {
 // (e.g. GET /models, GET /models/{id}, POST /models/{id}/generate).
 ```
 
-Provide a CLI scaffold (`mcp plugin init`) to create new modules, generate boilerplate code, tests, and a manifest.
+Use `mel-server` as the host binary that loads plugins, and `mel` as the CLI binary for plugin management.
+Provide a CLI scaffold (`mel plugin init`) via the `mel` binary to create new modules, generate boilerplate code, tests, and a manifest.
 
 ## 6. Registry & Discovery
 
