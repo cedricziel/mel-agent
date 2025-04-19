@@ -2,8 +2,8 @@ package api
 
 import (
   "net/http"
-
   "github.com/go-chi/chi/v5"
+  "github.com/cedricziel/mel-agent/internal/db"
 )
 
 // getNodeTypeSchemaHandler returns a JSON Schema for the given node type.
@@ -24,7 +24,7 @@ func getNodeTypeSchemaHandler(w http.ResponseWriter, r *http.Request) {
   props := map[string]interface{}{}
   required := []string{}
   for _, p := range meta.Parameters {
-    prop := map[string]interface{}{ }
+    prop := map[string]interface{}{}
     // map basic types
     switch p.Type {
     case "string": prop["type"] = "string"
@@ -34,14 +34,38 @@ func getNodeTypeSchemaHandler(w http.ResponseWriter, r *http.Request) {
     case "enum": prop["type"] = "string"
     default: prop["type"] = p.Type
     }
+    // dynamic enum for LLM connectionId
+    if meta.Type == "llm" && p.Name == "connectionId" {
+      // list all valid LLM connections
+      rows, err := db.DB.Query(
+        `SELECT c.id, c.name FROM connections c JOIN integrations i ON c.integration_id = i.id WHERE i.category = $1 AND c.status = 'valid'`,
+        "llm_provider",
+      )
+      if err == nil {
+        var ids []string
+        var names []string
+        for rows.Next() {
+          var id, name string
+          if err := rows.Scan(&id, &name); err == nil {
+            ids = append(ids, id)
+            names = append(names, name)
+          }
+        }
+        rows.Close()
+        prop["enum"] = ids
+        prop["x-enumNames"] = names
+      }
+    } else {
+      if len(p.Options) > 0 {
+        prop["enum"] = p.Options
+      }
+    }
+    // common fields
     if p.Description != "" {
       prop["description"] = p.Description
     }
     if p.Default != nil {
       prop["default"] = p.Default
-    }
-    if len(p.Options) > 0 {
-      prop["enum"] = p.Options
     }
     if p.VisibilityCondition != "" {
       prop["x-visibilityCondition"] = p.VisibilityCondition

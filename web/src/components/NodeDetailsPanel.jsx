@@ -1,10 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CronEditor from './CronEditor';
 
 // Panel to configure node details and preview data flow
 export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, publicUrl, readOnly }) {
   if (!node || !nodeDef) return null;
   const { data } = node;
+  // dynamic state: fetch LLM model connections for dropdown
+  const [connections, setConnections] = useState([]);
+  useEffect(() => {
+    if (nodeDef && nodeDef.type === 'llm') {
+      fetch('/api/connections')
+        .then((res) => res.json())
+        .then((conns) => setConnections(conns))
+        .catch(() => setConnections([]));
+    }
+  }, [nodeDef]);
   // In live/read-only mode, show config but disable edits
   if (readOnly) {
     const fallbackKeys = Object.keys(data).filter(
@@ -127,6 +137,33 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
                 const baseClass = error ? 'border-red-500' : 'border-gray-300';
                 switch (p.type) {
                   case 'string':
+                    // Model Connection dropdown for LLM node
+                    if (nodeDef.type === 'llm' && p.name === 'connectionId') {
+                      return (
+                        <div key={p.name} className="mb-3">
+                          <label className="block text-sm mb-1">
+                            {p.label}{p.required && <span className="text-red-500">*</span>}
+                          </label>
+                          <select
+                            value={val}
+                            onChange={(e) => onChange(p.name, e.target.value)}
+                            className={`w-full border rounded px-2 py-1 ${baseClass}`}
+                          >
+                            <option value="">Select Connection</option>
+                            {connections.map((c) => (
+                              <option key={c.id} value={c.id}>
+                                {c.name}
+                              </option>
+                            ))}
+                          </select>
+                          {error && (
+                            <div className="text-xs text-red-600 mt-1">
+                              {p.label} is required
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
                     // Cron editor for schedule nodes
                     if (p.name === 'cron') {
                       return (
