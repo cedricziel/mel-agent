@@ -28,7 +28,9 @@ function BuilderPage({ agentId }) {
   // modal state for selecting new node type
   const [modalOpen, setModalOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [chatOpen, setChatOpen] = useState(false);
+  // Sidebar tab: 'details' | 'chat' | null
+  const [sidebarTab, setSidebarTab] = useState(null);
+  // const [chatOpen, setChatOpen] = useState(false);  // replaced by sidebarTab
 
   // Node definitions from server
   const [nodeDefs, setNodeDefs] = useState([]);
@@ -365,7 +367,8 @@ function BuilderPage({ agentId }) {
   }, [triggers, agentId]);
   const onNodeClick = useCallback((event, node) => {
     setSelectedNodeId(node.id);
-  }, []);
+    setSidebarTab('details');
+  }, [setSidebarTab]);
   const onPaneClick = useCallback(() => {
     setSelectedNodeId(null);
   }, []);
@@ -435,7 +438,7 @@ function BuilderPage({ agentId }) {
               Save
             </button>
             <button
-              onClick={() => setChatOpen(true)}
+              onClick={() => setSidebarTab('chat')}
               className="px-3 py-1 bg-purple-600 text-white rounded"
             >
               AI Assistant
@@ -491,30 +494,60 @@ function BuilderPage({ agentId }) {
           </ReactFlow>
         </div>
       </div>
-      {/* Sidebar: show either chat or node details */}
-      {!chatOpen && selectedNode && selectedNodeDef && (
-        <NodeDetailsPanel
-          node={selectedNode}
-          nodeDef={selectedNodeDef}
-          readOnly={isLiveMode}
-          onChange={(key, value) => {
-            setNodes((nds) =>
-              nds.map((n) =>
-                n.id === selectedNode.id ? { ...n, data: { ...n.data, [key]: value } } : n
-              )
-            );
-          }}
-          onExecute={onExecute}
-          publicUrl={
-            selectedNodeDef.entry_point
-              ? (
-                  triggersMap[selectedNode.id]
-                    ? `${window.location.origin}/webhooks/${selectedNode.type}/${triggersMap[selectedNode.id].id}`
-                    : null
-                )
-              : undefined
-          }
-        />
+      {/* Sidebar with tabs */}
+      {sidebarTab && (
+        <div className="w-80 bg-gray-50 border-l h-full flex flex-col">
+          {/* Tabs header */}
+          <div className="flex items-center justify-between p-2 border-b">
+            <div className="flex space-x-2">
+              <button
+                className={`px-3 py-1 ${sidebarTab === 'details' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-gray-600'}`}
+                onClick={() => setSidebarTab('details')}
+              >
+                Details
+              </button>
+              <button
+                className={`px-3 py-1 ${sidebarTab === 'chat' ? 'border-b-2 border-indigo-600 text-indigo-600' : 'text-gray-600'}`}
+                onClick={() => setSidebarTab('chat')}
+              >
+                Chat
+              </button>
+            </div>
+            <button onClick={() => setSidebarTab(null)} className="text-gray-500 hover:text-gray-800">&times;</button>
+          </div>
+          {/* Content area */}
+          <div className="flex-1 overflow-auto">
+            {sidebarTab === 'details' && selectedNode && selectedNodeDef && (
+              <NodeDetailsPanel
+                node={selectedNode}
+                nodeDef={selectedNodeDef}
+                readOnly={isLiveMode}
+                onChange={(key, value) => {
+                  setNodes((nds) =>
+                    nds.map((n) =>
+                      n.id === selectedNode.id ? { ...n, data: { ...n.data, [key]: value } } : n
+                    )
+                  );
+                }}
+                onExecute={onExecute}
+                publicUrl={selectedNodeDef.entry_point && triggersMap[selectedNode.id]
+                  ? `${window.location.origin}/webhooks/${selectedNode.type}/${triggersMap[selectedNode.id].id}`
+                  : undefined
+                }
+              />
+            )}
+            {sidebarTab === 'chat' && (
+              <ChatAssistant
+                inline
+                agentId={agentId}
+                onAddNode={handleAddNode}
+                onConnectNodes={handleConnectNodes}
+                onGetWorkflow={handleGetWorkflow}
+                onClose={() => setSidebarTab(null)}
+              />
+            )}
+          </div>
+        </div>
       )}
       {/* Test Run result modal (Edit mode only) */}
       {!isLiveMode && testRunResult && (
@@ -614,17 +647,6 @@ function BuilderPage({ agentId }) {
           </div>
         </div>
       )}
-      {/* Inline Chat Assistant (always mounted to preserve history) */}
-      <div style={{ display: chatOpen ? 'flex' : 'none' }}>
-        <ChatAssistant
-          inline
-          agentId={agentId}
-          onAddNode={handleAddNode}
-          onConnectNodes={handleConnectNodes}
-          onGetWorkflow={handleGetWorkflow}
-          onClose={() => setChatOpen(false)}
-        />
-      </div>
     </div>
   );
 }

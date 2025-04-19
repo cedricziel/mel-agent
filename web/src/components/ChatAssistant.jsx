@@ -108,8 +108,9 @@ export default function ChatAssistant({ agentId, onAddNode, onConnectNodes, onGe
   };
 
   if (inline) {
+    // Inline mode: rendered inside a parent sidebar wrapper
     return (
-      <div className="w-80 flex flex-col h-full bg-gray-50 border-l p-4 overflow-auto">
+      <div className="flex flex-col h-full p-4 overflow-auto">
         <div className="flex justify-between items-center p-2 border-b">
           <h2 className="text-lg font-bold">AI Assistant</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-800">&times;</button>
