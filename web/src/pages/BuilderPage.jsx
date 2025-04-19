@@ -517,26 +517,29 @@ function BuilderPage({ agentId }) {
           </div>
           {/* Content area */}
           <div className="flex-1 overflow-auto">
-            {sidebarTab === 'details' && selectedNode && selectedNodeDef && (
-              <NodeDetailsPanel
-                node={selectedNode}
-                nodeDef={selectedNodeDef}
-                readOnly={isLiveMode}
-                onChange={(key, value) => {
-                  setNodes((nds) =>
-                    nds.map((n) =>
-                      n.id === selectedNode.id ? { ...n, data: { ...n.data, [key]: value } } : n
-                    )
-                  );
-                }}
-                onExecute={onExecute}
-                publicUrl={selectedNodeDef.entry_point && triggersMap[selectedNode.id]
-                  ? `${window.location.origin}/webhooks/${selectedNode.type}/${triggersMap[selectedNode.id].id}`
-                  : undefined
-                }
-              />
-            )}
-            {sidebarTab === 'chat' && (
+            <div style={{ display: sidebarTab === 'details' ? 'block' : 'none' }}>
+              {selectedNode && selectedNodeDef && (
+                <NodeDetailsPanel
+                  node={selectedNode}
+                  nodeDef={selectedNodeDef}
+                  readOnly={isLiveMode}
+                  onChange={(key, value) => {
+                    setNodes((nds) =>
+                      nds.map((n) =>
+                        n.id === selectedNode.id ? { ...n, data: { ...n.data, [key]: value } } : n
+                      )
+                    );
+                  }}
+                  onExecute={onExecute}
+                  publicUrl={
+                    selectedNodeDef.entry_point && triggersMap[selectedNode.id]
+                      ? `${window.location.origin}/webhooks/${selectedNode.type}/${triggersMap[selectedNode.id].id}`
+                      : undefined
+                  }
+                />
+              )}
+            </div>
+            <div style={{ display: sidebarTab === 'chat' ? 'block' : 'none' }}>
               <ChatAssistant
                 inline
                 agentId={agentId}
@@ -545,7 +548,7 @@ function BuilderPage({ agentId }) {
                 onGetWorkflow={handleGetWorkflow}
                 onClose={() => setSidebarTab(null)}
               />
-            )}
+            </div>
           </div>
         </div>
       )}
