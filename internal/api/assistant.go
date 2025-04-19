@@ -56,9 +56,9 @@ func assistantChatHandler(w http.ResponseWriter, r *http.Request) {
 				"required": []string{"type"},
 			},
 		},
-		{
-			Name:        "add_node",
-			Description: "Add a node to the workflow",
+       {
+           Name:        "add_node",
+           Description: "Add a node to the workflow",
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
@@ -77,7 +77,7 @@ func assistantChatHandler(w http.ResponseWriter, r *http.Request) {
 				},
 				"required": []string{"type"},
 			},
-		},
+       },
 		{
 			Name:        "connect_nodes",
 			Description: "Connect two nodes in the workflow",
@@ -89,8 +89,17 @@ func assistantChatHandler(w http.ResponseWriter, r *http.Request) {
 				},
 				"required": []string{"source_id", "target_id"},
 			},
-		},
-	}
+       },
+       {
+           Name:        "get_node_definition",
+           Description: "Retrieve metadata for a specific node type, including default parameter values",
+           Parameters: map[string]interface{}{
+               "type":       "object",
+               "properties": map[string]interface{}{ "type": map[string]interface{}{ "type": "string", "description": "Node type name" } },
+               "required":   []string{"type"},
+           },
+       },
+   }
 	// Call OpenAI ChatCompletion
 	resp, err := client.CreateChatCompletion(r.Context(), openai.ChatCompletionRequest{
 		Model:        openai.GPT4oMini,

@@ -53,6 +53,10 @@ export default function ChatAssistant({ agentId, onAddNode, onConnectNodes, onGe
             const { type } = fnArgs;
             const r = await axios.get(`/api/node-types/schema/${type}`);
             result = r.data;
+          } else if (fnName === 'get_node_definition') {
+            const { type } = fnArgs;
+            const r = await axios.get(`/api/node-types`);
+            result = (r.data || []).find((nt) => nt.type === type) || {};
           } else if (fnName === 'get_workflow') result = onGetWorkflow();
           const resultContent = JSON.stringify(result || {});
           // Append the function result
