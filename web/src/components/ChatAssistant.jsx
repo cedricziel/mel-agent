@@ -108,14 +108,10 @@ export default function ChatAssistant({ agentId, onAddNode, onConnectNodes, onGe
   };
 
   if (inline) {
-    // Inline mode: rendered inside a parent sidebar wrapper
+    // Inline mode: rendered inside parent sidebar without its own header
     return (
-      <div className="flex flex-col h-full p-4 overflow-auto">
-        <div className="flex justify-between items-center p-2 border-b">
-          <h2 className="text-lg font-bold">AI Assistant</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-800">&times;</button>
-        </div>
-        <div ref={scrollRef} className="p-2 flex-1 overflow-auto space-y-2 text-sm">
+      <div className="flex flex-col h-full p-2 overflow-auto">
+        <div ref={scrollRef} className="flex-1 overflow-auto space-y-2 text-sm">
           {messages.map((msg, idx) => {
             let display;
             if (msg.role === 'function') {
