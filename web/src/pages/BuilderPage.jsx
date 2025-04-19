@@ -532,7 +532,8 @@ function BuilderPage({ agentId }) {
                   }}
                   onExecute={onExecute}
                   publicUrl={
-                    selectedNodeDef.entry_point && triggersMap[selectedNode.id]
+                    // only webhook nodes have public URLs
+                    selectedNodeDef.type === 'webhook' && triggersMap[selectedNode.id]
                       ? `${window.location.origin}/webhooks/${selectedNode.type}/${triggersMap[selectedNode.id].id}`
                       : undefined
                   }

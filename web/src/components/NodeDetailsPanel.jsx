@@ -13,7 +13,8 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
     return (
       <div className="w-80 bg-gray-50 border-l p-4 overflow-auto">
         <h2 className="text-lg font-bold mb-4">{nodeDef.label} Details</h2>
-        {nodeDef.entry_point && publicUrl && (
+        {// only show public URL for webhook nodes
+        nodeDef.type === 'webhook' && publicUrl && (
           <div className="mb-4">
             <h3 className="font-semibold mb-1">Public URL</h3>
             <input
@@ -55,7 +56,8 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
   return (
     <div className="w-80 bg-gray-50 border-l p-4 overflow-auto">
       <h2 className="text-lg font-bold mb-4">{nodeDef.label} Details</h2>
-      {nodeDef.entry_point && (
+      {// only show public URL for webhook nodes
+      nodeDef.type === 'webhook' && (
         <div className="mb-4">
           <h3 className="font-semibold mb-1">Public URL</h3>
           {publicUrl ? (
