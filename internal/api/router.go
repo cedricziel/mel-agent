@@ -57,6 +57,8 @@ func Handler() http.Handler {
 	r.Get("/agents/{agentID}/versions/latest", getLatestAgentVersionHandler)
 	// Execute a single node with provided input data (stub implementation)
 	r.Post("/agents/{agentID}/nodes/{nodeID}/execute", executeNodeHandler)
+   // Chat assistant endpoint for builder
+   r.Post("/agents/{agentID}/assistant/chat", assistantChatHandler)
 
 	return r
 }

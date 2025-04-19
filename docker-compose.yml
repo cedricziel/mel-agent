@@ -27,6 +27,7 @@ services:
       - GOMODCACHE=/app/.gomodcache
       - GOCACHE=/app/.gocache
       - GOPROXY=https://proxy.golang.org,direct
+      - OPENAI_API_KEY
     command: ["go", "run", "./cmd/server"]
 
 volumes:

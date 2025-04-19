@@ -8,4 +8,5 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/lib/pq v1.10.9
 	github.com/robfig/cron/v3 v3.0.0
+	github.com/sashabaranov/go-openai v1.38.2
 )

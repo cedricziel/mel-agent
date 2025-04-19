@@ -15,6 +15,7 @@ import TriggerNode from "../components/TriggerNode";
 import HttpRequestNode from "../components/HttpRequestNode";
 import NodeDetailsPanel from "../components/NodeDetailsPanel";
 import "reactflow/dist/style.css";
+import ChatAssistant from "../components/ChatAssistant";
 
 // TODO: node type definitions are fetched from the backend via /api/node-types
 
@@ -27,6 +28,7 @@ function BuilderPage({ agentId }) {
   // modal state for selecting new node type
   const [modalOpen, setModalOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [chatOpen, setChatOpen] = useState(false);
 
   // Node definitions from server
   const [nodeDefs, setNodeDefs] = useState([]);
@@ -205,6 +207,20 @@ function BuilderPage({ agentId }) {
     },
     [clientId, isLiveMode]
   );
+  // Tool callback: add a node from assistant
+  const handleAddNode = useCallback(({ type, label, parameters, position }) => {
+    const id = Date.now().toString();
+    const data = { label: label || type, nodeTypeLabel: label || type, ...(parameters || {}) };
+    const pos = position || { x: 100, y: 100 };
+    const newNode = { id, type, data, position: pos };
+    setNodes((nds) => [...nds, newNode]);
+    return { node_id: id };
+  }, []);
+  // Tool callback: connect two nodes from assistant
+  const handleConnectNodes = useCallback(({ source_id, target_id }) => {
+    setEdges((eds) => addEdge({ source: source_id, target: target_id }, eds));
+    return {};
+  }, []);
 
   // double-click a node to rename it
   const onNodeDoubleClick = useCallback((event, node) => {
@@ -414,6 +430,12 @@ function BuilderPage({ agentId }) {
             >
               Save
             </button>
+            <button
+              onClick={() => setChatOpen(true)}
+              className="px-3 py-1 bg-purple-600 text-white rounded"
+            >
+              AI Assistant
+            </button>
           </>
         )}
         <button
@@ -587,6 +609,15 @@ function BuilderPage({ agentId }) {
             </div>
           </div>
         </div>
+      )}
+      {/* Chat assistant modal */}
+      {chatOpen && (
+        <ChatAssistant
+          agentId={agentId}
+          onAddNode={handleAddNode}
+          onConnectNodes={handleConnectNodes}
+          onClose={() => setChatOpen(false)}
+        />
       )}
     </div>
   );
