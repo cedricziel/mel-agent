@@ -23,50 +23,47 @@ export default function ChatAssistant({ agentId, onAddNode, onConnectNodes, onGe
   const sendMessage = async () => {
     const text = input.trim();
     if (!text) return;
-    const userMsg = { role: 'user', content: text };
-    const newMessages = [...messages, userMsg];
-    setMessages(newMessages);
-    setInput('');
+    // Prepare a mutable copy of the conversation
     setIsLoading(true);
+    let convo = [...messages, { role: 'user', content: text }];
+    setMessages(convo);
+    setInput('');
     try {
-      // Initial chat completion, may request a function call
-      const res1 = await axios.post(`/api/agents/${agentId}/assistant/chat`, { messages: newMessages });
-      const choice1 = res1.data.choices[0].message;
-      if (choice1.function_call) {
-        // Record the function call
-        setMessages(ms => [...ms, { role: 'assistant', content: '', function_call: choice1.function_call }]);
-        // Execute the tool locally or fetch definitions
-        const fnName = choice1.function_call.name;
-        const fnArgs = JSON.parse(choice1.function_call.arguments || '{}');
-        let result;
-        if (fnName === 'add_node') {
-          result = onAddNode(fnArgs);
-        } else if (fnName === 'connect_nodes') {
-          result = onConnectNodes(fnArgs);
-        } else if (fnName === 'list_node_types') {
-          // Fetch available node types from backend
-          const res = await axios.get(`/api/node-types`);
-          result = res.data;
-        } else if (fnName === 'get_node_type_schema') {
-          // Fetch JSON Schema for a specific node type
-          const { type } = fnArgs;
-          const res = await axios.get(`/api/node-types/schema/${type}`);
-          result = res.data;
-        } else if (fnName === 'get_workflow') {
-          // Return the current graph from the UI
-          result = onGetWorkflow();
+      // Loop until the model returns a non-function message
+      while (true) {
+        const res = await axios.post(
+          `/api/agents/${agentId}/assistant/chat`,
+          { messages: convo }
+        );
+        const msg = res.data.choices[0].message;
+        if (msg.function_call) {
+          // Append the function_call message
+          setMessages(ms => [...ms, { role: 'assistant', content: '', function_call: msg.function_call }]);
+          convo = [...convo, msg];
+          // Execute the tool
+          const fnName = msg.function_call.name;
+          const fnArgs = JSON.parse(msg.function_call.arguments || '{}');
+          let result;
+          if (fnName === 'add_node') result = onAddNode(fnArgs);
+          else if (fnName === 'connect_nodes') result = onConnectNodes(fnArgs);
+          else if (fnName === 'list_node_types') {
+            const r = await axios.get(`/api/node-types`);
+            result = r.data;
+          } else if (fnName === 'get_node_type_schema') {
+            const { type } = fnArgs;
+            const r = await axios.get(`/api/node-types/schema/${type}`);
+            result = r.data;
+          } else if (fnName === 'get_workflow') result = onGetWorkflow();
+          const resultContent = JSON.stringify(result || {});
+          // Append the function result
+          setMessages(ms => [...ms, { role: 'function', name: fnName, content: resultContent }]);
+          convo = [...convo, { role: 'function', name: fnName, content: resultContent }];
+          // Continue loop for next call
+        } else {
+          // Final assistant response
+          setMessages(ms => [...ms, { role: 'assistant', content: msg.content }]);
+          break;
         }
-        const fnResultContent = JSON.stringify(result || {});
-        setMessages(ms => [...ms, { role: 'function', name: fnName, content: fnResultContent }]);
-        // Second chat completion to get assistant response
-        const followup = await axios.post(`/api/agents/${agentId}/assistant/chat`, {
-          messages: [...newMessages, choice1, { role: 'function', name: fnName, content: fnResultContent }]
-        });
-        const choice2 = followup.data.choices[0].message;
-        setMessages(ms => [...ms, { role: 'assistant', content: choice2.content }]);
-      } else {
-        // Direct content response
-        setMessages(ms => [...ms, { role: 'assistant', content: choice1.content }]);
       }
     } catch (err) {
       console.error(err);
