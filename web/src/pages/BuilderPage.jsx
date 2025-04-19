@@ -491,8 +491,8 @@ function BuilderPage({ agentId }) {
           </ReactFlow>
         </div>
       </div>
-      {/* Details panel for selected node */}
-      {selectedNode && selectedNodeDef && (
+      {/* Sidebar: show either chat or node details */}
+      {!chatOpen && selectedNode && selectedNodeDef && (
         <NodeDetailsPanel
           node={selectedNode}
           nodeDef={selectedNodeDef}
@@ -614,16 +614,17 @@ function BuilderPage({ agentId }) {
           </div>
         </div>
       )}
-      {/* Chat assistant modal */}
-      {chatOpen && (
+      {/* Inline Chat Assistant (always mounted to preserve history) */}
+      <div style={{ display: chatOpen ? 'flex' : 'none' }}>
         <ChatAssistant
+          inline
           agentId={agentId}
           onAddNode={handleAddNode}
           onConnectNodes={handleConnectNodes}
           onGetWorkflow={handleGetWorkflow}
           onClose={() => setChatOpen(false)}
         />
-      )}
+      </div>
     </div>
   );
 }

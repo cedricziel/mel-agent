@@ -5,7 +5,7 @@ import remarkGfm from 'remark-gfm';
 
 // ChatAssistant provides a modal chat interface for users to interact with an AI assistant
 // and supports function-based tools to modify the workflow graph.
-export default function ChatAssistant({ agentId, onAddNode, onConnectNodes, onGetWorkflow, onClose }) {
+export default function ChatAssistant({ agentId, onAddNode, onConnectNodes, onGetWorkflow, onClose, inline = false }) {
   const [messages, setMessages] = useState([
     { role: 'system', content: 'You are a helpful AI assistant for the workflow builder. You can call functions `list_node_types`, `get_node_type_schema`, and `get_workflow` to inspect the current graph, and use `add_node` and `connect_nodes` to modify the workflow graph.' }
   ]);
@@ -107,6 +107,65 @@ export default function ChatAssistant({ agentId, onAddNode, onConnectNodes, onGe
     return text.length > 300 ? text.slice(0, 300) + '...' : text;
   };
 
+  if (inline) {
+    return (
+      <div className="w-80 flex flex-col h-full bg-gray-50 border-l p-4 overflow-auto">
+        <div className="flex justify-between items-center p-2 border-b">
+          <h2 className="text-lg font-bold">AI Assistant</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-800">&times;</button>
+        </div>
+        <div ref={scrollRef} className="p-2 flex-1 overflow-auto space-y-2 text-sm">
+          {messages.map((msg, idx) => {
+            let display;
+            if (msg.role === 'function') {
+              try {
+                const data = JSON.parse(msg.content);
+                display = summarizeResult(msg.name, data);
+              } catch {
+                display = msg.content;
+              }
+            } else {
+              display = msg.content;
+            }
+            return (
+              <div
+                key={idx}
+                className={
+                  msg.role === 'user'
+                    ? 'text-right'
+                    : msg.role === 'assistant'
+                    ? 'text-left text-gray-700'
+                    : 'text-left text-blue-500'
+                }
+              >
+                {msg.role === 'assistant' && msg.function_call && (
+                  <div className="italic text-gray-500">
+                    Function call: {msg.function_call.name}(…)
+                  </div>
+                )}
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{display}</ReactMarkdown>
+              </div>
+            );
+          })}
+        </div>
+        <div className="p-2 border-t flex">
+          <input
+            type="text"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') sendMessage(); }}
+            placeholder="Type a message..."
+            className="flex-1 border rounded px-2 py-1 mr-2"
+            disabled={isLoading}
+          />
+          <button onClick={sendMessage} disabled={isLoading} className="px-3 py-1 bg-indigo-600 text-white rounded disabled:opacity-50">
+            Send
+          </button>
+        </div>
+      </div>
+    );
+  }
+  // modal overlay
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
       <div className="bg-white rounded shadow-lg w-96 h-3/4 flex flex-col">
