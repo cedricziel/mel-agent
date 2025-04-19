@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 // ChatAssistant provides a modal chat interface for users to interact with an AI assistant
 // and supports function-based tools to modify the workflow graph.
@@ -74,6 +76,36 @@ export default function ChatAssistant({ agentId, onAddNode, onConnectNodes, onGe
     }
   };
 
+  // Summarize function results for UI display
+  const summarizeResult = (fnName, result) => {
+    try {
+      switch (fnName) {
+        case 'list_node_types':
+          if (Array.isArray(result)) {
+            const list = result.slice(0, 5).map((nt) => `\`${nt.type}\``);
+            const more = result.length > 5 ? ` and ${result.length - 5} more` : '';
+            return `**list_node_types** returned ${result.length} types: ${list.join(', ')}${more}.`;
+          }
+          break;
+        case 'get_node_type_schema':
+          if (result.properties && typeof result.properties === 'object') {
+            const props = Object.keys(result.properties).map((p) => `\`${p}\``);
+            return `Schema has properties: ${props.join(', ')}.`;
+          }
+          break;
+        case 'get_workflow':
+          if (result.nodes && result.edges) {
+            return `Current workflow has ${result.nodes.length} nodes and ${result.edges.length} edges.`;
+          }
+          break;
+      }
+    } catch {
+      // fallback
+    }
+    const text = JSON.stringify(result, null, 2);
+    return text.length > 300 ? text.slice(0, 300) + '...' : text;
+  };
+
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
       <div className="bg-white rounded shadow-lg w-96 h-3/4 flex flex-col">
@@ -82,14 +114,38 @@ export default function ChatAssistant({ agentId, onAddNode, onConnectNodes, onGe
           <button onClick={onClose} className="text-gray-500 hover:text-gray-800">&times;</button>
         </div>
         <div ref={scrollRef} className="p-2 flex-1 overflow-auto space-y-2 text-sm">
-          {messages.map((msg, idx) => (
-            <div key={idx} className={msg.role === 'user' ? 'text-right' : msg.role === 'assistant' ? 'text-left text-gray-700' : 'text-left text-blue-500'}>
-              {msg.role === 'assistant' && msg.function_call && (
-                <div className="italic text-gray-500">Function call: {msg.function_call.name}(…)</div>
-              )}
-              {msg.content}
-            </div>
-          ))}
+          {messages.map((msg, idx) => {
+            let display;
+            if (msg.role === 'function') {
+              try {
+                const data = JSON.parse(msg.content);
+                display = summarizeResult(msg.name, data);
+              } catch {
+                display = msg.content;
+              }
+            } else {
+              display = msg.content;
+            }
+            return (
+              <div
+                key={idx}
+                className={
+                  msg.role === 'user'
+                    ? 'text-right'
+                    : msg.role === 'assistant'
+                    ? 'text-left text-gray-700'
+                    : 'text-left text-blue-500'
+                }
+              >
+                {msg.role === 'assistant' && msg.function_call && (
+                  <div className="italic text-gray-500">
+                    Function call: {msg.function_call.name}(…)
+                  </div>
+                )}
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{display}</ReactMarkdown>
+              </div>
+            );
+          })}
         </div>
         <div className="p-2 border-t flex">
           <input
