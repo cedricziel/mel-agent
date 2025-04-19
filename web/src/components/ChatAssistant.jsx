@@ -3,9 +3,9 @@ import axios from 'axios';
 
 // ChatAssistant provides a modal chat interface for users to interact with an AI assistant
 // and supports function-based tools to modify the workflow graph.
-export default function ChatAssistant({ agentId, onAddNode, onConnectNodes, onClose }) {
+export default function ChatAssistant({ agentId, onAddNode, onConnectNodes, onGetWorkflow, onClose }) {
   const [messages, setMessages] = useState([
-    { role: 'system', content: 'You are a helpful AI assistant for the workflow builder. You can call functions `list_node_types` and `get_node_type_schema` to discover available node types and their parameter schemas, and use `add_node` and `connect_nodes` to modify the workflow graph.' }
+    { role: 'system', content: 'You are a helpful AI assistant for the workflow builder. You can call functions `list_node_types`, `get_node_type_schema`, and `get_workflow` to inspect the current graph, and use `add_node` and `connect_nodes` to modify the workflow graph.' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -50,6 +50,9 @@ export default function ChatAssistant({ agentId, onAddNode, onConnectNodes, onCl
           const { type } = fnArgs;
           const res = await axios.get(`/api/node-types/schema/${type}`);
           result = res.data;
+        } else if (fnName === 'get_workflow') {
+          // Return the current graph from the UI
+          result = onGetWorkflow();
         }
         const fnResultContent = JSON.stringify(result || {});
         setMessages(ms => [...ms, { role: 'function', name: fnName, content: fnResultContent }]);

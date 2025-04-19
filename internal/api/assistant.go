@@ -26,11 +26,20 @@ func assistantChatHandler(w http.ResponseWriter, r *http.Request) {
 	// Define available functions for assistant to call
 	// Define available functions for assistant to call
 	// Define available functions for assistant to call
-	funcs := []openai.FunctionDefinition{
+   funcs := []openai.FunctionDefinition{
        {
            Name:        "list_node_types",
            Description: "List available node types and their metadata",
            // Empty object schema: must include properties field even if empty
+           Parameters: map[string]interface{}{
+               "type":       "object",
+               "properties": map[string]interface{}{},
+           },
+       },
+       {
+           Name:        "get_workflow",
+           Description: "Get the current workflow graph (nodes and edges)",
+           // Empty object schema for no parameters
            Parameters: map[string]interface{}{
                "type":       "object",
                "properties": map[string]interface{}{},

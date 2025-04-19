@@ -221,6 +221,10 @@ function BuilderPage({ agentId }) {
     setEdges((eds) => addEdge({ source: source_id, target: target_id }, eds));
     return {};
   }, []);
+  // Tool callback: get the current workflow graph
+  const handleGetWorkflow = useCallback(() => {
+    return { nodes, edges };
+  }, [nodes, edges]);
 
   // double-click a node to rename it
   const onNodeDoubleClick = useCallback((event, node) => {
@@ -616,6 +620,7 @@ function BuilderPage({ agentId }) {
           agentId={agentId}
           onAddNode={handleAddNode}
           onConnectNodes={handleConnectNodes}
+          onGetWorkflow={handleGetWorkflow}
           onClose={() => setChatOpen(false)}
         />
       )}
