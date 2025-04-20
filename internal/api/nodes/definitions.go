@@ -12,21 +12,24 @@ import (
 
 // This file registers a set of basic node types (Utility, Transform, I/O, etc.)
 // that users can drag into their builder flows.
-func init() {
-   api.RegisterNodeDefinition(setVariableDefinition{})
-   api.RegisterNodeDefinition(transformDefinition{})
-   api.RegisterNodeDefinition(scriptDefinition{})
-   api.RegisterNodeDefinition(switchDefinition{})
-   api.RegisterNodeDefinition(forEachDefinition{})
-   api.RegisterNodeDefinition(mergeDefinition{})
-   api.RegisterNodeDefinition(delayDefinition{})
-   api.RegisterNodeDefinition(httpResponseDefinition{})
-   api.RegisterNodeDefinition(dbQueryDefinition{})
-   api.RegisterNodeDefinition(emailDefinition{})
-   api.RegisterNodeDefinition(fileIODefinition{})
-   api.RegisterNodeDefinition(randomDefinition{})
-   api.RegisterNodeDefinition(logDefinition{})
-   api.RegisterNodeDefinition(noopDefinition{})
+// AllNodeDefinitions returns all built-in builder node definitions.
+func AllNodeDefinitions() []api.NodeDefinition {
+   return []api.NodeDefinition{
+       setVariableDefinition{},
+       transformDefinition{},
+       scriptDefinition{},
+       switchDefinition{},
+       forEachDefinition{},
+       mergeDefinition{},
+       delayDefinition{},
+       httpResponseDefinition{},
+       dbQueryDefinition{},
+       emailDefinition{},
+       fileIODefinition{},
+       randomDefinition{},
+       logDefinition{},
+       noopDefinition{},
+   }
 }
 
 // --- Set Variable Node ---

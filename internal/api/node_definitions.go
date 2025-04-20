@@ -80,18 +80,20 @@ func FindDefinition(typ string) NodeDefinition {
 	return nil
 }
 
-// Register built-in node definitions.
-func init() {
-	RegisterNodeDefinition(timerDefinition{})
-	RegisterNodeDefinition(scheduleDefinition{})
-	RegisterNodeDefinition(webhookDefinition{})
-	RegisterNodeDefinition(slackDefinition{})
-	RegisterNodeDefinition(httpRequestDefinition{})
-	RegisterNodeDefinition(ifDefinition{})
-	RegisterNodeDefinition(switchDefinition{})
-	RegisterNodeDefinition(agentDefinition{})
-	RegisterNodeDefinition(llmDefinition{})
-	RegisterNodeDefinition(injectDefinition{})
+// AllCoreDefinitions returns the built-in core trigger and utility node definitions.
+func AllCoreDefinitions() []NodeDefinition {
+   return []NodeDefinition{
+       timerDefinition{},
+       scheduleDefinition{},
+       webhookDefinition{},
+       slackDefinition{},
+       httpRequestDefinition{},
+       ifDefinition{},
+       switchDefinition{},
+       agentDefinition{},
+       llmDefinition{},
+       injectDefinition{},
+   }
 }
 
 // --- Timer Node Definition ---

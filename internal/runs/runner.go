@@ -158,9 +158,8 @@ func (r *Runner) runOne(runID, agentID string, payloadRaw []byte) {
        if msg, err := json.Marshal(map[string]string{"type": "nodeExecution", "nodeId": node.ID, "phase": "start"}); err == nil {
            hub.Broadcast(msg)
        }
-       // Execute node via plugin API if available, else use legacy definition
+       // Execute node via plugin API if available
        var output interface{}
-       // Try plugin-based execution
        if np, ok := plugin.GetNodePlugin(node.Type); ok {
            // Prepare inputs: agent_id, input payload, and node configuration
            inputs := map[string]interface{}{
@@ -173,12 +172,9 @@ func (r *Runner) runOne(runID, agentID string, payloadRaw []byte) {
                log.Printf("runner plugin execute node error for run %s, node %s: %v", runID, node.ID, err)
            }
            output = outMap
-       } else if def := api.FindDefinition(node.Type); def != nil {
-           out, err := def.Execute(agentID, node, item.Data)
-           if err != nil {
-               log.Printf("runner execute node error for run %s, node %s: %v", runID, node.ID, err)
-           }
-           output = out
+       } else {
+           // No plugin available for this node type
+           log.Printf("runner: no NodePlugin found for type %s (run %s, node %s)", node.Type, runID, node.ID)
        }
        // Notify end
        if msg, err := json.Marshal(map[string]string{"type": "nodeExecution", "nodeId": node.ID, "phase": "end"}); err == nil {

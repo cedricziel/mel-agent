@@ -66,8 +66,13 @@ func convertValidators(in []ValidatorSpec) []plugin.ValidatorSpec {
    return out
 }
 
-// Register all existing node definitions as plugins.
+// init registers all NodeDefinition implementations as NodePlugins.
 func init() {
+   // Core definitions
+   for _, def := range AllCoreDefinitions() {
+       plugin.Register(nodeDefinitionAdapter{def: def})
+   }
+   // Builder definitions
    for _, def := range ListNodeDefinitions() {
        plugin.Register(nodeDefinitionAdapter{def: def})
    }
