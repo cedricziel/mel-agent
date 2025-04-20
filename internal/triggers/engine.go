@@ -71,10 +71,23 @@ func (e *Engine) sync() {
            e.removeJob(id)
            continue
        }
-       // Lookup plugin for this provider
+       // Lookup trigger plugin for this provider
        p, ok := plugin.GetTriggerPlugin(provider)
        if !ok {
            // No plugin registered for this provider
+           continue
+       }
+       // Only schedule plugins that declare a "cron" parameter
+       meta := p.Meta()
+       hasCron := false
+       for _, ps := range meta.Params {
+           if ps.Name == "cron" {
+               hasCron = true
+               break
+           }
+       }
+       if !hasCron {
+           // Not a schedule-type trigger; skip scheduling here
            continue
        }
        // Parse trigger config
@@ -83,10 +96,10 @@ func (e *Engine) sync() {
            log.Printf("trigger engine unmarshal config error for %s: %v", id, err)
            continue
        }
-       // Extract schedule spec (e.g., cron)
+       // Extract cron schedule spec
        cronSpec, _ := cfg["cron"].(string)
        if cronSpec == "" {
-           log.Printf("trigger engine missing cron for %s", id)
+           log.Printf("trigger engine missing cron spec for %s", id)
            continue
        }
        current[id] = struct{}{}

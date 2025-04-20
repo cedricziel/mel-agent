@@ -1,10 +1,12 @@
 package nodes
 
 import (
+   "context"
    "fmt"
    "time"
 
    "github.com/cedricziel/mel-agent/internal/api"
+   "github.com/cedricziel/mel-agent/internal/plugin"
    "github.com/google/uuid"
 )
 
@@ -189,7 +191,19 @@ func (dbQueryDefinition) Meta() api.NodeType {
    }
 }
 func (dbQueryDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
-   return input, nil
+   // Resolve the connection plugin by ID
+   connID, _ := node.Data["connectionId"].(string)
+   cp, ok := plugin.GetConnectionPlugin(connID)
+   if !ok {
+       return nil, fmt.Errorf("db_query: connection plugin %s not found", connID)
+   }
+   // Establish resource (e.g., DB client)
+   resource, err := cp.Connect(context.Background(), node.Data)
+   if err != nil {
+       return nil, err
+   }
+   // Placeholder: return the resource handle and query
+   return map[string]interface{}{"connection": resource, "query": node.Data["query"]}, nil
 }
 
 // --- Email Notification Node ---
