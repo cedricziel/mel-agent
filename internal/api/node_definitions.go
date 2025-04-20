@@ -7,9 +7,7 @@ import (
    "errors"
    "fmt"
    "net/http"
-
    openai "github.com/sashabaranov/go-openai"
-
    "github.com/cedricziel/mel-agent/internal/db"
 )
 
@@ -97,6 +95,7 @@ func AllCoreDefinitions() []NodeDefinition {
 }
 
 // init registers all core NodeDefinitions for the /node-types endpoint.
+// Builder definitions are registered by blank-importing internal/api/nodes.
 func init() {
    for _, def := range AllCoreDefinitions() {
        RegisterNodeDefinition(def)

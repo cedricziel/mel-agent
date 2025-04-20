@@ -9,10 +9,10 @@ import (
    "github.com/go-chi/chi/v5"
    "github.com/go-chi/chi/v5/middleware"
 
-   "github.com/cedricziel/mel-agent/internal/api"
-   _ "github.com/cedricziel/mel-agent/internal/api/nodes"
+   "github.com/cedricziel/mel-agent/pkg/api"
+   _ "github.com/cedricziel/mel-agent/internal/api/nodes" // TODO: move to pkg/nodes later
    "github.com/cedricziel/mel-agent/internal/db"
-   "github.com/cedricziel/mel-agent/internal/plugin"
+   "github.com/cedricziel/mel-agent/pkg/plugin"
    "github.com/cedricziel/mel-agent/internal/triggers"
    "github.com/cedricziel/mel-agent/internal/runs"
 )
