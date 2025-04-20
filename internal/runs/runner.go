@@ -1,6 +1,7 @@
 package runs
 
 import (
+   "context"
    "database/sql"
    "encoding/json"
    "fmt"
@@ -9,6 +10,7 @@ import (
 
    "github.com/cedricziel/mel-agent/internal/api"
    "github.com/cedricziel/mel-agent/internal/db"
+   "github.com/cedricziel/mel-agent/internal/plugin"
 )
 
 // Runner polls agent_runs and executes pending runs.
@@ -156,10 +158,22 @@ func (r *Runner) runOne(runID, agentID string, payloadRaw []byte) {
        if msg, err := json.Marshal(map[string]string{"type": "nodeExecution", "nodeId": node.ID, "phase": "start"}); err == nil {
            hub.Broadcast(msg)
        }
-       // Execute node
-       def := api.FindDefinition(node.Type)
+       // Execute node via plugin API if available, else use legacy definition
        var output interface{}
-       if def != nil {
+       // Try plugin-based execution
+       if np, ok := plugin.GetNodePlugin(node.Type); ok {
+           // Prepare inputs: agent_id, input payload, and node configuration
+           inputs := map[string]interface{}{
+               "agent_id": agentID,
+               "input":    item.Data,
+               "config":   node.Data,
+           }
+           outMap, err := np.Execute(context.Background(), inputs)
+           if err != nil {
+               log.Printf("runner plugin execute node error for run %s, node %s: %v", runID, node.ID, err)
+           }
+           output = outMap
+       } else if def := api.FindDefinition(node.Type); def != nil {
            out, err := def.Execute(agentID, node, item.Data)
            if err != nil {
                log.Printf("runner execute node error for run %s, node %s: %v", runID, node.ID, err)

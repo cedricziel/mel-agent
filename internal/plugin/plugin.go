@@ -9,11 +9,11 @@ import (
 // PluginMeta defines the metadata for a plugin, including its ID, version,
 // supported categories, parameter schema, and optional UI component path.
 type PluginMeta struct {
-   ID          string                         // unique plugin identifier
-   Version     string                         // semver-compliant version string
-   Categories  []string                       // extension types provided (e.g. "node", "trigger")
-   Params      []api.ParameterDefinition      // parameter schema for configuration/UI
-   UIComponent string                         // optional path or URL to React bundle
+   ID          string                   `json:"id"`                              // unique plugin identifier
+   Version     string                   `json:"version"`                         // semver-compliant version string
+   Categories  []string                 `json:"categories"`                      // extension types provided (e.g. "node", "trigger")
+   Params      []api.ParameterDefinition `json:"params,omitempty"`               // parameter schema for configuration/UI
+   UIComponent string                   `json:"ui_component,omitempty"`          // optional path or URL to React bundle
 }
 
 // Plugin is the base interface that all plugins must implement.
@@ -49,9 +49,9 @@ type AgentProtocolPlugin interface {
 
 // ModelSpec describes a model or tool exposed by an external MCP server.
 type ModelSpec struct {
-   ID          string                         // unique model or tool identifier
-   Description string                         // human-readable summary
-   Params      []api.ParameterDefinition      // invocation parameters (e.g. temperature)
+   ID          string                   `json:"id"`          // unique model or tool identifier
+   Description string                   `json:"description"` // human-readable summary
+   Params      []api.ParameterDefinition `json:"params,omitempty"` // invocation parameters (e.g. temperature)
 }
 
 // ModelServerPlugin integrates external Model Context Protocol (MCP) servers,

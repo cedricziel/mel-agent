@@ -1,17 +1,18 @@
 package api
 
 import (
-	"database/sql"
-	"encoding/json"
-	"fmt"
-	"io"
-	"net/http"
-	"strings"
-	"time"
+   "database/sql"
+   "encoding/json"
+   "fmt"
+   "io"
+   "net/http"
+   "strings"
+   "time"
 
-	"github.com/cedricziel/mel-agent/internal/db"
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
+   "github.com/cedricziel/mel-agent/internal/db"
+   "github.com/cedricziel/mel-agent/internal/plugin"
+   "github.com/go-chi/chi/v5"
+   "github.com/google/uuid"
 )
 
 // Handler returns a router with API routes mounted.
@@ -59,6 +60,9 @@ func Handler() http.Handler {
 	r.Post("/agents/{agentID}/nodes/{nodeID}/execute", executeNodeHandler)
    // Chat assistant endpoint for builder
    r.Post("/agents/{agentID}/assistant/chat", assistantChatHandler)
+  
+  // Plugin extensions catalog
+  r.Get("/extensions", listExtensionsHandler)
 
 	return r
 }
@@ -68,6 +72,12 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(v)
+}
+
+// listExtensionsHandler returns the catalog of registered plugins (GoPlugins and MCP servers).
+func listExtensionsHandler(w http.ResponseWriter, r *http.Request) {
+   metas := plugin.GetAllPlugins()
+   writeJSON(w, http.StatusOK, metas)
 }
 
 // --- Agent handlers ---
