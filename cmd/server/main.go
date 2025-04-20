@@ -12,6 +12,7 @@ import (
    "github.com/cedricziel/mel-agent/internal/api"
    _ "github.com/cedricziel/mel-agent/internal/api/nodes"
    "github.com/cedricziel/mel-agent/internal/db"
+   "github.com/cedricziel/mel-agent/internal/plugin"
    "github.com/cedricziel/mel-agent/internal/triggers"
    "github.com/cedricziel/mel-agent/internal/runs"
 )
@@ -24,6 +25,8 @@ func main() {
 
     // connect database (fatal on error)
     db.Connect()
+    // load connection plugins from the database
+    plugin.RegisterConnectionPlugins()
     // start trigger scheduler engine
     scheduler := triggers.NewEngine()
     scheduler.Start()

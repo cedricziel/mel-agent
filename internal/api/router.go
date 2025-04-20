@@ -3,8 +3,7 @@ package api
 import (
    "database/sql"
    "encoding/json"
-   "fmt"
-   "io"
+   "io/ioutil"
    "net/http"
    "strings"
    "time"
@@ -60,7 +59,7 @@ func Handler() http.Handler {
 	r.Post("/agents/{agentID}/nodes/{nodeID}/execute", executeNodeHandler)
    // Chat assistant endpoint for builder
    r.Post("/agents/{agentID}/assistant/chat", assistantChatHandler)
-  
+
   // Plugin extensions catalog
   r.Get("/extensions", listExtensionsHandler)
 
@@ -555,6 +554,9 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
    runID, _ := runIDRaw.(string)
    // Respond with run ID and default accepted status
    writeJSON(w, http.StatusAccepted, map[string]string{"runId": runID})
+   return
+}
+/*
 			"versionId":   versionID.String,
 			"startNodeId": nodeID,
 			"input":       payload,
@@ -692,6 +694,7 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, statusCode, resp)
 }
 
+*/
 // executeNodeHandler handles running a single node with provided input (stub implementation)
 func executeNodeHandler(w http.ResponseWriter, r *http.Request) {
 	agentID := chi.URLParam(r, "agentID")

@@ -44,7 +44,7 @@ func (a nodeDefinitionAdapter) Execute(ctx context.Context, inputs map[string]in
    input := inputs["input"]
    config, _ := inputs["config"].(map[string]interface{})
    // Build api.Node
-   node := api.Node{ID: "", Type: a.def.Meta().Type, Data: config}
+   node := Node{ID: "", Type: a.def.Meta().Type, Data: config}
    // Execute
    out, err := a.def.Execute(agentID, node, input)
    if err != nil {
