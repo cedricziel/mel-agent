@@ -1,6 +1,7 @@
 package triggers
 
 import (
+   "context"
    "database/sql"
    "encoding/json"
    "log"
@@ -11,6 +12,7 @@ import (
    "github.com/robfig/cron/v3"
 
    "github.com/cedricziel/mel-agent/internal/db"
+   "github.com/cedricziel/mel-agent/internal/plugin"
 )
 
 // Engine schedules and fires trigger providers based on persisted trigger instances.
@@ -46,8 +48,9 @@ func (e *Engine) watch() {
 
 // sync loads schedule triggers and updates scheduler jobs.
 func (e *Engine) sync() {
+   // Load all triggers (any provider)
    rows, err := db.DB.Query(
-       `SELECT id, agent_id, node_id, provider, config, enabled FROM triggers WHERE provider = 'schedule'`,
+       `SELECT id, provider, agent_id, node_id, config, enabled FROM triggers`,
    )
    if err != nil {
        log.Printf("trigger engine sync error: %v", err)
@@ -56,29 +59,60 @@ func (e *Engine) sync() {
    defer rows.Close()
    current := map[string]struct{}{}
    for rows.Next() {
-       var id, agentID, nodeID, provider string
+       var id, provider, agentID, nodeID string
        var configRaw []byte
        var enabled bool
-       if err := rows.Scan(&id, &agentID, &nodeID, &provider, &configRaw, &enabled); err != nil {
+       if err := rows.Scan(&id, &provider, &agentID, &nodeID, &configRaw, &enabled); err != nil {
            log.Printf("trigger engine scan error: %v", err)
            continue
        }
+       // Remove disabled triggers
        if !enabled {
            e.removeJob(id)
            continue
        }
+       // Lookup plugin for this provider
+       p, ok := plugin.GetTriggerPlugin(provider)
+       if !ok {
+           // No plugin registered for this provider
+           continue
+       }
+       // Parse trigger config
        var cfg map[string]interface{}
        if err := json.Unmarshal(configRaw, &cfg); err != nil {
            log.Printf("trigger engine unmarshal config error for %s: %v", id, err)
            continue
        }
-       cronSpec, ok := cfg["cron"].(string)
-       if !ok || cronSpec == "" {
+       // Extract schedule spec (e.g., cron)
+       cronSpec, _ := cfg["cron"].(string)
+       if cronSpec == "" {
            log.Printf("trigger engine missing cron for %s", id)
            continue
        }
        current[id] = struct{}{}
-       e.addJob(id, agentID, nodeID, cronSpec)
+       // Build payload for plugin
+       payload := map[string]interface{}{
+           "trigger_id": id,
+           "agent_id":   agentID,
+           "node_id":    nodeID,
+           "config":     cfg,
+       }
+       // Schedule the trigger
+       e.mu.Lock()
+       if _, exists := e.jobs[id]; !exists {
+           entryID, err := e.scheduler.AddFunc(cronSpec, func() {
+               if _, err := p.OnTrigger(context.Background(), payload); err != nil {
+                   log.Printf("trigger plugin OnTrigger error for %s: %v", id, err)
+               }
+           })
+           if err != nil {
+               log.Printf("trigger engine add job error for %s: %v", id, err)
+           } else {
+               e.jobs[id] = entryID
+               log.Printf("trigger engine scheduled %s with cron %s", id, cronSpec)
+           }
+       }
+       e.mu.Unlock()
    }
    e.mu.Lock()
    for id := range e.jobs {
