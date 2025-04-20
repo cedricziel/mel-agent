@@ -13,3 +13,4 @@ web/dist/
 .gomodcache
 .cache
 /server
+/mel-server

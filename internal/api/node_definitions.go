@@ -56,6 +56,10 @@ var definitions []NodeDefinition
 func RegisterNodeDefinition(def NodeDefinition) {
 	definitions = append(definitions, def)
 }
+// ListNodeDefinitions returns all registered NodeDefinition implementations.
+func ListNodeDefinitions() []NodeDefinition {
+   return definitions
+}
 
 // listNodeTypes returns all registered node type metadata.
 func listNodeTypes(w http.ResponseWriter, r *http.Request) {
