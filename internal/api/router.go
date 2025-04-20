@@ -521,33 +521,40 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
 		return
 	}
-	// Decode JSON payload (tolerate empty body)
-	var payload interface{}
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil && err != io.EOF {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
-		return
-	}
-	// Parse trigger config for mode and custom responses
-	var cfg map[string]interface{}
-	if err := json.Unmarshal(configRaw, &cfg); err != nil {
-		cfg = map[string]interface{}{}
-	}
-	mode, _ := cfg["mode"].(string)
-	// Synchronous (in-band) execution: run workflow and return its result
-	if mode == "sync" {
-		// Fetch latest agent version and graph
-		var versionID sql.NullString
-		if err := db.DB.QueryRow(`SELECT latest_version_id FROM agents WHERE id = $1`, agentID).Scan(&versionID); err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-			return
-		}
-		if !versionID.Valid {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "no version available for agent"})
-			return
-		}
-		// Record run in agent_runs as running
-		// runID already defined above for synchronous execution
-		syncPayload := map[string]interface{}{
+   // Read raw body
+   rawBody, err := ioutil.ReadAll(r.Body)
+   if err != nil {
+       writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+       return
+   }
+   // Build plugin payload
+   triggerPayload := map[string]interface{}{
+       "trigger_id": triggerID,
+       "agent_id":   agentID,
+       "node_id":    nodeID,
+       "http_method": r.Method,
+       "headers":     r.Header,
+       "body_raw":    rawBody,
+   }
+   // Invoke the webhook trigger plugin
+   p, ok := plugin.GetTriggerPlugin(provider)
+   if !ok {
+       writeJSON(w, http.StatusNotImplemented, map[string]string{"error": "no webhook plugin"})
+       return
+   }
+   runIDRaw, err := p.OnTrigger(r.Context(), triggerPayload)
+   if err != nil {
+       // Treat method not allowed specially
+       if err.Error() == "method not allowed" {
+           writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": err.Error()})
+       } else {
+           writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+       }
+       return
+   }
+   runID, _ := runIDRaw.(string)
+   // Respond with run ID and default accepted status
+   writeJSON(w, http.StatusAccepted, map[string]string{"runId": runID})
 			"versionId":   versionID.String,
 			"startNodeId": nodeID,
 			"input":       payload,
