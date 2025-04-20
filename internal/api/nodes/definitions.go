@@ -272,3 +272,10 @@ func (logDefinition) Execute(agentID string, node api.Node, input interface{}) (
 type noopDefinition struct{}
 func (noopDefinition) Meta() api.NodeType { return api.NodeType{Type: "noop", Label: "No-Op", Category: "Control"} }
 func (noopDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) { return input, nil }
+
+// init registers all builder node definitions for the /node-types endpoint.
+func init() {
+   for _, def := range AllNodeDefinitions() {
+       api.RegisterNodeDefinition(def)
+   }
+}

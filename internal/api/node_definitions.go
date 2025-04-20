@@ -96,6 +96,13 @@ func AllCoreDefinitions() []NodeDefinition {
    }
 }
 
+// init registers all core NodeDefinitions for the /node-types endpoint.
+func init() {
+   for _, def := range AllCoreDefinitions() {
+       RegisterNodeDefinition(def)
+   }
+}
+
 // --- Timer Node Definition ---
 type timerDefinition struct{}
 

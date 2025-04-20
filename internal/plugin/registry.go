@@ -76,38 +76,40 @@ func (r *Registry) GetAllPlugins() []PluginMeta {
 	return metas
 }
 
-// GetNodePlugin retrieves a NodePlugin implementation by plugin ID.
+// GetNodePlugin retrieves a NodePlugin implementation by plugin ID (from the "node" category).
 func GetNodePlugin(id string) (NodePlugin, bool) {
-	return defaultRegistry.GetNodePlugin(id)
+   return defaultRegistry.GetNodePlugin(id)
 }
 
-// GetNodePlugin retrieves a NodePlugin by ID from this registry.
+// GetNodePlugin retrieves a NodePlugin by ID from this registry (from the "node" category).
 func (r *Registry) GetNodePlugin(id string) (NodePlugin, bool) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-	p, ok := r.plugins[id]
-	if !ok {
-		return nil, false
-	}
-	np, ok := p.(NodePlugin)
-	return np, ok
+   r.mu.RLock()
+   defer r.mu.RUnlock()
+   if byCat, ok := r.byCategory["node"]; ok {
+       if p, ok2 := byCat[id]; ok2 {
+           np, ok3 := p.(NodePlugin)
+           return np, ok3
+       }
+   }
+   return nil, false
 }
 
-// GetTriggerPlugin retrieves a TriggerPlugin implementation by plugin ID.
+// GetTriggerPlugin retrieves a TriggerPlugin implementation by plugin ID (from the "trigger" category).
 func GetTriggerPlugin(id string) (TriggerPlugin, bool) {
-	return defaultRegistry.GetTriggerPlugin(id)
+   return defaultRegistry.GetTriggerPlugin(id)
 }
 
-// GetTriggerPlugin retrieves a TriggerPlugin by ID from this registry.
+// GetTriggerPlugin retrieves a TriggerPlugin by ID from this registry (from the "trigger" category).
 func (r *Registry) GetTriggerPlugin(id string) (TriggerPlugin, bool) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-	p, ok := r.plugins[id]
-	if !ok {
-		return nil, false
-	}
-	tp, ok := p.(TriggerPlugin)
-	return tp, ok
+   r.mu.RLock()
+   defer r.mu.RUnlock()
+   if byCat, ok := r.byCategory["trigger"]; ok {
+       if p, ok2 := byCat[id]; ok2 {
+           tp, ok3 := p.(TriggerPlugin)
+           return tp, ok3
+       }
+   }
+   return nil, false
 }
 
 // GetConnectionPlugin retrieves a ConnectionPlugin implementation by plugin ID.
