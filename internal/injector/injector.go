@@ -15,6 +15,10 @@ import (
    _ "github.com/cedricziel/mel-agent/pkg/api/nodes/http_response"
    // import migrated transform node to register via internal/API
    _ "github.com/cedricziel/mel-agent/pkg/api/nodes/transform"
+   // import migrated Script node definition
+   _ "github.com/cedricziel/mel-agent/pkg/api/nodes/script"
+   // import migrated Switch node definition
+   _ "github.com/cedricziel/mel-agent/pkg/api/nodes/switch_node"
    adapters "github.com/cedricziel/mel-agent/pkg/plugin/adapters"
    "github.com/cedricziel/mel-agent/pkg/plugin"
 )

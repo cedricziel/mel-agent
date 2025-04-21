@@ -7,8 +7,6 @@ import (
 // init registers all built-in builder node definitions.
 func init() {
    // setVariableDefinition migrated out to pkg/api/nodes/set_variable
-   api.RegisterNodeDefinition(scriptDefinition{})
-   api.RegisterNodeDefinition(switchDefinition{})
    api.RegisterNodeDefinition(forEachDefinition{})
    api.RegisterNodeDefinition(mergeDefinition{})
    api.RegisterNodeDefinition(dbQueryDefinition{})
@@ -46,38 +44,10 @@ func (setVariableDefinition) Execute(agentID string, node api.Node, input interf
 
 
 // --- Script Node ---
-type scriptDefinition struct{}
-func (scriptDefinition) Meta() api.NodeType {
-   return api.NodeType{
-       Type:     "script",
-       Label:    "Script",
-       Category: "Utility",
-       Parameters: []api.ParameterDefinition{
-           {Name: "language", Label: "Language", Type: "enum", Required: true, Default: "javascript", Options: []string{"javascript", "python"}, Group: "Settings"},
-           {Name: "code", Label: "Code", Type: "string", Required: true, Group: "Settings", Description: "Your script code"},
-       },
-   }
-}
-func (scriptDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
-   return input, nil
-}
+// Migrated to pkg/api/nodes/script
 
 // --- Switch Node ---
-type switchDefinition struct{}
-func (switchDefinition) Meta() api.NodeType {
-   return api.NodeType{
-       Type:      "switch",
-       Label:     "Switch",
-       Category:  "Control",
-       Branching: true,
-       Parameters: []api.ParameterDefinition{
-           {Name: "expression", Label: "Expression", Type: "string", Required: true, Group: "Settings"},
-       },
-   }
-}
-func (switchDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
-   return input, nil
-}
+// Migrated to pkg/api/nodes/switch_node
 
 // --- For Each Node ---
 type forEachDefinition struct{}
