@@ -28,3 +28,18 @@ type Connection = internal.Connection
 
 // Agent describes an agent record.
 type Agent = internal.Agent
+// NodeDefinition is the interface for node definitions.
+type NodeDefinition = internal.NodeDefinition
+
+// Node is the runtime node struct with ID, Type, Data.
+type Node = internal.Node
+
+// RegisterNodeDefinition registers a node type for the builder.
+func RegisterNodeDefinition(def NodeDefinition) {
+   internal.RegisterNodeDefinition(def)
+}
+
+// ListNodeDefinitions returns all registered node definitions.
+func ListNodeDefinitions() []NodeDefinition {
+   return internal.ListNodeDefinitions()
+}

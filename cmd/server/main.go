@@ -10,6 +10,8 @@ import (
    "github.com/go-chi/chi/v5/middleware"
 
    "github.com/cedricziel/mel-agent/pkg/api"
+   _ "github.com/cedricziel/mel-agent/internal/api/nodes"  // import legacy builder definitions
+   _ "github.com/cedricziel/mel-agent/internal/api/nodes"  // import legacy builder node definitions
    "github.com/cedricziel/mel-agent/internal/db"
    "github.com/cedricziel/mel-agent/pkg/plugin"
    "github.com/cedricziel/mel-agent/internal/triggers"
