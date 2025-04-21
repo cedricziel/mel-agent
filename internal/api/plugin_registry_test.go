@@ -2,9 +2,14 @@ package api_test
 
 import (
    "testing"
+   // trigger plugins (webhook, schedule) and connection adapters register via internal/plugin
+   _ "github.com/cedricziel/mel-agent/internal/plugin"
+   // node adapters register via pkg/plugin/adapters
+   _ "github.com/cedricziel/mel-agent/pkg/plugin/adapters"
+   // builder node definitions register via internal/api/nodes
+   _ "github.com/cedricziel/mel-agent/internal/api/nodes"
 
    "github.com/cedricziel/mel-agent/internal/plugin"
-   _ "github.com/cedricziel/mel-agent/internal/api"
 )
 
 // TestPluginRegistry ensures core and builder node plugins, and trigger plugins, are registered.

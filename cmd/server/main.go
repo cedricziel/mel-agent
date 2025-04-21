@@ -10,10 +10,10 @@ import (
    "github.com/go-chi/chi/v5/middleware"
 
    "github.com/cedricziel/mel-agent/pkg/api"
-   _ "github.com/cedricziel/mel-agent/pkg/plugin/adapters" // register node plugins adapters
    _ "github.com/cedricziel/mel-agent/internal/api/nodes"  // import legacy builder node definitions
    "github.com/cedricziel/mel-agent/internal/db"
    "github.com/cedricziel/mel-agent/pkg/plugin"
+   "github.com/cedricziel/mel-agent/internal/injector"
    "github.com/cedricziel/mel-agent/internal/triggers"
    "github.com/cedricziel/mel-agent/internal/runs"
 )
@@ -28,6 +28,10 @@ func main() {
     db.Connect()
     // load connection plugins from the database
     plugin.RegisterConnectionPlugins()
+    // register node plugins via injector (core + builder)
+    for _, p := range injector.InitializeNodePlugins() {
+        plugin.Register(p)
+    }
     // start trigger scheduler engine
     scheduler := triggers.NewEngine()
     scheduler.Start()
