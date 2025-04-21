@@ -14,7 +14,6 @@ func init() {
    api.RegisterNodeDefinition(httpResponseDefinition{})
    api.RegisterNodeDefinition(dbQueryDefinition{})
    api.RegisterNodeDefinition(emailDefinition{})
-   api.RegisterNodeDefinition(fileIODefinition{})
    api.RegisterNodeDefinition(logDefinition{})
    api.RegisterNodeDefinition(noopDefinition{})
 }
@@ -168,17 +167,8 @@ func (emailDefinition) Execute(agentID string, node api.Node, input interface{})
    return input, nil
 }
 
-// --- File I/O Node ---
-type fileIODefinition struct{}
-func (fileIODefinition) Meta() api.NodeType {
-   return api.NodeType{Type: "file_io", Label: "File I/O", Category: "Integration", Parameters: []api.ParameterDefinition{
-           {Name: "operation", Label: "Operation", Type: "enum", Required: true, Default: "read", Options: []string{"read", "write"}, Group: "Settings"},
-           {Name: "path", Label: "Path", Type: "string", Required: true, Group: "Settings"},
-       }}
-}
-func (fileIODefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
-   return input, nil
-}
+   // --- File I/O Node ---
+   // Migrated to pkg/api/nodes/file_io
 
 // --- Random Node ---
 // Migrated to pkg/api/nodes/random

@@ -7,6 +7,8 @@ import (
    _ "github.com/cedricziel/mel-agent/pkg/api/nodes/delay"
    // import migrated Random node definition
    _ "github.com/cedricziel/mel-agent/pkg/api/nodes/random"
+   // import migrated File I/O node definition
+   _ "github.com/cedricziel/mel-agent/pkg/api/nodes/file_io"
    // import migrated Set Variable node
    _ "github.com/cedricziel/mel-agent/pkg/api/nodes/set_variable"
    // import migrated transform node to register via internal/API
