@@ -95,7 +95,7 @@ func AllCoreDefinitions() []NodeDefinition {
 }
 
 // init registers all core NodeDefinitions for the /node-types endpoint.
-// Builder definitions are registered by blank-importing internal/api/nodes.
+// Builder definitions are registered by blank-importing pkg/api/nodes.
 func init() {
    for _, def := range AllCoreDefinitions() {
        RegisterNodeDefinition(def)

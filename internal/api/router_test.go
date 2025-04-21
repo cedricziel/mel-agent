@@ -6,7 +6,7 @@ import (
    "net/http/httptest"
    "testing"
    // load builder node definitions
-   _ "github.com/cedricziel/mel-agent/internal/api/nodes"
+   _ "github.com/cedricziel/mel-agent/pkg/api/nodes"
 
    "github.com/cedricziel/mel-agent/internal/api"
    "github.com/cedricziel/mel-agent/internal/plugin"
