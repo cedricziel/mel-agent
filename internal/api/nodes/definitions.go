@@ -8,10 +8,10 @@ import (
 func init() {
    // setVariableDefinition migrated out to pkg/api/nodes/set_variable
    // mergeDefinition migrated to pkg/api/nodes/merge
-   api.RegisterNodeDefinition(dbQueryDefinition{})
-   api.RegisterNodeDefinition(emailDefinition{})
-   api.RegisterNodeDefinition(logDefinition{})
-   api.RegisterNodeDefinition(noopDefinition{})
+   // dbQueryDefinition migrated to pkg/api/nodes/db_query
+   // emailDefinition migrated to pkg/api/nodes/email
+   // logDefinition migrated to pkg/api/nodes/log
+   // noopDefinition migrated to pkg/api/nodes/noop
 }
 
 // --- Set Variable Node ---
@@ -57,39 +57,10 @@ func (setVariableDefinition) Execute(agentID string, node api.Node, input interf
 // Migrated to pkg/api/nodes/http_response
 
 // --- DB Query Node ---
-type dbQueryDefinition struct{}
-func (dbQueryDefinition) Meta() api.NodeType {
-   return api.NodeType{
-       Type:     "db_query",
-       Label:    "DB Query",
-       Category: "Integration",
-       Parameters: []api.ParameterDefinition{
-           {Name: "connectionId", Label: "Connection ID", Type: "string", Required: true, Group: "Settings"},
-           {Name: "query", Label: "SQL Query", Type: "string", Required: true, Group: "Settings"},
-       },
-   }
-}
-func (dbQueryDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
-   return input, nil
-}
+// Migrated to pkg/api/nodes/db_query
 
 // --- Email Notification Node ---
-type emailDefinition struct{}
-func (emailDefinition) Meta() api.NodeType {
-   return api.NodeType{
-       Type:     "email",
-       Label:    "Email",
-       Category: "Integration",
-       Parameters: []api.ParameterDefinition{
-           {Name: "to", Label: "To", Type: "string", Required: true, Group: "Settings"},
-           {Name: "subject", Label: "Subject", Type: "string", Required: true, Group: "Settings"},
-           {Name: "body", Label: "Body", Type: "string", Required: true, Group: "Settings"},
-       },
-   }
-}
-func (emailDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
-   return input, nil
-}
+// Migrated to pkg/api/nodes/email
 
    // --- File I/O Node ---
    // Migrated to pkg/api/nodes/file_io
@@ -98,18 +69,7 @@ func (emailDefinition) Execute(agentID string, node api.Node, input interface{})
 // Migrated to pkg/api/nodes/random
 
 // --- Log Node ---
-type logDefinition struct{}
-func (logDefinition) Meta() api.NodeType {
-   return api.NodeType{Type: "log", Label: "Log", Category: "Utility", Parameters: []api.ParameterDefinition{
-           {Name: "level", Label: "Level", Type: "enum", Required: true, Default: "info", Options: []string{"debug", "info", "warn", "error"}, Group: "Settings"},
-           {Name: "message", Label: "Message", Type: "string", Required: true, Group: "Settings"},
-       }}
-}
-func (logDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
-   return input, nil
-}
+// Migrated to pkg/api/nodes/log
 
 // --- No-Op Node ---
-type noopDefinition struct{}
-func (noopDefinition) Meta() api.NodeType { return api.NodeType{Type: "noop", Label: "No-Op", Category: "Control"} }
-func (noopDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) { return input, nil }
+// Migrated to pkg/api/nodes/noop
