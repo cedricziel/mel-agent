@@ -11,7 +11,6 @@ func init() {
    api.RegisterNodeDefinition(switchDefinition{})
    api.RegisterNodeDefinition(forEachDefinition{})
    api.RegisterNodeDefinition(mergeDefinition{})
-   api.RegisterNodeDefinition(httpResponseDefinition{})
    api.RegisterNodeDefinition(dbQueryDefinition{})
    api.RegisterNodeDefinition(emailDefinition{})
    api.RegisterNodeDefinition(logDefinition{})
@@ -116,21 +115,7 @@ func (mergeDefinition) Execute(agentID string, node api.Node, input interface{})
   // Migrated to pkg/api/nodes/delay
 
 // --- HTTP Response Node ---
-type httpResponseDefinition struct{}
-func (httpResponseDefinition) Meta() api.NodeType {
-   return api.NodeType{
-       Type:     "http_response",
-       Label:    "HTTP Response",
-       Category: "Integration",
-       Parameters: []api.ParameterDefinition{
-           {Name: "statusCode", Label: "Status Code", Type: "number", Required: true, Default: 200, Group: "Settings"},
-           {Name: "body", Label: "Body", Type: "string", Required: false, Default: "", Group: "Settings"},
-       },
-   }
-}
-func (httpResponseDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
-   return input, nil
-}
+// Migrated to pkg/api/nodes/http_response
 
 // --- DB Query Node ---
 type dbQueryDefinition struct{}

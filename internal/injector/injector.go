@@ -11,6 +11,8 @@ import (
    _ "github.com/cedricziel/mel-agent/pkg/api/nodes/file_io"
    // import migrated Set Variable node
    _ "github.com/cedricziel/mel-agent/pkg/api/nodes/set_variable"
+   // import migrated HTTP Response node definition
+   _ "github.com/cedricziel/mel-agent/pkg/api/nodes/http_response"
    // import migrated transform node to register via internal/API
    _ "github.com/cedricziel/mel-agent/pkg/api/nodes/transform"
    adapters "github.com/cedricziel/mel-agent/pkg/plugin/adapters"
