@@ -7,8 +7,7 @@ import (
 // init registers all built-in builder node definitions.
 func init() {
    // setVariableDefinition migrated out to pkg/api/nodes/set_variable
-   api.RegisterNodeDefinition(forEachDefinition{})
-   api.RegisterNodeDefinition(mergeDefinition{})
+   // mergeDefinition migrated to pkg/api/nodes/merge
    api.RegisterNodeDefinition(dbQueryDefinition{})
    api.RegisterNodeDefinition(emailDefinition{})
    api.RegisterNodeDefinition(logDefinition{})
@@ -49,37 +48,7 @@ func (setVariableDefinition) Execute(agentID string, node api.Node, input interf
 // --- Switch Node ---
 // Migrated to pkg/api/nodes/switch_node
 
-// --- For Each Node ---
-type forEachDefinition struct{}
-func (forEachDefinition) Meta() api.NodeType {
-   return api.NodeType{
-       Type:     "for_each",
-       Label:    "For Each",
-       Category: "Control",
-       Parameters: []api.ParameterDefinition{
-           {Name: "path", Label: "Array Path", Type: "string", Required: true, Group: "Settings"},
-       },
-   }
-}
-func (forEachDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
-   return input, nil
-}
 
-// --- Merge Node ---
-type mergeDefinition struct{}
-func (mergeDefinition) Meta() api.NodeType {
-   return api.NodeType{
-       Type:     "merge",
-       Label:    "Merge",
-       Category: "Control",
-       Parameters: []api.ParameterDefinition{
-           {Name: "strategy", Label: "Strategy", Type: "enum", Required: true, Default: "concat", Options: []string{"concat", "union"}, Group: "Settings"},
-       },
-   }
-}
-func (mergeDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
-   return input, nil
-}
 
   // --- Delay Node ---
   // Migrated to pkg/api/nodes/delay

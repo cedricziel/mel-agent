@@ -9,6 +9,10 @@ import (
    _ "github.com/cedricziel/mel-agent/pkg/api/nodes/random"
    // import migrated File I/O node definition
    _ "github.com/cedricziel/mel-agent/pkg/api/nodes/file_io"
+  // import migrated For Each node definition
+   _ "github.com/cedricziel/mel-agent/pkg/api/nodes/for_each"
+  // import migrated Merge node definition
+   _ "github.com/cedricziel/mel-agent/pkg/api/nodes/merge"
    // import migrated Set Variable node
    _ "github.com/cedricziel/mel-agent/pkg/api/nodes/set_variable"
    // import migrated HTTP Response node definition
