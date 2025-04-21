@@ -1,7 +1,7 @@
 package delay
 
 import (
-   internalapi "github.com/cedricziel/mel-agent/internal/api"
+   api "github.com/cedricziel/mel-agent/pkg/api"
    "time"
 )
 
@@ -9,8 +9,8 @@ import (
 type delayDefinition struct{}
 
 // Meta returns metadata for the Delay node.
-func (delayDefinition) Meta() internalapi.NodeType {
-   return internalapi.NodeType{
+func (delayDefinition) Meta() api.NodeType {
+   return api.NodeType{
        Type:     "delay",
        Label:    "Delay",
        Category: "Control",
@@ -21,7 +21,7 @@ func (delayDefinition) Meta() internalapi.NodeType {
 }
 
 // Execute pauses execution for the specified duration.
-func (delayDefinition) Execute(agentID string, node internalapi.Node, input interface{}) (interface{}, error) {
+func (delayDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
    dur, ok := node.Data["duration"].(float64)
    if !ok {
        return input, nil
@@ -31,5 +31,5 @@ func (delayDefinition) Execute(agentID string, node internalapi.Node, input inte
 }
 
 func init() {
-   internalapi.RegisterNodeDefinition(delayDefinition{})
+   api.RegisterNodeDefinition(delayDefinition{})
 }
