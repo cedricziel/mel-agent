@@ -10,7 +10,6 @@ import (
 // init registers all built-in builder node definitions.
 func init() {
    api.RegisterNodeDefinition(setVariableDefinition{})
-   api.RegisterNodeDefinition(transformDefinition{})
    api.RegisterNodeDefinition(scriptDefinition{})
    api.RegisterNodeDefinition(switchDefinition{})
    api.RegisterNodeDefinition(forEachDefinition{})
@@ -51,21 +50,7 @@ func (setVariableDefinition) Execute(agentID string, node api.Node, input interf
    return data, nil
 }
 
-// --- Transform Node ---
-type transformDefinition struct{}
-func (transformDefinition) Meta() api.NodeType {
-   return api.NodeType{
-       Type:     "transform",
-       Label:    "Transform",
-       Category: "Utility",
-       Parameters: []api.ParameterDefinition{
-           {Name: "expression", Label: "Expression", Type: "string", Required: true, Group: "Settings", Description: "Transform input via expression"},
-       },
-   }
-}
-func (transformDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
-   return input, nil
-}
+
 
 // --- Script Node ---
 type scriptDefinition struct{}
