@@ -2,7 +2,6 @@ package nodes
 
 import (
    "fmt"
-   "time"
    "github.com/cedricziel/mel-agent/internal/api"
    "github.com/google/uuid"
 )
@@ -14,7 +13,6 @@ func init() {
    api.RegisterNodeDefinition(switchDefinition{})
    api.RegisterNodeDefinition(forEachDefinition{})
    api.RegisterNodeDefinition(mergeDefinition{})
-   api.RegisterNodeDefinition(delayDefinition{})
    api.RegisterNodeDefinition(httpResponseDefinition{})
    api.RegisterNodeDefinition(dbQueryDefinition{})
    api.RegisterNodeDefinition(emailDefinition{})
@@ -118,22 +116,8 @@ func (mergeDefinition) Execute(agentID string, node api.Node, input interface{})
    return input, nil
 }
 
-// --- Delay Node ---
-type delayDefinition struct{}
-func (delayDefinition) Meta() api.NodeType {
-   return api.NodeType{
-       Type:     "delay",
-       Label:    "Delay",
-       Category: "Control",
-       Parameters: []api.ParameterDefinition{
-           {Name: "duration", Label: "Duration (ms)", Type: "number", Required: true, Default: 1000, Group: "Settings"},
-       },
-   }
-}
-func (delayDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
-   time.Sleep(time.Duration(node.Data["duration"].(float64)) * time.Millisecond)
-   return input, nil
-}
+  // --- Delay Node ---
+  // Migrated to pkg/api/nodes/delay
 
 // --- HTTP Response Node ---
 type httpResponseDefinition struct{}
