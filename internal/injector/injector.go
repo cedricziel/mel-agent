@@ -3,6 +3,8 @@ package injector
 import (
    // blank-import legacy builder nodes so they register with internal/api
    _ "github.com/cedricziel/mel-agent/internal/api/nodes"
+   // import migrated Set Variable node
+   _ "github.com/cedricziel/mel-agent/pkg/api/nodes/set_variable"
    // import migrated transform node to register via internal/API
    _ "github.com/cedricziel/mel-agent/pkg/api/nodes/transform"
    adapters "github.com/cedricziel/mel-agent/pkg/plugin/adapters"

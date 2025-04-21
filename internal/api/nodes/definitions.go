@@ -9,7 +9,7 @@ import (
 
 // init registers all built-in builder node definitions.
 func init() {
-   api.RegisterNodeDefinition(setVariableDefinition{})
+   // setVariableDefinition migrated out to pkg/api/nodes/set_variable
    api.RegisterNodeDefinition(scriptDefinition{})
    api.RegisterNodeDefinition(switchDefinition{})
    api.RegisterNodeDefinition(forEachDefinition{})
