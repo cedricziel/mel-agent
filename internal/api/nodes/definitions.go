@@ -1,9 +1,7 @@
 package nodes
 
 import (
-   "fmt"
    "github.com/cedricziel/mel-agent/internal/api"
-   "github.com/google/uuid"
 )
 
 // init registers all built-in builder node definitions.
@@ -17,7 +15,6 @@ func init() {
    api.RegisterNodeDefinition(dbQueryDefinition{})
    api.RegisterNodeDefinition(emailDefinition{})
    api.RegisterNodeDefinition(fileIODefinition{})
-   api.RegisterNodeDefinition(randomDefinition{})
    api.RegisterNodeDefinition(logDefinition{})
    api.RegisterNodeDefinition(noopDefinition{})
 }
@@ -184,21 +181,7 @@ func (fileIODefinition) Execute(agentID string, node api.Node, input interface{}
 }
 
 // --- Random Node ---
-type randomDefinition struct{}
-func (randomDefinition) Meta() api.NodeType {
-   return api.NodeType{Type: "random", Label: "Random", Category: "Utility", Parameters: []api.ParameterDefinition{
-           {Name: "type", Label: "Type", Type: "enum", Required: true, Default: "uuid", Options: []string{"uuid", "number"}, Group: "Settings"},
-       }}
-}
-func (randomDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
-   typ, _ := node.Data["type"].(string)
-   switch typ {
-   case "uuid":
-       return fmt.Sprintf("%s", uuid.New()), nil
-   default:
-       return input, nil
-   }
-}
+// Migrated to pkg/api/nodes/random
 
 // --- Log Node ---
 type logDefinition struct{}
