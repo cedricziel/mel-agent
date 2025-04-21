@@ -1,28 +1,19 @@
 package nodes
 
 import (
-   "fmt"
-   "time"
-
    "github.com/cedricziel/mel-agent/internal/api"
-   "github.com/google/uuid"
 )
 
-// This file registers a set of basic node types (Utility, Transform, I/O, etc.)
-// that users can drag into their builder flows.
+// init registers all built-in builder node definitions.
 func init() {
-   api.RegisterNodeDefinition(setVariableDefinition{})
-   api.RegisterNodeDefinition(transformDefinition{})
+   // setVariableDefinition migrated out to pkg/api/nodes/set_variable
    api.RegisterNodeDefinition(scriptDefinition{})
    api.RegisterNodeDefinition(switchDefinition{})
    api.RegisterNodeDefinition(forEachDefinition{})
    api.RegisterNodeDefinition(mergeDefinition{})
-   api.RegisterNodeDefinition(delayDefinition{})
    api.RegisterNodeDefinition(httpResponseDefinition{})
    api.RegisterNodeDefinition(dbQueryDefinition{})
    api.RegisterNodeDefinition(emailDefinition{})
-   api.RegisterNodeDefinition(fileIODefinition{})
-   api.RegisterNodeDefinition(randomDefinition{})
    api.RegisterNodeDefinition(logDefinition{})
    api.RegisterNodeDefinition(noopDefinition{})
 }
@@ -53,22 +44,7 @@ func (setVariableDefinition) Execute(agentID string, node api.Node, input interf
    return data, nil
 }
 
-// --- Transform Node (Map) ---
-type transformDefinition struct{}
-func (transformDefinition) Meta() api.NodeType {
-   return api.NodeType{
-       Type:     "transform",
-       Label:    "Transform",
-       Category: "Utility",
-       Parameters: []api.ParameterDefinition{
-           {Name: "expression", Label: "Expression", Type: "string", Required: true, Group: "Settings", Description: "CEL or JS expression to map input"},
-       },
-   }
-}
-func (transformDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
-   // Placeholder: currently passthrough
-   return input, nil
-}
+
 
 // --- Script Node ---
 type scriptDefinition struct{}
@@ -84,7 +60,6 @@ func (scriptDefinition) Meta() api.NodeType {
    }
 }
 func (scriptDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
-   // Placeholder: passthrough
    return input, nil
 }
 
@@ -102,11 +77,10 @@ func (switchDefinition) Meta() api.NodeType {
    }
 }
 func (switchDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
-   // Placeholder: passthrough
    return input, nil
 }
 
-// --- For-Each Node ---
+// --- For Each Node ---
 type forEachDefinition struct{}
 func (forEachDefinition) Meta() api.NodeType {
    return api.NodeType{
@@ -114,12 +88,11 @@ func (forEachDefinition) Meta() api.NodeType {
        Label:    "For Each",
        Category: "Control",
        Parameters: []api.ParameterDefinition{
-           {Name: "path", Label: "Array Path", Type: "string", Required: true, Group: "Settings", Description: "JSONPath to array"},
+           {Name: "path", Label: "Array Path", Type: "string", Required: true, Group: "Settings"},
        },
    }
 }
 func (forEachDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
-   // Placeholder: passthrough
    return input, nil
 }
 
@@ -136,27 +109,11 @@ func (mergeDefinition) Meta() api.NodeType {
    }
 }
 func (mergeDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
-   // Placeholder: passthrough
    return input, nil
 }
 
-// --- Delay Node ---
-type delayDefinition struct{}
-func (delayDefinition) Meta() api.NodeType {
-   return api.NodeType{
-       Type:     "delay",
-       Label:    "Delay",
-       Category: "Control",
-       Parameters: []api.ParameterDefinition{
-           {Name: "duration", Label: "Duration (ms)", Type: "number", Required: true, Default: 1000, Group: "Settings"},
-       },
-   }
-}
-func (delayDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
-   dms, _ := node.Data["duration"].(float64)
-   time.Sleep(time.Duration(dms) * time.Millisecond)
-   return input, nil
-}
+  // --- Delay Node ---
+  // Migrated to pkg/api/nodes/delay
 
 // --- HTTP Response Node ---
 type httpResponseDefinition struct{}
@@ -175,7 +132,7 @@ func (httpResponseDefinition) Execute(agentID string, node api.Node, input inter
    return input, nil
 }
 
-// --- Database Query Node ---
+// --- DB Query Node ---
 type dbQueryDefinition struct{}
 func (dbQueryDefinition) Meta() api.NodeType {
    return api.NodeType{
@@ -210,36 +167,13 @@ func (emailDefinition) Execute(agentID string, node api.Node, input interface{})
    return input, nil
 }
 
-// --- File I/O Node ---
-type fileIODefinition struct{}
-func (fileIODefinition) Meta() api.NodeType {
-   return api.NodeType{Type: "file_io", Label: "File I/O", Category: "Integration", Parameters: []api.ParameterDefinition{
-           {Name: "operation", Label: "Operation", Type: "enum", Required: true, Default: "read", Options: []string{"read", "write"}, Group: "Settings"},
-           {Name: "path", Label: "Path", Type: "string", Required: true, Group: "Settings"},
-       }}
-}
-func (fileIODefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
-   return input, nil
-}
+   // --- File I/O Node ---
+   // Migrated to pkg/api/nodes/file_io
 
-// --- Random / Utility Node ---
-type randomDefinition struct{}
-func (randomDefinition) Meta() api.NodeType {
-   return api.NodeType{Type: "random", Label: "Random", Category: "Utility", Parameters: []api.ParameterDefinition{
-           {Name: "type", Label: "Type", Type: "enum", Required: true, Default: "uuid", Options: []string{"uuid", "number"}, Group: "Settings"},
-       }}
-}
-func (randomDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
-   typ, _ := node.Data["type"].(string)
-   switch typ {
-   case "uuid":
-       return fmt.Sprintf("%s", uuid.New()), nil
-   default:
-       return input, nil
-   }
-}
+// --- Random Node ---
+// Migrated to pkg/api/nodes/random
 
-// --- Log / Audit Node ---
+// --- Log Node ---
 type logDefinition struct{}
 func (logDefinition) Meta() api.NodeType {
    return api.NodeType{Type: "log", Label: "Log", Category: "Utility", Parameters: []api.ParameterDefinition{

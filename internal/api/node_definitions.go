@@ -7,9 +7,7 @@ import (
    "errors"
    "fmt"
    "net/http"
-
    openai "github.com/sashabaranov/go-openai"
-
    "github.com/cedricziel/mel-agent/internal/db"
 )
 
@@ -80,18 +78,28 @@ func FindDefinition(typ string) NodeDefinition {
 	return nil
 }
 
-// Register built-in node definitions.
+// AllCoreDefinitions returns the built-in core trigger and utility node definitions.
+func AllCoreDefinitions() []NodeDefinition {
+   return []NodeDefinition{
+       timerDefinition{},
+       scheduleDefinition{},
+       webhookDefinition{},
+       slackDefinition{},
+       httpRequestDefinition{},
+       ifDefinition{},
+       switchDefinition{},
+       agentDefinition{},
+       llmDefinition{},
+       injectDefinition{},
+   }
+}
+
+// init registers all core NodeDefinitions for the /node-types endpoint.
+// Builder definitions are registered by blank-importing pkg/api/nodes.
 func init() {
-	RegisterNodeDefinition(timerDefinition{})
-	RegisterNodeDefinition(scheduleDefinition{})
-	RegisterNodeDefinition(webhookDefinition{})
-	RegisterNodeDefinition(slackDefinition{})
-	RegisterNodeDefinition(httpRequestDefinition{})
-	RegisterNodeDefinition(ifDefinition{})
-	RegisterNodeDefinition(switchDefinition{})
-	RegisterNodeDefinition(agentDefinition{})
-	RegisterNodeDefinition(llmDefinition{})
-	RegisterNodeDefinition(injectDefinition{})
+   for _, def := range AllCoreDefinitions() {
+       RegisterNodeDefinition(def)
+   }
 }
 
 // --- Timer Node Definition ---
