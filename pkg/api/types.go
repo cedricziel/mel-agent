@@ -43,3 +43,7 @@ func RegisterNodeDefinition(def NodeDefinition) {
 func ListNodeDefinitions() []NodeDefinition {
    return internal.ListNodeDefinitions()
 }
+// AllCoreDefinitions returns the built-in core trigger and utility node definitions.
+func AllCoreDefinitions() []NodeDefinition {
+   return internal.AllCoreDefinitions()
+}
