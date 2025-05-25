@@ -20,3 +20,7 @@ func (agentDefinition) Execute(ctx api.ExecutionContext, node api.Node, input in
 func (agentDefinition) Initialize(mel api.Mel) error {
 	return nil
 }
+
+func init() {
+	api.RegisterNodeDefinition(agentDefinition{})
+}

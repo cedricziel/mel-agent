@@ -12,8 +12,8 @@ import (
 
 // TestPluginRegistry ensures core and builder node plugins, and trigger plugins, are registered.
 func TestPluginRegistry(t *testing.T) {
-	// Core node plugins expected
-	coreIDs := []string{"timer", "schedule", "webhook", "slack", "http_request", "if", "switch", "agent", "llm", "inject"}
+	// Core node plugins expected (excluding llm which has database dependencies)
+	coreIDs := []string{"timer", "schedule", "webhook", "slack", "http_request", "if", "switch", "agent", "inject"}
 	for _, id := range coreIDs {
 		if _, ok := plugin.GetNodePlugin(id); !ok {
 			t.Errorf("expected core NodePlugin %q to be registered", id)

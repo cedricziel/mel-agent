@@ -97,3 +97,7 @@ func (llmDefinition) Execute(ctx api.ExecutionContext, node api.Node, input inte
 func (llmDefinition) Initialize(mel api.Mel) error {
 	return nil
 }
+
+func init() {
+	api.RegisterNodeDefinition(llmDefinition{})
+}

@@ -27,3 +27,7 @@ func (timerDefinition) Execute(ctx api.ExecutionContext, node api.Node, input in
 func (timerDefinition) Initialize(mel api.Mel) error {
 	return nil
 }
+
+func init() {
+	api.RegisterNodeDefinition(timerDefinition{})
+}

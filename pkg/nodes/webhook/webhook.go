@@ -29,3 +29,7 @@ func (webhookDefinition) Execute(ctx api.ExecutionContext, node api.Node, input 
 func (webhookDefinition) Initialize(mel api.Mel) error {
 	return nil
 }
+
+func init() {
+	api.RegisterNodeDefinition(webhookDefinition{})
+}
