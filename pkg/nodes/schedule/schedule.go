@@ -19,6 +19,10 @@ func (scheduleDefinition) Meta() api.NodeType {
 		},
 	}
 }
-func (scheduleDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
+func (scheduleDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
 	return input, nil
+}
+
+func (scheduleDefinition) Initialize(mel api.Mel) error {
+	return nil
 }

@@ -11,8 +11,12 @@ func (noopDefinition) Meta() api.NodeType {
 }
 
 // Execute returns the input unchanged.
-func (noopDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
+func (noopDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
 	return input, nil
+}
+
+func (noopDefinition) Initialize(mel api.Mel) error {
+	return nil
 }
 
 func init() {

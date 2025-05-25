@@ -6,10 +6,11 @@ import (
    "net/http/httptest"
    "testing"
    // load builder node definitions
-   _ "github.com/cedricziel/mel-agent/pkg/api/nodes"
+   _ "github.com/cedricziel/mel-agent/pkg/nodes"
 
    "github.com/cedricziel/mel-agent/internal/api"
    "github.com/cedricziel/mel-agent/internal/plugin"
+   pkgapi "github.com/cedricziel/mel-agent/pkg/api"
 )
 
 // TestListExtensions verifies the /extensions endpoint.
@@ -49,7 +50,7 @@ func TestListNodeTypes(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("expected status 200, got %d", resp.StatusCode)
 	}
-	var types []api.NodeType
+	var types []pkgapi.NodeType
 	if err := json.NewDecoder(resp.Body).Decode(&types); err != nil {
 		t.Fatalf("failed to decode response: %v", err)
 	}

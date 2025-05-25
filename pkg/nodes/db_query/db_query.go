@@ -19,8 +19,12 @@ func (dbQueryDefinition) Meta() internalapi.NodeType {
 }
 
 // Execute returns the input unchanged (actual I/O happens at runtime).
-func (dbQueryDefinition) Execute(agentID string, node internalapi.Node, input interface{}) (interface{}, error) {
+func (dbQueryDefinition) Execute(ctx internalapi.ExecutionContext, node internalapi.Node, input interface{}) (interface{}, error) {
 	return input, nil
+}
+
+func (dbQueryDefinition) Initialize(mel internalapi.Mel) error {
+	return nil
 }
 
 func init() {

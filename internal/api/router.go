@@ -1,17 +1,18 @@
 package api
 
 import (
-   "database/sql"
-   "encoding/json"
-   "io/ioutil"
-   "net/http"
-   "strings"
-   "time"
+	"database/sql"
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"strings"
+	"time"
 
-   "github.com/cedricziel/mel-agent/internal/db"
-   "github.com/cedricziel/mel-agent/internal/plugin"
-   "github.com/go-chi/chi/v5"
-   "github.com/google/uuid"
+	"github.com/cedricziel/mel-agent/internal/db"
+	"github.com/cedricziel/mel-agent/internal/plugin"
+	"github.com/cedricziel/mel-agent/pkg/api"
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 // Handler returns a router with API routes mounted.
@@ -57,11 +58,11 @@ func Handler() http.Handler {
 	r.Get("/agents/{agentID}/versions/latest", getLatestAgentVersionHandler)
 	// Execute a single node with provided input data (stub implementation)
 	r.Post("/agents/{agentID}/nodes/{nodeID}/execute", executeNodeHandler)
-   // Chat assistant endpoint for builder
-   r.Post("/agents/{agentID}/assistant/chat", assistantChatHandler)
+	// Chat assistant endpoint for builder
+	r.Post("/agents/{agentID}/assistant/chat", assistantChatHandler)
 
-  // Plugin extensions catalog
-  r.Get("/extensions", listExtensionsHandler)
+	// Plugin extensions catalog
+	r.Get("/extensions", listExtensionsHandler)
 
 	return r
 }
@@ -75,8 +76,8 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 
 // listExtensionsHandler returns the catalog of registered plugins (GoPlugins and MCP servers).
 func listExtensionsHandler(w http.ResponseWriter, r *http.Request) {
-   metas := plugin.GetAllPlugins()
-   writeJSON(w, http.StatusOK, metas)
+	metas := plugin.GetAllPlugins()
+	writeJSON(w, http.StatusOK, metas)
 }
 
 // --- Agent handlers ---
@@ -202,7 +203,7 @@ func createAgentVersion(w http.ResponseWriter, r *http.Request) {
 		processed := map[string]bool{}
 		for _, nd := range graph.Nodes {
 			// Only sync entry-point (trigger) node types
-			def := FindDefinition(nd.Type)
+			def := api.FindDefinition(nd.Type)
 			if def == nil || !def.Meta().EntryPoint {
 				continue
 			}
@@ -520,181 +521,43 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
 		return
 	}
-   // Read raw body
-   rawBody, err := ioutil.ReadAll(r.Body)
-   if err != nil {
-       writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
-       return
-   }
-   // Build plugin payload
-   triggerPayload := map[string]interface{}{
-       "trigger_id": triggerID,
-       "agent_id":   agentID,
-       "node_id":    nodeID,
-       "http_method": r.Method,
-       "headers":     r.Header,
-       "body_raw":    rawBody,
-   }
-   // Invoke the webhook trigger plugin
-   p, ok := plugin.GetTriggerPlugin(provider)
-   if !ok {
-       writeJSON(w, http.StatusNotImplemented, map[string]string{"error": "no webhook plugin"})
-       return
-   }
-   runIDRaw, err := p.OnTrigger(r.Context(), triggerPayload)
-   if err != nil {
-       // Treat method not allowed specially
-       if err.Error() == "method not allowed" {
-           writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": err.Error()})
-       } else {
-           writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-       }
-       return
-   }
-   runID, _ := runIDRaw.(string)
-   // Respond with run ID and default accepted status
-   writeJSON(w, http.StatusAccepted, map[string]string{"runId": runID})
-   return
-}
-/*
-			"versionId":   versionID.String,
-			"startNodeId": nodeID,
-			"input":       payload,
-		}
-		rawSync, _ := json.Marshal(syncPayload)
-		runID := uuid.New().String()
-		_, _ = db.DB.Exec(`INSERT INTO agent_runs (id, agent_id, payload, status) VALUES ($1, $2, $3::jsonb, 'running')`, runID, agentID, string(rawSync))
-		var graphRaw []byte
-		if err := db.DB.QueryRow(`SELECT graph FROM agent_versions WHERE id = $1`, versionID.String).Scan(&graphRaw); err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-			return
-		}
-		// Unmarshal graph for execution
-		var graphData interface{}
-		_ = json.Unmarshal(graphRaw, &graphData)
-		var graphStruct struct {
-			Nodes []Node `json:"nodes"`
-		}
-		if err := json.Unmarshal(graphRaw, &graphStruct); err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-			return
-		}
-		// Prepare execution payload
-		type Item struct {
-			ID   string      `json:"id"`
-			Data interface{} `json:"data"`
-		}
-		type Step struct {
-			NodeID string `json:"nodeId"`
-			Input  []Item `json:"input"`
-			Output []Item `json:"output"`
-		}
-		type Payload struct {
-			RunID   string                 `json:"runId"`
-			Graph   interface{}            `json:"graph"`
-			Context map[string]interface{} `json:"context"`
-			Meta    map[string]interface{} `json:"meta"`
-			Trace   []Step                 `json:"trace"`
-		}
-
-		initial := Item{ID: uuid.New().String(), Data: payload}
-		execPayload := Payload{
-			RunID:   runID,
-			Graph:   graphData,
-			Context: map[string]interface{}{},
-			Meta:    map[string]interface{}{"startTime": time.Now().UTC().Format(time.RFC3339)},
-			Trace:   []Step{},
-		}
-		current := []Item{initial}
-		// Execute nodes sequentially
-		// Broadcast execution events on WS hub
-		hub := GetHub(agentID)
-		for _, node := range graphStruct.Nodes {
-			// Notify start of node execution
-			if startMsg, err := json.Marshal(map[string]string{"type": "nodeExecution", "nodeId": node.ID, "phase": "start"}); err == nil {
-				hub.Broadcast(startMsg)
-			}
-			inputs := current
-			var next []Item
-			for _, it := range inputs {
-				out, err := executeNodeLocal(agentID, node, it.Data)
-				if err != nil {
-					next = append(next, Item{ID: it.ID, Data: map[string]interface{}{"error": err.Error()}})
-				} else if out != nil {
-					next = append(next, Item{ID: it.ID, Data: out})
-				}
-			}
-			// Notify end of node execution
-			if endMsg, err := json.Marshal(map[string]string{"type": "nodeExecution", "nodeId": node.ID, "phase": "end"}); err == nil {
-				hub.Broadcast(endMsg)
-			}
-			execPayload.Trace = append(execPayload.Trace, Step{NodeID: node.ID, Input: inputs, Output: next})
-			execPayload.Meta["lastNode"] = node.ID
-			current = next
-		}
-		execPayload.Meta["finalItems"] = current
-		// Persist run record
-		rawExec, err := json.Marshal(execPayload)
-		if err == nil {
-			_, _ = db.DB.Exec(`INSERT INTO agent_runs (id, agent_id, payload) VALUES ($1, $2, $3::jsonb)`, runID, agentID, string(rawExec))
-		}
-		// Determine response status and body
-		statusCode := 200
-		if sc, ok := cfg["statusCode"].(float64); ok {
-			statusCode = int(sc)
-		}
-		// Default to entire execPayload
-		respBody := any(execPayload)
-		if rb, ok := cfg["responseBody"]; ok {
-			respBody = rb
-		}
-		// Include run ID in response headers for tracing
-		w.Header().Set("X-Run-Id", runID)
-		writeJSON(w, statusCode, respBody)
-		return
-	}
-	// Asynchronous execution: enqueue and return immediately
-	_, _ = db.DB.Exec(`UPDATE triggers SET last_checked = now() WHERE id = $1`, triggerID)
-	// Fetch latest agent version
-	var versionID sql.NullString
-	if err := db.DB.QueryRow(
-		`SELECT latest_version_id FROM agents WHERE id = $1`, agentID,
-	).Scan(&versionID); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-	if !versionID.Valid {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "no version available for agent"})
-		return
-	}
-	// Build run payload
-	runPayload := map[string]interface{}{"versionId": versionID.String, "startNodeId": nodeID, "input": payload}
-	raw, err := json.Marshal(runPayload)
+	// Read raw body
+	rawBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	runID := uuid.New().String()
-	if _, err := db.DB.Exec(`INSERT INTO agent_runs (id, agent_id, payload) VALUES ($1, $2, $3::jsonb)`, runID, agentID, string(raw)); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	// Build plugin payload
+	triggerPayload := map[string]interface{}{
+		"trigger_id":  triggerID,
+		"agent_id":    agentID,
+		"node_id":     nodeID,
+		"http_method": r.Method,
+		"headers":     r.Header,
+		"body_raw":    rawBody,
+	}
+	// Invoke the webhook trigger plugin
+	p, ok := plugin.GetTriggerPlugin(provider)
+	if !ok {
+		writeJSON(w, http.StatusNotImplemented, map[string]string{"error": "no webhook plugin"})
 		return
 	}
-	// Return configured immediate response
-	statusCode := 202
-	if sc, ok := cfg["statusCode"].(float64); ok {
-		statusCode = int(sc)
+	runIDRaw, err := p.OnTrigger(r.Context(), triggerPayload)
+	if err != nil {
+		// Treat method not allowed specially
+		if err.Error() == "method not allowed" {
+			writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": err.Error()})
+		} else {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+		return
 	}
-	resp := map[string]string{"runId": runID}
-	if rb, ok := cfg["responseBody"]; ok {
-		// if responseBody is a string, return raw; else return as JSON object
-		resp = map[string]string{"body": fmt.Sprint(rb)}
-	}
-	// Include run ID in response headers for tracing
-	w.Header().Set("X-Run-Id", runID)
-	writeJSON(w, statusCode, resp)
+	runID, _ := runIDRaw.(string)
+	// Respond with run ID and default accepted status
+	writeJSON(w, http.StatusAccepted, map[string]string{"runId": runID})
+	return
 }
 
-*/
 // executeNodeHandler handles running a single node with provided input (stub implementation)
 func executeNodeHandler(w http.ResponseWriter, r *http.Request) {
 	agentID := chi.URLParam(r, "agentID")
@@ -824,7 +687,7 @@ func testRunHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// Unmarshal nodes sequence for execution order
 	var graphStruct struct {
-		Nodes []Node `json:"nodes"`
+		Nodes []api.Node `json:"nodes"`
 	}
 	if err := json.Unmarshal(graphRaw, &graphStruct); err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -918,9 +781,10 @@ func testRunHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // executeNodeLocal invokes the node logic via the node definitions.
-func executeNodeLocal(agentID string, node Node, input interface{}) (interface{}, error) {
-	if def := FindDefinition(node.Type); def != nil {
-		return def.Execute(agentID, node, input)
+func executeNodeLocal(agentID string, node api.Node, input interface{}) (interface{}, error) {
+	if def := api.FindDefinition(node.Type); def != nil {
+		ctx := api.ExecutionContext{AgentID: agentID}
+		return def.Execute(ctx, node, input)
 	}
 	// Fallback: return input unchanged
 	return input, nil

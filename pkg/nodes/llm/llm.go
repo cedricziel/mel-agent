@@ -28,7 +28,7 @@ func (llmDefinition) Meta() api.NodeType {
 	}
 }
 
-func (llmDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
+func (llmDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
 	// Resolve connection
 	connID, ok := node.Data["connectionId"].(string)
 	if !ok || connID == "" {
@@ -92,4 +92,8 @@ func (llmDefinition) Execute(agentID string, node api.Node, input interface{}) (
 		return nil, errors.New("llm: no response choices")
 	}
 	return resp.Choices[0].Message.Content, nil
+}
+
+func (llmDefinition) Initialize(mel api.Mel) error {
+	return nil
 }

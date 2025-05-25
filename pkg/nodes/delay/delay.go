@@ -3,7 +3,7 @@ package delay
 import (
 	"time"
 
-	api "github.com/cedricziel/mel-agent/pkg/api"
+	"github.com/cedricziel/mel-agent/pkg/api"
 )
 
 // delayDefinition provides the built-in "Delay" node.
@@ -22,7 +22,7 @@ func (delayDefinition) Meta() api.NodeType {
 }
 
 // Execute pauses execution for the specified duration.
-func (delayDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
+func (delayDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
 	dur, ok := node.Data["duration"].(float64)
 	if !ok {
 		return input, nil
@@ -31,6 +31,14 @@ func (delayDefinition) Execute(agentID string, node api.Node, input interface{})
 	return input, nil
 }
 
+func (delayDefinition) Initialize(mel api.Mel) error {
+	// No initialization needed for this node.
+	return nil
+}
+
 func init() {
 	api.RegisterNodeDefinition(delayDefinition{})
 }
+
+// assert that delayDefinition implements the NodeExecutor interface
+var _ api.NodeDefinition = (*delayDefinition)(nil)

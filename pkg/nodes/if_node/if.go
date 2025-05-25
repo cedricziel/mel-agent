@@ -16,6 +16,10 @@ func (ifDefinition) Meta() api.NodeType {
 		},
 	}
 }
-func (ifDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
+func (ifDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
 	return input, nil
+}
+
+func (ifDefinition) Initialize(mel api.Mel) error {
+	return nil
 }

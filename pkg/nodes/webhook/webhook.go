@@ -21,7 +21,11 @@ func (webhookDefinition) Meta() api.NodeType {
 		},
 	}
 }
-func (webhookDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
+func (webhookDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
 	// Execution for webhook is handled via HTTP endpoint, default no-op
 	return input, nil
+}
+
+func (webhookDefinition) Initialize(mel api.Mel) error {
+	return nil
 }

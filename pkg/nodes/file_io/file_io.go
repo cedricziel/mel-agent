@@ -21,8 +21,12 @@ func (fileIODefinition) Meta() api.NodeType {
 }
 
 // Execute performs the file I/O operation (currently no-op).
-func (fileIODefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
+func (fileIODefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
 	return input, nil
+}
+
+func (fileIODefinition) Initialize(mel api.Mel) error {
+	return nil
 }
 
 func init() {

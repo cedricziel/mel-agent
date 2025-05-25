@@ -21,7 +21,7 @@ func (setVariableDefinition) Meta() api.NodeType {
 }
 
 // Execute sets a variable in the data map under the given key.
-func (setVariableDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
+func (setVariableDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
 	data, ok := input.(map[string]interface{})
 	if !ok {
 		data = map[string]interface{}{"input": input}
@@ -32,6 +32,10 @@ func (setVariableDefinition) Execute(agentID string, node api.Node, input interf
 		data[key] = val
 	}
 	return data, nil
+}
+
+func (setVariableDefinition) Initialize(mel api.Mel) error {
+	return nil
 }
 
 func init() {

@@ -20,8 +20,12 @@ func (transformDefinition) Meta() api.NodeType {
 }
 
 // Execute applies the expression to the input (currently passthrough).
-func (transformDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
+func (transformDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
 	return input, nil
+}
+
+func (transformDefinition) Initialize(mel api.Mel) error {
+	return nil
 }
 
 func init() {

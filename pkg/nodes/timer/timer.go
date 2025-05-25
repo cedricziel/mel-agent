@@ -19,7 +19,11 @@ func (timerDefinition) Meta() api.NodeType {
 	}
 }
 
-func (timerDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
+func (timerDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
 	// Delegate to existing executor
 	return input, nil
+}
+
+func (timerDefinition) Initialize(mel api.Mel) error {
+	return nil
 }

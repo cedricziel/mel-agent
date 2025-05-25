@@ -19,8 +19,12 @@ func (logDefinition) Meta() api.NodeType {
 }
 
 // Execute returns the input unchanged (logging handled separately).
-func (logDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
+func (logDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
 	return input, nil
+}
+
+func (logDefinition) Initialize(mel api.Mel) error {
+	return nil
 }
 
 func init() {

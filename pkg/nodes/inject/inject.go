@@ -17,10 +17,14 @@ func (injectDefinition) Meta() api.NodeType {
 	}
 }
 
-func (injectDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
+func (injectDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
 	// Return configured payload as the output
 	if p, ok := node.Data["payload"]; ok {
 		return p, nil
 	}
 	return nil, nil
+}
+
+func (injectDefinition) Initialize(mel api.Mel) error {
+	return nil
 }

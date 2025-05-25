@@ -19,8 +19,12 @@ func (scriptDefinition) Meta() api.NodeType {
 }
 
 // Execute runs the user-provided script. Currently passthrough.
-func (scriptDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
+func (scriptDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
 	return input, nil
+}
+
+func (scriptDefinition) Initialize(mel api.Mel) error {
+	return nil
 }
 
 func init() {

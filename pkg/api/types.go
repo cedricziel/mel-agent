@@ -1,21 +1,5 @@
 package api
 
-import (
-	"net/http"
-
-	internal "github.com/cedricziel/mel-agent/internal/api"
-)
-
-// Handler returns the HTTP handler with all API routes mounted.
-func Handler() http.Handler {
-	return internal.Handler()
-}
-
-// WebhookHandler handles external webhook events.
-func WebhookHandler(w http.ResponseWriter, r *http.Request) {
-	internal.WebhookHandler(w, r)
-}
-
 // ParameterDefinition defines a single configuration parameter for a node.
 type ParameterDefinition struct {
 	Name                string          `json:"name"`                          // key in node.Data
@@ -47,35 +31,53 @@ type NodeType struct {
 	Parameters []ParameterDefinition `json:"parameters,omitempty"`
 }
 
+// ExecutionContext provides context for node execution.
+type ExecutionContext struct {
+	AgentID   string                 `json:"agent_id"`
+	RunID     string                 `json:"run_id,omitempty"`
+	Variables map[string]interface{} `json:"variables,omitempty"`
+}
+
+// ExecutionResult represents the result of node execution.
+type ExecutionResult struct {
+	Output interface{} `json:"output"`
+	Error  error       `json:"error,omitempty"`
+}
+
+// NodeError represents node execution errors with context.
+type NodeError struct {
+	NodeID  string `json:"node_id"`
+	Type    string `json:"type"`
+	Message string `json:"message"`
+	Code    string `json:"code,omitempty"`
+}
+
+func (e NodeError) Error() string {
+	return e.Message
+}
+
+// NewNodeError creates a new NodeError.
+func NewNodeError(nodeID, nodeType, message string) *NodeError {
+	return &NodeError{
+		NodeID:  nodeID,
+		Type:    nodeType,
+		Message: message,
+	}
+}
+
+// NewNodeErrorWithCode creates a new NodeError with an error code.
+func NewNodeErrorWithCode(nodeID, nodeType, message, code string) *NodeError {
+	return &NodeError{
+		NodeID:  nodeID,
+		Type:    nodeType,
+		Message: message,
+		Code:    code,
+	}
+}
+
 // NodeDefinition contains metadata and execution logic for a node type.
 type NodeDefinition interface {
+	Initialize(mel Mel) error
 	Meta() NodeType
-	Execute(agentID string, node Node, input interface{}) (interface{}, error)
-}
-
-// Trigger represents a user-configured event trigger.
-type Trigger = internal.Trigger
-
-// Connection represents a stored integration connection.
-type Connection = internal.Connection
-
-// Agent describes an agent record.
-type Agent = internal.Agent
-
-// Node is the runtime node struct with ID, Type, Data.
-type Node = internal.Node
-
-// RegisterNodeDefinition registers a node type for the builder.
-func RegisterNodeDefinition(def NodeDefinition) {
-	internal.RegisterNodeDefinition(def)
-}
-
-// ListNodeDefinitions returns all registered node definitions.
-func ListNodeDefinitions() []NodeDefinition {
-	return internal.ListNodeDefinitions()
-}
-
-// AllCoreDefinitions returns the built-in core trigger and utility node definitions.
-func AllCoreDefinitions() []NodeDefinition {
-	return internal.AllCoreDefinitions()
+	Execute(ctx ExecutionContext, node Node, input interface{}) (interface{}, error)
 }

@@ -19,8 +19,12 @@ func (httpResponseDefinition) Meta() api.NodeType {
 }
 
 // Execute returns the input unchanged (response handled elsewhere).
-func (httpResponseDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
+func (httpResponseDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
 	return input, nil
+}
+
+func (httpResponseDefinition) Initialize(mel api.Mel) error {
+	return nil
 }
 
 func init() {

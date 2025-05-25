@@ -24,7 +24,7 @@ func (randomDefinition) Meta() api.NodeType {
 }
 
 // Execute generates a random value based on the configured type.
-func (randomDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
+func (randomDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
 	typ, _ := node.Data["type"].(string)
 	switch typ {
 	case "uuid":
@@ -35,6 +35,10 @@ func (randomDefinition) Execute(agentID string, node api.Node, input interface{}
 	default:
 		return input, nil
 	}
+}
+
+func (randomDefinition) Initialize(mel api.Mel) error {
+	return nil
 }
 
 func init() {

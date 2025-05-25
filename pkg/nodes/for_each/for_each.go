@@ -18,8 +18,12 @@ func (forEachDefinition) Meta() api.NodeType {
 }
 
 // Execute iterates over input arrays. Currently passthrough.
-func (forEachDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
+func (forEachDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
 	return input, nil
+}
+
+func (forEachDefinition) Initialize(mel api.Mel) error {
+	return nil
 }
 
 func init() {

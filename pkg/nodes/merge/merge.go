@@ -18,8 +18,12 @@ func (mergeDefinition) Meta() api.NodeType {
 }
 
 // Execute merges data based on strategy. Currently passthrough.
-func (mergeDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
+func (mergeDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
 	return input, nil
+}
+
+func (mergeDefinition) Initialize(mel api.Mel) error {
+	return nil
 }
 
 func init() {

@@ -19,8 +19,12 @@ func (switchDefinition) Meta() api.NodeType {
 }
 
 // Execute returns the input unchanged (branching logic handled elsewhere).
-func (switchDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
+func (switchDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
 	return input, nil
+}
+
+func (switchDefinition) Initialize(mel api.Mel) error {
+	return nil
 }
 
 func init() {

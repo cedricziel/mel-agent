@@ -20,8 +20,12 @@ func (emailDefinition) Meta() api.NodeType {
 }
 
 // Execute returns the input unchanged (sending handled elsewhere).
-func (emailDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
+func (emailDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
 	return input, nil
+}
+
+func (emailDefinition) Initialize(mel api.Mel) error {
+	return nil
 }
 
 func init() {

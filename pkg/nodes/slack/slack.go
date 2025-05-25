@@ -19,6 +19,10 @@ func (slackDefinition) Meta() api.NodeType {
 		},
 	}
 }
-func (slackDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
+func (slackDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
 	return input, nil
+}
+
+func (slackDefinition) Initialize(mel api.Mel) error {
+	return nil
 }

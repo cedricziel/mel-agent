@@ -20,6 +20,10 @@ func (httpRequestDefinition) Meta() api.NodeType {
 	}
 }
 
-func (httpRequestDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
+func (httpRequestDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
 	return input, nil
+}
+
+func (httpRequestDefinition) Initialize(mel api.Mel) error {
+	return nil
 }

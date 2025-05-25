@@ -13,6 +13,10 @@ func (agentDefinition) Meta() api.NodeType {
 		Parameters: []api.ParameterDefinition{},
 	}
 }
-func (agentDefinition) Execute(agentID string, node api.Node, input interface{}) (interface{}, error) {
+func (agentDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
 	return input, nil
+}
+
+func (agentDefinition) Initialize(mel api.Mel) error {
+	return nil
 }
