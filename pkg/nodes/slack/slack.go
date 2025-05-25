@@ -26,3 +26,7 @@ func (slackDefinition) Execute(ctx api.ExecutionContext, node api.Node, input in
 func (slackDefinition) Initialize(mel api.Mel) error {
 	return nil
 }
+
+func init() {
+	api.RegisterNodeDefinition(slackDefinition{})
+}

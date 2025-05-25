@@ -23,3 +23,7 @@ func (ifDefinition) Execute(ctx api.ExecutionContext, node api.Node, input inter
 func (ifDefinition) Initialize(mel api.Mel) error {
 	return nil
 }
+
+func init() {
+	api.RegisterNodeDefinition(ifDefinition{})
+}

@@ -26,3 +26,7 @@ func (scheduleDefinition) Execute(ctx api.ExecutionContext, node api.Node, input
 func (scheduleDefinition) Initialize(mel api.Mel) error {
 	return nil
 }
+
+func init() {
+	api.RegisterNodeDefinition(scheduleDefinition{})
+}

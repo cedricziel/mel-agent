@@ -28,3 +28,7 @@ func (injectDefinition) Execute(ctx api.ExecutionContext, node api.Node, input i
 func (injectDefinition) Initialize(mel api.Mel) error {
 	return nil
 }
+
+func init() {
+	api.RegisterNodeDefinition(injectDefinition{})
+}
