@@ -24,27 +24,25 @@ func assistantChatHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	client := openai.NewClient(apiKey)
 	// Define available functions for assistant to call
-	// Define available functions for assistant to call
-	// Define available functions for assistant to call
-   funcs := []openai.FunctionDefinition{
-       {
-           Name:        "list_node_types",
-           Description: "List available node types and their metadata",
-           // Empty object schema: must include properties field even if empty
-           Parameters: map[string]interface{}{
-               "type":       "object",
-               "properties": map[string]interface{}{},
-           },
-       },
-       {
-           Name:        "get_workflow",
-           Description: "Get the current workflow graph (nodes and edges)",
-           // Empty object schema for no parameters
-           Parameters: map[string]interface{}{
-               "type":       "object",
-               "properties": map[string]interface{}{},
-           },
-       },
+	funcs := []openai.FunctionDefinition{
+		{
+			Name:        "list_node_types",
+			Description: "List available node types and their metadata",
+			// Empty object schema: must include properties field even if empty
+			Parameters: map[string]interface{}{
+				"type":       "object",
+				"properties": map[string]interface{}{},
+			},
+		},
+		{
+			Name:        "get_workflow",
+			Description: "Get the current workflow graph (nodes and edges)",
+			// Empty object schema for no parameters
+			Parameters: map[string]interface{}{
+				"type":       "object",
+				"properties": map[string]interface{}{},
+			},
+		},
 		{
 			Name:        "get_node_type_schema",
 			Description: "Get the JSON Schema for a given node type",
@@ -56,9 +54,9 @@ func assistantChatHandler(w http.ResponseWriter, r *http.Request) {
 				"required": []string{"type"},
 			},
 		},
-       {
-           Name:        "add_node",
-           Description: "Add a node to the workflow",
+		{
+			Name:        "add_node",
+			Description: "Add a node to the workflow",
 			Parameters: map[string]interface{}{
 				"type": "object",
 				"properties": map[string]interface{}{
@@ -77,7 +75,7 @@ func assistantChatHandler(w http.ResponseWriter, r *http.Request) {
 				},
 				"required": []string{"type"},
 			},
-       },
+		},
 		{
 			Name:        "connect_nodes",
 			Description: "Connect two nodes in the workflow",
@@ -89,17 +87,17 @@ func assistantChatHandler(w http.ResponseWriter, r *http.Request) {
 				},
 				"required": []string{"source_id", "target_id"},
 			},
-       },
-       {
-           Name:        "get_node_definition",
-           Description: "Retrieve metadata for a specific node type, including default parameter values",
-           Parameters: map[string]interface{}{
-               "type":       "object",
-               "properties": map[string]interface{}{ "type": map[string]interface{}{ "type": "string", "description": "Node type name" } },
-               "required":   []string{"type"},
-           },
-       },
-   }
+		},
+		{
+			Name:        "get_node_definition",
+			Description: "Retrieve metadata for a specific node type, including default parameter values",
+			Parameters: map[string]interface{}{
+				"type":       "object",
+				"properties": map[string]interface{}{"type": map[string]interface{}{"type": "string", "description": "Node type name"}},
+				"required":   []string{"type"},
+			},
+		},
+	}
 	// Call OpenAI ChatCompletion
 	resp, err := client.CreateChatCompletion(r.Context(), openai.ChatCompletionRequest{
 		Model:        openai.GPT4oMini,
