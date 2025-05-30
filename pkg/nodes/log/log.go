@@ -30,3 +30,6 @@ func (logDefinition) Initialize(mel api.Mel) error {
 func init() {
 	api.RegisterNodeDefinition(logDefinition{})
 }
+
+// assert that logDefinition implements the NodeDefinition interface
+var _ api.NodeDefinition = (*logDefinition)(nil)

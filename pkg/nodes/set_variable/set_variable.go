@@ -45,3 +45,6 @@ func (setVariableDefinition) Initialize(mel api.Mel) error {
 func init() {
 	api.RegisterNodeDefinition(setVariableDefinition{})
 }
+
+// assert that setVariableDefinition implements the NodeDefinition interface
+var _ api.NodeDefinition = (*setVariableDefinition)(nil)

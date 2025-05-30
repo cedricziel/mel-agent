@@ -24,3 +24,6 @@ func (agentDefinition) Initialize(mel api.Mel) error {
 func init() {
 	api.RegisterNodeDefinition(agentDefinition{})
 }
+
+// assert that agentDefinition implements the NodeDefinition interface
+var _ api.NodeDefinition = (*agentDefinition)(nil)

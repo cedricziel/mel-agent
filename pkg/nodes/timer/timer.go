@@ -31,3 +31,6 @@ func (timerDefinition) Initialize(mel api.Mel) error {
 func init() {
 	api.RegisterNodeDefinition(timerDefinition{})
 }
+
+// assert that timerDefinition implements the NodeDefinition interface
+var _ api.NodeDefinition = (*timerDefinition)(nil)

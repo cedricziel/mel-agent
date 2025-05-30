@@ -32,3 +32,6 @@ func (injectDefinition) Initialize(mel api.Mel) error {
 func init() {
 	api.RegisterNodeDefinition(injectDefinition{})
 }
+
+// assert that injectDefinition implements the NodeDefinition interface
+var _ api.NodeDefinition = (*injectDefinition)(nil)

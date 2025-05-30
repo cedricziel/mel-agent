@@ -31,3 +31,6 @@ func (transformDefinition) Initialize(mel api.Mel) error {
 func init() {
 	api.RegisterNodeDefinition(transformDefinition{})
 }
+
+// assert that transformDefinition implements the NodeDefinition interface
+var _ api.NodeDefinition = (*transformDefinition)(nil)

@@ -31,3 +31,6 @@ func (emailDefinition) Initialize(mel api.Mel) error {
 func init() {
 	api.RegisterNodeDefinition(emailDefinition{})
 }
+
+// assert that emailDefinition implements the NodeDefinition interface
+var _ api.NodeDefinition = (*emailDefinition)(nil)

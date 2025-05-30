@@ -30,3 +30,6 @@ func (slackDefinition) Initialize(mel api.Mel) error {
 func init() {
 	api.RegisterNodeDefinition(slackDefinition{})
 }
+
+// assert that slackDefinition implements the NodeDefinition interface
+var _ api.NodeDefinition = (*slackDefinition)(nil)

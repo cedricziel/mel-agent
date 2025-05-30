@@ -32,3 +32,6 @@ func (fileIODefinition) Initialize(mel api.Mel) error {
 func init() {
 	api.RegisterNodeDefinition(fileIODefinition{})
 }
+
+// assert that fileIODefinition implements the NodeDefinition interface
+var _ api.NodeDefinition = (*fileIODefinition)(nil)

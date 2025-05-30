@@ -30,3 +30,6 @@ func (switchDefinition) Initialize(mel api.Mel) error {
 func init() {
 	api.RegisterNodeDefinition(switchDefinition{})
 }
+
+// assert that switchDefinition implements the NodeDefinition interface
+var _ api.NodeDefinition = (*switchDefinition)(nil)

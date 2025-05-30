@@ -22,3 +22,6 @@ func (noopDefinition) Initialize(mel api.Mel) error {
 func init() {
 	api.RegisterNodeDefinition(noopDefinition{})
 }
+
+// assert that noopDefinition implements the NodeDefinition interface
+var _ api.NodeDefinition = (*noopDefinition)(nil)

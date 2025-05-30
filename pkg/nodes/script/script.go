@@ -30,3 +30,6 @@ func (scriptDefinition) Initialize(mel api.Mel) error {
 func init() {
 	api.RegisterNodeDefinition(scriptDefinition{})
 }
+
+// assert that scriptDefinition implements the NodeDefinition interface
+var _ api.NodeDefinition = (*scriptDefinition)(nil)

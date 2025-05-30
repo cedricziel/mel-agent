@@ -30,3 +30,6 @@ func (dbQueryDefinition) Initialize(mel internalapi.Mel) error {
 func init() {
 	internalapi.RegisterNodeDefinition(dbQueryDefinition{})
 }
+
+// assert that dbQueryDefinition implements the NodeDefinition interface
+var _ internalapi.NodeDefinition = (*dbQueryDefinition)(nil)

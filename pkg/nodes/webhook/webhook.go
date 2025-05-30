@@ -33,3 +33,6 @@ func (webhookDefinition) Initialize(mel api.Mel) error {
 func init() {
 	api.RegisterNodeDefinition(webhookDefinition{})
 }
+
+// assert that webhookDefinition implements the NodeDefinition interface
+var _ api.NodeDefinition = (*webhookDefinition)(nil)

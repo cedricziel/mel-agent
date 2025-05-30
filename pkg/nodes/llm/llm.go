@@ -108,3 +108,6 @@ func (llmDefinition) Initialize(mel api.Mel) error {
 func init() {
 	api.RegisterNodeDefinition(llmDefinition{})
 }
+
+// assert that llmDefinition implements the NodeDefinition interface
+var _ api.NodeDefinition = (*llmDefinition)(nil)

@@ -45,3 +45,6 @@ func (httpRequestDefinition) Initialize(mel api.Mel) error {
 func init() {
 	api.RegisterNodeDefinition(httpRequestDefinition{})
 }
+
+// assert that httpRequestDefinition implements the NodeDefinition interface
+var _ api.NodeDefinition = (*httpRequestDefinition)(nil)

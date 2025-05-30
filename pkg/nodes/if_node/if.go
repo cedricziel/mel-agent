@@ -29,3 +29,6 @@ func (ifDefinition) Initialize(mel api.Mel) error {
 func init() {
 	api.RegisterNodeDefinition(ifDefinition{})
 }
+
+// assert that ifDefinition implements the NodeDefinition interface
+var _ api.NodeDefinition = (*ifDefinition)(nil)

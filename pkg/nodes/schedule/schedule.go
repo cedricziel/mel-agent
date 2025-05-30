@@ -30,3 +30,6 @@ func (scheduleDefinition) Initialize(mel api.Mel) error {
 func init() {
 	api.RegisterNodeDefinition(scheduleDefinition{})
 }
+
+// assert that scheduleDefinition implements the NodeDefinition interface
+var _ api.NodeDefinition = (*scheduleDefinition)(nil)

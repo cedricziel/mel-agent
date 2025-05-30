@@ -44,3 +44,6 @@ func (randomDefinition) Initialize(mel api.Mel) error {
 func init() {
 	api.RegisterNodeDefinition(randomDefinition{})
 }
+
+// assert that randomDefinition implements the NodeDefinition interface
+var _ api.NodeDefinition = (*randomDefinition)(nil)

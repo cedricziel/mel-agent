@@ -29,3 +29,6 @@ func (forEachDefinition) Initialize(mel api.Mel) error {
 func init() {
 	api.RegisterNodeDefinition(forEachDefinition{})
 }
+
+// assert that forEachDefinition implements the NodeDefinition interface
+var _ api.NodeDefinition = (*forEachDefinition)(nil)
