@@ -8,5 +8,6 @@
       "Bash(ls:*)"
     ],
     "deny": []
-  }
+  },
+  "enableAllProjectMcpServers": false
 }
