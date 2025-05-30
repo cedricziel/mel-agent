@@ -81,10 +81,11 @@ type ParameterDefinition struct {
 	VisibilityCondition string          `json:"visibilityCondition,omitempty"` // CEL expression for conditional display
 	Options             []string        `json:"options,omitempty"`             // for enum types
 	Validators          []ValidatorSpec `json:"validators,omitempty"`          // validation rules to apply
-	Description         string          `json:"description,omitempty"`         // help text or tooltip
+	Description         string                `json:"description,omitempty"`         // help text or tooltip
+	ItemSchema          []ParameterDefinition `json:"itemSchema,omitempty"`          // for array types, defines structure of each item
 	
 	// JSON Schema specific fields
-	JSONSchema          *JSONSchema     `json:"jsonSchema,omitempty"`          // explicit JSON schema override
+	JSONSchema          *JSONSchema           `json:"jsonSchema,omitempty"`          // explicit JSON schema override
 }
 
 // ValidatorSpec defines a validation rule and its parameters.
@@ -295,6 +296,17 @@ func NewObjectParameter(name, label string, required bool) ParameterDefinition {
 	}
 }
 
+// NewArrayParameter creates a parameter definition for an array type.
+func NewArrayParameter(name, label string, required bool) ParameterDefinition {
+	return ParameterDefinition{
+		Name:          name,
+		Label:         label,
+		Type:          string(TypeArray),
+		ParameterType: TypeArray,
+		Required:      required,
+	}
+}
+
 // WithDefault sets the default value for a parameter definition.
 func (pd ParameterDefinition) WithDefault(value interface{}) ParameterDefinition {
 	pd.Default = value
@@ -322,5 +334,11 @@ func (pd ParameterDefinition) WithValidators(validators ...ValidatorSpec) Parame
 // WithVisibilityCondition sets the visibility condition for a parameter definition.
 func (pd ParameterDefinition) WithVisibilityCondition(condition string) ParameterDefinition {
 	pd.VisibilityCondition = condition
+	return pd
+}
+
+// WithItemSchema sets the item schema for array parameters.
+func (pd ParameterDefinition) WithItemSchema(schema ...ParameterDefinition) ParameterDefinition {
+	pd.ItemSchema = schema
 	return pd
 }
