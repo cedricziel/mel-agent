@@ -3,10 +3,13 @@ import CronEditor from './CronEditor';
 
 // Panel to configure node details and preview data flow
 export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, publicUrl, readOnly }) {
-  if (!node || !nodeDef) return null;
-  const { data } = node;
-  // dynamic state: fetch LLM model connections for dropdown
+  // All hooks must be called before any conditional returns
   const [connections, setConnections] = useState([]);
+  const [execInput, setExecInput] = useState('{}');
+  const [execOutput, setExecOutput] = useState(null);
+  const [execError, setExecError] = useState(null);
+  const [running, setRunning] = useState(false);
+
   useEffect(() => {
     if (nodeDef && nodeDef.type === 'llm') {
       fetch('/api/connections')
@@ -15,6 +18,12 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
         .catch(() => setConnections([]));
     }
   }, [nodeDef]);
+
+  // Early returns after all hooks
+  if (!node || !nodeDef) return null;
+  
+  const { data } = node;
+  
   // In live/read-only mode, show config but disable edits
   if (readOnly) {
     const fallbackKeys = Object.keys(data).filter(
@@ -58,11 +67,6 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
   // legacy defaults (unused) and fallback data keys
   const defaults = nodeDef.defaults || {};
   const fallbackKeys = Object.keys(data).filter((k) => k !== 'label' && k !== 'status' && k !== 'lastOutput');
-  // execution state
-  const [execInput, setExecInput] = useState('{}');
-  const [execOutput, setExecOutput] = useState(null);
-  const [execError, setExecError] = useState(null);
-  const [running, setRunning] = useState(false);
   return (
     <div className="w-80 bg-gray-50 border-l p-4 overflow-auto">
       <h2 className="text-lg font-bold mb-4">{nodeDef.label} Details</h2>
