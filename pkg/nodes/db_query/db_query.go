@@ -12,8 +12,8 @@ func (dbQueryDefinition) Meta() internalapi.NodeType {
 		Label:    "DB Query",
 		Category: "Integration",
 		Parameters: []internalapi.ParameterDefinition{
-			{Name: "connectionId", Label: "Connection ID", Type: "string", Required: true, Group: "Settings", Description: "Select a connection"},
-			{Name: "query", Label: "SQL Query", Type: "string", Required: true, Group: "Settings", Description: "Your SQL query"},
+			internalapi.NewStringParameter("connectionId", "Connection ID", true).WithGroup("Settings").WithDescription("Select a connection"),
+			internalapi.NewStringParameter("query", "SQL Query", true).WithGroup("Settings").WithDescription("Your SQL query"),
 		},
 	}
 }

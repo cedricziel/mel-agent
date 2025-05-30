@@ -16,7 +16,10 @@ func (delayDefinition) Meta() api.NodeType {
 		Label:    "Delay",
 		Category: "Control",
 		Parameters: []api.ParameterDefinition{
-			{Name: "duration", Label: "Duration (ms)", Type: "number", Required: true, Default: 1000, Group: "Settings"},
+			api.NewNumberParameter("duration", "Duration (ms)", true).
+				WithDefault(1000).
+				WithGroup("Settings").
+				WithDescription("Duration to pause execution in milliseconds"),
 		},
 	}
 }

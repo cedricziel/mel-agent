@@ -12,7 +12,7 @@ func (mergeDefinition) Meta() api.NodeType {
 		Label:    "Merge",
 		Category: "Control",
 		Parameters: []api.ParameterDefinition{
-			{Name: "strategy", Label: "Strategy", Type: "enum", Required: true, Default: "concat", Options: []string{"concat", "union"}, Group: "Settings", Description: "Merge strategy"},
+			api.NewEnumParameter("strategy", "Strategy", []string{"concat", "union"}, true).WithDefault("concat").WithGroup("Settings").WithDescription("Merge strategy"),
 		},
 	}
 }

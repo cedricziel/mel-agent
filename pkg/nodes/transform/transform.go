@@ -14,7 +14,7 @@ func (transformDefinition) Meta() api.NodeType {
 		Label:    "Transform",
 		Category: "Utility",
 		Parameters: []api.ParameterDefinition{
-			{Name: "expression", Label: "Expression", Type: "string", Required: true, Group: "Settings", Description: "Transform input via expression"},
+			api.NewStringParameter("expression", "Expression", true).WithGroup("Settings").WithDescription("Transform input via expression"),
 		},
 	}
 }

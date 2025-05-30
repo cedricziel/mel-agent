@@ -12,8 +12,8 @@ func (httpResponseDefinition) Meta() api.NodeType {
 		Label:    "HTTP Response",
 		Category: "Integration",
 		Parameters: []api.ParameterDefinition{
-			{Name: "statusCode", Label: "Status Code", Type: "number", Required: true, Default: 200, Group: "Settings"},
-			{Name: "body", Label: "Body", Type: "string", Required: false, Default: "", Group: "Settings"},
+			api.NewNumberParameter("statusCode", "Status Code", true).WithDefault(200).WithGroup("Settings"),
+			api.NewStringParameter("body", "Body", false).WithDefault("").WithGroup("Settings"),
 		},
 	}
 }

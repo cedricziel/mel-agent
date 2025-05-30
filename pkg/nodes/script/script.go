@@ -12,8 +12,8 @@ func (scriptDefinition) Meta() api.NodeType {
 		Label:    "Script",
 		Category: "Utility",
 		Parameters: []api.ParameterDefinition{
-			{Name: "language", Label: "Language", Type: "enum", Required: true, Default: "javascript", Options: []string{"javascript", "python"}, Group: "Settings"},
-			{Name: "code", Label: "Code", Type: "string", Required: true, Group: "Settings", Description: "Your script code"},
+			api.NewEnumParameter("language", "Language", []string{"javascript", "python"}, true).WithDefault("javascript").WithGroup("Settings"),
+			api.NewStringParameter("code", "Code", true).WithGroup("Settings").WithDescription("Your script code"),
 		},
 	}
 }

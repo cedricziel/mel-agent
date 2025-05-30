@@ -12,8 +12,8 @@ func (logDefinition) Meta() api.NodeType {
 		Label:    "Log",
 		Category: "Utility",
 		Parameters: []api.ParameterDefinition{
-			{Name: "level", Label: "Level", Type: "enum", Required: true, Default: "info", Options: []string{"debug", "info", "warn", "error"}, Group: "Settings"},
-			{Name: "message", Label: "Message", Type: "string", Required: true, Group: "Settings"},
+			api.NewEnumParameter("level", "Level", []string{"debug", "info", "warn", "error"}, true).WithDefault("info").WithGroup("Settings"),
+			api.NewStringParameter("message", "Message", true).WithGroup("Settings"),
 		},
 	}
 }

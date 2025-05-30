@@ -13,11 +13,11 @@ func (webhookDefinition) Meta() api.NodeType {
 		EntryPoint: true,
 		Parameters: []api.ParameterDefinition{
 			// Allowed HTTP method for this webhook (ANY to accept all)
-			{Name: "method", Label: "HTTP Method", Type: "enum", Required: true, Default: "POST", Options: []string{"ANY", "GET", "POST", "PUT", "PATCH", "DELETE"}, Group: "HTTP", Description: "Allowed HTTP method for this webhook trigger"},
-			{Name: "secret", Label: "Secret", Type: "string", Required: false, Default: "", Group: "Security", Description: "HMAC or token to validate requests"},
-			{Name: "mode", Label: "Mode", Type: "enum", Required: true, Default: "async", Options: []string{"async", "sync"}, Group: "Execution", Description: "Async (enqueue run) or Sync (inline) execution"},
-			{Name: "statusCode", Label: "Response Status", Type: "number", Required: false, Default: 202, Group: "Response", VisibilityCondition: "mode=='sync'", Description: "HTTP status code returned by trigger"},
-			{Name: "responseBody", Label: "Response Body", Type: "string", Required: false, Default: "", Group: "Response", VisibilityCondition: "mode=='sync'", Description: "HTTP body returned by trigger"},
+			api.NewEnumParameter("method", "HTTP Method", []string{"ANY", "GET", "POST", "PUT", "PATCH", "DELETE"}, true).WithDefault("POST").WithGroup("HTTP").WithDescription("Allowed HTTP method for this webhook trigger"),
+			api.NewStringParameter("secret", "Secret", false).WithDefault("").WithGroup("Security").WithDescription("HMAC or token to validate requests"),
+			api.NewEnumParameter("mode", "Mode", []string{"async", "sync"}, true).WithDefault("async").WithGroup("Execution").WithDescription("Async (enqueue run) or Sync (inline) execution"),
+			api.NewNumberParameter("statusCode", "Response Status", false).WithDefault(202).WithGroup("Response").WithVisibilityCondition("mode=='sync'").WithDescription("HTTP status code returned by trigger"),
+			api.NewStringParameter("responseBody", "Response Body", false).WithDefault("").WithGroup("Response").WithVisibilityCondition("mode=='sync'").WithDescription("HTTP body returned by trigger"),
 		},
 	}
 }

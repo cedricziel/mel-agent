@@ -12,9 +12,9 @@ func (emailDefinition) Meta() api.NodeType {
 		Label:    "Email",
 		Category: "Integration",
 		Parameters: []api.ParameterDefinition{
-			{Name: "to", Label: "To", Type: "string", Required: true, Group: "Settings", Description: "Recipient address(es)"},
-			{Name: "subject", Label: "Subject", Type: "string", Required: true, Group: "Settings"},
-			{Name: "body", Label: "Body", Type: "string", Required: true, Group: "Settings"},
+			api.NewStringParameter("to", "To", true).WithGroup("Settings").WithDescription("Recipient address(es)"),
+			api.NewStringParameter("subject", "Subject", true).WithGroup("Settings"),
+			api.NewStringParameter("body", "Body", true).WithGroup("Settings"),
 		},
 	}
 }

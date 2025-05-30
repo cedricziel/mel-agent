@@ -12,10 +12,10 @@ func (slackDefinition) Meta() api.NodeType {
 		Category:   "Triggers",
 		EntryPoint: true,
 		Parameters: []api.ParameterDefinition{
-			{Name: "command", Label: "Command", Type: "string", Required: true, Default: "", Group: "Trigger", Description: "Slash command to respond to"},
-			{Name: "mode", Label: "Mode", Type: "enum", Required: true, Default: "async", Options: []string{"async", "sync"}, Group: "Execution"},
-			{Name: "statusCode", Label: "Response Status", Type: "number", Required: false, Default: 200, Group: "Response"},
-			{Name: "responseBody", Label: "Response Body", Type: "string", Required: false, Default: "", Group: "Response"},
+			api.NewStringParameter("command", "Command", true).WithDefault("").WithGroup("Trigger").WithDescription("Slash command to respond to"),
+			api.NewEnumParameter("mode", "Mode", []string{"async", "sync"}, true).WithDefault("async").WithGroup("Execution"),
+			api.NewNumberParameter("statusCode", "Response Status", false).WithDefault(200).WithGroup("Response"),
+			api.NewStringParameter("responseBody", "Response Body", false).WithDefault("").WithGroup("Response"),
 		},
 	}
 }

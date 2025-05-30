@@ -12,7 +12,7 @@ func (injectDefinition) Meta() api.NodeType {
 		Category:   "Debug",
 		EntryPoint: true,
 		Parameters: []api.ParameterDefinition{
-			{Name: "payload", Label: "Payload", Type: "json", Required: false, Default: "{}", Group: "Inject", Description: "Data to inject"},
+			api.NewObjectParameter("payload", "Payload", false).WithDefault("{}").WithGroup("Inject").WithDescription("Data to inject"),
 		},
 	}
 }

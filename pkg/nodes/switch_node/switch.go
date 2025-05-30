@@ -13,7 +13,7 @@ func (switchDefinition) Meta() api.NodeType {
 		Category:  "Control",
 		Branching: true,
 		Parameters: []api.ParameterDefinition{
-			{Name: "expression", Label: "Expression", Type: "string", Required: true, Group: "Settings"},
+			api.NewStringParameter("expression", "Expression", true).WithGroup("Settings"),
 		},
 	}
 }

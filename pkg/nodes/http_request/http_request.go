@@ -11,11 +11,25 @@ func (httpRequestDefinition) Meta() api.NodeType {
 		Icon:     "🌐",
 		Category: "Integration",
 		Parameters: []api.ParameterDefinition{
-			{Name: "url", Label: "URL", Type: "string", Required: true, Default: "", Group: "Request", Description: "Endpoint to call", Validators: []api.ValidatorSpec{{Type: "notEmpty"}, {Type: "url"}}},
-			{Name: "method", Label: "Method", Type: "enum", Required: true, Default: "GET", Options: []string{"GET", "POST", "PUT", "DELETE"}, Group: "Request"},
-			{Name: "headers", Label: "Headers", Type: "json", Required: false, Default: "{}", Group: "Request", Validators: []api.ValidatorSpec{{Type: "json"}}},
-			{Name: "body", Label: "Body", Type: "string", Required: false, Default: "", Group: "Request", VisibilityCondition: "method!='GET'"},
-			{Name: "timeout", Label: "Timeout", Type: "number", Required: false, Default: 30, Group: "Advanced", Description: "Timeout in seconds"},
+			api.NewStringParameter("url", "URL", true).
+				WithGroup("Request").
+				WithDescription("Endpoint to call").
+				WithValidators(api.ValidatorSpec{Type: "notEmpty"}, api.ValidatorSpec{Type: "url"}),
+			api.NewEnumParameter("method", "Method", []string{"GET", "POST", "PUT", "DELETE"}, true).
+				WithDefault("GET").
+				WithGroup("Request"),
+			api.NewObjectParameter("headers", "Headers", false).
+				WithDefault("{}").
+				WithGroup("Request").
+				WithValidators(api.ValidatorSpec{Type: "json"}),
+			api.NewStringParameter("body", "Body", false).
+				WithGroup("Request").
+				WithDescription("Request body").
+				WithVisibilityCondition("method!='GET'"),
+			api.NewNumberParameter("timeout", "Timeout", false).
+				WithDefault(30).
+				WithGroup("Advanced").
+				WithDescription("Timeout in seconds"),
 		},
 	}
 }

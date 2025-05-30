@@ -21,9 +21,16 @@ func (llmDefinition) Meta() api.NodeType {
 		Icon:     "🧠",
 		Category: "AI",
 		Parameters: []api.ParameterDefinition{
-			{Name: "connectionId", Label: "Model Connection", Type: "string", Required: true, Group: "Settings", Description: "ID of the model provider connection"},
-			{Name: "model", Label: "Model", Type: "string", Required: false, Default: "gpt-3.5-turbo", Group: "Settings", Description: "Model name or ID"},
-			{Name: "systemPrompt", Label: "System Prompt", Type: "string", Required: false, Group: "Prompts", Description: "Optional system prompt for the model"},
+			api.NewStringParameter("connectionId", "Model Connection", true).
+				WithGroup("Settings").
+				WithDescription("ID of the model provider connection"),
+			api.NewStringParameter("model", "Model", false).
+				WithDefault("gpt-3.5-turbo").
+				WithGroup("Settings").
+				WithDescription("Model name or ID"),
+			api.NewStringParameter("systemPrompt", "System Prompt", false).
+				WithGroup("Prompts").
+				WithDescription("Optional system prompt for the model"),
 		},
 	}
 }

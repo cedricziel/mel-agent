@@ -18,7 +18,7 @@ func (randomDefinition) Meta() api.NodeType {
 		Label:    "Random",
 		Category: "Utility",
 		Parameters: []api.ParameterDefinition{
-			{Name: "type", Label: "Type", Type: "enum", Required: true, Default: "uuid", Options: []string{"uuid", "number"}, Group: "Settings"},
+			api.NewEnumParameter("type", "Type", []string{"uuid", "number"}, true).WithDefault("uuid").WithGroup("Settings"),
 		},
 	}
 }

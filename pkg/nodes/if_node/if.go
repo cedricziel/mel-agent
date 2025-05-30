@@ -12,7 +12,9 @@ func (ifDefinition) Meta() api.NodeType {
 		Category:  "Basic",
 		Branching: true,
 		Parameters: []api.ParameterDefinition{
-			{Name: "condition", Label: "Condition", Type: "string", Required: true, Default: "", Group: "Expression", Description: "Boolean CEL expression to evaluate"},
+			api.NewStringParameter("condition", "Condition", true).
+				WithGroup("Expression").
+				WithDescription("Boolean CEL expression to evaluate"),
 		},
 	}
 }

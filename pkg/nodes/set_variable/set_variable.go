@@ -14,8 +14,12 @@ func (setVariableDefinition) Meta() api.NodeType {
 		Label:    "Set Variable",
 		Category: "Utility",
 		Parameters: []api.ParameterDefinition{
-			{Name: "key", Label: "Key", Type: "string", Required: true, Group: "Settings"},
-			{Name: "value", Label: "Value", Type: "string", Required: true, Group: "Settings"},
+			api.NewStringParameter("key", "Key", true).
+				WithGroup("Settings").
+				WithDescription("Variable name to set"),
+			api.NewStringParameter("value", "Value", true).
+				WithGroup("Settings").
+				WithDescription("Value to assign to the variable"),
 		},
 	}
 }

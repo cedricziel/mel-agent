@@ -12,9 +12,9 @@ func (timerDefinition) Meta() api.NodeType {
 		Category:   "Triggers",
 		EntryPoint: true,
 		Parameters: []api.ParameterDefinition{
-			{Name: "mode", Label: "Mode", Type: "enum", Required: true, Default: "async", Options: []string{"async", "sync"}, Group: "Execution", Description: "Async (enqueue run) or Sync (inline) execution"},
-			{Name: "statusCode", Label: "Response Status", Type: "number", Required: false, Default: 202, Group: "Response", Description: "HTTP status code returned by trigger"},
-			{Name: "responseBody", Label: "Response Body", Type: "string", Required: false, Default: "", Group: "Response", Description: "HTTP body returned by trigger"},
+			api.NewEnumParameter("mode", "Mode", []string{"async", "sync"}, true).WithDefault("async").WithGroup("Execution").WithDescription("Async (enqueue run) or Sync (inline) execution"),
+			api.NewNumberParameter("statusCode", "Response Status", false).WithDefault(202).WithGroup("Response").WithDescription("HTTP status code returned by trigger"),
+			api.NewStringParameter("responseBody", "Response Body", false).WithDefault("").WithGroup("Response").WithDescription("HTTP body returned by trigger"),
 		},
 	}
 }

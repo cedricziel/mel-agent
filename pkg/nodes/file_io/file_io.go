@@ -14,8 +14,8 @@ func (fileIODefinition) Meta() api.NodeType {
 		Label:    "File I/O",
 		Category: "Integration",
 		Parameters: []api.ParameterDefinition{
-			{Name: "operation", Label: "Operation", Type: "enum", Required: true, Default: "read", Options: []string{"read", "write"}, Group: "Settings"},
-			{Name: "path", Label: "Path", Type: "string", Required: true, Group: "Settings"},
+			api.NewEnumParameter("operation", "Operation", []string{"read", "write"}, true).WithDefault("read").WithGroup("Settings"),
+			api.NewStringParameter("path", "Path", true).WithGroup("Settings"),
 		},
 	}
 }
