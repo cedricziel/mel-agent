@@ -1,7 +1,7 @@
 import { Link, Route, Routes, NavLink, useParams } from "react-router-dom";
 import AgentsPage from "./pages/AgentsPage";
 import ConnectionsPage from "./pages/ConnectionsPage";
-import BuilderPageNew from "./pages/BuilderPageNew";
+import BuilderPage from "./pages/BuilderPage";
 import RunsPage from "./pages/RunsPage";
 import ErrorBoundary from "./components/ErrorBoundary";
 
@@ -69,5 +69,5 @@ export default App;
 
 function AgentBuilderWrapper() {
   const { id } = useParams();
-  return <BuilderPageNew agentId={id} />;
+  return <BuilderPage agentId={id} />;
 }

@@ -30,7 +30,7 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
       (k) => k !== 'label' && k !== 'status' && k !== 'lastOutput'
     );
     return (
-      <div className="w-80 bg-gray-50 border-l p-4 overflow-auto">
+      <div className="bg-gray-50 p-4 h-full">
         <h2 className="text-lg font-bold mb-4">{nodeDef.label} Details</h2>
         {// only show public URL for webhook nodes
         nodeDef.type === 'webhook' && publicUrl && (
@@ -68,7 +68,7 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
   const defaults = nodeDef.defaults || {};
   const fallbackKeys = Object.keys(data).filter((k) => k !== 'label' && k !== 'status' && k !== 'lastOutput');
   return (
-    <div className="w-80 bg-gray-50 border-l p-4 overflow-auto">
+    <div className="bg-gray-50 p-4 h-full">
       <h2 className="text-lg font-bold mb-4">{nodeDef.label} Details</h2>
       {// only show public URL for webhook nodes
       nodeDef.type === 'webhook' && (
