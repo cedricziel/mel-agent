@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+// Temporarily disabled due to React 19 compatibility issues
+// import ReactMarkdown from 'react-markdown';
+// import remarkGfm from 'remark-gfm';
 
 // ChatAssistant provides a modal chat interface for users to interact with an AI assistant
 // and supports function-based tools to modify the workflow graph.
@@ -140,7 +141,8 @@ export default function ChatAssistant({ agentId, onAddNode, onConnectNodes, onGe
                     Function call: {msg.function_call.name}(…)
                   </div>
                 )}
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{display}</ReactMarkdown>
+                {/* Temporarily use plain text due to React 19 compatibility */}
+                <div className="whitespace-pre-wrap">{display}</div>
               </div>
             );
           })}
@@ -199,7 +201,8 @@ export default function ChatAssistant({ agentId, onAddNode, onConnectNodes, onGe
                     Function call: {msg.function_call.name}(…)
                   </div>
                 )}
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{display}</ReactMarkdown>
+                {/* Temporarily use plain text due to React 19 compatibility */}
+                <div className="whitespace-pre-wrap">{display}</div>
               </div>
             );
           })}

@@ -256,7 +256,7 @@ func TestIfNode_Meta(t *testing.T) {
 
 func TestIfNode_InvalidConditions(t *testing.T) {
 	def := ifDefinition{}
-	
+
 	tests := []struct {
 		name       string
 		conditions interface{}
