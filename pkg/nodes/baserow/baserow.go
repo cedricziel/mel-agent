@@ -596,47 +596,34 @@ func (baserowDefinition) Initialize(mel api.Mel) error {
 
 // GetDynamicOptions implements the DynamicOptionsProvider interface
 func (d baserowDefinition) GetDynamicOptions(ctx api.ExecutionContext, parameterName string, dependencies map[string]interface{}) ([]api.OptionChoice, error) {
-	fmt.Printf("GetDynamicOptions called: parameter=%s, dependencies=%+v\n", parameterName, dependencies)
-	
 	// Check if credential is provided
 	credentialID, ok := dependencies["credentialId"].(string)
 	if !ok || credentialID == "" {
-		fmt.Printf("GetDynamicOptions - No credentialId, returning empty options\n")
 		return []api.OptionChoice{}, nil // Return empty options instead of error
 	}
 
 	switch parameterName {
 	case "databaseId":
 		// Always load databases when credential is available - users need to see them to select
-		fmt.Printf("GetDynamicOptions - databaseId: Always loading databases\n")
 		return d.getDatabaseOptions(dependencies)
 	case "tableId":
 		// Load tables whenever a database is selected - users need to see them to select
 		databaseID, _ := dependencies["databaseId"].(string)
-		fmt.Printf("GetDynamicOptions - tableId: databaseId=%s\n", databaseID)
 		if databaseID != "" {
-			fmt.Printf("GetDynamicOptions - Calling getTableOptions\n")
 			return d.getTableOptions(dependencies)
 		}
-		fmt.Printf("GetDynamicOptions - No database selected, returning empty options\n")
 		return []api.OptionChoice{}, nil // Return empty options when no database selected
 	default:
-		fmt.Printf("GetDynamicOptions - Unknown parameter: %s\n", parameterName)
 		return nil, fmt.Errorf("parameter %s does not support dynamic options", parameterName)
 	}
 }
 
 // getDatabaseOptions loads databases for a Baserow credential
 func (d baserowDefinition) getDatabaseOptions(dependencies map[string]interface{}) ([]api.OptionChoice, error) {
-	fmt.Printf("getDatabaseOptions called with dependencies: %+v\n", dependencies)
-	
 	credentialID, ok := dependencies["credentialId"].(string)
 	if !ok || credentialID == "" {
-		fmt.Printf("getDatabaseOptions - No credentialId provided or wrong type\n")
 		return nil, fmt.Errorf("credentialId is required")
 	}
-	
-	fmt.Printf("getDatabaseOptions - Using credentialId: %s\n", credentialID)
 
 	// Load credential configuration
 	var secretJSON, configJSON []byte
@@ -653,10 +640,6 @@ func (d baserowDefinition) getDatabaseOptions(dependencies map[string]interface{
 		return nil, fmt.Errorf("invalid connection secret: %v", err)
 	}
 
-	// Debug: log what we have
-	fmt.Printf("getDatabaseOptions - Credential data: BaseURL=%s, Username=%s, Password=%s, Token=%s\n",
-		conn.BaseURL, conn.Username, conn.Password, conn.Token)
-
 	if conn.BaseURL == "" {
 		return nil, fmt.Errorf("baseURL is required in connection")
 	}
@@ -666,21 +649,15 @@ func (d baserowDefinition) getDatabaseOptions(dependencies map[string]interface{
 		return nil, fmt.Errorf("username and password are required for JWT authentication")
 	}
 
-	fmt.Printf("getDatabaseOptions - Attempting authentication with %s, username: %s\n", conn.BaseURL, conn.Username)
 	client, err2 := NewBaserowClientWithJWT(conn.BaseURL, conn.Username, conn.Password)
 	if err2 != nil {
-		fmt.Printf("getDatabaseOptions - Authentication failed: %v\n", err2)
 		return nil, fmt.Errorf("failed to authenticate with Baserow: %v", err2)
 	}
 
-	fmt.Printf("getDatabaseOptions - Authentication successful, listing databases\n")
 	databases, err := client.ListDatabases()
 	if err != nil {
-		fmt.Printf("getDatabaseOptions - ListDatabases failed: %v\n", err)
 		return nil, fmt.Errorf("failed to list databases: %v", err)
 	}
-	
-	fmt.Printf("getDatabaseOptions - Found %d databases: %+v\n", len(databases), databases)
 
 	// Convert to OptionChoice
 	options := make([]api.OptionChoice, len(databases))

@@ -1383,31 +1383,105 @@ func deleteWorkflowEdge(w http.ResponseWriter, r *http.Request) {
 func autoLayoutWorkflow(w http.ResponseWriter, r *http.Request) {
 	workflowID := chi.URLParam(r, "workflowID")
 
-	// Simple layout algorithm: arrange nodes in a grid
-	rows, err := db.DB.Query(`SELECT node_id FROM workflow_nodes WHERE agent_id = $1 ORDER BY created_at`, workflowID)
+	// Get all nodes
+	nodeRows, err := db.DB.Query(`SELECT node_id FROM workflow_nodes WHERE agent_id = $1`, workflowID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	defer rows.Close()
+	defer nodeRows.Close()
 
-	var nodeIDs []string
-	for rows.Next() {
+	var allNodes []string
+	nodeSet := make(map[string]bool)
+	for nodeRows.Next() {
 		var nodeID string
-		if err := rows.Scan(&nodeID); err != nil {
+		if err := nodeRows.Scan(&nodeID); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
-		nodeIDs = append(nodeIDs, nodeID)
+		allNodes = append(allNodes, nodeID)
+		nodeSet[nodeID] = true
 	}
 
-	// Arrange in a grid with 200px spacing
-	const spacing = 200.0
-	cols := 3
+	// Get all edges to build the graph
+	edgeRows, err := db.DB.Query(`SELECT source_node_id, target_node_id FROM workflow_edges WHERE agent_id = $1`, workflowID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	defer edgeRows.Close()
 
-	for i, nodeID := range nodeIDs {
-		x := float64(i%cols) * spacing
-		y := float64(i/cols) * spacing
+	// Build adjacency list and in-degree count
+	adjacencyList := make(map[string][]string)
+	inDegree := make(map[string]int)
+	
+	// Initialize in-degree for all nodes
+	for _, nodeID := range allNodes {
+		inDegree[nodeID] = 0
+	}
+
+	for edgeRows.Next() {
+		var sourceID, targetID string
+		if err := edgeRows.Scan(&sourceID, &targetID); err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+		
+		// Only process edges between existing nodes
+		if nodeSet[sourceID] && nodeSet[targetID] {
+			adjacencyList[sourceID] = append(adjacencyList[sourceID], targetID)
+			inDegree[targetID]++
+		}
+	}
+
+	// Perform topological sort using Kahn's algorithm
+	var sortedNodes []string
+	var queue []string
+
+	// Find all nodes with no incoming edges (start nodes)
+	for _, nodeID := range allNodes {
+		if inDegree[nodeID] == 0 {
+			queue = append(queue, nodeID)
+		}
+	}
+
+	for len(queue) > 0 {
+		// Remove first element from queue
+		current := queue[0]
+		queue = queue[1:]
+		sortedNodes = append(sortedNodes, current)
+
+		// For each neighbor of current node
+		for _, neighbor := range adjacencyList[current] {
+			inDegree[neighbor]--
+			if inDegree[neighbor] == 0 {
+				queue = append(queue, neighbor)
+			}
+		}
+	}
+
+	// Add any remaining nodes (in case of cycles or disconnected components)
+	for _, nodeID := range allNodes {
+		found := false
+		for _, sorted := range sortedNodes {
+			if sorted == nodeID {
+				found = true
+				break
+			}
+		}
+		if !found {
+			sortedNodes = append(sortedNodes, nodeID)
+		}
+	}
+
+	// Arrange nodes in a left-to-right flow layout
+	const spacingX = 300.0 // Horizontal spacing between nodes
+	const spacingY = 150.0 // Vertical spacing between rows
+	const maxNodesPerRow = 4 // Maximum nodes per row before wrapping
+
+	for i, nodeID := range sortedNodes {
+		x := float64(i%maxNodesPerRow) * spacingX
+		y := float64(i/maxNodesPerRow) * spacingY
 
 		if _, err := db.DB.Exec(`UPDATE workflow_nodes SET position_x = $1, position_y = $2 WHERE agent_id = $3 AND node_id = $4`, x, y, workflowID, nodeID); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -1415,7 +1489,10 @@ func autoLayoutWorkflow(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	writeJSON(w, http.StatusOK, map[string]interface{}{"updated_nodes": len(nodeIDs)})
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"updated_nodes": len(sortedNodes),
+		"layout_order": sortedNodes,
+	})
 }
 
 // Helper function to dereference string pointer
@@ -1431,12 +1508,9 @@ func getDynamicOptionsHandler(w http.ResponseWriter, r *http.Request) {
 	nodeType := chi.URLParam(r, "type")
 	parameterName := chi.URLParam(r, "parameter")
 	
-	fmt.Printf("getDynamicOptionsHandler called: nodeType=%s, parameter=%s, URL=%s\n", nodeType, parameterName, r.URL.String())
-	
 	// Find the node definition
 	def := api.FindDefinition(nodeType)
 	if def == nil {
-		fmt.Printf("getDynamicOptionsHandler - Node type %s not found\n", nodeType)
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": "node type not found"})
 		return
 	}
@@ -1444,7 +1518,6 @@ func getDynamicOptionsHandler(w http.ResponseWriter, r *http.Request) {
 	// Check if the node implements DynamicOptionsProvider
 	optionsProvider, ok := def.(api.DynamicOptionsProvider)
 	if !ok {
-		fmt.Printf("getDynamicOptionsHandler - Node type %s does not implement DynamicOptionsProvider\n", nodeType)
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "node does not support dynamic options"})
 		return
 	}
@@ -1457,21 +1530,16 @@ func getDynamicOptionsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	
-	fmt.Printf("getDynamicOptionsHandler - Dependencies: %+v\n", dependencies)
-	
 	// Create execution context (we might need a user context in the future)
 	ctx := api.ExecutionContext{}
 	
 	// Get dynamic options
-	fmt.Printf("getDynamicOptionsHandler - Calling GetDynamicOptions for %s.%s\n", nodeType, parameterName)
 	options, err := optionsProvider.GetDynamicOptions(ctx, parameterName, dependencies)
 	if err != nil {
-		fmt.Printf("getDynamicOptionsHandler - GetDynamicOptions failed: %v\n", err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
 	
-	fmt.Printf("getDynamicOptionsHandler - Returning %d options: %+v\n", len(options), options)
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"options": options,
 	})
