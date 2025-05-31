@@ -3,6 +3,7 @@ package api
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/cedricziel/mel-agent/internal/db"
 	"github.com/cedricziel/mel-agent/internal/plugin"
 	"github.com/cedricziel/mel-agent/pkg/api"
+	_ "github.com/cedricziel/mel-agent/pkg/credentials" // Register credential definitions
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
@@ -55,6 +57,11 @@ func Handler() http.Handler {
 	// Connection endpoints.
 	r.Get("/connections", listConnections)
 	r.Post("/connections", createConnection)
+	r.Get("/connections/{connectionID}", getConnection)
+	r.Put("/connections/{connectionID}", updateConnection)
+	r.Delete("/connections/{connectionID}", deleteConnection)
+	// Credentials for selection in nodes
+	r.Get("/credentials", listCredentialsForSelection)
 
 	// Trigger endpoints.
 	r.Get("/triggers", listTriggers)
@@ -68,6 +75,10 @@ func Handler() http.Handler {
 
 	// Integrations (read‑only)
 	r.Get("/integrations", listIntegrations)
+	// Credential type definitions
+	r.Get("/credential-types", listCredentialTypes)
+	r.Get("/credential-types/schema/{type}", getCredentialTypeSchemaHandler)
+	r.Post("/credential-types/{type}/test", testCredentialsHandler)
 	// Node type definitions for builder
 	r.Get("/node-types", listNodeTypes)
 	// JSON Schema for node types
@@ -294,24 +305,64 @@ type Connection struct {
 }
 
 type Integration struct {
-	ID   string `db:"id" json:"id"`
-	Name string `db:"name" json:"name"`
+	ID             string `db:"id" json:"id"`
+	Name           string `db:"name" json:"name"`
+	AuthType       string `db:"auth_type" json:"auth_type"`
+	CredentialType string `db:"credential_type" json:"credential_type"`
 }
 
 func listIntegrations(w http.ResponseWriter, r *http.Request) {
 	// initialize slice to ensure JSON encodes as [] instead of null when empty
 	integrations := []Integration{}
-	rows, err := db.DB.Query(`SELECT id, name FROM integrations ORDER BY name`)
+	
+	// Check if credential_type column exists
+	var hasCredentialType bool
+	err := db.DB.QueryRow(`
+		SELECT EXISTS (
+			SELECT 1 FROM information_schema.columns 
+			WHERE table_name = 'integrations' AND column_name = 'credential_type'
+		)
+	`).Scan(&hasCredentialType)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	
+	var query string
+	if hasCredentialType {
+		query = `SELECT id, name, auth_type, COALESCE(credential_type, '') FROM integrations ORDER BY name`
+	} else {
+		query = `SELECT id, name, auth_type FROM integrations ORDER BY name`
+	}
+	
+	rows, err := db.DB.Query(query)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
 	defer rows.Close()
+	
 	for rows.Next() {
 		var i Integration
-		if err := rows.Scan(&i.ID, &i.Name); err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-			return
+		if hasCredentialType {
+			if err := rows.Scan(&i.ID, &i.Name, &i.AuthType, &i.CredentialType); err != nil {
+				writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+				return
+			}
+		} else {
+			if err := rows.Scan(&i.ID, &i.Name, &i.AuthType); err != nil {
+				writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+				return
+			}
+			// Set default credential type based on auth_type for backward compatibility
+			switch i.AuthType {
+			case "api_key", "token":
+				i.CredentialType = "api_key"
+			case "custom":
+				if i.Name == "baserow" {
+					i.CredentialType = "baserow_jwt"
+				}
+			}
 		}
 		integrations = append(integrations, i)
 	}
@@ -346,12 +397,13 @@ func listConnections(w http.ResponseWriter, r *http.Request) {
 
 func createConnection(w http.ResponseWriter, r *http.Request) {
 	var in struct {
-		IntegrationID string          `json:"integration_id"`
-		UserID        string          `json:"user_id"`
-		Name          string          `json:"name"`
-		Secret        json.RawMessage `json:"secret"` // kept opaque
-		Config        json.RawMessage `json:"config"`
-		IsDefault     bool            `json:"is_default"`
+		IntegrationID  string          `json:"integration_id"`
+		UserID         string          `json:"user_id"`
+		Name           string          `json:"name"`
+		Secret         json.RawMessage `json:"secret"` // kept opaque
+		Config         json.RawMessage `json:"config"`
+		IsDefault      bool            `json:"is_default"`
+		CredentialType string          `json:"credential_type"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
@@ -360,13 +412,130 @@ func createConnection(w http.ResponseWriter, r *http.Request) {
 	if in.UserID == "" {
 		in.UserID = "00000000-0000-0000-0000-000000000001"
 	}
+	
+	// If credential_type is provided, validate and transform the credentials
+	var finalSecret json.RawMessage = in.Secret
+	if in.CredentialType != "" {
+		// Parse the secret data for validation
+		var secretData map[string]interface{}
+		if err := json.Unmarshal(in.Secret, &secretData); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid secret format"})
+			return
+		}
+		
+		// Validate credentials using the credential definition
+		if err := api.ValidateCredentials(in.CredentialType, secretData); err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "credential validation failed: " + err.Error()})
+			return
+		}
+		
+		// Transform credentials (e.g., exchange username/password for token)
+		transformedData, err := api.TransformCredentials(in.CredentialType, secretData)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "credential transformation failed: " + err.Error()})
+			return
+		}
+		
+		// Re-encode the transformed data
+		finalSecret, err = json.Marshal(transformedData)
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to encode transformed credentials"})
+			return
+		}
+	}
+	
 	var id string
-	query := `INSERT INTO connections (user_id,integration_id,name,secret,config,is_default) VALUES ($1,$2,$3,$4::jsonb,$5::jsonb,$6) RETURNING id`
-	if err := db.DB.QueryRow(query, in.UserID, in.IntegrationID, in.Name, string(in.Secret), string(in.Config), in.IsDefault).Scan(&id); err != nil {
+	// Check if credential_type column exists in connections table
+	var hasCredentialType bool
+	err := db.DB.QueryRow(`
+		SELECT EXISTS (
+			SELECT 1 FROM information_schema.columns 
+			WHERE table_name = 'connections' AND column_name = 'credential_type'
+		)
+	`).Scan(&hasCredentialType)
+	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
+	
+	var query string
+	if hasCredentialType {
+		query = `INSERT INTO connections (user_id,integration_id,name,secret,config,is_default,credential_type) VALUES ($1,$2,$3,$4::jsonb,$5::jsonb,$6,$7) RETURNING id`
+		if err := db.DB.QueryRow(query, in.UserID, in.IntegrationID, in.Name, string(finalSecret), string(in.Config), in.IsDefault, in.CredentialType).Scan(&id); err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+	} else {
+		query = `INSERT INTO connections (user_id,integration_id,name,secret,config,is_default) VALUES ($1,$2,$3,$4::jsonb,$5::jsonb,$6) RETURNING id`
+		if err := db.DB.QueryRow(query, in.UserID, in.IntegrationID, in.Name, string(finalSecret), string(in.Config), in.IsDefault).Scan(&id); err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+	}
 	writeJSON(w, http.StatusCreated, map[string]string{"id": id})
+}
+
+// getConnection retrieves a single connection by ID
+func getConnection(w http.ResponseWriter, r *http.Request) {
+	connectionID := chi.URLParam(r, "connectionID")
+	
+	// Check if credential_type column exists in connections table
+	var hasCredentialType bool
+	err := db.DB.QueryRow(`
+		SELECT EXISTS (
+			SELECT 1 FROM information_schema.columns 
+			WHERE table_name = 'connections' AND column_name = 'credential_type'
+		)
+	`).Scan(&hasCredentialType)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	
+	var query string
+	if hasCredentialType {
+		query = `SELECT id, integration_id, user_id, name, secret, config, is_default, COALESCE(credential_type, '') as credential_type FROM connections WHERE id = $1`
+	} else {
+		query = `SELECT id, integration_id, user_id, name, secret, config, is_default FROM connections WHERE id = $1`
+	}
+	
+	var c struct {
+		ID             string          `json:"id"`
+		IntegrationID  string          `json:"integration_id"`
+		UserID         string          `json:"user_id"`
+		Name           string          `json:"name"`
+		Secret         json.RawMessage `json:"secret"`
+		Config         json.RawMessage `json:"config"`
+		IsDefault      bool            `json:"is_default"`
+		CredentialType string          `json:"credential_type,omitempty"`
+	}
+	
+	var secretBytes, configBytes []byte
+	if hasCredentialType {
+		err = db.DB.QueryRow(query, connectionID).Scan(
+			&c.ID, &c.IntegrationID, &c.UserID, &c.Name, 
+			&secretBytes, &configBytes, &c.IsDefault, &c.CredentialType,
+		)
+	} else {
+		err = db.DB.QueryRow(query, connectionID).Scan(
+			&c.ID, &c.IntegrationID, &c.UserID, &c.Name, 
+			&secretBytes, &configBytes, &c.IsDefault,
+		)
+	}
+	
+	if err != nil {
+		if err == sql.ErrNoRows {
+			writeJSON(w, http.StatusNotFound, map[string]string{"error": "connection not found"})
+		} else {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		}
+		return
+	}
+	
+	c.Secret = secretBytes
+	c.Config = configBytes
+	
+	writeJSON(w, http.StatusOK, c)
 }
 
 // --- Trigger handlers ---
@@ -1262,9 +1431,12 @@ func getDynamicOptionsHandler(w http.ResponseWriter, r *http.Request) {
 	nodeType := chi.URLParam(r, "type")
 	parameterName := chi.URLParam(r, "parameter")
 	
+	fmt.Printf("getDynamicOptionsHandler called: nodeType=%s, parameter=%s, URL=%s\n", nodeType, parameterName, r.URL.String())
+	
 	// Find the node definition
 	def := api.FindDefinition(nodeType)
 	if def == nil {
+		fmt.Printf("getDynamicOptionsHandler - Node type %s not found\n", nodeType)
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": "node type not found"})
 		return
 	}
@@ -1272,6 +1444,7 @@ func getDynamicOptionsHandler(w http.ResponseWriter, r *http.Request) {
 	// Check if the node implements DynamicOptionsProvider
 	optionsProvider, ok := def.(api.DynamicOptionsProvider)
 	if !ok {
+		fmt.Printf("getDynamicOptionsHandler - Node type %s does not implement DynamicOptionsProvider\n", nodeType)
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "node does not support dynamic options"})
 		return
 	}
@@ -1284,17 +1457,299 @@ func getDynamicOptionsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	
+	fmt.Printf("getDynamicOptionsHandler - Dependencies: %+v\n", dependencies)
+	
 	// Create execution context (we might need a user context in the future)
 	ctx := api.ExecutionContext{}
 	
 	// Get dynamic options
+	fmt.Printf("getDynamicOptionsHandler - Calling GetDynamicOptions for %s.%s\n", nodeType, parameterName)
 	options, err := optionsProvider.GetDynamicOptions(ctx, parameterName, dependencies)
+	if err != nil {
+		fmt.Printf("getDynamicOptionsHandler - GetDynamicOptions failed: %v\n", err)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	
+	fmt.Printf("getDynamicOptionsHandler - Returning %d options: %+v\n", len(options), options)
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"options": options,
+	})
+}
+
+// listCredentialTypes returns all available credential type definitions
+func listCredentialTypes(w http.ResponseWriter, r *http.Request) {
+	types := api.ListCredentialDefinitions()
+	writeJSON(w, http.StatusOK, types)
+}
+
+// getCredentialTypeSchemaHandler returns the JSON schema for a specific credential type
+func getCredentialTypeSchemaHandler(w http.ResponseWriter, r *http.Request) {
+	credentialType := chi.URLParam(r, "type")
+	
+	def := api.FindCredentialDefinition(credentialType)
+	if def == nil {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "credential type not found"})
+		return
+	}
+	
+	// Build JSON schema from parameter definitions
+	schema := map[string]interface{}{
+		"type": "object",
+		"properties": make(map[string]interface{}),
+		"required": make([]string, 0),
+	}
+	
+	properties := schema["properties"].(map[string]interface{})
+	required := schema["required"].([]string)
+	
+	for _, param := range def.Parameters() {
+		properties[param.Name] = param.ToJSONSchema()
+		if param.Required {
+			required = append(required, param.Name)
+		}
+	}
+	
+	schema["required"] = required
+	writeJSON(w, http.StatusOK, schema)
+}
+
+// testCredentialsHandler tests credentials for a specific credential type
+func testCredentialsHandler(w http.ResponseWriter, r *http.Request) {
+	credentialType := chi.URLParam(r, "type")
+	
+	var requestData map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
+		return
+	}
+	
+	// Test the credentials
+	if err := api.TestCredentials(credentialType, requestData); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+	
+	writeJSON(w, http.StatusOK, map[string]string{"status": "success", "message": "credentials are valid"})
+}
+
+// listCredentialsForSelection returns credentials suitable for selection in nodes
+func listCredentialsForSelection(w http.ResponseWriter, r *http.Request) {
+	// Get optional credential_type filter
+	credentialType := r.URL.Query().Get("credential_type")
+	
+	var query string
+	var args []interface{}
+	
+	// Build query based on whether we have credential_type column
+	var hasCredentialTypeColumn bool
+	err := db.DB.QueryRow(`
+		SELECT EXISTS (
+			SELECT 1 FROM information_schema.columns 
+			WHERE table_name = 'connections' AND column_name = 'credential_type'
+		)
+	`).Scan(&hasCredentialTypeColumn)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
 	
-	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"options": options,
-	})
+	if hasCredentialTypeColumn && credentialType != "" {
+		query = `SELECT c.id, c.name, c.integration_id, i.name as integration_name, c.credential_type 
+		         FROM connections c 
+		         JOIN integrations i ON c.integration_id = i.id 
+		         WHERE c.credential_type = $1 
+		         ORDER BY c.name`
+		args = append(args, credentialType)
+	} else if hasCredentialTypeColumn {
+		query = `SELECT c.id, c.name, c.integration_id, i.name as integration_name, COALESCE(c.credential_type, '') as credential_type 
+		         FROM connections c 
+		         JOIN integrations i ON c.integration_id = i.id 
+		         ORDER BY c.name`
+	} else {
+		query = `SELECT c.id, c.name, c.integration_id, i.name as integration_name 
+		         FROM connections c 
+		         JOIN integrations i ON c.integration_id = i.id 
+		         ORDER BY c.name`
+	}
+	
+	rows, err := db.DB.Query(query, args...)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	defer rows.Close()
+	
+	type CredentialOption struct {
+		ID              string `json:"id"`
+		Name            string `json:"name"`
+		IntegrationID   string `json:"integration_id"`
+		IntegrationName string `json:"integration_name"`
+		CredentialType  string `json:"credential_type,omitempty"`
+	}
+	
+	credentials := []CredentialOption{}
+	for rows.Next() {
+		var cred CredentialOption
+		if hasCredentialTypeColumn {
+			if err := rows.Scan(&cred.ID, &cred.Name, &cred.IntegrationID, &cred.IntegrationName, &cred.CredentialType); err != nil {
+				writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+				return
+			}
+		} else {
+			if err := rows.Scan(&cred.ID, &cred.Name, &cred.IntegrationID, &cred.IntegrationName); err != nil {
+				writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+				return
+			}
+		}
+		credentials = append(credentials, cred)
+	}
+	
+	writeJSON(w, http.StatusOK, credentials)
+}
+
+// updateConnection updates an existing connection/credential
+func updateConnection(w http.ResponseWriter, r *http.Request) {
+	connectionID := chi.URLParam(r, "connectionID")
+	
+	var in struct {
+		Name           *string         `json:"name,omitempty"`
+		Secret         json.RawMessage `json:"secret,omitempty"`
+		Config         json.RawMessage `json:"config,omitempty"`
+		CredentialType *string         `json:"credential_type,omitempty"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return
+	}
+	
+	// Check if connection exists
+	var exists bool
+	err := db.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM connections WHERE id = $1)`, connectionID).Scan(&exists)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	if !exists {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "connection not found"})
+		return
+	}
+	
+	// Build dynamic update query
+	updates := []string{}
+	args := []interface{}{}
+	argIndex := 1
+	
+	if in.Name != nil {
+		updates = append(updates, fmt.Sprintf("name = $%d", argIndex))
+		args = append(args, *in.Name)
+		argIndex++
+	}
+	
+	if in.Secret != nil {
+		// If credential_type is provided, validate and transform the credentials
+		var finalSecret json.RawMessage = in.Secret
+		if in.CredentialType != nil && *in.CredentialType != "" {
+			// Parse the secret data for validation
+			var secretData map[string]interface{}
+			if err := json.Unmarshal(in.Secret, &secretData); err != nil {
+				writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid secret format"})
+				return
+			}
+			
+			// Validate credentials using the credential definition
+			if err := api.ValidateCredentials(*in.CredentialType, secretData); err != nil {
+				writeJSON(w, http.StatusBadRequest, map[string]string{"error": "credential validation failed: " + err.Error()})
+				return
+			}
+			
+			// Transform credentials (e.g., exchange username/password for token)
+			transformedData, err := api.TransformCredentials(*in.CredentialType, secretData)
+			if err != nil {
+				writeJSON(w, http.StatusBadRequest, map[string]string{"error": "credential transformation failed: " + err.Error()})
+				return
+			}
+			
+			// Re-encode the transformed data
+			finalSecret, err = json.Marshal(transformedData)
+			if err != nil {
+				writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to encode transformed credentials"})
+				return
+			}
+		}
+		
+		updates = append(updates, fmt.Sprintf("secret = $%d::jsonb", argIndex))
+		args = append(args, string(finalSecret))
+		argIndex++
+	}
+	
+	if in.Config != nil {
+		updates = append(updates, fmt.Sprintf("config = $%d::jsonb", argIndex))
+		args = append(args, string(in.Config))
+		argIndex++
+	}
+	
+	if in.CredentialType != nil {
+		// Check if credential_type column exists
+		var hasCredentialType bool
+		err := db.DB.QueryRow(`
+			SELECT EXISTS (
+				SELECT 1 FROM information_schema.columns 
+				WHERE table_name = 'connections' AND column_name = 'credential_type'
+			)
+		`).Scan(&hasCredentialType)
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+		
+		if hasCredentialType {
+			updates = append(updates, fmt.Sprintf("credential_type = $%d", argIndex))
+			args = append(args, *in.CredentialType)
+			argIndex++
+		}
+	}
+	
+	if len(updates) == 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "no fields to update"})
+		return
+	}
+	
+	// Add WHERE clause
+	query := fmt.Sprintf("UPDATE connections SET %s WHERE id = $%d", 
+		strings.Join(updates, ", "), argIndex)
+	args = append(args, connectionID)
+	
+	_, err = db.DB.Exec(query, args...)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	
+	writeJSON(w, http.StatusOK, map[string]string{"id": connectionID})
+}
+
+// deleteConnection deletes a connection/credential
+func deleteConnection(w http.ResponseWriter, r *http.Request) {
+	connectionID := chi.URLParam(r, "connectionID")
+	
+	// Check if connection exists and delete it
+	result, err := db.DB.Exec(`DELETE FROM connections WHERE id = $1`, connectionID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	
+	if rowsAffected == 0 {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "connection not found"})
+		return
+	}
+	
+	w.WriteHeader(http.StatusNoContent)
 }

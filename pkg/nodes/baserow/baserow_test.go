@@ -116,6 +116,37 @@ func TestBaserowClientCreation(t *testing.T) {
 	}
 }
 
+func TestBaserowConnectionStructure(t *testing.T) {
+	// Test token-based connection
+	tokenConn := BaserowConnection{
+		BaseURL: "https://example.baserow.io",
+		Token:   "test-token",
+	}
+	
+	if tokenConn.BaseURL != "https://example.baserow.io" {
+		t.Errorf("Expected BaseURL to be set")
+	}
+	
+	if tokenConn.Token != "test-token" {
+		t.Errorf("Expected Token to be set")
+	}
+	
+	// Test JWT-based connection
+	jwtConn := BaserowConnection{
+		BaseURL:  "https://example.baserow.io",
+		Username: "testuser",
+		Password: "testpass",
+	}
+	
+	if jwtConn.Username != "testuser" {
+		t.Errorf("Expected Username to be set")
+	}
+	
+	if jwtConn.Password != "testpass" {
+		t.Errorf("Expected Password to be set")
+	}
+}
+
 func TestNodeImplementsInterface(t *testing.T) {
 	var _ api.NodeDefinition = (*baserowDefinition)(nil)
 }

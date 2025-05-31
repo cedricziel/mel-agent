@@ -4,19 +4,21 @@ package api
 type ParameterType string
 
 const (
-	TypeString  ParameterType = "string"
-	TypeNumber  ParameterType = "number"
-	TypeInteger ParameterType = "integer"
-	TypeBoolean ParameterType = "boolean"
-	TypeEnum    ParameterType = "enum"
-	TypeObject  ParameterType = "object"
-	TypeArray   ParameterType = "array"
-	TypeJSON    ParameterType = "json" // backward compatibility alias for object
+	TypeString     ParameterType = "string"
+	TypeNumber     ParameterType = "number"
+	TypeInteger    ParameterType = "integer"
+	TypeBoolean    ParameterType = "boolean"
+	TypeEnum       ParameterType = "enum"
+	TypeObject     ParameterType = "object"
+	TypeArray      ParameterType = "array"
+	TypeJSON       ParameterType = "json"       // backward compatibility alias for object
+	TypeCredential ParameterType = "credential" // for selecting saved credentials
 )
 
 // JSONSchema represents a JSON schema definition.
 type JSONSchema struct {
 	Type        string                 `json:"type,omitempty"`
+	Title       string                 `json:"title,omitempty"`
 	Format      string                 `json:"format,omitempty"`
 	Enum        []interface{}          `json:"enum,omitempty"`
 	Properties  map[string]*JSONSchema `json:"properties,omitempty"`
@@ -48,6 +50,8 @@ func (pt ParameterType) ToJSONSchema() *JSONSchema {
 		return &JSONSchema{Type: "object"}
 	case TypeArray:
 		return &JSONSchema{Type: "array"}
+	case TypeCredential:
+		return &JSONSchema{Type: "string"} // credential IDs are strings
 	default:
 		return &JSONSchema{Type: "string"} // fallback
 	}
@@ -61,7 +65,7 @@ func (pt ParameterType) String() string {
 // IsValid checks if the parameter type is valid.
 func (pt ParameterType) IsValid() bool {
 	switch pt {
-	case TypeString, TypeNumber, TypeInteger, TypeBoolean, TypeEnum, TypeObject, TypeArray, TypeJSON:
+	case TypeString, TypeNumber, TypeInteger, TypeBoolean, TypeEnum, TypeObject, TypeArray, TypeJSON, TypeCredential:
 		return true
 	default:
 		return false
@@ -82,6 +86,8 @@ type ParameterDefinition struct {
 	Validators          []ValidatorSpec       `json:"validators,omitempty"`          // validation rules to apply
 	Description         string                `json:"description,omitempty"`         // help text or tooltip
 	ItemSchema          []ParameterDefinition `json:"itemSchema,omitempty"`          // for array types, defines structure of each item
+	CredentialType      string                `json:"credentialType,omitempty"`      // for credential parameters, which credential type to filter by
+	DynamicOptions      bool                  `json:"dynamicOptions,omitempty"`      // if true, this parameter supports dynamic option loading
 
 	// JSON Schema specific fields
 	JSONSchema *JSONSchema `json:"jsonSchema,omitempty"` // explicit JSON schema override
@@ -206,6 +212,9 @@ func (pd ParameterDefinition) ToJSONSchema() *JSONSchema {
 	schema := effectiveType.ToJSONSchema()
 
 	// Apply parameter definition properties
+	if pd.Label != "" {
+		schema.Title = pd.Label
+	}
 	if pd.Description != "" {
 		schema.Description = pd.Description
 	}
@@ -329,6 +338,18 @@ func NewArrayParameter(name, label string, required bool) ParameterDefinition {
 	}
 }
 
+// NewCredentialParameter creates a parameter definition for selecting a credential.
+func NewCredentialParameter(name, label string, credentialType string, required bool) ParameterDefinition {
+	return ParameterDefinition{
+		Name:           name,
+		Label:          label,
+		Type:           string(TypeCredential),
+		ParameterType:  TypeCredential,
+		Required:       required,
+		CredentialType: credentialType,
+	}
+}
+
 // WithDefault sets the default value for a parameter definition.
 func (pd ParameterDefinition) WithDefault(value interface{}) ParameterDefinition {
 	pd.Default = value
@@ -362,5 +383,11 @@ func (pd ParameterDefinition) WithVisibilityCondition(condition string) Paramete
 // WithItemSchema sets the item schema for array parameters.
 func (pd ParameterDefinition) WithItemSchema(schema ...ParameterDefinition) ParameterDefinition {
 	pd.ItemSchema = schema
+	return pd
+}
+
+// WithDynamicOptions marks this parameter as supporting dynamic option loading.
+func (pd ParameterDefinition) WithDynamicOptions() ParameterDefinition {
+	pd.DynamicOptions = true
 	return pd
 }
