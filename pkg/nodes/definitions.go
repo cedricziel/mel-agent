@@ -15,6 +15,7 @@ import (
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/inject"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/llm"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/log"
+	_ "github.com/cedricziel/mel-agent/pkg/nodes/manual_trigger"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/merge"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/noop"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/random"

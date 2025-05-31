@@ -12,6 +12,7 @@ import DefaultNode from "../components/DefaultNode";
 import TriggerNode from "../components/TriggerNode";
 import HttpRequestNode from "../components/HttpRequestNode";
 import NodeDetailsPanel from "../components/NodeDetailsPanel";
+import NodeModal from "../components/NodeModal";
 import "reactflow/dist/style.css";
 import ChatAssistant from "../components/ChatAssistant";
 import { useWorkflowState } from "../hooks/useWorkflowState";
@@ -42,6 +43,7 @@ function BuilderPage({ agentId }) {
 
   // UI state
   const [modalOpen, setModalOpen] = useState(false);
+  const [nodeModalOpen, setNodeModalOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [sidebarTab, setSidebarTab] = useState(null);
   const [addingFromNodeId, setAddingFromNodeId] = useState(null);
@@ -50,6 +52,10 @@ function BuilderPage({ agentId }) {
   const [isLiveMode, setIsLiveMode] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [validationErrors, setValidationErrors] = useState({});
+  const [viewMode, setViewMode] = useState('editor'); // 'editor', 'executions'
+  const [executions, setExecutions] = useState([]);
+  const [selectedExecution, setSelectedExecution] = useState(null);
+  const [loadingExecutions, setLoadingExecutions] = useState(false);
 
   // Node definitions and triggers
   const [nodeDefs, setNodeDefs] = useState([]);
@@ -83,6 +89,25 @@ function BuilderPage({ agentId }) {
       .then((res) => setTriggers(res.data))
       .catch((err) => console.error('fetch triggers failed:', err));
   }, []);
+
+  // Load executions when switching to executions mode
+  useEffect(() => {
+    if (viewMode === 'executions') {
+      setLoadingExecutions(true);
+      axios.get(`/api/agents/${agentId}/runs`)
+        .then((res) => {
+          setExecutions(res.data);
+          if (res.data.length > 0 && !selectedExecution) {
+            setSelectedExecution(res.data[0]);
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to load executions:', err);
+          setExecutions([]);
+        })
+        .finally(() => setLoadingExecutions(false));
+    }
+  }, [viewMode, agentId, selectedExecution]);
 
   // Node categories
   const categories = useMemo(() => {
@@ -233,7 +258,7 @@ function BuilderPage({ agentId }) {
   // ReactFlow event handlers with collaborative updates
   const onNodesChange = useCallback(
     (changes) => {
-      if (isLiveMode) return;
+      if (isLiveMode || viewMode === 'executions') return;
       
       // Apply changes locally first
       applyNodeChanges(changes);
@@ -255,12 +280,12 @@ function BuilderPage({ agentId }) {
         }
       });
     },
-    [applyNodeChanges, broadcastNodeChange, isLiveMode]
+    [applyNodeChanges, broadcastNodeChange, isLiveMode, viewMode]
   );
 
   const onEdgesChange = useCallback(
     (changes) => {
-      if (isLiveMode) return;
+      if (isLiveMode || viewMode === 'executions') return;
       
       applyEdgeChanges(changes);
       
@@ -270,12 +295,12 @@ function BuilderPage({ agentId }) {
         }
       });
     },
-    [applyEdgeChanges, broadcastNodeChange, isLiveMode]
+    [applyEdgeChanges, broadcastNodeChange, isLiveMode, viewMode]
   );
 
   const onConnect = useCallback(
     async (params) => {
-      if (isLiveMode) return;
+      if (isLiveMode || viewMode === 'executions') return;
       
       const edgeId = `edge-${Date.now()}`;
       const newEdge = { ...params, id: edgeId };
@@ -287,7 +312,7 @@ function BuilderPage({ agentId }) {
         console.error('Failed to create edge:', err);
       }
     },
-    [createEdge, broadcastNodeChange, isLiveMode]
+    [createEdge, broadcastNodeChange, isLiveMode, viewMode]
   );
 
   // Test run functionality
@@ -310,20 +335,15 @@ function BuilderPage({ agentId }) {
   // Node double-click to rename
   const onNodeDoubleClick = useCallback(async (event, node) => {
     if (isLiveMode) return;
-    const current = node.data.label || '';
-    const name = prompt('Enter node name:', current);
-    if (name !== null) {
-      try {
-        await updateNode(node.id, { data: { ...node.data, label: name } });
-        broadcastNodeChange('nodeUpdated', {
-          nodeId: node.id,
-          data: { data: { ...node.data, label: name } }
-        });
-      } catch (err) {
-        console.error('Failed to rename node:', err);
-      }
-    }
-  }, [updateNode, broadcastNodeChange, isLiveMode]);
+    setSelectedNodeId(node.id);
+    setNodeModalOpen(true);
+  }, [isLiveMode]);
+
+  // Node click handler for selection (works in both modes)
+  const onNodeClick = useCallback((event, node) => {
+    setSelectedNodeId(node.id);
+    setNodeModalOpen(true);
+  }, []);
 
   // Save functionality with validation
   const save = useCallback(async () => {
@@ -446,12 +466,6 @@ function BuilderPage({ agentId }) {
     }
   }, [autoLayout]);
 
-  // Node click handler for selection
-  const onNodeClick = useCallback((event, node) => {
-    setSelectedNodeId(node.id);
-    setSidebarTab('details');
-  }, []);
-
   // Add node from modal
   const handleModalAddNode = useCallback(async (nodeType) => {
     const id = Date.now().toString();
@@ -509,8 +523,18 @@ function BuilderPage({ agentId }) {
           nodeTypes={{
             default: DefaultNode,
             if: IfNode,
-            webhook: TriggerNode,
-            schedule: TriggerNode,
+            webhook: (props) => {
+              const nodeDef = nodeDefs.find(def => def.type === 'webhook');
+              return <TriggerNode {...props} type="webhook" agentId={agentId} icon={nodeDef?.icon} />;
+            },
+            schedule: (props) => {
+              const nodeDef = nodeDefs.find(def => def.type === 'schedule');
+              return <TriggerNode {...props} type="schedule" agentId={agentId} icon={nodeDef?.icon} />;
+            },
+            manual_trigger: (props) => {
+              const nodeDef = nodeDefs.find(def => def.type === 'manual_trigger');
+              return <TriggerNode {...props} type="manual_trigger" agentId={agentId} icon={nodeDef?.icon} />;
+            },
             http_request: HttpRequestNode,
           }}
           fitView
@@ -522,30 +546,70 @@ function BuilderPage({ agentId }) {
 
         {/* Top toolbar */}
         <div className="absolute top-4 left-4 right-4 flex justify-between items-center">
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            {/* n8n-style toggle switch */}
+            <div className="flex bg-gray-100 rounded-lg p-1 mr-4">
+              <button
+                onClick={() => setViewMode('editor')}
+                className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                  viewMode === 'editor' 
+                    ? 'bg-white text-gray-900 shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Editor
+              </button>
+              <button
+                onClick={() => setViewMode('executions')}
+                className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                  viewMode === 'executions' 
+                    ? 'bg-white text-gray-900 shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Executions
+              </button>
+            </div>
+            
             <button
               onClick={() => setModalOpen(true)}
-              className="px-4 py-2 bg-blue-500 text-white rounded"
+              disabled={viewMode === 'executions'}
+              className={`px-4 py-2 rounded ${
+                viewMode === 'executions' 
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                  : 'bg-blue-500 text-white'
+              }`}
             >
               + Add Node
             </button>
             <button
               onClick={save}
-              disabled={!isDirty}
-              className={`px-4 py-2 rounded ${isDirty ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-500'}`}
+              disabled={!isDirty || viewMode === 'executions'}
+              className={`px-4 py-2 rounded ${
+                (isDirty && viewMode === 'editor') ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-500'
+              }`}
             >
               Save
             </button>
             <button
               onClick={onTestRun}
-              disabled={testing}
-              className="px-4 py-2 bg-green-500 text-white rounded"
+              disabled={testing || viewMode === 'executions'}
+              className={`px-4 py-2 rounded ${
+                viewMode === 'executions' 
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-green-500 text-white'
+              }`}
             >
               {testing ? 'Running...' : 'Test Run'}
             </button>
             <button
               onClick={handleAutoLayout}
-              className="px-4 py-2 bg-purple-500 text-white rounded"
+              disabled={viewMode === 'executions'}
+              className={`px-4 py-2 rounded ${
+                viewMode === 'executions'
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-purple-500 text-white'
+              }`}
             >
               Auto Layout
             </button>
@@ -569,9 +633,52 @@ function BuilderPage({ agentId }) {
       </div>
 
       {/* Sidebar */}
-      {sidebarTab && (
+      {(sidebarTab || viewMode === 'executions') && (
         <div className="w-80 bg-white border-l shadow-lg h-screen overflow-y-auto">
-          {sidebarTab === 'details' && selectedNode && selectedNodeDef && (
+          {/* Executions panel */}
+          {viewMode === 'executions' && (
+            <div className="h-full flex flex-col">
+              <div className="p-4 border-b">
+                <h3 className="text-lg font-semibold">Executions</h3>
+                {loadingExecutions && (
+                  <div className="text-sm text-gray-500">Loading executions...</div>
+                )}
+              </div>
+              <div className="flex-1 overflow-y-auto">
+                {executions.length === 0 && !loadingExecutions ? (
+                  <div className="p-4 text-center text-gray-500">
+                    No executions found. Run your workflow to see execution history.
+                  </div>
+                ) : (
+                  <div className="p-2">
+                    {executions.map((execution) => (
+                      <div
+                        key={execution.id}
+                        onClick={() => setSelectedExecution(execution)}
+                        className={`p-3 border rounded mb-2 cursor-pointer hover:bg-gray-50 ${
+                          selectedExecution?.id === execution.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">
+                            {new Date(execution.created_at).toLocaleString()}
+                          </span>
+                          <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+                            Completed
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          ID: {execution.id.slice(0, 8)}...
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {sidebarTab === 'details' && selectedNode && selectedNodeDef && viewMode === 'editor' && (
             <NodeDetailsPanel
               node={selectedNode}
               nodeDef={selectedNodeDef}
@@ -675,6 +782,39 @@ function BuilderPage({ agentId }) {
           </div>
         </div>
       )}
+
+      {/* Node editing modal */}
+      <NodeModal
+        node={selectedNode}
+        nodeDef={selectedNodeDef}
+        isOpen={nodeModalOpen}
+        viewMode={viewMode}
+        selectedExecution={selectedExecution}
+        agentId={agentId}
+        onClose={() => {
+          setNodeModalOpen(false);
+          setSelectedNodeId(null);
+        }}
+        onChange={(key, value) => {
+          updateNode(selectedNodeId, {
+            data: { ...selectedNode.data, [key]: value }
+          });
+        }}
+        onExecute={async (inputData) => {
+          try {
+            // Execute single node
+            const res = await axios.post(
+              `/api/agents/${agentId}/nodes/${selectedNodeId}/execute`,
+              inputData
+            );
+            return res.data.output;
+          } catch (err) {
+            console.error('Execution failed:', err);
+            throw err;
+          }
+        }}
+        onSave={save}
+      />
     </div>
   );
 }

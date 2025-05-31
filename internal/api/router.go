@@ -314,12 +314,12 @@ type Integration struct {
 func listIntegrations(w http.ResponseWriter, r *http.Request) {
 	// initialize slice to ensure JSON encodes as [] instead of null when empty
 	integrations := []Integration{}
-	
+
 	// Check if credential_type column exists
 	var hasCredentialType bool
 	err := db.DB.QueryRow(`
 		SELECT EXISTS (
-			SELECT 1 FROM information_schema.columns 
+			SELECT 1 FROM information_schema.columns
 			WHERE table_name = 'integrations' AND column_name = 'credential_type'
 		)
 	`).Scan(&hasCredentialType)
@@ -327,21 +327,21 @@ func listIntegrations(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	
+
 	var query string
 	if hasCredentialType {
 		query = `SELECT id, name, auth_type, COALESCE(credential_type, '') FROM integrations ORDER BY name`
 	} else {
 		query = `SELECT id, name, auth_type FROM integrations ORDER BY name`
 	}
-	
+
 	rows, err := db.DB.Query(query)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
 	defer rows.Close()
-	
+
 	for rows.Next() {
 		var i Integration
 		if hasCredentialType {
@@ -412,7 +412,7 @@ func createConnection(w http.ResponseWriter, r *http.Request) {
 	if in.UserID == "" {
 		in.UserID = "00000000-0000-0000-0000-000000000001"
 	}
-	
+
 	// If credential_type is provided, validate and transform the credentials
 	var finalSecret json.RawMessage = in.Secret
 	if in.CredentialType != "" {
@@ -422,20 +422,20 @@ func createConnection(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid secret format"})
 			return
 		}
-		
+
 		// Validate credentials using the credential definition
 		if err := api.ValidateCredentials(in.CredentialType, secretData); err != nil {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "credential validation failed: " + err.Error()})
 			return
 		}
-		
+
 		// Transform credentials (e.g., exchange username/password for token)
 		transformedData, err := api.TransformCredentials(in.CredentialType, secretData)
 		if err != nil {
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "credential transformation failed: " + err.Error()})
 			return
 		}
-		
+
 		// Re-encode the transformed data
 		finalSecret, err = json.Marshal(transformedData)
 		if err != nil {
@@ -443,13 +443,13 @@ func createConnection(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	
+
 	var id string
 	// Check if credential_type column exists in connections table
 	var hasCredentialType bool
 	err := db.DB.QueryRow(`
 		SELECT EXISTS (
-			SELECT 1 FROM information_schema.columns 
+			SELECT 1 FROM information_schema.columns
 			WHERE table_name = 'connections' AND column_name = 'credential_type'
 		)
 	`).Scan(&hasCredentialType)
@@ -457,7 +457,7 @@ func createConnection(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	
+
 	var query string
 	if hasCredentialType {
 		query = `INSERT INTO connections (user_id,integration_id,name,secret,config,is_default,credential_type) VALUES ($1,$2,$3,$4::jsonb,$5::jsonb,$6,$7) RETURNING id`
@@ -478,12 +478,12 @@ func createConnection(w http.ResponseWriter, r *http.Request) {
 // getConnection retrieves a single connection by ID
 func getConnection(w http.ResponseWriter, r *http.Request) {
 	connectionID := chi.URLParam(r, "connectionID")
-	
+
 	// Check if credential_type column exists in connections table
 	var hasCredentialType bool
 	err := db.DB.QueryRow(`
 		SELECT EXISTS (
-			SELECT 1 FROM information_schema.columns 
+			SELECT 1 FROM information_schema.columns
 			WHERE table_name = 'connections' AND column_name = 'credential_type'
 		)
 	`).Scan(&hasCredentialType)
@@ -491,14 +491,14 @@ func getConnection(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	
+
 	var query string
 	if hasCredentialType {
 		query = `SELECT id, integration_id, user_id, name, secret, config, is_default, COALESCE(credential_type, '') as credential_type FROM connections WHERE id = $1`
 	} else {
 		query = `SELECT id, integration_id, user_id, name, secret, config, is_default FROM connections WHERE id = $1`
 	}
-	
+
 	var c struct {
 		ID             string          `json:"id"`
 		IntegrationID  string          `json:"integration_id"`
@@ -509,20 +509,20 @@ func getConnection(w http.ResponseWriter, r *http.Request) {
 		IsDefault      bool            `json:"is_default"`
 		CredentialType string          `json:"credential_type,omitempty"`
 	}
-	
+
 	var secretBytes, configBytes []byte
 	if hasCredentialType {
 		err = db.DB.QueryRow(query, connectionID).Scan(
-			&c.ID, &c.IntegrationID, &c.UserID, &c.Name, 
+			&c.ID, &c.IntegrationID, &c.UserID, &c.Name,
 			&secretBytes, &configBytes, &c.IsDefault, &c.CredentialType,
 		)
 	} else {
 		err = db.DB.QueryRow(query, connectionID).Scan(
-			&c.ID, &c.IntegrationID, &c.UserID, &c.Name, 
+			&c.ID, &c.IntegrationID, &c.UserID, &c.Name,
 			&secretBytes, &configBytes, &c.IsDefault,
 		)
 	}
-	
+
 	if err != nil {
 		if err == sql.ErrNoRows {
 			writeJSON(w, http.StatusNotFound, map[string]string{"error": "connection not found"})
@@ -531,10 +531,10 @@ func getConnection(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	
+
 	c.Secret = secretBytes
 	c.Config = configBytes
-	
+
 	writeJSON(w, http.StatusOK, c)
 }
 
@@ -1414,7 +1414,7 @@ func autoLayoutWorkflow(w http.ResponseWriter, r *http.Request) {
 	// Build adjacency list and in-degree count
 	adjacencyList := make(map[string][]string)
 	inDegree := make(map[string]int)
-	
+
 	// Initialize in-degree for all nodes
 	for _, nodeID := range allNodes {
 		inDegree[nodeID] = 0
@@ -1426,7 +1426,7 @@ func autoLayoutWorkflow(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
-		
+
 		// Only process edges between existing nodes
 		if nodeSet[sourceID] && nodeSet[targetID] {
 			adjacencyList[sourceID] = append(adjacencyList[sourceID], targetID)
@@ -1434,64 +1434,108 @@ func autoLayoutWorkflow(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Perform topological sort using Kahn's algorithm
-	var sortedNodes []string
-	var queue []string
-
-	// Find all nodes with no incoming edges (start nodes)
+	// Create a layered layout using BFS to group nodes by their distance from start nodes
+	layers := make(map[int][]string) // layer index -> list of node IDs
+	nodeLayer := make(map[string]int) // node ID -> layer index
+	visited := make(map[string]bool)
+	
+	// Find all nodes with no incoming edges (start nodes) - these go in layer 0
+	var startNodes []string
 	for _, nodeID := range allNodes {
 		if inDegree[nodeID] == 0 {
-			queue = append(queue, nodeID)
+			startNodes = append(startNodes, nodeID)
+			layers[0] = append(layers[0], nodeID)
+			nodeLayer[nodeID] = 0
+			visited[nodeID] = true
 		}
 	}
 
-	for len(queue) > 0 {
-		// Remove first element from queue
-		current := queue[0]
-		queue = queue[1:]
-		sortedNodes = append(sortedNodes, current)
-
-		// For each neighbor of current node
-		for _, neighbor := range adjacencyList[current] {
-			inDegree[neighbor]--
-			if inDegree[neighbor] == 0 {
-				queue = append(queue, neighbor)
+	// Use BFS to assign layers to remaining nodes
+	currentLayer := 0
+	for {
+		nextLayerNodes := []string{}
+		
+		// Process all nodes in current layer
+		for _, nodeID := range layers[currentLayer] {
+			// For each neighbor of current node
+			for _, neighbor := range adjacencyList[nodeID] {
+				if !visited[neighbor] {
+					// Check if all predecessors of neighbor have been visited
+					allPredecessorsVisited := true
+					for _, potentialPred := range allNodes {
+						for _, target := range adjacencyList[potentialPred] {
+							if target == neighbor && !visited[potentialPred] {
+								allPredecessorsVisited = false
+								break
+							}
+						}
+						if !allPredecessorsVisited {
+							break
+						}
+					}
+					
+					if allPredecessorsVisited {
+						nextLayerNodes = append(nextLayerNodes, neighbor)
+						visited[neighbor] = true
+						nodeLayer[neighbor] = currentLayer + 1
+					}
+				}
 			}
 		}
+		
+		if len(nextLayerNodes) == 0 {
+			break
+		}
+		
+		currentLayer++
+		layers[currentLayer] = nextLayerNodes
 	}
-
-	// Add any remaining nodes (in case of cycles or disconnected components)
+	
+	// Add any remaining unvisited nodes (disconnected components) to the last layer
+	maxLayer := currentLayer
 	for _, nodeID := range allNodes {
-		found := false
-		for _, sorted := range sortedNodes {
-			if sorted == nodeID {
-				found = true
-				break
-			}
-		}
-		if !found {
-			sortedNodes = append(sortedNodes, nodeID)
+		if !visited[nodeID] {
+			maxLayer++
+			layers[maxLayer] = append(layers[maxLayer], nodeID)
+			nodeLayer[nodeID] = maxLayer
 		}
 	}
 
-	// Arrange nodes in a left-to-right flow layout
-	const spacingX = 300.0 // Horizontal spacing between nodes
-	const spacingY = 150.0 // Vertical spacing between rows
-	const maxNodesPerRow = 4 // Maximum nodes per row before wrapping
+	// Layout constants
+	const spacingX = 300.0 // Horizontal spacing between layers
+	const spacingY = 120.0 // Vertical spacing between nodes in same layer
+	const startX = 50.0    // Starting X position
+	const startY = 50.0    // Starting Y position
 
-	for i, nodeID := range sortedNodes {
-		x := float64(i%maxNodesPerRow) * spacingX
-		y := float64(i/maxNodesPerRow) * spacingY
-
-		if _, err := db.DB.Exec(`UPDATE workflow_nodes SET position_x = $1, position_y = $2 WHERE agent_id = $3 AND node_id = $4`, x, y, workflowID, nodeID); err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-			return
+	// Position nodes layer by layer
+	for layerIndex := 0; layerIndex <= maxLayer; layerIndex++ {
+		layerNodes := layers[layerIndex]
+		if len(layerNodes) == 0 {
+			continue
+		}
+		
+		// Calculate X position for this layer
+		x := startX + float64(layerIndex)*spacingX
+		
+		// Calculate starting Y position to center the nodes vertically
+		totalHeight := float64(len(layerNodes)-1) * spacingY
+		startYForLayer := startY - totalHeight/2
+		
+		// Position each node in this layer
+		for i, nodeID := range layerNodes {
+			y := startYForLayer + float64(i)*spacingY
+			
+			if _, err := db.DB.Exec(`UPDATE workflow_nodes SET position_x = $1, position_y = $2 WHERE agent_id = $3 AND node_id = $4`, x, y, workflowID, nodeID); err != nil {
+				writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+				return
+			}
 		}
 	}
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"updated_nodes": len(sortedNodes),
-		"layout_order": sortedNodes,
+		"updated_nodes": len(allNodes),
+		"layers":        layers,
+		"max_layer":     maxLayer,
 	})
 }
 
@@ -1507,21 +1551,21 @@ func stringDeref(s *string) string {
 func getDynamicOptionsHandler(w http.ResponseWriter, r *http.Request) {
 	nodeType := chi.URLParam(r, "type")
 	parameterName := chi.URLParam(r, "parameter")
-	
+
 	// Find the node definition
 	def := api.FindDefinition(nodeType)
 	if def == nil {
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": "node type not found"})
 		return
 	}
-	
+
 	// Check if the node implements DynamicOptionsProvider
 	optionsProvider, ok := def.(api.DynamicOptionsProvider)
 	if !ok {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "node does not support dynamic options"})
 		return
 	}
-	
+
 	// Parse dependencies from query parameters
 	dependencies := make(map[string]interface{})
 	for key, values := range r.URL.Query() {
@@ -1529,17 +1573,17 @@ func getDynamicOptionsHandler(w http.ResponseWriter, r *http.Request) {
 			dependencies[key] = values[0]
 		}
 	}
-	
+
 	// Create execution context (we might need a user context in the future)
 	ctx := api.ExecutionContext{}
-	
+
 	// Get dynamic options
 	options, err := optionsProvider.GetDynamicOptions(ctx, parameterName, dependencies)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	
+
 	writeJSON(w, http.StatusOK, map[string]interface{}{
 		"options": options,
 	})
@@ -1554,30 +1598,30 @@ func listCredentialTypes(w http.ResponseWriter, r *http.Request) {
 // getCredentialTypeSchemaHandler returns the JSON schema for a specific credential type
 func getCredentialTypeSchemaHandler(w http.ResponseWriter, r *http.Request) {
 	credentialType := chi.URLParam(r, "type")
-	
+
 	def := api.FindCredentialDefinition(credentialType)
 	if def == nil {
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": "credential type not found"})
 		return
 	}
-	
+
 	// Build JSON schema from parameter definitions
 	schema := map[string]interface{}{
-		"type": "object",
+		"type":       "object",
 		"properties": make(map[string]interface{}),
-		"required": make([]string, 0),
+		"required":   make([]string, 0),
 	}
-	
+
 	properties := schema["properties"].(map[string]interface{})
 	required := schema["required"].([]string)
-	
+
 	for _, param := range def.Parameters() {
 		properties[param.Name] = param.ToJSONSchema()
 		if param.Required {
 			required = append(required, param.Name)
 		}
 	}
-	
+
 	schema["required"] = required
 	writeJSON(w, http.StatusOK, schema)
 }
@@ -1585,19 +1629,19 @@ func getCredentialTypeSchemaHandler(w http.ResponseWriter, r *http.Request) {
 // testCredentialsHandler tests credentials for a specific credential type
 func testCredentialsHandler(w http.ResponseWriter, r *http.Request) {
 	credentialType := chi.URLParam(r, "type")
-	
+
 	var requestData map[string]interface{}
 	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
 		return
 	}
-	
+
 	// Test the credentials
 	if err := api.TestCredentials(credentialType, requestData); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	
+
 	writeJSON(w, http.StatusOK, map[string]string{"status": "success", "message": "credentials are valid"})
 }
 
@@ -1605,15 +1649,15 @@ func testCredentialsHandler(w http.ResponseWriter, r *http.Request) {
 func listCredentialsForSelection(w http.ResponseWriter, r *http.Request) {
 	// Get optional credential_type filter
 	credentialType := r.URL.Query().Get("credential_type")
-	
+
 	var query string
 	var args []interface{}
-	
+
 	// Build query based on whether we have credential_type column
 	var hasCredentialTypeColumn bool
 	err := db.DB.QueryRow(`
 		SELECT EXISTS (
-			SELECT 1 FROM information_schema.columns 
+			SELECT 1 FROM information_schema.columns
 			WHERE table_name = 'connections' AND column_name = 'credential_type'
 		)
 	`).Scan(&hasCredentialTypeColumn)
@@ -1621,33 +1665,33 @@ func listCredentialsForSelection(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	
+
 	if hasCredentialTypeColumn && credentialType != "" {
-		query = `SELECT c.id, c.name, c.integration_id, i.name as integration_name, c.credential_type 
-		         FROM connections c 
-		         JOIN integrations i ON c.integration_id = i.id 
-		         WHERE c.credential_type = $1 
+		query = `SELECT c.id, c.name, c.integration_id, i.name as integration_name, c.credential_type
+		         FROM connections c
+		         JOIN integrations i ON c.integration_id = i.id
+		         WHERE c.credential_type = $1
 		         ORDER BY c.name`
 		args = append(args, credentialType)
 	} else if hasCredentialTypeColumn {
-		query = `SELECT c.id, c.name, c.integration_id, i.name as integration_name, COALESCE(c.credential_type, '') as credential_type 
-		         FROM connections c 
-		         JOIN integrations i ON c.integration_id = i.id 
+		query = `SELECT c.id, c.name, c.integration_id, i.name as integration_name, COALESCE(c.credential_type, '') as credential_type
+		         FROM connections c
+		         JOIN integrations i ON c.integration_id = i.id
 		         ORDER BY c.name`
 	} else {
-		query = `SELECT c.id, c.name, c.integration_id, i.name as integration_name 
-		         FROM connections c 
-		         JOIN integrations i ON c.integration_id = i.id 
+		query = `SELECT c.id, c.name, c.integration_id, i.name as integration_name
+		         FROM connections c
+		         JOIN integrations i ON c.integration_id = i.id
 		         ORDER BY c.name`
 	}
-	
+
 	rows, err := db.DB.Query(query, args...)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
 	defer rows.Close()
-	
+
 	type CredentialOption struct {
 		ID              string `json:"id"`
 		Name            string `json:"name"`
@@ -1655,7 +1699,7 @@ func listCredentialsForSelection(w http.ResponseWriter, r *http.Request) {
 		IntegrationName string `json:"integration_name"`
 		CredentialType  string `json:"credential_type,omitempty"`
 	}
-	
+
 	credentials := []CredentialOption{}
 	for rows.Next() {
 		var cred CredentialOption
@@ -1672,14 +1716,14 @@ func listCredentialsForSelection(w http.ResponseWriter, r *http.Request) {
 		}
 		credentials = append(credentials, cred)
 	}
-	
+
 	writeJSON(w, http.StatusOK, credentials)
 }
 
 // updateConnection updates an existing connection/credential
 func updateConnection(w http.ResponseWriter, r *http.Request) {
 	connectionID := chi.URLParam(r, "connectionID")
-	
+
 	var in struct {
 		Name           *string         `json:"name,omitempty"`
 		Secret         json.RawMessage `json:"secret,omitempty"`
@@ -1690,7 +1734,7 @@ func updateConnection(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	
+
 	// Check if connection exists
 	var exists bool
 	err := db.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM connections WHERE id = $1)`, connectionID).Scan(&exists)
@@ -1702,18 +1746,18 @@ func updateConnection(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": "connection not found"})
 		return
 	}
-	
+
 	// Build dynamic update query
 	updates := []string{}
 	args := []interface{}{}
 	argIndex := 1
-	
+
 	if in.Name != nil {
 		updates = append(updates, fmt.Sprintf("name = $%d", argIndex))
 		args = append(args, *in.Name)
 		argIndex++
 	}
-	
+
 	if in.Secret != nil {
 		// If credential_type is provided, validate and transform the credentials
 		var finalSecret json.RawMessage = in.Secret
@@ -1724,20 +1768,20 @@ func updateConnection(w http.ResponseWriter, r *http.Request) {
 				writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid secret format"})
 				return
 			}
-			
+
 			// Validate credentials using the credential definition
 			if err := api.ValidateCredentials(*in.CredentialType, secretData); err != nil {
 				writeJSON(w, http.StatusBadRequest, map[string]string{"error": "credential validation failed: " + err.Error()})
 				return
 			}
-			
+
 			// Transform credentials (e.g., exchange username/password for token)
 			transformedData, err := api.TransformCredentials(*in.CredentialType, secretData)
 			if err != nil {
 				writeJSON(w, http.StatusBadRequest, map[string]string{"error": "credential transformation failed: " + err.Error()})
 				return
 			}
-			
+
 			// Re-encode the transformed data
 			finalSecret, err = json.Marshal(transformedData)
 			if err != nil {
@@ -1745,24 +1789,24 @@ func updateConnection(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
-		
+
 		updates = append(updates, fmt.Sprintf("secret = $%d::jsonb", argIndex))
 		args = append(args, string(finalSecret))
 		argIndex++
 	}
-	
+
 	if in.Config != nil {
 		updates = append(updates, fmt.Sprintf("config = $%d::jsonb", argIndex))
 		args = append(args, string(in.Config))
 		argIndex++
 	}
-	
+
 	if in.CredentialType != nil {
 		// Check if credential_type column exists
 		var hasCredentialType bool
 		err := db.DB.QueryRow(`
 			SELECT EXISTS (
-				SELECT 1 FROM information_schema.columns 
+				SELECT 1 FROM information_schema.columns
 				WHERE table_name = 'connections' AND column_name = 'credential_type'
 			)
 		`).Scan(&hasCredentialType)
@@ -1770,54 +1814,54 @@ func updateConnection(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
-		
+
 		if hasCredentialType {
 			updates = append(updates, fmt.Sprintf("credential_type = $%d", argIndex))
 			args = append(args, *in.CredentialType)
 			argIndex++
 		}
 	}
-	
+
 	if len(updates) == 0 {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "no fields to update"})
 		return
 	}
-	
+
 	// Add WHERE clause
-	query := fmt.Sprintf("UPDATE connections SET %s WHERE id = $%d", 
+	query := fmt.Sprintf("UPDATE connections SET %s WHERE id = $%d",
 		strings.Join(updates, ", "), argIndex)
 	args = append(args, connectionID)
-	
+
 	_, err = db.DB.Exec(query, args...)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	
+
 	writeJSON(w, http.StatusOK, map[string]string{"id": connectionID})
 }
 
 // deleteConnection deletes a connection/credential
 func deleteConnection(w http.ResponseWriter, r *http.Request) {
 	connectionID := chi.URLParam(r, "connectionID")
-	
+
 	// Check if connection exists and delete it
 	result, err := db.DB.Exec(`DELETE FROM connections WHERE id = $1`, connectionID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	
+
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
 	}
-	
+
 	if rowsAffected == 0 {
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": "connection not found"})
 		return
 	}
-	
+
 	w.WriteHeader(http.StatusNoContent)
 }
