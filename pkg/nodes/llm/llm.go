@@ -35,7 +35,12 @@ func (llmDefinition) Meta() api.NodeType {
 	}
 }
 
-func (llmDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
+// ExecuteEnvelope performs LLM completion using envelopes
+func (d llmDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+	// Extract input from envelope
+	input := envelope.Data
+
+	// Perform existing logic
 	// Resolve connection
 	connID, ok := node.Data["connectionId"].(string)
 	if !ok || connID == "" {
@@ -98,7 +103,12 @@ func (llmDefinition) Execute(ctx api.ExecutionContext, node api.Node, input inte
 	if len(resp.Choices) == 0 {
 		return nil, errors.New("llm: no response choices")
 	}
-	return resp.Choices[0].Message.Content, nil
+
+	// Create result envelope
+	result := envelope.Clone()
+	result.Trace = envelope.Trace.Next(node.ID)
+	result.Data = resp.Choices[0].Message.Content
+	return result, nil
 }
 
 func (llmDefinition) Initialize(mel api.Mel) error {
@@ -109,5 +119,5 @@ func init() {
 	api.RegisterNodeDefinition(llmDefinition{})
 }
 
-// assert that llmDefinition implements the NodeDefinition interface
+// assert that llmDefinition implements both interfaces
 var _ api.NodeDefinition = (*llmDefinition)(nil)

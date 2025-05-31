@@ -1,18 +1,17 @@
 package api
 
-
 // ParameterType represents the type of a parameter with JSON schema support.
 type ParameterType string
 
 const (
-	TypeString   ParameterType = "string"
-	TypeNumber   ParameterType = "number"
-	TypeInteger  ParameterType = "integer"
-	TypeBoolean  ParameterType = "boolean"
-	TypeEnum     ParameterType = "enum"
-	TypeObject   ParameterType = "object"
-	TypeArray    ParameterType = "array"
-	TypeJSON     ParameterType = "json" // backward compatibility alias for object
+	TypeString  ParameterType = "string"
+	TypeNumber  ParameterType = "number"
+	TypeInteger ParameterType = "integer"
+	TypeBoolean ParameterType = "boolean"
+	TypeEnum    ParameterType = "enum"
+	TypeObject  ParameterType = "object"
+	TypeArray   ParameterType = "array"
+	TypeJSON    ParameterType = "json" // backward compatibility alias for object
 )
 
 // JSONSchema represents a JSON schema definition.
@@ -71,21 +70,21 @@ func (pt ParameterType) IsValid() bool {
 
 // ParameterDefinition defines a single configuration parameter for a node.
 type ParameterDefinition struct {
-	Name                string          `json:"name"`                          // key in node.Data
-	Label               string          `json:"label"`                         // user-facing label
-	Type                string          `json:"type"`                          // "string", "number", "boolean", "enum", "json" (backward compatibility)
-	ParameterType       ParameterType   `json:"parameterType,omitempty"`       // typed version of Type field
-	Required            bool            `json:"required"`                      // must be provided (non-empty)
-	Default             interface{}     `json:"default,omitempty"`             // default value
-	Group               string          `json:"group,omitempty"`               // logical grouping in UI
-	VisibilityCondition string          `json:"visibilityCondition,omitempty"` // CEL expression for conditional display
-	Options             []string        `json:"options,omitempty"`             // for enum types
-	Validators          []ValidatorSpec `json:"validators,omitempty"`          // validation rules to apply
+	Name                string                `json:"name"`                          // key in node.Data
+	Label               string                `json:"label"`                         // user-facing label
+	Type                string                `json:"type"`                          // "string", "number", "boolean", "enum", "json" (backward compatibility)
+	ParameterType       ParameterType         `json:"parameterType,omitempty"`       // typed version of Type field
+	Required            bool                  `json:"required"`                      // must be provided (non-empty)
+	Default             interface{}           `json:"default,omitempty"`             // default value
+	Group               string                `json:"group,omitempty"`               // logical grouping in UI
+	VisibilityCondition string                `json:"visibilityCondition,omitempty"` // CEL expression for conditional display
+	Options             []string              `json:"options,omitempty"`             // for enum types
+	Validators          []ValidatorSpec       `json:"validators,omitempty"`          // validation rules to apply
 	Description         string                `json:"description,omitempty"`         // help text or tooltip
 	ItemSchema          []ParameterDefinition `json:"itemSchema,omitempty"`          // for array types, defines structure of each item
-	
+
 	// JSON Schema specific fields
-	JSONSchema          *JSONSchema           `json:"jsonSchema,omitempty"`          // explicit JSON schema override
+	JSONSchema *JSONSchema `json:"jsonSchema,omitempty"` // explicit JSON schema override
 }
 
 // ValidatorSpec defines a validation rule and its parameters.
@@ -150,16 +149,8 @@ func NewNodeErrorWithCode(nodeID, nodeType, message, code string) *NodeError {
 }
 
 // NodeDefinition contains metadata and execution logic for a node type.
-// This is the legacy interface that will be maintained for backward compatibility.
+// This interface uses the envelope-based execution model for better type safety.
 type NodeDefinition interface {
-	Initialize(mel Mel) error
-	Meta() NodeType
-	Execute(ctx ExecutionContext, node Node, input interface{}) (interface{}, error)
-}
-
-// EnvelopeNodeDefinition is the new envelope-based interface for node types.
-// This provides stronger typing and better metadata handling.
-type EnvelopeNodeDefinition interface {
 	Initialize(mel Mel) error
 	Meta() NodeType
 	ExecuteEnvelope(ctx ExecutionContext, node Node, envelope *Envelope[interface{}]) (*Envelope[interface{}], error)

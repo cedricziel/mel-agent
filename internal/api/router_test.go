@@ -1,16 +1,16 @@
 package api_test
 
 import (
-   "encoding/json"
-   "net/http"
-   "net/http/httptest"
-   "testing"
-   // load builder node definitions
-   _ "github.com/cedricziel/mel-agent/pkg/nodes"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	// load builder node definitions
+	_ "github.com/cedricziel/mel-agent/pkg/nodes"
 
-   "github.com/cedricziel/mel-agent/internal/api"
-   "github.com/cedricziel/mel-agent/internal/plugin"
-   pkgapi "github.com/cedricziel/mel-agent/pkg/api"
+	"github.com/cedricziel/mel-agent/internal/api"
+	"github.com/cedricziel/mel-agent/internal/plugin"
+	pkgapi "github.com/cedricziel/mel-agent/pkg/api"
 )
 
 // TestListExtensions verifies the /extensions endpoint.
@@ -54,8 +54,8 @@ func TestListNodeTypes(t *testing.T) {
 	if err := json.NewDecoder(resp.Body).Decode(&types); err != nil {
 		t.Fatalf("failed to decode response: %v", err)
 	}
-   // Ensure we get a JSON array (length may vary depending on definitions)
-   if types == nil {
-       t.Errorf("expected a JSON array, got nil")
-   }
+	// Ensure we get a JSON array (length may vary depending on definitions)
+	if types == nil {
+		t.Errorf("expected a JSON array, got nil")
+	}
 }

@@ -1,6 +1,8 @@
 package for_each
 
-import api "github.com/cedricziel/mel-agent/pkg/api"
+import (
+	api "github.com/cedricziel/mel-agent/pkg/api"
+)
 
 // forEachDefinition provides the built-in "For Each" node.
 type forEachDefinition struct{}
@@ -17,9 +19,11 @@ func (forEachDefinition) Meta() api.NodeType {
 	}
 }
 
-// Execute iterates over input arrays. Currently passthrough.
-func (forEachDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
-	return input, nil
+// ExecuteEnvelope iterates over input arrays. Currently passthrough.
+func (d forEachDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+	result := envelope.Clone()
+	result.Trace = envelope.Trace.Next(node.ID)
+	return result, nil
 }
 
 func (forEachDefinition) Initialize(mel api.Mel) error {
@@ -30,5 +34,5 @@ func init() {
 	api.RegisterNodeDefinition(forEachDefinition{})
 }
 
-// assert that forEachDefinition implements the NodeDefinition interface
+// assert that forEachDefinition implements the interface
 var _ api.NodeDefinition = (*forEachDefinition)(nil)

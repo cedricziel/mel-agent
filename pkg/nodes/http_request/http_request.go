@@ -68,21 +68,23 @@ func (httpRequestDefinition) Meta() api.NodeType {
 	}
 }
 
-func (httpRequestDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
+// ExecuteEnvelope performs HTTP request using envelopes
+func (d httpRequestDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+	// Perform existing logic
 	// Extract configuration from node data
 	config := node.Data
-	
+
 	// Get required parameters
 	url, ok := config["url"].(string)
 	if !ok || url == "" {
 		return nil, fmt.Errorf("url is required")
 	}
-	
+
 	method, ok := config["method"].(string)
 	if !ok {
 		method = "GET"
 	}
-	
+
 	// Get optional parameters
 	body := ""
 	if bodyVal, exists := config["body"]; exists {
@@ -90,14 +92,14 @@ func (httpRequestDefinition) Execute(ctx api.ExecutionContext, node api.Node, in
 			body = bodyStr
 		}
 	}
-	
+
 	contentType := "application/json"
 	if ctVal, exists := config["contentType"]; exists {
 		if ctStr, ok := ctVal.(string); ok && ctStr != "" {
 			contentType = ctStr
 		}
 	}
-	
+
 	timeout := 30
 	if timeoutVal, exists := config["timeout"]; exists {
 		switch t := timeoutVal.(type) {
@@ -111,29 +113,29 @@ func (httpRequestDefinition) Execute(ctx api.ExecutionContext, node api.Node, in
 			}
 		}
 	}
-	
+
 	// Create HTTP client with timeout
 	client := &http.Client{
 		Timeout: time.Duration(timeout) * time.Second,
 	}
-	
+
 	// Prepare request body
 	var bodyReader io.Reader
 	if body != "" && method != "GET" && method != "HEAD" {
 		bodyReader = strings.NewReader(body)
 	}
-	
+
 	// Create request
 	req, err := http.NewRequest(method, url, bodyReader)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	
+
 	// Set Content-Type header if we have a body
 	if bodyReader != nil {
 		req.Header.Set("Content-Type", contentType)
 	}
-	
+
 	// Add custom headers
 	if headersVal, exists := config["headers"]; exists {
 		if headersMap, ok := headersVal.(map[string]interface{}); ok {
@@ -144,11 +146,11 @@ func (httpRequestDefinition) Execute(ctx api.ExecutionContext, node api.Node, in
 			}
 		}
 	}
-	
+
 	// Handle authentication
 	authType, _ := config["authType"].(string)
 	authValue, _ := config["authValue"].(string)
-	
+
 	switch authType {
 	case "bearer":
 		if authValue != "" {
@@ -167,29 +169,29 @@ func (httpRequestDefinition) Execute(ctx api.ExecutionContext, node api.Node, in
 			req.Header.Set(authHeader, authValue)
 		}
 	}
-	
+
 	// Make the request
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("request failed: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	// Read response body
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
-	
+
 	// Try to parse response as JSON, fallback to string
 	var responseData interface{}
 	if err := json.Unmarshal(respBody, &responseData); err != nil {
 		// Not valid JSON, return as string
 		responseData = string(respBody)
 	}
-	
+
 	// Return structured response
-	result := map[string]interface{}{
+	resultData := map[string]interface{}{
 		"status":     resp.StatusCode,
 		"statusText": resp.Status,
 		"headers":    resp.Header,
@@ -197,7 +199,11 @@ func (httpRequestDefinition) Execute(ctx api.ExecutionContext, node api.Node, in
 		"url":        url,
 		"method":     method,
 	}
-	
+
+	// Create result envelope
+	result := envelope.Clone()
+	result.Trace = envelope.Trace.Next(node.ID)
+	result.Data = resultData
 	return result, nil
 }
 
@@ -209,5 +215,5 @@ func init() {
 	api.RegisterNodeDefinition(httpRequestDefinition{})
 }
 
-// assert that httpRequestDefinition implements the NodeDefinition interface
+// assert that httpRequestDefinition implements both interfaces
 var _ api.NodeDefinition = (*httpRequestDefinition)(nil)

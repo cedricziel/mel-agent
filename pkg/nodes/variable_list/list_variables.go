@@ -27,8 +27,9 @@ func (listVariablesDefinition) Meta() api.NodeType {
 	}
 }
 
-// Execute lists variables from the specified scope(s).
-func (listVariablesDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
+// ExecuteEnvelope lists variables from the specified scope(s) using envelopes.
+func (d listVariablesDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+	input := envelope.Data
 	scopeStr, _ := node.Data["scope"].(string)
 	if scopeStr == "" {
 		scopeStr = "all"
@@ -52,7 +53,9 @@ func (listVariablesDefinition) Execute(ctx api.ExecutionContext, node api.Node, 
 			scopeName := scopeNames[i]
 			vars, err := api.ListVariables(varCtx, scope)
 			if err != nil {
-				return input, api.NewNodeError(node.ID, node.Type, "failed to list "+scopeName+" variables: "+err.Error())
+				err := api.NewNodeError(node.ID, node.Type, "failed to list "+scopeName+" variables: "+err.Error())
+				envelope.AddError(node.ID, "failed to list "+scopeName+" variables: "+err.Error(), err)
+				return envelope, err
 			}
 
 			if len(vars) > 0 || includeEmpty {
@@ -70,19 +73,29 @@ func (listVariablesDefinition) Execute(ctx api.ExecutionContext, node api.Node, 
 		case "global":
 			scope = api.GlobalScope
 		default:
-			return input, api.NewNodeError(node.ID, node.Type, "invalid scope: "+scopeStr)
+			err := api.NewNodeError(node.ID, node.Type, "invalid scope: "+scopeStr)
+			envelope.AddError(node.ID, "invalid scope: "+scopeStr, err)
+			return envelope, err
 		}
 
 		vars, err := api.ListVariables(varCtx, scope)
 		if err != nil {
-			return input, api.NewNodeError(node.ID, node.Type, "failed to list variables: "+err.Error())
+			err := api.NewNodeError(node.ID, node.Type, "failed to list variables: "+err.Error())
+			envelope.AddError(node.ID, "failed to list variables: "+err.Error(), err)
+			return envelope, err
 		}
 
 		result["variables"] = vars
 		result["scope"] = scopeStr
 	}
 
-	return result, nil
+	// Create result envelope
+	resultEnvelope := envelope.Clone()
+	resultEnvelope.Trace = envelope.Trace.Next(node.ID)
+	resultEnvelope.Data = result
+	resultEnvelope.DataType = "object"
+
+	return resultEnvelope, nil
 }
 
 func (listVariablesDefinition) Initialize(mel api.Mel) error {
@@ -93,5 +106,5 @@ func init() {
 	api.RegisterNodeDefinition(listVariablesDefinition{})
 }
 
-// assert that listVariablesDefinition implements the NodeDefinition interface
+// assert that listVariablesDefinition implements the interface
 var _ api.NodeDefinition = (*listVariablesDefinition)(nil)

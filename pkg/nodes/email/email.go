@@ -1,6 +1,8 @@
 package email
 
-import api "github.com/cedricziel/mel-agent/pkg/api"
+import (
+	api "github.com/cedricziel/mel-agent/pkg/api"
+)
 
 // emailDefinition provides the built-in "Email" node.
 type emailDefinition struct{}
@@ -19,9 +21,11 @@ func (emailDefinition) Meta() api.NodeType {
 	}
 }
 
-// Execute returns the input unchanged (sending handled elsewhere).
-func (emailDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
-	return input, nil
+// ExecuteEnvelope returns the input unchanged (sending handled elsewhere).
+func (d emailDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+	result := envelope.Clone()
+	result.Trace = envelope.Trace.Next(node.ID)
+	return result, nil
 }
 
 func (emailDefinition) Initialize(mel api.Mel) error {
@@ -32,5 +36,5 @@ func init() {
 	api.RegisterNodeDefinition(emailDefinition{})
 }
 
-// assert that emailDefinition implements the NodeDefinition interface
+// assert that emailDefinition implements both interfaces
 var _ api.NodeDefinition = (*emailDefinition)(nil)

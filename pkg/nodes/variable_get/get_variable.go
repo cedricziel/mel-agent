@@ -37,12 +37,15 @@ func (getVariableDefinition) Meta() api.NodeType {
 	}
 }
 
-// Execute retrieves a variable from the specified scope.
-func (getVariableDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
+// ExecuteEnvelope retrieves a variable from the specified scope using envelopes.
+func (d getVariableDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+	input := envelope.Data
 	// Get configuration
 	key, _ := node.Data["key"].(string)
 	if key == "" {
-		return input, api.NewNodeError(node.ID, node.Type, "variable name is required")
+		err := api.NewNodeError(node.ID, node.Type, "variable name is required")
+		envelope.AddError(node.ID, "variable name is required", err)
+		return envelope, err
 	}
 
 	scopeStr, _ := node.Data["scope"].(string)
@@ -59,7 +62,9 @@ func (getVariableDefinition) Execute(ctx api.ExecutionContext, node api.Node, in
 	case "global":
 		scope = api.GlobalScope
 	default:
-		return input, api.NewNodeError(node.ID, node.Type, "invalid scope: "+scopeStr)
+		err := api.NewNodeError(node.ID, node.Type, "invalid scope: "+scopeStr)
+		envelope.AddError(node.ID, "invalid scope: "+scopeStr, err)
+		return envelope, err
 	}
 
 	// Create context for variable operations
@@ -68,14 +73,17 @@ func (getVariableDefinition) Execute(ctx api.ExecutionContext, node api.Node, in
 	// Get the variable
 	value, exists, err := api.GetVariable(varCtx, scope, key)
 	if err != nil {
-		return input, api.NewNodeError(node.ID, node.Type, "failed to get variable: "+err.Error())
+		envelope.AddError(node.ID, "failed to get variable: "+err.Error(), err)
+		return envelope, api.NewNodeError(node.ID, node.Type, "failed to get variable: "+err.Error())
 	}
 
 	// Handle missing variable
 	if !exists {
 		failIfMissing, _ := node.Data["failIfMissing"].(bool)
 		if failIfMissing {
-			return input, api.NewNodeError(node.ID, node.Type, "variable '"+key+"' not found in "+scopeStr+" scope")
+			err := api.NewNodeError(node.ID, node.Type, "variable '"+key+"' not found in "+scopeStr+" scope")
+			envelope.AddError(node.ID, "variable not found", err)
+			return envelope, err
 		}
 
 		// Use default value if provided
@@ -86,6 +94,10 @@ func (getVariableDefinition) Execute(ctx api.ExecutionContext, node api.Node, in
 		}
 	}
 
+	// Create result envelope
+	result := envelope.Clone()
+	result.Trace = envelope.Trace.Next(node.ID)
+
 	// Format output based on output mode
 	outputMode, _ := node.Data["outputMode"].(string)
 	if outputMode == "" {
@@ -94,36 +106,43 @@ func (getVariableDefinition) Execute(ctx api.ExecutionContext, node api.Node, in
 
 	switch outputMode {
 	case "value_only":
-		return value, nil
+		result.Data = value
+		result.DataType = "unknown"
 
 	case "with_metadata":
-		return map[string]interface{}{
+		result.Data = map[string]interface{}{
 			"value":  value,
 			"exists": exists,
 			"key":    key,
 			"scope":  scopeStr,
-		}, nil
+		}
+		result.DataType = "object"
 
 	case "merge_input":
 		// Merge with input data
-		result := make(map[string]interface{})
-		
+		mergedResult := make(map[string]interface{})
+
 		// Add input data if it's a map
 		if inputMap, ok := input.(map[string]interface{}); ok {
 			for k, v := range inputMap {
-				result[k] = v
+				mergedResult[k] = v
 			}
 		} else if input != nil {
-			result["input"] = input
+			mergedResult["input"] = input
 		}
 
 		// Add the variable value
-		result[key] = value
-		return result, nil
+		mergedResult[key] = value
+		result.Data = mergedResult
+		result.DataType = "object"
 
 	default:
-		return input, api.NewNodeError(node.ID, node.Type, "invalid output mode: "+outputMode)
+		err := api.NewNodeError(node.ID, node.Type, "invalid output mode: "+outputMode)
+		envelope.AddError(node.ID, "invalid output mode: "+outputMode, err)
+		return envelope, err
 	}
+
+	return result, nil
 }
 
 func (getVariableDefinition) Initialize(mel api.Mel) error {
@@ -134,5 +153,5 @@ func init() {
 	api.RegisterNodeDefinition(getVariableDefinition{})
 }
 
-// assert that getVariableDefinition implements the NodeDefinition interface
+// assert that getVariableDefinition implements the interface
 var _ api.NodeDefinition = (*getVariableDefinition)(nil)

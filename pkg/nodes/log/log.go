@@ -1,6 +1,8 @@
 package log
 
-import api "github.com/cedricziel/mel-agent/pkg/api"
+import (
+	api "github.com/cedricziel/mel-agent/pkg/api"
+)
 
 // logDefinition provides the built-in "Log" node.
 type logDefinition struct{}
@@ -18,9 +20,11 @@ func (logDefinition) Meta() api.NodeType {
 	}
 }
 
-// Execute returns the input unchanged (logging handled separately).
-func (logDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
-	return input, nil
+// ExecuteEnvelope returns the input envelope unchanged (logging handled separately).
+func (d logDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+	result := envelope.Clone()
+	result.Trace = envelope.Trace.Next(node.ID)
+	return result, nil
 }
 
 func (logDefinition) Initialize(mel api.Mel) error {
@@ -31,5 +35,5 @@ func init() {
 	api.RegisterNodeDefinition(logDefinition{})
 }
 
-// assert that logDefinition implements the NodeDefinition interface
+// assert that logDefinition implements the interface
 var _ api.NodeDefinition = (*logDefinition)(nil)

@@ -1,6 +1,8 @@
 package webhook
 
-import "github.com/cedricziel/mel-agent/pkg/api"
+import (
+	"github.com/cedricziel/mel-agent/pkg/api"
+)
 
 type webhookDefinition struct{}
 
@@ -21,9 +23,12 @@ func (webhookDefinition) Meta() api.NodeType {
 		},
 	}
 }
-func (webhookDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
-	// Execution for webhook is handled via HTTP endpoint, default no-op
-	return input, nil
+
+// ExecuteEnvelope for webhook is handled via HTTP endpoint, default no-op
+func (d webhookDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+	result := envelope.Clone()
+	result.Trace = envelope.Trace.Next(node.ID)
+	return result, nil
 }
 
 func (webhookDefinition) Initialize(mel api.Mel) error {
@@ -34,5 +39,5 @@ func init() {
 	api.RegisterNodeDefinition(webhookDefinition{})
 }
 
-// assert that webhookDefinition implements the NodeDefinition interface
+// assert that webhookDefinition implements both interfaces
 var _ api.NodeDefinition = (*webhookDefinition)(nil)

@@ -1,6 +1,8 @@
 package schedule
 
-import "github.com/cedricziel/mel-agent/pkg/api"
+import (
+	"github.com/cedricziel/mel-agent/pkg/api"
+)
 
 type scheduleDefinition struct{}
 
@@ -19,8 +21,12 @@ func (scheduleDefinition) Meta() api.NodeType {
 		},
 	}
 }
-func (scheduleDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
-	return input, nil
+
+// ExecuteEnvelope returns the input unchanged (schedule logic handled elsewhere).
+func (d scheduleDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+	result := envelope.Clone()
+	result.Trace = envelope.Trace.Next(node.ID)
+	return result, nil
 }
 
 func (scheduleDefinition) Initialize(mel api.Mel) error {
@@ -31,5 +37,5 @@ func init() {
 	api.RegisterNodeDefinition(scheduleDefinition{})
 }
 
-// assert that scheduleDefinition implements the NodeDefinition interface
+// assert that scheduleDefinition implements both interfaces
 var _ api.NodeDefinition = (*scheduleDefinition)(nil)

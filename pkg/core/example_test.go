@@ -33,7 +33,7 @@ func (n *ExampleHTTPNode) Initialize(mel api.Mel) error {
 func (n *ExampleHTTPNode) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
 	url, _ := node.Data["url"].(string)
 	method, _ := node.Data["method"].(string)
-	
+
 	// Create HTTP payload
 	httpPayload := HTTPPayload{
 		Method:  method,
@@ -42,24 +42,24 @@ func (n *ExampleHTTPNode) ExecuteEnvelope(ctx api.ExecutionContext, node api.Nod
 		Body:    envelope.Data,
 		Status:  200, // Simulated response
 	}
-	
+
 	// Create response envelope
 	result := &api.Envelope[interface{}]{
-		ID:       GenerateEnvelopeID(),
-		IssuedAt: envelope.IssuedAt,
-		Version:  envelope.Version,
-		DataType: "http_response",
-		Data:     httpPayload,
-		Trace:    envelope.Trace.Next(node.ID),
-		Meta:     envelope.Meta,
+		ID:        GenerateEnvelopeID(),
+		IssuedAt:  envelope.IssuedAt,
+		Version:   envelope.Version,
+		DataType:  "http_response",
+		Data:      httpPayload,
+		Trace:     envelope.Trace.Next(node.ID),
+		Meta:      envelope.Meta,
 		Variables: envelope.Variables,
 	}
-	
+
 	// Add some metadata about the operation
 	result.SetMeta("http_method", method)
 	result.SetMeta("http_url", url)
 	result.SetMeta("http_status", "200")
-	
+
 	return result, nil
 }
 
@@ -82,19 +82,19 @@ func (n *ExampleTypedNode) Initialize(mel api.Mel) error {
 // ExecuteTyped implements the typed interface
 func (n *ExampleTypedNode) ExecuteTyped(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[HTTPPayload]) (*api.Envelope[string], error) {
 	// Process the HTTP payload and return a string result
-	result := fmt.Sprintf("Processed %s request to %s with status %d", 
-		envelope.Data.Method, 
-		envelope.Data.URL, 
+	result := fmt.Sprintf("Processed %s request to %s with status %d",
+		envelope.Data.Method,
+		envelope.Data.URL,
 		envelope.Data.Status)
-	
+
 	return &api.Envelope[string]{
-		ID:       GenerateEnvelopeID(),
-		IssuedAt: envelope.IssuedAt,
-		Version:  envelope.Version,
-		DataType: "string",
-		Data:     result,
-		Trace:    envelope.Trace.Next(node.ID),
-		Meta:     envelope.Meta,
+		ID:        GenerateEnvelopeID(),
+		IssuedAt:  envelope.IssuedAt,
+		Version:   envelope.Version,
+		DataType:  "string",
+		Data:      result,
+		Trace:     envelope.Trace.Next(node.ID),
+		Meta:      envelope.Meta,
 		Variables: envelope.Variables,
 	}, nil
 }
@@ -102,7 +102,7 @@ func (n *ExampleTypedNode) ExecuteTyped(ctx api.ExecutionContext, node api.Node,
 func TestEnvelopeWorkflow(t *testing.T) {
 	// Initialize variable store
 	api.SetVariableStore(api.NewMemoryVariableStore())
-	
+
 	// Create execution context
 	ctx := api.ExecutionContext{
 		AgentID: "test-workflow",
@@ -111,16 +111,16 @@ func TestEnvelopeWorkflow(t *testing.T) {
 			"api_key": "secret-key-123",
 		},
 	}
-	
+
 	// Create initial data envelope
 	initialData := map[string]interface{}{
 		"user_id": 12345,
 		"action":  "create_user",
 	}
-	
+
 	envelope := NewGenericEnvelopeFromContext(initialData, ctx, "start")
 	envelope.SetVariable(api.RunScope, "start_time", "2024-01-01T00:00:00Z")
-	
+
 	// Node 1: HTTP Request (envelope-based)
 	httpNode := &ExampleHTTPNode{}
 	httpNodeConfig := api.Node{
@@ -131,38 +131,38 @@ func TestEnvelopeWorkflow(t *testing.T) {
 			"method": "POST",
 		},
 	}
-	
+
 	envelope, err := httpNode.ExecuteEnvelope(ctx, httpNodeConfig, envelope)
 	if err != nil {
 		t.Fatalf("HTTP node failed: %v", err)
 	}
-	
+
 	// Verify HTTP response envelope
 	httpPayload, ok := envelope.Data.(HTTPPayload)
 	if !ok {
 		t.Fatal("Expected HTTPPayload")
 	}
-	
+
 	if httpPayload.Method != "POST" {
 		t.Errorf("Expected method POST, got %s", httpPayload.Method)
 	}
-	
+
 	if httpPayload.URL != "https://api.example.com/users" {
 		t.Errorf("Expected URL https://api.example.com/users, got %s", httpPayload.URL)
 	}
-	
+
 	// Check metadata
 	if method, exists := envelope.GetMeta("http_method"); !exists || method != "POST" {
 		t.Errorf("Expected http_method metadata 'POST', got '%s'", method)
 	}
-	
+
 	// Node 2: Transform to typed node (manually convert for this example)
 	typedNodeConfig := api.Node{
 		ID:   "typed-1",
 		Type: "example_typed",
 		Data: map[string]interface{}{},
 	}
-	
+
 	// Convert to typed envelope manually for demonstration
 	typedEnvelope := &api.Envelope[HTTPPayload]{
 		ID:        envelope.ID,
@@ -174,13 +174,13 @@ func TestEnvelopeWorkflow(t *testing.T) {
 		Meta:      envelope.Meta,
 		Variables: envelope.Variables,
 	}
-	
+
 	typedNode := &ExampleTypedNode{}
 	stringResult, err := typedNode.ExecuteTyped(ctx, typedNodeConfig, typedEnvelope)
 	if err != nil {
 		t.Fatalf("Typed node failed: %v", err)
 	}
-	
+
 	// Convert back to generic envelope
 	envelope = &api.Envelope[interface{}]{
 		ID:        stringResult.ID,
@@ -192,55 +192,55 @@ func TestEnvelopeWorkflow(t *testing.T) {
 		Meta:      stringResult.Meta,
 		Variables: stringResult.Variables,
 	}
-	
+
 	// Verify string result
 	result, ok := envelope.Data.(string)
 	if !ok {
 		t.Fatal("Expected string result")
 	}
-	
+
 	expected := "Processed POST request to https://api.example.com/users with status 200"
 	if result != expected {
 		t.Errorf("Expected result '%s', got '%s'", expected, result)
 	}
-	
+
 	// Test variable access
 	startTime, exists := envelope.GetVariable(api.RunScope, "start_time")
 	if !exists {
 		t.Error("Expected start_time variable to exist")
 	}
-	
+
 	if startTime != "2024-01-01T00:00:00Z" {
 		t.Errorf("Expected start_time '2024-01-01T00:00:00Z', got %v", startTime)
 	}
-	
+
 	// Test serialization
 	converter := NewJSONConverter()
 	data, err := converter.Marshal(envelope)
 	if err != nil {
 		t.Fatalf("Failed to marshal envelope: %v", err)
 	}
-	
+
 	restored, err := converter.Unmarshal(data)
 	if err != nil {
 		t.Fatalf("Failed to unmarshal envelope: %v", err)
 	}
-	
+
 	if restored.ID != envelope.ID {
 		t.Errorf("Expected restored ID '%s', got '%s'", envelope.ID, restored.ID)
 	}
-	
+
 	if restored.DataType != envelope.DataType {
 		t.Errorf("Expected restored DataType '%s', got '%s'", envelope.DataType, restored.DataType)
 	}
-	
+
 	// Test envelope to legacy adapter (since httpNode implements EnvelopeNodeDefinition)
 	legacyAdapter := api.NewEnvelopeToLegacyAdapter(httpNode)
 	legacyResult, err := legacyAdapter.Execute(ctx, httpNodeConfig, initialData)
 	if err != nil {
 		t.Fatalf("Legacy adapter failed: %v", err)
 	}
-	
+
 	if legacyPayload, ok := legacyResult.(HTTPPayload); !ok {
 		t.Error("Legacy adapter should return HTTPPayload")
 	} else if legacyPayload.Method != "POST" {
@@ -259,9 +259,9 @@ func TestSplitAggregatePattern(t *testing.T) {
 		Step:    "start",
 		Attempt: 1,
 	}
-	
+
 	envelope := NewGenericEnvelope(arrayData, trace)
-	
+
 	// Test splitter
 	splitter := &SplitterNode{}
 	splitterConfig := api.Node{
@@ -269,26 +269,26 @@ func TestSplitAggregatePattern(t *testing.T) {
 		Type: "envelope_splitter",
 		Data: map[string]interface{}{},
 	}
-	
+
 	ctx := api.ExecutionContext{
 		AgentID: "test-workflow",
 		RunID:   "run-split",
 	}
-	
+
 	splitResult, err := splitter.ExecuteEnvelope(ctx, splitterConfig, envelope)
 	if err != nil {
 		t.Fatalf("Splitter failed: %v", err)
 	}
-	
+
 	// Verify split metadata
 	if splitOp, exists := splitResult.GetMeta("split_operation"); !exists || splitOp != "true" {
 		t.Error("Expected split_operation metadata")
 	}
-	
+
 	if splitTotal, exists := splitResult.GetMeta("split_total"); !exists || splitTotal != "3" {
 		t.Errorf("Expected split_total '3', got '%s'", splitTotal)
 	}
-	
+
 	// Test aggregator
 	aggregator := NewAggregatorNode()
 	aggregatorConfig := api.Node{
@@ -298,29 +298,29 @@ func TestSplitAggregatePattern(t *testing.T) {
 			"expectedCount": 3,
 		},
 	}
-	
+
 	// Simulate receiving split items
 	splitEnvelopes := []*api.Envelope[interface{}]{
 		NewGenericEnvelope("item1", trace.Next("splitter-1")),
 		NewGenericEnvelope("item2", trace.Next("splitter-1")),
 		NewGenericEnvelope("item3", trace.Next("splitter-1")),
 	}
-	
+
 	// Add split metadata to each
 	for i, env := range splitEnvelopes {
 		env.SetMeta("split_total", "3")
 		env.SetMeta("split_index", fmt.Sprintf("%d", i))
 	}
-	
+
 	var aggregatedResult *api.Envelope[interface{}]
-	
+
 	// Send each split envelope to aggregator
 	for i, splitEnv := range splitEnvelopes {
 		result, err := aggregator.ExecuteEnvelope(ctx, aggregatorConfig, splitEnv)
 		if err != nil {
 			t.Fatalf("Aggregator failed on item %d: %v", i, err)
 		}
-		
+
 		if i < 2 {
 			// Should return nil for first two items (not ready)
 			if result != nil {
@@ -334,29 +334,29 @@ func TestSplitAggregatePattern(t *testing.T) {
 			aggregatedResult = result
 		}
 	}
-	
+
 	// Verify aggregated result
 	if aggregatedResult.DataType != "array" {
 		t.Errorf("Expected aggregated DataType 'array', got '%s'", aggregatedResult.DataType)
 	}
-	
+
 	aggregatedData := aggregatedResult.Data.([]interface{})
 	if len(aggregatedData) != 3 {
 		t.Errorf("Expected 3 aggregated items, got %d", len(aggregatedData))
 	}
-	
+
 	expectedItems := []interface{}{"item1", "item2", "item3"}
 	for i, item := range aggregatedData {
 		if item != expectedItems[i] {
 			t.Errorf("Expected aggregated item '%v', got '%v'", expectedItems[i], item)
 		}
 	}
-	
+
 	// Check aggregation metadata
 	if count, exists := aggregatedResult.GetMeta("aggregated_count"); !exists || count != "3" {
 		t.Errorf("Expected aggregated_count '3', got '%s'", count)
 	}
-	
+
 	if complete, exists := aggregatedResult.GetMeta("aggregation_complete"); !exists || complete != "true" {
 		t.Errorf("Expected aggregation_complete 'true', got '%s'", complete)
 	}

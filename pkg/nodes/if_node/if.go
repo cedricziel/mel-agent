@@ -40,6 +40,7 @@ func (ifDefinition) Meta() api.NodeType {
 		},
 	}
 }
+
 // ConditionSpec represents a single if/else-if condition
 type ConditionSpec struct {
 	Expression string `json:"expression"`
@@ -48,13 +49,31 @@ type ConditionSpec struct {
 
 // IfResult represents the result of if node execution with branch information
 type IfResult struct {
-	Input       interface{} `json:"input"`
-	Branch      string      `json:"branch"`
-	Matched     bool        `json:"matched"`
-	Expression  string      `json:"expression,omitempty"`
+	Input      interface{} `json:"input"`
+	Branch     string      `json:"branch"`
+	Matched    bool        `json:"matched"`
+	Expression string      `json:"expression,omitempty"`
 }
 
-func (ifDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
+// ExecuteEnvelope evaluates conditions and returns result with branch information using envelopes.
+func (d ifDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+	input := envelope.Data
+	result, err := d.evaluateConditions(ctx, node, input)
+	if err != nil {
+		envelope.AddError(node.ID, "if condition evaluation failed: "+err.Error(), err)
+		return envelope, api.NewNodeError(node.ID, node.Type, "if condition evaluation failed: "+err.Error())
+	}
+
+	resultEnvelope := envelope.Clone()
+	resultEnvelope.Trace = envelope.Trace.Next(node.ID)
+	resultEnvelope.Data = result
+	resultEnvelope.DataType = "object"
+
+	return resultEnvelope, nil
+}
+
+// evaluateConditions contains the main if node logic extracted for reuse
+func (d ifDefinition) evaluateConditions(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
 	// Parse conditions from array parameter
 	conditionsRaw, ok := node.Data["conditions"]
 	if !ok {
@@ -166,152 +185,152 @@ func evaluateExpression(expression string, input interface{}, ctx api.ExecutionC
 // evaluateSimpleExpression handles basic comparison operations
 func evaluateSimpleExpression(expr string, data map[string]interface{}) (bool, error) {
 	expr = strings.TrimSpace(expr)
-	
+
 	// Handle simple equality checks: input.field == "value"
 	if strings.Contains(expr, "==") {
 		parts := strings.SplitN(expr, "==", 2)
 		if len(parts) != 2 {
 			return false, fmt.Errorf("invalid == expression: %s", expr)
 		}
-		
+
 		left := strings.TrimSpace(parts[0])
 		right := strings.TrimSpace(parts[1])
-		
+
 		leftVal, err := getValue(left, data)
 		if err != nil {
 			return false, err
 		}
-		
+
 		rightVal, err := parseValue(right)
 		if err != nil {
 			return false, err
 		}
-		
+
 		return compareValues(leftVal, rightVal, "==")
 	}
-	
+
 	// Handle inequality checks: input.field != "value"
 	if strings.Contains(expr, "!=") {
 		parts := strings.SplitN(expr, "!=", 2)
 		if len(parts) != 2 {
 			return false, fmt.Errorf("invalid != expression: %s", expr)
 		}
-		
+
 		left := strings.TrimSpace(parts[0])
 		right := strings.TrimSpace(parts[1])
-		
+
 		leftVal, err := getValue(left, data)
 		if err != nil {
 			return false, err
 		}
-		
+
 		rightVal, err := parseValue(right)
 		if err != nil {
 			return false, err
 		}
-		
+
 		result, err := compareValues(leftVal, rightVal, "==")
 		return !result, err
 	}
-	
+
 	// Handle greater than: input.field > value
 	if strings.Contains(expr, ">") && !strings.Contains(expr, ">=") {
 		parts := strings.SplitN(expr, ">", 2)
 		if len(parts) != 2 {
 			return false, fmt.Errorf("invalid > expression: %s", expr)
 		}
-		
+
 		left := strings.TrimSpace(parts[0])
 		right := strings.TrimSpace(parts[1])
-		
+
 		leftVal, err := getValue(left, data)
 		if err != nil {
 			return false, err
 		}
-		
+
 		rightVal, err := parseValue(right)
 		if err != nil {
 			return false, err
 		}
-		
+
 		return compareValues(leftVal, rightVal, ">")
 	}
-	
+
 	// Handle greater than or equal: input.field >= value
 	if strings.Contains(expr, ">=") {
 		parts := strings.SplitN(expr, ">=", 2)
 		if len(parts) != 2 {
 			return false, fmt.Errorf("invalid >= expression: %s", expr)
 		}
-		
+
 		left := strings.TrimSpace(parts[0])
 		right := strings.TrimSpace(parts[1])
-		
+
 		leftVal, err := getValue(left, data)
 		if err != nil {
 			return false, err
 		}
-		
+
 		rightVal, err := parseValue(right)
 		if err != nil {
 			return false, err
 		}
-		
+
 		return compareValues(leftVal, rightVal, ">=")
 	}
-	
+
 	// Handle less than: input.field < value
 	if strings.Contains(expr, "<") && !strings.Contains(expr, "<=") {
 		parts := strings.SplitN(expr, "<", 2)
 		if len(parts) != 2 {
 			return false, fmt.Errorf("invalid < expression: %s", expr)
 		}
-		
+
 		left := strings.TrimSpace(parts[0])
 		right := strings.TrimSpace(parts[1])
-		
+
 		leftVal, err := getValue(left, data)
 		if err != nil {
 			return false, err
 		}
-		
+
 		rightVal, err := parseValue(right)
 		if err != nil {
 			return false, err
 		}
-		
+
 		return compareValues(leftVal, rightVal, "<")
 	}
-	
+
 	// Handle less than or equal: input.field <= value
 	if strings.Contains(expr, "<=") {
 		parts := strings.SplitN(expr, "<=", 2)
 		if len(parts) != 2 {
 			return false, fmt.Errorf("invalid <= expression: %s", expr)
 		}
-		
+
 		left := strings.TrimSpace(parts[0])
 		right := strings.TrimSpace(parts[1])
-		
+
 		leftVal, err := getValue(left, data)
 		if err != nil {
 			return false, err
 		}
-		
+
 		rightVal, err := parseValue(right)
 		if err != nil {
 			return false, err
 		}
-		
+
 		return compareValues(leftVal, rightVal, "<=")
 	}
-	
+
 	// Handle simple property existence/truthiness check
 	val, err := getValue(expr, data)
 	if err != nil {
 		return false, err
 	}
-	
+
 	return isTruthy(val), nil
 }
 
@@ -319,40 +338,40 @@ func evaluateSimpleExpression(expr string, data map[string]interface{}) (bool, e
 func getValue(path string, data map[string]interface{}) (interface{}, error) {
 	parts := strings.Split(path, ".")
 	current := data
-	
+
 	for i, part := range parts {
 		if i == len(parts)-1 {
 			// Last part - return the value
 			return current[part], nil
 		}
-		
+
 		// Navigate deeper
 		next, ok := current[part]
 		if !ok {
 			return nil, fmt.Errorf("property '%s' not found in path '%s'", part, path)
 		}
-		
+
 		nextMap, ok := next.(map[string]interface{})
 		if !ok {
 			return nil, fmt.Errorf("cannot navigate through non-object at '%s' in path '%s'", part, path)
 		}
-		
+
 		current = nextMap
 	}
-	
+
 	return nil, fmt.Errorf("empty path")
 }
 
 // parseValue parses a string value, handling quotes, numbers, and booleans
 func parseValue(s string) (interface{}, error) {
 	s = strings.TrimSpace(s)
-	
+
 	// Handle quoted strings
 	if (strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"")) ||
 		(strings.HasPrefix(s, "'") && strings.HasSuffix(s, "'")) {
 		return s[1 : len(s)-1], nil
 	}
-	
+
 	// Handle booleans
 	if s == "true" {
 		return true, nil
@@ -360,12 +379,12 @@ func parseValue(s string) (interface{}, error) {
 	if s == "false" {
 		return false, nil
 	}
-	
+
 	// Handle numbers
 	if val, err := strconv.ParseFloat(s, 64); err == nil {
 		return val, nil
 	}
-	
+
 	// Default to string
 	return s, nil
 }
@@ -375,15 +394,15 @@ func compareValues(left, right interface{}, op string) (bool, error) {
 	switch op {
 	case "==":
 		return fmt.Sprintf("%v", left) == fmt.Sprintf("%v", right), nil
-		
+
 	case ">", ">=", "<", "<=":
 		leftNum, leftOk := toNumber(left)
 		rightNum, rightOk := toNumber(right)
-		
+
 		if !leftOk || !rightOk {
 			return false, fmt.Errorf("cannot compare non-numeric values with %s", op)
 		}
-		
+
 		switch op {
 		case ">":
 			return leftNum > rightNum, nil
@@ -395,7 +414,7 @@ func compareValues(left, right interface{}, op string) (bool, error) {
 			return leftNum <= rightNum, nil
 		}
 	}
-	
+
 	return false, fmt.Errorf("unsupported operator: %s", op)
 }
 
@@ -421,7 +440,7 @@ func isTruthy(v interface{}) bool {
 	if v == nil {
 		return false
 	}
-	
+
 	switch val := v.(type) {
 	case bool:
 		return val
@@ -446,5 +465,5 @@ func init() {
 	api.RegisterNodeDefinition(ifDefinition{})
 }
 
-// assert that ifDefinition implements the NodeDefinition interface
+// assert that ifDefinition implements the interface
 var _ api.NodeDefinition = (*ifDefinition)(nil)

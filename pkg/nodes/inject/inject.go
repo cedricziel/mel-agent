@@ -1,6 +1,8 @@
 package inject
 
-import "github.com/cedricziel/mel-agent/pkg/api"
+import (
+	"github.com/cedricziel/mel-agent/pkg/api"
+)
 
 type injectDefinition struct{}
 
@@ -17,12 +19,19 @@ func (injectDefinition) Meta() api.NodeType {
 	}
 }
 
-func (injectDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
+// ExecuteEnvelope returns configured payload as the output using envelopes.
+func (d injectDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+	result := envelope.Clone()
+	result.Trace = envelope.Trace.Next(node.ID)
+
 	// Return configured payload as the output
 	if p, ok := node.Data["payload"]; ok {
-		return p, nil
+		result.Data = p
+	} else {
+		result.Data = nil
 	}
-	return nil, nil
+
+	return result, nil
 }
 
 func (injectDefinition) Initialize(mel api.Mel) error {
@@ -33,5 +42,5 @@ func init() {
 	api.RegisterNodeDefinition(injectDefinition{})
 }
 
-// assert that injectDefinition implements the NodeDefinition interface
+// assert that injectDefinition implements the interface
 var _ api.NodeDefinition = (*injectDefinition)(nil)

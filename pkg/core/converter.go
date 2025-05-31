@@ -27,7 +27,7 @@ func (c *JSONConverter) Marshal(envelope *api.Envelope[interface{}]) ([]byte, er
 	if envelope == nil {
 		return nil, fmt.Errorf("envelope is nil")
 	}
-	
+
 	return json.Marshal(envelope)
 }
 
@@ -36,12 +36,12 @@ func (c *JSONConverter) Unmarshal(data []byte) (*api.Envelope[interface{}], erro
 	if len(data) == 0 {
 		return nil, fmt.Errorf("data is empty")
 	}
-	
+
 	var envelope api.Envelope[interface{}]
 	if err := json.Unmarshal(data, &envelope); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal envelope: %w", err)
 	}
-	
+
 	return &envelope, nil
 }
 
@@ -63,7 +63,7 @@ func (c *CompactJSONConverter) Marshal(envelope *api.Envelope[interface{}]) ([]b
 	if envelope == nil {
 		return nil, fmt.Errorf("envelope is nil")
 	}
-	
+
 	return json.Marshal(envelope)
 }
 
@@ -72,12 +72,12 @@ func (c *CompactJSONConverter) Unmarshal(data []byte) (*api.Envelope[interface{}
 	if len(data) == 0 {
 		return nil, fmt.Errorf("data is empty")
 	}
-	
+
 	var envelope api.Envelope[interface{}]
 	if err := json.Unmarshal(data, &envelope); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal envelope: %w", err)
 	}
-	
+
 	return &envelope, nil
 }
 
@@ -99,7 +99,7 @@ func (c *PrettyJSONConverter) Marshal(envelope *api.Envelope[interface{}]) ([]by
 	if envelope == nil {
 		return nil, fmt.Errorf("envelope is nil")
 	}
-	
+
 	return json.MarshalIndent(envelope, "", "  ")
 }
 
@@ -108,12 +108,12 @@ func (c *PrettyJSONConverter) Unmarshal(data []byte) (*api.Envelope[interface{}]
 	if len(data) == 0 {
 		return nil, fmt.Errorf("data is empty")
 	}
-	
+
 	var envelope api.Envelope[interface{}]
 	if err := json.Unmarshal(data, &envelope); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal envelope: %w", err)
 	}
-	
+
 	return &envelope, nil
 }
 
@@ -134,12 +134,12 @@ func NewConverterRegistry() *ConverterRegistry {
 		converters: make(map[string]PayloadConverter),
 		default_:   NewJSONConverter(),
 	}
-	
+
 	// Register built-in converters
 	registry.Register("json", NewJSONConverter())
 	registry.Register("compact", NewCompactJSONConverter())
 	registry.Register("pretty", NewPrettyJSONConverter())
-	
+
 	return registry
 }
 

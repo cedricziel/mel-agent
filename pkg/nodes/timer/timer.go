@@ -1,6 +1,8 @@
 package timer
 
-import "github.com/cedricziel/mel-agent/pkg/api"
+import (
+	"github.com/cedricziel/mel-agent/pkg/api"
+)
 
 type timerDefinition struct{}
 
@@ -19,9 +21,11 @@ func (timerDefinition) Meta() api.NodeType {
 	}
 }
 
-func (timerDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
-	// Delegate to existing executor
-	return input, nil
+// ExecuteEnvelope delegates to existing executor.
+func (d timerDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+	result := envelope.Clone()
+	result.Trace = envelope.Trace.Next(node.ID)
+	return result, nil
 }
 
 func (timerDefinition) Initialize(mel api.Mel) error {
@@ -32,5 +36,5 @@ func init() {
 	api.RegisterNodeDefinition(timerDefinition{})
 }
 
-// assert that timerDefinition implements the NodeDefinition interface
+// assert that timerDefinition implements both interfaces
 var _ api.NodeDefinition = (*timerDefinition)(nil)

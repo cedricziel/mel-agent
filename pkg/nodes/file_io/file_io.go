@@ -20,9 +20,11 @@ func (fileIODefinition) Meta() api.NodeType {
 	}
 }
 
-// Execute performs the file I/O operation (currently no-op).
-func (fileIODefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
-	return input, nil
+// ExecuteEnvelope performs the file I/O operation (currently no-op).
+func (d fileIODefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+	result := envelope.Clone()
+	result.Trace = envelope.Trace.Next(node.ID)
+	return result, nil
 }
 
 func (fileIODefinition) Initialize(mel api.Mel) error {
@@ -33,5 +35,5 @@ func init() {
 	api.RegisterNodeDefinition(fileIODefinition{})
 }
 
-// assert that fileIODefinition implements the NodeDefinition interface
+// assert that fileIODefinition implements both interfaces
 var _ api.NodeDefinition = (*fileIODefinition)(nil)

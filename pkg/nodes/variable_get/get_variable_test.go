@@ -30,7 +30,7 @@ func TestGetVariableMeta(t *testing.T) {
 func TestGetVariable_ValueOnly(t *testing.T) {
 	// Reset variable store and set a test variable
 	api.SetVariableStore(api.NewMemoryVariableStore())
-	
+
 	ctx := api.ExecutionContext{
 		AgentID: "test-agent",
 		RunID:   "test-run",
@@ -62,7 +62,7 @@ func TestGetVariable_ValueOnly(t *testing.T) {
 func TestGetVariable_WithMetadata(t *testing.T) {
 	// Reset variable store and set a test variable
 	api.SetVariableStore(api.NewMemoryVariableStore())
-	
+
 	ctx := api.ExecutionContext{
 		AgentID: "test-agent",
 		RunID:   "test-run",
@@ -111,7 +111,7 @@ func TestGetVariable_WithMetadata(t *testing.T) {
 func TestGetVariable_MergeInput(t *testing.T) {
 	// Reset variable store and set a test variable
 	api.SetVariableStore(api.NewMemoryVariableStore())
-	
+
 	ctx := api.ExecutionContext{
 		AgentID: "test-agent",
 		RunID:   "test-run",
@@ -163,7 +163,7 @@ func TestGetVariable_MergeInput(t *testing.T) {
 func TestGetVariable_MergeInputNonMap(t *testing.T) {
 	// Reset variable store and set a test variable
 	api.SetVariableStore(api.NewMemoryVariableStore())
-	
+
 	ctx := api.ExecutionContext{
 		AgentID: "test-agent",
 		RunID:   "test-run",
@@ -369,7 +369,7 @@ func TestGetVariable_InvalidScope(t *testing.T) {
 func TestGetVariable_InvalidOutputMode(t *testing.T) {
 	// Reset variable store and set a test variable
 	api.SetVariableStore(api.NewMemoryVariableStore())
-	
+
 	ctx := api.ExecutionContext{
 		AgentID: "test-agent",
 		RunID:   "test-run",

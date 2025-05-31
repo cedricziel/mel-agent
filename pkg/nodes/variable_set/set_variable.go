@@ -37,12 +37,14 @@ func (setVariableDefinition) Meta() api.NodeType {
 	}
 }
 
-// Execute sets a variable in the specified scope.
-func (setVariableDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
+// ExecuteEnvelope sets a variable in the specified scope using envelopes.
+func (setVariableDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+	input := envelope.Data
 	// Get configuration
 	key, _ := node.Data["key"].(string)
 	if key == "" {
-		return input, api.NewNodeError(node.ID, node.Type, "variable name is required")
+		envelope.AddError(node.ID, "variable name is required", api.NewNodeError(node.ID, node.Type, "variable name is required"))
+		return envelope, api.NewNodeError(node.ID, node.Type, "variable name is required")
 	}
 
 	scopeStr, _ := node.Data["scope"].(string)
@@ -59,7 +61,9 @@ func (setVariableDefinition) Execute(ctx api.ExecutionContext, node api.Node, in
 	case "global":
 		scope = api.GlobalScope
 	default:
-		return input, api.NewNodeError(node.ID, node.Type, "invalid scope: "+scopeStr)
+		err := api.NewNodeError(node.ID, node.Type, "invalid scope: "+scopeStr)
+		envelope.AddError(node.ID, "invalid scope: "+scopeStr, err)
+		return envelope, err
 	}
 
 	// Determine the value to set
@@ -80,22 +84,31 @@ func (setVariableDefinition) Execute(ctx api.ExecutionContext, node api.Node, in
 
 	// Set the variable
 	if err := api.SetVariable(varCtx, scope, key, value); err != nil {
-		return input, api.NewNodeError(node.ID, node.Type, "failed to set variable: "+err.Error())
+		envelope.AddError(node.ID, "failed to set variable: "+err.Error(), err)
+		return envelope, api.NewNodeError(node.ID, node.Type, "failed to set variable: "+err.Error())
 	}
+
+	// Create result envelope
+	result := envelope.Clone()
+	result.Trace = envelope.Trace.Next(node.ID)
 
 	// Determine output
 	passthrough, _ := node.Data["passthrough"].(bool)
 	if passthrough {
-		return input, nil
+		// Keep original data
+		result.Data = input
+	} else {
+		// Return information about the variable that was set
+		result.Data = map[string]interface{}{
+			"variable_set": true,
+			"key":          key,
+			"scope":        scopeStr,
+			"value":        value,
+		}
+		result.DataType = "object"
 	}
 
-	// Return information about the variable that was set
-	return map[string]interface{}{
-		"variable_set": true,
-		"key":          key,
-		"scope":        scopeStr,
-		"value":        value,
-	}, nil
+	return result, nil
 }
 
 // extractValueFromInput extracts a value from input using a simple JSONPath-like syntax
@@ -107,7 +120,7 @@ func extractValueFromInput(input interface{}, path string) interface{} {
 	// Simple implementation - just support dot notation for now
 	// e.g., "data.result" or "response.data.items"
 	current := input
-	
+
 	// Handle the case where input is not a map
 	if path == "." {
 		return current
@@ -143,10 +156,10 @@ func splitPath(path string) []string {
 	if path == "" {
 		return nil
 	}
-	
+
 	var parts []string
 	var current string
-	
+
 	for _, char := range path {
 		if char == '.' {
 			if current != "" {
@@ -157,11 +170,11 @@ func splitPath(path string) []string {
 			current += string(char)
 		}
 	}
-	
+
 	if current != "" {
 		parts = append(parts, current)
 	}
-	
+
 	return parts
 }
 
@@ -173,5 +186,5 @@ func init() {
 	api.RegisterNodeDefinition(setVariableDefinition{})
 }
 
-// assert that setVariableDefinition implements the NodeDefinition interface
+// assert that setVariableDefinition implements the interface
 var _ api.NodeDefinition = (*setVariableDefinition)(nil)

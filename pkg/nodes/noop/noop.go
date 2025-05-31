@@ -10,9 +10,11 @@ func (noopDefinition) Meta() api.NodeType {
 	return api.NodeType{Type: "noop", Label: "No-Op", Category: "Control"}
 }
 
-// Execute returns the input unchanged.
-func (noopDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
-	return input, nil
+// ExecuteEnvelope returns the input envelope unchanged.
+func (d noopDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+	result := envelope.Clone()
+	result.Trace = envelope.Trace.Next(node.ID)
+	return result, nil
 }
 
 func (noopDefinition) Initialize(mel api.Mel) error {

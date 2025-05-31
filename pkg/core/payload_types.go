@@ -2,19 +2,19 @@ package core
 
 // HTTPPayload for HTTP request/response data
 type HTTPPayload struct {
-	Method   string            `json:"method"`
-	URL      string            `json:"url"`
-	Headers  map[string]string `json:"headers"`
-	Body     interface{}       `json:"body"`
-	Status   int              `json:"status,omitempty"`
+	Method  string            `json:"method"`
+	URL     string            `json:"url"`
+	Headers map[string]string `json:"headers"`
+	Body    interface{}       `json:"body"`
+	Status  int               `json:"status,omitempty"`
 }
 
 // DatabasePayload for database operations
 type DatabasePayload struct {
-	Query     string                 `json:"query"`
-	Params    []interface{}         `json:"params,omitempty"`
-	Results   []map[string]interface{} `json:"results,omitempty"`
-	RowCount  int                   `json:"rowCount,omitempty"`
+	Query    string                   `json:"query"`
+	Params   []interface{}            `json:"params,omitempty"`
+	Results  []map[string]interface{} `json:"results,omitempty"`
+	RowCount int                      `json:"rowCount,omitempty"`
 }
 
 // FilePayload for file operations
@@ -41,8 +41,8 @@ type EmailPayload struct {
 
 // SlackPayload for Slack messaging
 type SlackPayload struct {
-	Channel string `json:"channel"`
-	Text    string `json:"text"`
+	Channel string      `json:"channel"`
+	Text    string      `json:"text"`
 	Blocks  interface{} `json:"blocks,omitempty"`
 }
 
@@ -62,8 +62,8 @@ type TimerPayload struct {
 
 // ErrorPayload for error information
 type ErrorPayload struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
+	Code    string      `json:"code"`
+	Message string      `json:"message"`
 	Details interface{} `json:"details,omitempty"`
 }
 
@@ -73,7 +73,7 @@ type WebhookPayload struct {
 	Headers map[string]string `json:"headers"`
 	Query   map[string]string `json:"query"`
 	Body    interface{}       `json:"body"`
-	Path    string           `json:"path"`
+	Path    string            `json:"path"`
 }
 
 // SchedulePayload for scheduled trigger data
@@ -109,16 +109,16 @@ type ConditionPayload struct {
 // LoopPayload for iteration operations
 type LoopPayload struct {
 	Items   []interface{} `json:"items"`
-	Index   int          `json:"index"`
+	Index   int           `json:"index"`
 	Current interface{}   `json:"current"`
-	Total   int          `json:"total"`
+	Total   int           `json:"total"`
 }
 
 // AggregatePayload for collecting multiple inputs
 type AggregatePayload struct {
 	Items []interface{} `json:"items"`
-	Count int          `json:"count"`
-	Keys  []string     `json:"keys,omitempty"`
+	Count int           `json:"count"`
+	Keys  []string      `json:"keys,omitempty"`
 }
 
 // TransformPayload for data transformation

@@ -6,12 +6,12 @@ import (
 
 // Trace holds IDs for logging, metrics, and correlation
 type Trace struct {
-	AgentID  string `json:"agentId"`           // Workflow/Agent identifier
-	RunID    string `json:"runId"`             // Execution run identifier
+	AgentID  string `json:"agentId"`            // Workflow/Agent identifier
+	RunID    string `json:"runId"`              // Execution run identifier
 	ParentID string `json:"parentId,omitempty"` // Parent workflow for sub-flows
-	NodeID   string `json:"nodeId"`            // Current processing node
-	Step     string `json:"step"`              // Step name/identifier
-	Attempt  int    `json:"attempt"`           // Retry attempt number
+	NodeID   string `json:"nodeId"`             // Current processing node
+	Step     string `json:"step"`               // Step name/identifier
+	Attempt  int    `json:"attempt"`            // Retry attempt number
 }
 
 // Next creates a new trace for the next step in the workflow
@@ -56,16 +56,16 @@ type ExecutionError struct {
 
 // Envelope is the generic unit that flows through the MEL engine
 type Envelope[T any] struct {
-	ID        string                 `json:"id"`              // UUID v4
-	IssuedAt  time.Time             `json:"issuedAt"`
-	Version   int                   `json:"version"`         // Schema version
-	DataType  string                `json:"dataType"`        // e.g. "HttpRequest", "UserCreated"
-	Data      T                     `json:"data"`            // Strongly-typed business payload
-	Binary    map[string][]byte     `json:"binary,omitempty"` // Optional binary attachments
-	Meta      map[string]string     `json:"meta,omitempty"`   // Arbitrary metadata
+	ID        string                 `json:"id"` // UUID v4
+	IssuedAt  time.Time              `json:"issuedAt"`
+	Version   int                    `json:"version"`             // Schema version
+	DataType  string                 `json:"dataType"`            // e.g. "HttpRequest", "UserCreated"
+	Data      T                      `json:"data"`                // Strongly-typed business payload
+	Binary    map[string][]byte      `json:"binary,omitempty"`    // Optional binary attachments
+	Meta      map[string]string      `json:"meta,omitempty"`      // Arbitrary metadata
 	Variables map[string]interface{} `json:"variables,omitempty"` // Context variables
-	Trace     Trace                 `json:"trace"`
-	Errors    []ExecutionError      `json:"errors,omitempty"`
+	Trace     Trace                  `json:"trace"`
+	Errors    []ExecutionError       `json:"errors,omitempty"`
 }
 
 // AddError appends an execution error to the envelope
@@ -75,12 +75,12 @@ func (e *Envelope[T]) AddError(nodeID, message string, err error) {
 		NodeID:  nodeID,
 		Message: message,
 	}
-	
+
 	if nodeErr, ok := err.(*NodeError); ok {
 		execError.Code = nodeErr.Code
 		// Use the provided message, not the NodeError message
 	}
-	
+
 	e.Errors = append(e.Errors, execError)
 }
 
@@ -105,7 +105,7 @@ func (e *Envelope[T]) GetVariable(scope VariableScope, key string) (interface{},
 			return val, true
 		}
 	}
-	
+
 	// Fall back to global variable store
 	ctx := CreateVariableContext(e.Trace.AgentID, e.Trace.RunID, e.Trace.NodeID)
 	val, exists, _ := GetVariable(ctx, scope, key)
@@ -121,7 +121,7 @@ func (e *Envelope[T]) SetVariable(scope VariableScope, key string, value interfa
 		e.Variables[key] = value
 		return nil
 	}
-	
+
 	// Use global variable store for other scopes
 	ctx := CreateVariableContext(e.Trace.AgentID, e.Trace.RunID, e.Trace.NodeID)
 	return SetVariable(ctx, scope, key, value)
@@ -137,7 +137,7 @@ func (e *Envelope[T]) Clone() *Envelope[T] {
 		Data:     e.Data, // Note: T might need deep copying depending on type
 		Trace:    e.Trace,
 	}
-	
+
 	// Copy maps to avoid shared references
 	if len(e.Binary) > 0 {
 		clone.Binary = make(map[string][]byte, len(e.Binary))
@@ -146,26 +146,26 @@ func (e *Envelope[T]) Clone() *Envelope[T] {
 			copy(clone.Binary[k], v)
 		}
 	}
-	
+
 	if len(e.Meta) > 0 {
 		clone.Meta = make(map[string]string, len(e.Meta))
 		for k, v := range e.Meta {
 			clone.Meta[k] = v
 		}
 	}
-	
+
 	if len(e.Variables) > 0 {
 		clone.Variables = make(map[string]interface{}, len(e.Variables))
 		for k, v := range e.Variables {
 			clone.Variables[k] = v
 		}
 	}
-	
+
 	if len(e.Errors) > 0 {
 		clone.Errors = make([]ExecutionError, len(e.Errors))
 		copy(clone.Errors, e.Errors)
 	}
-	
+
 	return clone
 }
 

@@ -2,6 +2,7 @@ package adapters
 
 import (
 	"context"
+	"time"
 
 	api "github.com/cedricziel/mel-agent/pkg/api"
 	"github.com/cedricziel/mel-agent/pkg/plugin"
@@ -55,10 +56,30 @@ func (a NodeDefinitionAdapter) Execute(ctx context.Context, inputs map[string]in
 	config, _ := inputs["config"].(map[string]interface{})
 	node := api.Node{ID: "", Type: a.Def.Meta().Type, Data: config}
 	execCtx := api.ExecutionContext{AgentID: agentID}
-	out, err := a.Def.Execute(execCtx, node, input)
+
+	// Create envelope for the new interface
+	envelope := &api.Envelope[interface{}]{
+		ID:       "plugin-" + node.ID,
+		IssuedAt: time.Now(),
+		Version:  1,
+		DataType: "unknown",
+		Data:     input,
+		Trace: api.Trace{
+			AgentID: execCtx.AgentID,
+			RunID:   execCtx.RunID,
+			NodeID:  node.ID,
+			Step:    node.ID,
+			Attempt: 1,
+		},
+		Variables: execCtx.Variables,
+	}
+
+	result, err := a.Def.ExecuteEnvelope(execCtx, node, envelope)
 	if err != nil {
 		return nil, err
 	}
+
+	out := result.Data
 	if m, ok := out.(map[string]interface{}); ok {
 		return m, nil
 	}

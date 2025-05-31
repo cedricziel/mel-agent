@@ -25,30 +25,30 @@ type ValidatorSpec = internal.ValidatorSpec
 
 // Register adds a plugin to the global registry.
 func Register(p Plugin) {
-   internal.Register(p)
+	internal.Register(p)
 }
 
 // GetNodePlugin retrieves a NodePlugin by ID.
 func GetNodePlugin(id string) (NodePlugin, bool) {
-   return internal.GetNodePlugin(id)
+	return internal.GetNodePlugin(id)
 }
 
 // GetTriggerPlugin retrieves a TriggerPlugin by ID.
 func GetTriggerPlugin(id string) (TriggerPlugin, bool) {
-   return internal.GetTriggerPlugin(id)
+	return internal.GetTriggerPlugin(id)
 }
 
 // GetConnectionPlugin retrieves a ConnectionPlugin by ID.
 func GetConnectionPlugin(id string) (ConnectionPlugin, bool) {
-   return internal.GetConnectionPlugin(id)
+	return internal.GetConnectionPlugin(id)
 }
 
 // GetAllPlugins returns metadata for all registered plugins.
 func GetAllPlugins() []PluginMeta {
-   return internal.GetAllPlugins()
+	return internal.GetAllPlugins()
 }
 
 // RegisterConnectionPlugins loads and registers all connections from the DB.
 func RegisterConnectionPlugins() {
-   internal.RegisterConnectionPlugins()
+	internal.RegisterConnectionPlugins()
 }

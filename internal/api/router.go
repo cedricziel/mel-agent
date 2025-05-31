@@ -26,13 +26,13 @@ func Handler() http.Handler {
 
 	// Workflow management (agents are workflows)
 	r.Route("/workflows", func(r chi.Router) {
-		r.Get("/", listAgents) // reuse existing handler
+		r.Get("/", listAgents)   // reuse existing handler
 		r.Post("/", createAgent) // reuse existing handler
 		r.Route("/{workflowID}", func(r chi.Router) {
 			r.Get("/", getWorkflow)
 			r.Put("/", updateWorkflow)
 			r.Delete("/", deleteWorkflow)
-			
+
 			// Node management
 			r.Get("/nodes", listWorkflowNodes)
 			r.Post("/nodes", createWorkflowNode)
@@ -41,12 +41,12 @@ func Handler() http.Handler {
 				r.Put("/", updateWorkflowNode)
 				r.Delete("/", deleteWorkflowNode)
 			})
-			
+
 			// Edge management
 			r.Get("/edges", listWorkflowEdges)
 			r.Post("/edges", createWorkflowEdge)
 			r.Delete("/edges/{edgeID}", deleteWorkflowEdge)
-			
+
 			// Layout management
 			r.Post("/layout", autoLayoutWorkflow)
 		})
@@ -812,7 +812,30 @@ func testRunHandler(w http.ResponseWriter, r *http.Request) {
 func executeNodeLocal(agentID string, node api.Node, input interface{}) (interface{}, error) {
 	if def := api.FindDefinition(node.Type); def != nil {
 		ctx := api.ExecutionContext{AgentID: agentID}
-		return def.Execute(ctx, node, input)
+
+		// Create envelope from input
+		envelope := &api.Envelope[interface{}]{
+			ID:       "local-" + node.ID,
+			IssuedAt: time.Now(),
+			Version:  1,
+			DataType: "unknown",
+			Data:     input,
+			Trace: api.Trace{
+				AgentID: ctx.AgentID,
+				RunID:   ctx.RunID,
+				NodeID:  node.ID,
+				Step:    node.ID,
+				Attempt: 1,
+			},
+			Variables: ctx.Variables,
+		}
+
+		result, err := def.ExecuteEnvelope(ctx, node, envelope)
+		if err != nil {
+			return input, err
+		}
+
+		return result.Data, nil
 	}
 	// Fallback: return input unchanged
 	return input, nil
@@ -904,14 +927,14 @@ type WorkflowNode struct {
 
 // WorkflowEdge represents an edge between nodes
 type WorkflowEdge struct {
-	ID             string `db:"id" json:"id"`
-	AgentID        string `db:"agent_id" json:"agent_id"`
-	EdgeID         string `db:"edge_id" json:"edge_id"`
-	SourceNodeID   string `db:"source_node_id" json:"source_node_id"`
-	TargetNodeID   string `db:"target_node_id" json:"target_node_id"`
-	SourceHandle   *string `db:"source_handle" json:"source_handle,omitempty"`
-	TargetHandle   *string `db:"target_handle" json:"target_handle,omitempty"`
-	CreatedAt      time.Time `db:"created_at" json:"created_at"`
+	ID           string    `db:"id" json:"id"`
+	AgentID      string    `db:"agent_id" json:"agent_id"`
+	EdgeID       string    `db:"edge_id" json:"edge_id"`
+	SourceNodeID string    `db:"source_node_id" json:"source_node_id"`
+	TargetNodeID string    `db:"target_node_id" json:"target_node_id"`
+	SourceHandle *string   `db:"source_handle" json:"source_handle,omitempty"`
+	TargetHandle *string   `db:"target_handle" json:"target_handle,omitempty"`
+	CreatedAt    time.Time `db:"created_at" json:"created_at"`
 }
 
 func getWorkflow(w http.ResponseWriter, r *http.Request) {
@@ -945,7 +968,7 @@ func updateWorkflow(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	
+
 	if in.Name != nil {
 		if _, err := db.DB.Exec(`UPDATE agents SET name = $1 WHERE id = $2`, *in.Name, workflowID); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -964,7 +987,7 @@ func updateWorkflow(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	
+
 	writeJSON(w, http.StatusOK, map[string]string{"id": workflowID})
 }
 
@@ -1017,7 +1040,7 @@ func createWorkflowNode(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	
+
 	if in.Config == nil {
 		in.Config = map[string]interface{}{}
 	}
@@ -1026,7 +1049,7 @@ func createWorkflowNode(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid config"})
 		return
 	}
-	
+
 	var id string
 	query := `INSERT INTO workflow_nodes (agent_id, node_id, node_type, position_x, position_y, config) VALUES ($1, $2, $3, $4, $5, $6::jsonb) RETURNING id`
 	if err := db.DB.QueryRow(query, workflowID, in.NodeID, in.NodeType, in.PositionX, in.PositionY, string(configBytes)).Scan(&id); err != nil {
@@ -1039,7 +1062,7 @@ func createWorkflowNode(w http.ResponseWriter, r *http.Request) {
 func getWorkflowNode(w http.ResponseWriter, r *http.Request) {
 	workflowID := chi.URLParam(r, "workflowID")
 	nodeID := chi.URLParam(r, "nodeID")
-	
+
 	var node WorkflowNode
 	var configBytes []byte
 	err := db.DB.QueryRow(`SELECT id, agent_id, node_id, node_type, position_x, position_y, config, created_at, updated_at FROM workflow_nodes WHERE agent_id = $1 AND node_id = $2`, workflowID, nodeID).
@@ -1052,7 +1075,7 @@ func getWorkflowNode(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	
+
 	if err := json.Unmarshal(configBytes, &node.Config); err != nil {
 		node.Config = map[string]interface{}{}
 	}
@@ -1062,7 +1085,7 @@ func getWorkflowNode(w http.ResponseWriter, r *http.Request) {
 func updateWorkflowNode(w http.ResponseWriter, r *http.Request) {
 	workflowID := chi.URLParam(r, "workflowID")
 	nodeID := chi.URLParam(r, "nodeID")
-	
+
 	var in struct {
 		NodeType  *string                 `json:"node_type,omitempty"`
 		PositionX *float64                `json:"position_x,omitempty"`
@@ -1073,7 +1096,7 @@ func updateWorkflowNode(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	
+
 	if in.NodeType != nil {
 		if _, err := db.DB.Exec(`UPDATE workflow_nodes SET node_type = $1 WHERE agent_id = $2 AND node_id = $3`, *in.NodeType, workflowID, nodeID); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -1103,14 +1126,14 @@ func updateWorkflowNode(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	
+
 	writeJSON(w, http.StatusOK, map[string]string{"node_id": nodeID})
 }
 
 func deleteWorkflowNode(w http.ResponseWriter, r *http.Request) {
 	workflowID := chi.URLParam(r, "workflowID")
 	nodeID := chi.URLParam(r, "nodeID")
-	
+
 	if _, err := db.DB.Exec(`DELETE FROM workflow_nodes WHERE agent_id = $1 AND node_id = $2`, workflowID, nodeID); err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
@@ -1161,10 +1184,10 @@ func createWorkflowEdge(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	
+
 	var id string
 	query := `INSERT INTO workflow_edges (agent_id, edge_id, source_node_id, target_node_id, source_handle, target_handle) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
-	if err := db.DB.QueryRow(query, workflowID, in.EdgeID, in.SourceNodeID, in.TargetNodeID, 
+	if err := db.DB.QueryRow(query, workflowID, in.EdgeID, in.SourceNodeID, in.TargetNodeID,
 		sql.NullString{String: stringDeref(in.SourceHandle), Valid: in.SourceHandle != nil},
 		sql.NullString{String: stringDeref(in.TargetHandle), Valid: in.TargetHandle != nil}).Scan(&id); err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -1176,7 +1199,7 @@ func createWorkflowEdge(w http.ResponseWriter, r *http.Request) {
 func deleteWorkflowEdge(w http.ResponseWriter, r *http.Request) {
 	workflowID := chi.URLParam(r, "workflowID")
 	edgeID := chi.URLParam(r, "edgeID")
-	
+
 	if _, err := db.DB.Exec(`DELETE FROM workflow_edges WHERE agent_id = $1 AND edge_id = $2`, workflowID, edgeID); err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
@@ -1188,7 +1211,7 @@ func deleteWorkflowEdge(w http.ResponseWriter, r *http.Request) {
 
 func autoLayoutWorkflow(w http.ResponseWriter, r *http.Request) {
 	workflowID := chi.URLParam(r, "workflowID")
-	
+
 	// Simple layout algorithm: arrange nodes in a grid
 	rows, err := db.DB.Query(`SELECT node_id FROM workflow_nodes WHERE agent_id = $1 ORDER BY created_at`, workflowID)
 	if err != nil {
@@ -1196,7 +1219,7 @@ func autoLayoutWorkflow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer rows.Close()
-	
+
 	var nodeIDs []string
 	for rows.Next() {
 		var nodeID string
@@ -1206,21 +1229,21 @@ func autoLayoutWorkflow(w http.ResponseWriter, r *http.Request) {
 		}
 		nodeIDs = append(nodeIDs, nodeID)
 	}
-	
+
 	// Arrange in a grid with 200px spacing
 	const spacing = 200.0
 	cols := 3
-	
+
 	for i, nodeID := range nodeIDs {
 		x := float64(i%cols) * spacing
 		y := float64(i/cols) * spacing
-		
+
 		if _, err := db.DB.Exec(`UPDATE workflow_nodes SET position_x = $1, position_y = $2 WHERE agent_id = $3 AND node_id = $4`, x, y, workflowID, nodeID); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
 		}
 	}
-	
+
 	writeJSON(w, http.StatusOK, map[string]interface{}{"updated_nodes": len(nodeIDs)})
 }
 

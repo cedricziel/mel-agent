@@ -22,26 +22,26 @@ const (
 type VariableStore interface {
 	// Set stores a variable at the specified scope
 	Set(ctx context.Context, scope VariableScope, key string, value interface{}) error
-	
+
 	// Get retrieves a variable from the specified scope
 	Get(ctx context.Context, scope VariableScope, key string) (interface{}, bool, error)
-	
+
 	// Delete removes a variable from the specified scope
 	Delete(ctx context.Context, scope VariableScope, key string) error
-	
+
 	// List returns all variables in the specified scope
 	List(ctx context.Context, scope VariableScope) (map[string]interface{}, error)
-	
+
 	// Clear removes all variables from the specified scope
 	Clear(ctx context.Context, scope VariableScope) error
 }
 
 // MemoryVariableStore is an in-memory implementation of VariableStore
 type MemoryVariableStore struct {
-	mu               sync.RWMutex
-	globalVars       map[string]interface{}            // global variables
-	workflowVars     map[string]map[string]interface{} // agentID -> variables
-	runVars          map[string]map[string]interface{} // runID -> variables
+	mu           sync.RWMutex
+	globalVars   map[string]interface{}            // global variables
+	workflowVars map[string]map[string]interface{} // agentID -> variables
+	runVars      map[string]map[string]interface{} // runID -> variables
 }
 
 // NewMemoryVariableStore creates a new in-memory variable store

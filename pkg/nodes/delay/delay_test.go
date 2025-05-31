@@ -47,12 +47,12 @@ func TestDelayDefinition_Execute(t *testing.T) {
 	}
 
 	tests := []struct {
-		name          string
-		node          api.Node
-		input         interface{}
+		name           string
+		node           api.Node
+		input          interface{}
 		expectedOutput interface{}
-		minDuration   time.Duration
-		maxDuration   time.Duration
+		minDuration    time.Duration
+		maxDuration    time.Duration
 	}{
 		{
 			name: "valid duration",
@@ -61,10 +61,10 @@ func TestDelayDefinition_Execute(t *testing.T) {
 					"duration": float64(100),
 				},
 			},
-			input:         "test input",
+			input:          "test input",
 			expectedOutput: "test input",
-			minDuration:   90 * time.Millisecond,
-			maxDuration:   150 * time.Millisecond,
+			minDuration:    90 * time.Millisecond,
+			maxDuration:    150 * time.Millisecond,
 		},
 		{
 			name: "zero duration",
@@ -73,20 +73,20 @@ func TestDelayDefinition_Execute(t *testing.T) {
 					"duration": float64(0),
 				},
 			},
-			input:         "test input",
+			input:          "test input",
 			expectedOutput: "test input",
-			minDuration:   0,
-			maxDuration:   10 * time.Millisecond,
+			minDuration:    0,
+			maxDuration:    10 * time.Millisecond,
 		},
 		{
 			name: "missing duration",
 			node: api.Node{
 				Data: map[string]interface{}{},
 			},
-			input:         "test input",
+			input:          "test input",
 			expectedOutput: "test input",
-			minDuration:   0,
-			maxDuration:   10 * time.Millisecond,
+			minDuration:    0,
+			maxDuration:    10 * time.Millisecond,
 		},
 		{
 			name: "invalid duration type",
@@ -95,10 +95,10 @@ func TestDelayDefinition_Execute(t *testing.T) {
 					"duration": "invalid",
 				},
 			},
-			input:         "test input",
+			input:          "test input",
 			expectedOutput: "test input",
-			minDuration:   0,
-			maxDuration:   10 * time.Millisecond,
+			minDuration:    0,
+			maxDuration:    10 * time.Millisecond,
 		},
 	}
 

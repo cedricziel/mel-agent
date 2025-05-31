@@ -1,6 +1,8 @@
 package agent
 
-import "github.com/cedricziel/mel-agent/pkg/api"
+import (
+	"github.com/cedricziel/mel-agent/pkg/api"
+)
 
 type agentDefinition struct{}
 
@@ -13,8 +15,12 @@ func (agentDefinition) Meta() api.NodeType {
 		Parameters: []api.ParameterDefinition{},
 	}
 }
-func (agentDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
-	return input, nil
+
+// ExecuteEnvelope returns the input unchanged (agent logic handled elsewhere).
+func (d agentDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+	result := envelope.Clone()
+	result.Trace = envelope.Trace.Next(node.ID)
+	return result, nil
 }
 
 func (agentDefinition) Initialize(mel api.Mel) error {
@@ -25,5 +31,5 @@ func init() {
 	api.RegisterNodeDefinition(agentDefinition{})
 }
 
-// assert that agentDefinition implements the NodeDefinition interface
+// assert that agentDefinition implements both interfaces
 var _ api.NodeDefinition = (*agentDefinition)(nil)

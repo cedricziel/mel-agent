@@ -30,13 +30,13 @@ func TestListVariablesMeta(t *testing.T) {
 func TestListVariables_AllScopes(t *testing.T) {
 	// Reset variable store and set test variables
 	api.SetVariableStore(api.NewMemoryVariableStore())
-	
+
 	ctx := api.ExecutionContext{
 		AgentID: "test-agent",
 		RunID:   "test-run",
 	}
 	varCtx := api.CreateVariableContext("test-agent", "test-run", "test-node")
-	
+
 	// Set variables in different scopes
 	api.SetVariable(varCtx, api.RunScope, "runVar", "run value")
 	api.SetVariable(varCtx, api.WorkflowScope, "workflowVar", "workflow value")
@@ -100,13 +100,13 @@ func TestListVariables_AllScopes(t *testing.T) {
 func TestListVariables_SpecificScope(t *testing.T) {
 	// Reset variable store and set test variables
 	api.SetVariableStore(api.NewMemoryVariableStore())
-	
+
 	ctx := api.ExecutionContext{
 		AgentID: "test-agent",
 		RunID:   "test-run",
 	}
 	varCtx := api.CreateVariableContext("test-agent", "test-run", "test-node")
-	
+
 	// Set variables in run scope
 	api.SetVariable(varCtx, api.RunScope, "var1", "value1")
 	api.SetVariable(varCtx, api.RunScope, "var2", 42)
@@ -197,13 +197,13 @@ func TestListVariables_EmptyScope(t *testing.T) {
 func TestListVariables_AllScopesWithEmpty(t *testing.T) {
 	// Reset variable store and set only workflow variable
 	api.SetVariableStore(api.NewMemoryVariableStore())
-	
+
 	ctx := api.ExecutionContext{
 		AgentID: "test-agent",
 		RunID:   "test-run",
 	}
 	varCtx := api.CreateVariableContext("test-agent", "test-run", "test-node")
-	
+
 	// Set only workflow variable
 	api.SetVariable(varCtx, api.WorkflowScope, "workflowVar", "workflow value")
 
@@ -257,13 +257,13 @@ func TestListVariables_AllScopesWithEmpty(t *testing.T) {
 func TestListVariables_AllScopesWithoutEmpty(t *testing.T) {
 	// Reset variable store and set only workflow variable
 	api.SetVariableStore(api.NewMemoryVariableStore())
-	
+
 	ctx := api.ExecutionContext{
 		AgentID: "test-agent",
 		RunID:   "test-run",
 	}
 	varCtx := api.CreateVariableContext("test-agent", "test-run", "test-node")
-	
+
 	// Set only workflow variable
 	api.SetVariable(varCtx, api.WorkflowScope, "workflowVar", "workflow value")
 
@@ -309,13 +309,13 @@ func TestListVariables_AllScopesWithoutEmpty(t *testing.T) {
 func TestListVariables_DefaultScope(t *testing.T) {
 	// Reset variable store and set test variables
 	api.SetVariableStore(api.NewMemoryVariableStore())
-	
+
 	ctx := api.ExecutionContext{
 		AgentID: "test-agent",
 		RunID:   "test-run",
 	}
 	varCtx := api.CreateVariableContext("test-agent", "test-run", "test-node")
-	
+
 	// Set variables in different scopes
 	api.SetVariable(varCtx, api.RunScope, "runVar", "run value")
 	api.SetVariable(varCtx, api.WorkflowScope, "workflowVar", "workflow value")

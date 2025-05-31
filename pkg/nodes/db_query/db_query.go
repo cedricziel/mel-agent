@@ -1,6 +1,8 @@
 package db_query
 
-import internalapi "github.com/cedricziel/mel-agent/pkg/api"
+import (
+	internalapi "github.com/cedricziel/mel-agent/pkg/api"
+)
 
 // dbQueryDefinition provides the built-in "DB Query" node.
 type dbQueryDefinition struct{}
@@ -18,9 +20,11 @@ func (dbQueryDefinition) Meta() internalapi.NodeType {
 	}
 }
 
-// Execute returns the input unchanged (actual I/O happens at runtime).
-func (dbQueryDefinition) Execute(ctx internalapi.ExecutionContext, node internalapi.Node, input interface{}) (interface{}, error) {
-	return input, nil
+// ExecuteEnvelope returns the input unchanged (actual I/O happens at runtime).
+func (d dbQueryDefinition) ExecuteEnvelope(ctx internalapi.ExecutionContext, node internalapi.Node, envelope *internalapi.Envelope[interface{}]) (*internalapi.Envelope[interface{}], error) {
+	result := envelope.Clone()
+	result.Trace = envelope.Trace.Next(node.ID)
+	return result, nil
 }
 
 func (dbQueryDefinition) Initialize(mel internalapi.Mel) error {
@@ -31,5 +35,5 @@ func init() {
 	internalapi.RegisterNodeDefinition(dbQueryDefinition{})
 }
 
-// assert that dbQueryDefinition implements the NodeDefinition interface
+// assert that dbQueryDefinition implements both interfaces
 var _ internalapi.NodeDefinition = (*dbQueryDefinition)(nil)

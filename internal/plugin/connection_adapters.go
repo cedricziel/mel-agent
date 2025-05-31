@@ -35,25 +35,25 @@ func (c *connectionPlugin) Connect(ctx context.Context, cfg map[string]interface
 
 // RegisterConnectionPlugins loads all connections from the database and registers them as plugins.
 func RegisterConnectionPlugins() {
-   rows, err := db.DB.Query(`SELECT id, config FROM connections`)
-   if err != nil {
-       log.Printf("connection plugin: failed to load connections: %v", err)
-       return
-   }
-   defer rows.Close()
-   for rows.Next() {
-       var id string
-       var raw json.RawMessage
-       if err := rows.Scan(&id, &raw); err != nil {
-           log.Printf("connection plugin: scan error: %v", err)
-           continue
-       }
-       cfg := map[string]interface{}{}
-       if err := json.Unmarshal(raw, &cfg); err != nil {
-           log.Printf("connection plugin: unmarshal config error for %s: %v", id, err)
-           continue
-       }
-       plugin := &connectionPlugin{id: id, config: cfg}
-       Register(plugin)
-   }
+	rows, err := db.DB.Query(`SELECT id, config FROM connections`)
+	if err != nil {
+		log.Printf("connection plugin: failed to load connections: %v", err)
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id string
+		var raw json.RawMessage
+		if err := rows.Scan(&id, &raw); err != nil {
+			log.Printf("connection plugin: scan error: %v", err)
+			continue
+		}
+		cfg := map[string]interface{}{}
+		if err := json.Unmarshal(raw, &cfg); err != nil {
+			log.Printf("connection plugin: unmarshal config error for %s: %v", id, err)
+			continue
+		}
+		plugin := &connectionPlugin{id: id, config: cfg}
+		Register(plugin)
+	}
 }

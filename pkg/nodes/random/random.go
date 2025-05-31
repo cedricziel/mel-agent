@@ -23,18 +23,26 @@ func (randomDefinition) Meta() api.NodeType {
 	}
 }
 
-// Execute generates a random value based on the configured type.
-func (randomDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
+// ExecuteEnvelope generates a random value based on the configured type using envelopes.
+func (d randomDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
 	typ, _ := node.Data["type"].(string)
+
+	var randomValue interface{}
 	switch typ {
 	case "uuid":
-		return fmt.Sprintf("%s", uuid.New()), nil
+		randomValue = fmt.Sprintf("%s", uuid.New())
 	case "number":
 		// Simple random number: use nanosecond timestamp
-		return time.Now().UnixNano(), nil
+		randomValue = time.Now().UnixNano()
 	default:
-		return input, nil
+		randomValue = envelope.Data
 	}
+
+	result := envelope.Clone()
+	result.Trace = envelope.Trace.Next(node.ID)
+	result.Data = randomValue
+
+	return result, nil
 }
 
 func (randomDefinition) Initialize(mel api.Mel) error {
@@ -45,5 +53,5 @@ func init() {
 	api.RegisterNodeDefinition(randomDefinition{})
 }
 
-// assert that randomDefinition implements the NodeDefinition interface
+// assert that randomDefinition implements the interface
 var _ api.NodeDefinition = (*randomDefinition)(nil)

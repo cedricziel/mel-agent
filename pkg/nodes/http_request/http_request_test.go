@@ -54,7 +54,7 @@ func TestHttpRequestExecute_GET(t *testing.T) {
 		if r.Method != "GET" {
 			t.Errorf("Expected GET request, got %s", r.Method)
 		}
-		
+
 		w.Header().Set("Content-Type", "application/json")
 		response := map[string]interface{}{
 			"message": "success",
@@ -475,11 +475,11 @@ func TestHttpRequestInitialize(t *testing.T) {
 
 // Helper function
 func contains(str, substr string) bool {
-	return len(str) >= len(substr) && (str == substr || 
-		(len(str) > len(substr) && 
-		 (str[:len(substr)] == substr || 
-		  str[len(str)-len(substr):] == substr ||
-		  findSubstring(str, substr))))
+	return len(str) >= len(substr) && (str == substr ||
+		(len(str) > len(substr) &&
+			(str[:len(substr)] == substr ||
+				str[len(str)-len(substr):] == substr ||
+				findSubstring(str, substr))))
 }
 
 func findSubstring(str, substr string) bool {

@@ -19,9 +19,12 @@ func (transformDefinition) Meta() api.NodeType {
 	}
 }
 
-// Execute applies the expression to the input (currently passthrough).
-func (transformDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
-	return input, nil
+// ExecuteEnvelope applies the expression to the input envelope (currently passthrough).
+func (d transformDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+	// TODO: Implement actual transformation logic based on expression
+	result := envelope.Clone()
+	result.Trace = envelope.Trace.Next(node.ID)
+	return result, nil
 }
 
 func (transformDefinition) Initialize(mel api.Mel) error {
@@ -32,5 +35,5 @@ func init() {
 	api.RegisterNodeDefinition(transformDefinition{})
 }
 
-// assert that transformDefinition implements the NodeDefinition interface
+// assert that transformDefinition implements the interface
 var _ api.NodeDefinition = (*transformDefinition)(nil)

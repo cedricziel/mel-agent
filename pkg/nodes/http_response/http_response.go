@@ -1,6 +1,8 @@
 package http_response
 
-import api "github.com/cedricziel/mel-agent/pkg/api"
+import (
+	api "github.com/cedricziel/mel-agent/pkg/api"
+)
 
 // httpResponseDefinition provides the built-in "HTTP Response" node.
 type httpResponseDefinition struct{}
@@ -18,9 +20,11 @@ func (httpResponseDefinition) Meta() api.NodeType {
 	}
 }
 
-// Execute returns the input unchanged (response handled elsewhere).
-func (httpResponseDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
-	return input, nil
+// ExecuteEnvelope returns the input unchanged (response handled elsewhere).
+func (d httpResponseDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+	result := envelope.Clone()
+	result.Trace = envelope.Trace.Next(node.ID)
+	return result, nil
 }
 
 func (httpResponseDefinition) Initialize(mel api.Mel) error {
@@ -31,5 +35,5 @@ func init() {
 	api.RegisterNodeDefinition(httpResponseDefinition{})
 }
 
-// assert that httpResponseDefinition implements the NodeDefinition interface
+// assert that httpResponseDefinition implements the interface
 var _ api.NodeDefinition = (*httpResponseDefinition)(nil)

@@ -1,6 +1,8 @@
 package slack
 
-import "github.com/cedricziel/mel-agent/pkg/api"
+import (
+	"github.com/cedricziel/mel-agent/pkg/api"
+)
 
 type slackDefinition struct{}
 
@@ -19,8 +21,12 @@ func (slackDefinition) Meta() api.NodeType {
 		},
 	}
 }
-func (slackDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
-	return input, nil
+
+// ExecuteEnvelope returns the input unchanged (Slack handling elsewhere).
+func (d slackDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+	result := envelope.Clone()
+	result.Trace = envelope.Trace.Next(node.ID)
+	return result, nil
 }
 
 func (slackDefinition) Initialize(mel api.Mel) error {
@@ -31,5 +37,5 @@ func init() {
 	api.RegisterNodeDefinition(slackDefinition{})
 }
 
-// assert that slackDefinition implements the NodeDefinition interface
+// assert that slackDefinition implements both interfaces
 var _ api.NodeDefinition = (*slackDefinition)(nil)

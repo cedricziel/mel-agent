@@ -1,6 +1,8 @@
 package merge
 
-import api "github.com/cedricziel/mel-agent/pkg/api"
+import (
+	api "github.com/cedricziel/mel-agent/pkg/api"
+)
 
 // mergeDefinition provides the built-in "Merge" node.
 type mergeDefinition struct{}
@@ -17,9 +19,12 @@ func (mergeDefinition) Meta() api.NodeType {
 	}
 }
 
-// Execute merges data based on strategy. Currently passthrough.
-func (mergeDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
-	return input, nil
+// ExecuteEnvelope merges data based on strategy. Currently passthrough.
+func (d mergeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+	// TODO: Implement actual merge logic based on strategy
+	result := envelope.Clone()
+	result.Trace = envelope.Trace.Next(node.ID)
+	return result, nil
 }
 
 func (mergeDefinition) Initialize(mel api.Mel) error {
@@ -30,5 +35,5 @@ func init() {
 	api.RegisterNodeDefinition(mergeDefinition{})
 }
 
-// assert that mergeDefinition implements the NodeDefinition interface
+// assert that mergeDefinition implements the interface
 var _ api.NodeDefinition = (*mergeDefinition)(nil)
