@@ -63,6 +63,36 @@ func getNodeTypeSchemaHandler(w http.ResponseWriter, r *http.Request) {
 				prop["enum"] = ids
 				prop["x-enumNames"] = names
 			}
+		} else if meta.Type == "baserow" && p.Name == "connectionId" {
+			// list all valid Baserow connections
+			rows, err := db.DB.Query(
+				`SELECT c.id, c.name FROM connections c JOIN integrations i ON c.integration_id = i.id WHERE i.name = $1 AND c.status = 'valid'`,
+				"baserow",
+			)
+			if err == nil {
+				var ids []string
+				var names []string
+				for rows.Next() {
+					var id, name string
+					if err := rows.Scan(&id, &name); err == nil {
+						ids = append(ids, id)
+						names = append(names, name)
+					}
+				}
+				rows.Close()
+				prop["enum"] = ids
+				prop["x-enumNames"] = names
+			}
+		} else if meta.Type == "baserow" && (p.Name == "databaseId" || p.Name == "tableId") {
+			// For database and table IDs, we'll need dynamic loading via API endpoints
+			// Set up the parameter to indicate it needs dynamic loading
+			prop["x-dynamicEnum"] = map[string]interface{}{
+				"type": p.Name,
+				"dependsOn": "connectionId",
+			}
+			if p.Name == "tableId" {
+				prop["x-dynamicEnum"].(map[string]interface{})["dependsOn"] = []string{"connectionId", "databaseId"}
+			}
 		} else {
 			if len(p.Options) > 0 {
 				prop["enum"] = p.Options

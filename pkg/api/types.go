@@ -156,6 +156,20 @@ type NodeDefinition interface {
 	ExecuteEnvelope(ctx ExecutionContext, node Node, envelope *Envelope[interface{}]) (*Envelope[interface{}], error)
 }
 
+// DynamicOptionsProvider is an optional interface that nodes can implement
+// to provide dynamic option loading for their parameters.
+type DynamicOptionsProvider interface {
+	GetDynamicOptions(ctx ExecutionContext, parameterName string, dependencies map[string]interface{}) ([]OptionChoice, error)
+}
+
+// OptionChoice represents a single choice in a dynamic options list
+type OptionChoice struct {
+	Value       string `json:"value"`
+	Label       string `json:"label"`
+	Description string `json:"description,omitempty"`
+	Group       string `json:"group,omitempty"`
+}
+
 // TypedNodeDefinition is a strongly-typed envelope interface for specific input/output types.
 // This allows for compile-time type checking when both input and output types are known.
 type TypedNodeDefinition[TIn, TOut any] interface {

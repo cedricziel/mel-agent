@@ -72,6 +72,8 @@ func Handler() http.Handler {
 	r.Get("/node-types", listNodeTypes)
 	// JSON Schema for node types
 	r.Get("/node-types/schema/{type}", getNodeTypeSchemaHandler)
+	// Dynamic options for node parameters
+	r.Get("/node-types/{type}/parameters/{parameter}/options", getDynamicOptionsHandler)
 	// WebSocket for collaborative updates
 	r.Get("/ws/agents/{agentID}", wsHandler)
 	// Create a run via trigger or API
@@ -1253,4 +1255,46 @@ func stringDeref(s *string) string {
 		return ""
 	}
 	return *s
+}
+
+// getDynamicOptionsHandler provides a unified endpoint for loading dynamic options for any node parameter
+func getDynamicOptionsHandler(w http.ResponseWriter, r *http.Request) {
+	nodeType := chi.URLParam(r, "type")
+	parameterName := chi.URLParam(r, "parameter")
+	
+	// Find the node definition
+	def := api.FindDefinition(nodeType)
+	if def == nil {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "node type not found"})
+		return
+	}
+	
+	// Check if the node implements DynamicOptionsProvider
+	optionsProvider, ok := def.(api.DynamicOptionsProvider)
+	if !ok {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "node does not support dynamic options"})
+		return
+	}
+	
+	// Parse dependencies from query parameters
+	dependencies := make(map[string]interface{})
+	for key, values := range r.URL.Query() {
+		if len(values) > 0 {
+			dependencies[key] = values[0]
+		}
+	}
+	
+	// Create execution context (we might need a user context in the future)
+	ctx := api.ExecutionContext{}
+	
+	// Get dynamic options
+	options, err := optionsProvider.GetDynamicOptions(ctx, parameterName, dependencies)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"options": options,
+	})
 }
