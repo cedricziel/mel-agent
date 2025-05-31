@@ -150,10 +150,27 @@ func NewNodeErrorWithCode(nodeID, nodeType, message, code string) *NodeError {
 }
 
 // NodeDefinition contains metadata and execution logic for a node type.
+// This is the legacy interface that will be maintained for backward compatibility.
 type NodeDefinition interface {
 	Initialize(mel Mel) error
 	Meta() NodeType
 	Execute(ctx ExecutionContext, node Node, input interface{}) (interface{}, error)
+}
+
+// EnvelopeNodeDefinition is the new envelope-based interface for node types.
+// This provides stronger typing and better metadata handling.
+type EnvelopeNodeDefinition interface {
+	Initialize(mel Mel) error
+	Meta() NodeType
+	ExecuteEnvelope(ctx ExecutionContext, node Node, envelope *Envelope[interface{}]) (*Envelope[interface{}], error)
+}
+
+// TypedNodeDefinition is a strongly-typed envelope interface for specific input/output types.
+// This allows for compile-time type checking when both input and output types are known.
+type TypedNodeDefinition[TIn, TOut any] interface {
+	Initialize(mel Mel) error
+	Meta() NodeType
+	ExecuteTyped(ctx ExecutionContext, node Node, envelope *Envelope[TIn]) (*Envelope[TOut], error)
 }
 
 // GetEffectiveType returns the parameter type, preferring ParameterType over Type for backward compatibility.
