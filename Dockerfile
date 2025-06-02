@@ -14,7 +14,7 @@ COPY . ./
 RUN CGO_ENABLED=0 go build -o /app/bin/server ./cmd/server
 
 # --- Runtime image ---
-FROM alpine:3.21
+FROM alpine:3.22
 WORKDIR /app
 
 COPY --from=build /app/bin/server /app/bin/server
