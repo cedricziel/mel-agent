@@ -757,18 +757,74 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-// executeNodeHandler handles running a single node with provided input (stub implementation)
+// executeNodeHandler handles running a single node with provided input
 func executeNodeHandler(w http.ResponseWriter, r *http.Request) {
 	agentID := chi.URLParam(r, "agentID")
 	nodeID := chi.URLParam(r, "nodeID")
+	
 	var input interface{}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
 	}
-	// TODO: integrate real execution engine. For now, echo input as output.
-	result := map[string]interface{}{"agent_id": agentID, "node_id": nodeID, "output": input}
-	writeJSON(w, http.StatusOK, result)
+
+	// Get the latest workflow version to find node configuration
+	var versionID sql.NullString
+	if err := db.DB.QueryRow(`SELECT latest_version_id FROM agents WHERE id = $1`, agentID).Scan(&versionID); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to get agent version"})
+		return
+	}
+	
+	if !versionID.Valid {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "no workflow version available"})
+		return
+	}
+
+	// Load the workflow graph to find the specific node configuration
+	var graphRaw []byte
+	if err := db.DB.QueryRow(`SELECT graph FROM agent_versions WHERE id = $1`, versionID.String).Scan(&graphRaw); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to load workflow graph"})
+		return
+	}
+
+	// Parse the graph to find the target node
+	var graphStruct struct {
+		Nodes []api.Node `json:"nodes"`
+	}
+	if err := json.Unmarshal(graphRaw, &graphStruct); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to parse workflow graph"})
+		return
+	}
+
+	// Find the specific node
+	var targetNode *api.Node
+	for _, node := range graphStruct.Nodes {
+		if node.ID == nodeID {
+			targetNode = &node
+			break
+		}
+	}
+
+	if targetNode == nil {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "node not found in workflow"})
+		return
+	}
+
+	// Execute the node
+	result, err := executeNodeLocal(agentID, *targetNode, input)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+
+	// Return the execution result
+	response := map[string]interface{}{
+		"agent_id": agentID,
+		"node_id":  nodeID,
+		"output":   result,
+		"success":  true,
+	}
+	writeJSON(w, http.StatusOK, response)
 }
 
 // getLatestAgentVersionHandler returns the latest saved graph for an agent.

@@ -404,7 +404,17 @@ export default function NodeModal({ node, nodeDef, isOpen, onClose, onChange, on
               // In editor mode, show test controls
               <div className="flex items-center gap-4">
                 <button
-                  onClick={() => onExecute && onExecute({})}
+                  onClick={async () => {
+                    if (onExecute) {
+                      try {
+                        const result = await onExecute({});
+                        setOutputData(result || {});
+                      } catch (error) {
+                        console.error('Node execution error:', error);
+                        setOutputData({ error: error.message || 'Execution failed' });
+                      }
+                    }
+                  }}
                   className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                 >
                   Test Node
