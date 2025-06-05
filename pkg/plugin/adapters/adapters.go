@@ -55,7 +55,10 @@ func (a NodeDefinitionAdapter) Execute(ctx context.Context, inputs map[string]in
 	input := inputs["input"]
 	config, _ := inputs["config"].(map[string]interface{})
 	node := api.Node{ID: "", Type: a.Def.Meta().Type, Data: config}
-	execCtx := api.ExecutionContext{AgentID: agentID}
+	execCtx := api.ExecutionContext{
+		AgentID: agentID,
+		Mel:     api.NewMel(), // Provide platform utilities
+	}
 
 	// Create envelope for the new interface
 	envelope := &api.Envelope[interface{}]{

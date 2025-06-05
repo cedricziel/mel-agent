@@ -55,14 +55,45 @@ Available node types include:
 - File I/O operations
 - Control flow (if/else, for_each, switch)
 - Integrations (Slack, webhooks)
-- Utility nodes (log, delay, transform)
+- Workflow communication (workflow_call, workflow_return, workflow_trigger)
+- Triggers (manual_trigger, schedule, webhook)
+- Utility nodes (log, delay, transform, variable_get, variable_set, variable_list)
 
 ## API Endpoints
+
+### Agents/Workflows
 - `GET /api/agents` - List agents
 - `POST /api/agents` - Create agent
+- `POST /api/agents/{agentID}/versions` - Create agent version
+- `GET /api/agents/{agentID}/versions/latest` - Get latest agent version
+- `POST /api/agents/{agentID}/runs` - Create run
+- `POST /api/agents/{agentID}/runs/test` - Test run agent
+- `GET /api/agents/{agentID}/runs` - List runs
+- `GET /api/agents/{agentID}/runs/{runID}` - Get specific run
+
+### Connections & Credentials
 - `GET /api/connections` - List connections
 - `POST /api/connections` - Create connection
-- WebSocket endpoint for real-time updates
+- `GET /api/connections/{connectionID}` - Get connection
+- `PUT /api/connections/{connectionID}` - Update connection
+- `DELETE /api/connections/{connectionID}` - Delete connection
+- `GET /api/credentials` - List credentials for selection
+
+### Workflow Builder
+- `GET /api/workflows/{workflowID}/nodes` - List workflow nodes
+- `POST /api/workflows/{workflowID}/nodes` - Create workflow node
+- `GET /api/workflows/{workflowID}/edges` - List workflow edges
+- `POST /api/workflows/{workflowID}/edges` - Create workflow edge
+- `POST /api/workflows/{workflowID}/layout` - Auto-layout workflow
+
+### Meta & Schema
+- `GET /api/node-types` - List node type definitions
+- `GET /api/node-types/schema/{type}` - Get node schema
+- `GET /api/credential-types` - List credential types
+- `GET /api/integrations` - List integrations
+
+### Real-time
+- `GET /api/ws/agents/{agentID}` - WebSocket for collaborative updates
 
 ## Environment Setup
 1. Start services: `docker compose up --build`
@@ -80,10 +111,11 @@ The `pkg/api` package provides a complete public API for building node types:
 
 ### Core Types
 - `NodeDefinition` - Interface for implementing node types
-- `ExecutionContext` - Execution context with agent ID and variables
+- `ExecutionContext` - Execution context with agent ID, variables, and platform utilities (Mel)
 - `Node` - Represents a workflow node with configuration
 - `NodeType` - Metadata for node type (label, category, parameters)
 - `ParameterDefinition` - Defines node configuration parameters
+- `Mel` - Platform utilities interface providing HTTP client, workflow calling, and data storage
 
 ### Registration and Discovery
 ```go
@@ -114,9 +146,12 @@ func (d MyNodeDefinition) Meta() api.NodeType {
     }
 }
 
-func (d MyNodeDefinition) Execute(ctx api.ExecutionContext, node api.Node, input interface{}) (interface{}, error) {
-    // Implementation here
-    return input, nil
+func (d MyNodeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+    // Implementation here - process envelope and return result
+    result := envelope.Clone()
+    result.Trace = envelope.Trace.Next(node.ID)
+    result.Data = map[string]interface{}{"processed": true}
+    return result, nil
 }
 
 func (d MyNodeDefinition) Initialize(mel api.Mel) error {
@@ -124,8 +159,78 @@ func (d MyNodeDefinition) Initialize(mel api.Mel) error {
 }
 ```
 
+## Platform Utilities (Mel Interface)
+
+Nodes have access to platform utilities through the `ctx.Mel` interface:
+
+### HTTP Client
+```go
+// Make HTTP requests from nodes
+httpReq := api.HTTPRequest{
+    Method:  "POST",
+    URL:     "https://api.example.com/data",
+    Headers: map[string]string{"Authorization": "Bearer token"},
+    Body:    strings.NewReader(`{"data": "value"}`), // requires import "strings"
+    Timeout: 30 * time.Second,
+}
+
+response, err := ctx.Mel.HTTPRequest(context.Background(), httpReq)
+```
+
+### Workflow Communication
+```go
+// Call another workflow synchronously
+req := api.WorkflowCallRequest{
+    TargetWorkflowID: "target-workflow-id",
+    CallData:         map[string]interface{}{"input": "data"},
+    CallMode:         "sync", // or "async"
+    TimeoutSeconds:   30,
+    SourceContext:    ctx,
+}
+
+response, err := ctx.Mel.CallWorkflow(context.Background(), req)
+
+// Return data to calling workflow (from workflow_return node)
+err := ctx.Mel.ReturnToWorkflow(context.Background(), callID, returnData, "success")
+```
+
+### Data Storage
+```go
+// Store data for cross-workflow communication
+err := ctx.Mel.StoreData(context.Background(), "my-key", data, 1*time.Hour)
+
+// Retrieve data
+data, err := ctx.Mel.RetrieveData(context.Background(), "my-key")
+
+// Delete data
+err := ctx.Mel.DeleteData(context.Background(), "my-key")
+```
+
+## Envelope-Based Architecture
+
+All node execution uses an envelope-based data flow system:
+
+```go
+type Envelope[T any] struct {
+    ID        string                 `json:"id"`
+    IssuedAt  time.Time             `json:"issuedAt"`
+    Version   int                   `json:"version"`
+    DataType  string                `json:"dataType"`
+    Data      T                     `json:"data"`
+    Trace     Trace                 `json:"trace"`
+    Variables map[string]interface{} `json:"variables,omitempty"`
+}
+```
+
+### Key Concepts:
+- **Immutable Flow**: Envelopes are cloned and modified, never mutated
+- **Tracing**: Each envelope carries execution trace information
+- **Type Safety**: Generic envelope supports any data type
+- **Context Preservation**: Variables and trace information flow through nodes
+
 ## Common Workflows
-1. **Adding new node types**: Create in `pkg/nodes/[type]/` implementing `api.NodeDefinition` interface
+1. **Adding new node types**: Create in `pkg/nodes/[type]/` implementing `api.NodeDefinition` interface with `ExecuteEnvelope` method
 2. **API changes**: Update handlers in `internal/api/` and types in `pkg/api/`
 3. **Frontend updates**: Components in `web/src/components/`, pages in `web/src/pages/`
 4. **Database changes**: Add migrations to `migrations/` directory
+5. **Workflow communication**: Use `workflow_call`, `workflow_return`, and `workflow_trigger` nodes for inter-workflow communication

@@ -535,6 +535,10 @@ function BuilderPage({ agentId }) {
               const nodeDef = nodeDefs.find(def => def.type === 'manual_trigger');
               return <TriggerNode {...props} type="manual_trigger" agentId={agentId} icon={nodeDef?.icon} />;
             },
+            workflow_trigger: (props) => {
+              const nodeDef = nodeDefs.find(def => def.type === 'workflow_trigger');
+              return <TriggerNode {...props} type="workflow_trigger" agentId={agentId} icon={nodeDef?.icon} />;
+            },
             http_request: HttpRequestNode,
           }}
           fitView

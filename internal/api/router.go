@@ -982,7 +982,10 @@ func testRunHandler(w http.ResponseWriter, r *http.Request) {
 // executeNodeLocal invokes the node logic via the node definitions.
 func executeNodeLocal(agentID string, node api.Node, input interface{}) (interface{}, error) {
 	if def := api.FindDefinition(node.Type); def != nil {
-		ctx := api.ExecutionContext{AgentID: agentID}
+		ctx := api.ExecutionContext{
+			AgentID: agentID,
+			Mel:     api.NewMel(), // Provide platform utilities
+		}
 
 		// Create envelope from input
 		envelope := &api.Envelope[interface{}]{

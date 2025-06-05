@@ -29,4 +29,7 @@ import (
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/variable_list"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/variable_set"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/webhook"
+	_ "github.com/cedricziel/mel-agent/pkg/nodes/workflow_call"
+	_ "github.com/cedricziel/mel-agent/pkg/nodes/workflow_return"
+	_ "github.com/cedricziel/mel-agent/pkg/nodes/workflow_trigger"
 )

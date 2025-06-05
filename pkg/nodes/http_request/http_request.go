@@ -1,10 +1,10 @@
 package httprequest
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -114,26 +114,18 @@ func (d httpRequestDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node ap
 		}
 	}
 
-	// Create HTTP client with timeout
-	client := &http.Client{
-		Timeout: time.Duration(timeout) * time.Second,
-	}
-
 	// Prepare request body
 	var bodyReader io.Reader
 	if body != "" && method != "GET" && method != "HEAD" {
 		bodyReader = strings.NewReader(body)
 	}
 
-	// Create request
-	req, err := http.NewRequest(method, url, bodyReader)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
+	// Prepare headers
+	headers := make(map[string]string)
+	
 	// Set Content-Type header if we have a body
 	if bodyReader != nil {
-		req.Header.Set("Content-Type", contentType)
+		headers["Content-Type"] = contentType
 	}
 
 	// Add custom headers
@@ -141,7 +133,7 @@ func (d httpRequestDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node ap
 		if headersMap, ok := headersVal.(map[string]interface{}); ok {
 			for key, value := range headersMap {
 				if strVal, ok := value.(string); ok {
-					req.Header.Set(key, strVal)
+					headers[key] = strVal
 				}
 			}
 		}
@@ -154,11 +146,11 @@ func (d httpRequestDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node ap
 	switch authType {
 	case "bearer":
 		if authValue != "" {
-			req.Header.Set("Authorization", "Bearer "+authValue)
+			headers["Authorization"] = "Bearer " + authValue
 		}
 	case "basic":
 		if authValue != "" {
-			req.Header.Set("Authorization", "Basic "+authValue)
+			headers["Authorization"] = "Basic " + authValue
 		}
 	case "apikey":
 		if authValue != "" {
@@ -166,38 +158,40 @@ func (d httpRequestDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node ap
 			if authHeader == "" {
 				authHeader = "Authorization"
 			}
-			req.Header.Set(authHeader, authValue)
+			headers[authHeader] = authValue
 		}
 	}
 
-	// Make the request
-	resp, err := client.Do(req)
+	// Use platform HTTP client
+	httpReq := api.HTTPRequest{
+		Method:  method,
+		URL:     url,
+		Headers: headers,
+		Body:    bodyReader,
+		Timeout: time.Duration(timeout) * time.Second,
+	}
+
+	httpResp, err := ctx.Mel.HTTPRequest(context.Background(), httpReq)
 	if err != nil {
 		return nil, fmt.Errorf("request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	// Read response body
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
 	// Try to parse response as JSON, fallback to string
 	var responseData interface{}
-	if err := json.Unmarshal(respBody, &responseData); err != nil {
+	if err := json.Unmarshal(httpResp.Body, &responseData); err != nil {
 		// Not valid JSON, return as string
-		responseData = string(respBody)
+		responseData = string(httpResp.Body)
 	}
 
 	// Return structured response
 	resultData := map[string]interface{}{
-		"status":     resp.StatusCode,
-		"statusText": resp.Status,
-		"headers":    resp.Header,
+		"status":     httpResp.StatusCode,
+		"statusText": fmt.Sprintf("%d", httpResp.StatusCode),
+		"headers":    httpResp.Headers,
 		"data":       responseData,
 		"url":        url,
 		"method":     method,
+		"duration":   httpResp.Duration.Milliseconds(),
 	}
 
 	// Create result envelope

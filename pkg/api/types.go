@@ -115,6 +115,7 @@ type ExecutionContext struct {
 	AgentID   string                 `json:"agent_id"`
 	RunID     string                 `json:"run_id,omitempty"`
 	Variables map[string]interface{} `json:"variables,omitempty"`
+	Mel       Mel                    `json:"-"` // Platform utilities (not serialized)
 }
 
 // ExecutionResult represents the result of node execution.
