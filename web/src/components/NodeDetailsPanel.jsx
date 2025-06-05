@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CronEditor from './CronEditor';
+import DataViewer from './DataViewer';
 
 // Panel to configure node details and preview data flow
 export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, publicUrl, readOnly }) {
@@ -609,9 +610,13 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
           {execOutput !== null && (
             <div>
               <div className="font-medium text-sm mb-1">Output</div>
-              <pre className="bg-white border rounded p-2 text-xs h-32 overflow-auto">
-                {JSON.stringify(execOutput, null, 2)}
-              </pre>
+              <div className="bg-white border rounded max-h-32 overflow-auto">
+                <DataViewer 
+                  data={execOutput} 
+                  title="" 
+                  searchable={false}
+                />
+              </div>
             </div>
           )}
         </div>

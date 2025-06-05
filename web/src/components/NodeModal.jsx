@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import DataViewer from './DataViewer';
 
 // Full-screen modal for editing nodes with input/output panels like n8n
 export default function NodeModal({ node, nodeDef, isOpen, onClose, onChange, onExecute, onSave, viewMode, selectedExecution, agentId }) {
@@ -286,10 +287,12 @@ export default function NodeModal({ node, nodeDef, isOpen, onClose, onChange, on
             <div className="p-3 border-b bg-gray-50">
               <h3 className="font-medium">Input Data</h3>
             </div>
-            <div className="flex-1 p-3 overflow-auto">
-              <pre className="text-xs bg-gray-100 p-3 rounded">
-                {JSON.stringify(inputData, null, 2) || '// No input data'}
-              </pre>
+            <div className="flex-1 overflow-auto">
+              <DataViewer 
+                data={inputData} 
+                title="Input Data" 
+                searchable={true}
+              />
             </div>
           </div>
 
@@ -382,10 +385,12 @@ export default function NodeModal({ node, nodeDef, isOpen, onClose, onChange, on
                 </p>
               )}
             </div>
-            <div className="flex-1 p-3 overflow-auto">
-              <pre className="text-xs bg-gray-100 p-3 rounded">
-                {JSON.stringify(outputData, null, 2) || '// No output data'}
-              </pre>
+            <div className="flex-1 overflow-auto">
+              <DataViewer 
+                data={outputData} 
+                title="Output Data" 
+                searchable={true}
+              />
             </div>
           </div>
         </div>
