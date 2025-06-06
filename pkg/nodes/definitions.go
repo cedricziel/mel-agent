@@ -4,6 +4,7 @@ package nodes
 import (
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/agent"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/baserow"
+	_ "github.com/cedricziel/mel-agent/pkg/nodes/code"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/db_query"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/delay"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/email"

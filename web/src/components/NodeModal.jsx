@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import CodeEditor from './CodeEditor';
 import DataViewer from './DataViewer';
 
 // Full-screen modal for editing nodes with input/output panels like n8n
@@ -178,6 +179,22 @@ export default function NodeModal({ node, nodeDef, isOpen, onClose, onChange, on
                 <option value="">No options available</option>
               )}
             </select>
+          );
+        }
+        
+        // Check for code format (from jsonSchema.format)
+        if (param.jsonSchema && param.jsonSchema.format === 'code') {
+          // Get the language from the node's language parameter
+          const nodeLanguage = currentFormData.language || 'javascript';
+          
+          return (
+            <CodeEditor
+              value={val || ''}
+              onChange={(code) => handleChange(param.name, code)}
+              language={nodeLanguage}
+              height="400px"
+              placeholder={param.description || 'Enter your code here...'}
+            />
           );
         }
         

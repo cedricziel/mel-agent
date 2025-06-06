@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CronEditor from './CronEditor';
+import CodeEditor from './CodeEditor';
 import DataViewer from './DataViewer';
 
 // Panel to configure node details and preview data flow
@@ -279,6 +280,38 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
                           {error && (
                             <div className="text-xs text-red-600 mt-1">
                               {p.label} is required
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+                    
+                    // Check for code format (from jsonSchema.format)
+                    if (p.jsonSchema && p.jsonSchema.format === 'code') {
+                      // Get the language from the node's language parameter
+                      const nodeLanguage = currentFormData.language || 'javascript';
+                      
+                      return (
+                        <div key={p.name} className="mb-3">
+                          <label className="block text-sm mb-1">
+                            {p.label}{p.required && <span className="text-red-500">*</span>}
+                          </label>
+                          <CodeEditor
+                            value={val || ''}
+                            onChange={(code) => handleChange(p.name, code)}
+                            language={nodeLanguage}
+                            height="300px"
+                            placeholder={p.description || 'Enter your code here...'}
+                            readOnly={readOnly}
+                          />
+                          {error && (
+                            <div className="text-xs text-red-600 mt-1">
+                              {p.label} is required
+                            </div>
+                          )}
+                          {p.description && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              {p.description}
                             </div>
                           )}
                         </div>

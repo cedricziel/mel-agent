@@ -9,12 +9,13 @@
     "lint": "echo \"(eslint placeholder)\""
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
+    "axios": "^1.6.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "axios": "^1.6.0",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^7.6.2",
     "reactflow": "^11.9.2",
-    "react-markdown": "^10.1.0",
     "remark-gfm": "^3.0.1"
   },
   "devDependencies": {
