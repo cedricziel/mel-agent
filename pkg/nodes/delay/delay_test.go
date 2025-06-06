@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/cedricziel/mel-agent/pkg/api"
+	"github.com/cedricziel/mel-agent/pkg/core"
 )
 
 func TestDelayDefinition_Meta(t *testing.T) {
@@ -39,10 +40,11 @@ func TestDelayDefinition_Meta(t *testing.T) {
 	}
 }
 
-func TestDelayDefinition_Execute(t *testing.T) {
+func TestDelayDefinition_ExecuteEnvelope(t *testing.T) {
 	def := delayDefinition{}
 	ctx := api.ExecutionContext{
 		AgentID:   "test-agent",
+		RunID:     "test-run",
 		Variables: make(map[string]interface{}),
 	}
 
@@ -57,6 +59,8 @@ func TestDelayDefinition_Execute(t *testing.T) {
 		{
 			name: "valid duration",
 			node: api.Node{
+				ID:   "delay-node",
+				Type: "delay",
 				Data: map[string]interface{}{
 					"duration": float64(100),
 				},
@@ -69,6 +73,8 @@ func TestDelayDefinition_Execute(t *testing.T) {
 		{
 			name: "zero duration",
 			node: api.Node{
+				ID:   "delay-node",
+				Type: "delay",
 				Data: map[string]interface{}{
 					"duration": float64(0),
 				},
@@ -81,6 +87,8 @@ func TestDelayDefinition_Execute(t *testing.T) {
 		{
 			name: "missing duration",
 			node: api.Node{
+				ID:   "delay-node",
+				Type: "delay",
 				Data: map[string]interface{}{},
 			},
 			input:          "test input",
@@ -91,6 +99,8 @@ func TestDelayDefinition_Execute(t *testing.T) {
 		{
 			name: "invalid duration type",
 			node: api.Node{
+				ID:   "delay-node",
+				Type: "delay",
 				Data: map[string]interface{}{
 					"duration": "invalid",
 				},
@@ -104,22 +114,44 @@ func TestDelayDefinition_Execute(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Create input envelope
+			trace := api.Trace{
+				AgentID: ctx.AgentID,
+				RunID:   ctx.RunID,
+				NodeID:  tt.node.ID,
+				Step:    tt.node.ID,
+				Attempt: 1,
+			}
+			inputEnvelope := core.NewEnvelope(tt.input, trace)
+
 			start := time.Now()
-			output, err := def.Execute(ctx, tt.node, tt.input)
+			outputEnvelope, err := def.ExecuteEnvelope(ctx, tt.node, inputEnvelope)
 			duration := time.Since(start)
 
 			if err != nil {
-				t.Errorf("Execute() error = %v", err)
+				t.Errorf("ExecuteEnvelope() error = %v", err)
 				return
 			}
-			if output != tt.expectedOutput {
-				t.Errorf("Execute() output = %v, expected %v", output, tt.expectedOutput)
+			
+			if outputEnvelope == nil {
+				t.Error("ExecuteEnvelope() returned nil envelope")
+				return
 			}
+			
+			if outputEnvelope.Data != tt.expectedOutput {
+				t.Errorf("ExecuteEnvelope() output = %v, expected %v", outputEnvelope.Data, tt.expectedOutput)
+			}
+			
 			if duration < tt.minDuration {
-				t.Errorf("Execute() duration %v is less than expected minimum %v", duration, tt.minDuration)
+				t.Errorf("ExecuteEnvelope() duration %v is less than expected minimum %v", duration, tt.minDuration)
 			}
 			if duration > tt.maxDuration {
-				t.Errorf("Execute() duration %v is greater than expected maximum %v", duration, tt.maxDuration)
+				t.Errorf("ExecuteEnvelope() duration %v is greater than expected maximum %v", duration, tt.maxDuration)
+			}
+			
+			// Verify trace is properly updated
+			if outputEnvelope.Trace.NodeID != tt.node.ID {
+				t.Errorf("Expected trace NodeID %s, got %s", tt.node.ID, outputEnvelope.Trace.NodeID)
 			}
 		})
 	}

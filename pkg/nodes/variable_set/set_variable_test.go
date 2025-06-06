@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/cedricziel/mel-agent/pkg/api"
+	"github.com/cedricziel/mel-agent/pkg/core"
 )
 
 func TestSetVariableMeta(t *testing.T) {
@@ -27,7 +28,7 @@ func TestSetVariableMeta(t *testing.T) {
 	}
 }
 
-func TestSetVariable_RunScope(t *testing.T) {
+func TestSetVariableExecuteEnvelope_RunScope(t *testing.T) {
 	// Reset variable store for clean test
 	api.SetVariableStore(api.NewMemoryVariableStore())
 
@@ -48,10 +49,27 @@ func TestSetVariable_RunScope(t *testing.T) {
 	}
 
 	input := map[string]interface{}{"original": "data"}
-	result, err := def.Execute(ctx, node, input)
-	if err != nil {
-		t.Fatalf("Execute failed: %v", err)
+	
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
 	}
+	inputEnvelope := core.NewEnvelope(interface{}(input), trace)
+
+	outputEnvelope, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
+	if err != nil {
+		t.Fatalf("ExecuteEnvelope failed: %v", err)
+	}
+
+	if outputEnvelope == nil {
+		t.Fatal("ExecuteEnvelope returned nil envelope")
+	}
+
+	result := outputEnvelope.Data
 
 	// Should return input when passthrough is true
 	resultMap, ok := result.(map[string]interface{})
@@ -79,7 +97,7 @@ func TestSetVariable_RunScope(t *testing.T) {
 	}
 }
 
-func TestSetVariable_WorkflowScope(t *testing.T) {
+func TestSetVariableExecuteEnvelope_WorkflowScope(t *testing.T) {
 	// Reset variable store for clean test
 	api.SetVariableStore(api.NewMemoryVariableStore())
 
@@ -99,10 +117,26 @@ func TestSetVariable_WorkflowScope(t *testing.T) {
 		},
 	}
 
-	result, err := def.Execute(ctx, node, "input data")
-	if err != nil {
-		t.Fatalf("Execute failed: %v", err)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
 	}
+	inputEnvelope := core.NewEnvelope(interface{}("input data"), trace)
+
+	outputEnvelope, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
+	if err != nil {
+		t.Fatalf("ExecuteEnvelope failed: %v", err)
+	}
+
+	if outputEnvelope == nil {
+		t.Fatal("ExecuteEnvelope returned nil envelope")
+	}
+
+	result := outputEnvelope.Data
 
 	// Should return variable info when passthrough is false
 	resultMap, ok := result.(map[string]interface{})
@@ -138,7 +172,7 @@ func TestSetVariable_WorkflowScope(t *testing.T) {
 	}
 }
 
-func TestSetVariable_GlobalScope(t *testing.T) {
+func TestSetVariableExecuteEnvelope_GlobalScope(t *testing.T) {
 	// Reset variable store for clean test
 	api.SetVariableStore(api.NewMemoryVariableStore())
 
@@ -157,9 +191,19 @@ func TestSetVariable_GlobalScope(t *testing.T) {
 		},
 	}
 
-	_, err := def.Execute(ctx, node, nil)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
+	}
+	inputEnvelope := core.NewEnvelope(interface{}(nil), trace)
+
+	_, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
 	if err != nil {
-		t.Fatalf("Execute failed: %v", err)
+		t.Fatalf("ExecuteEnvelope failed: %v", err)
 	}
 
 	// Verify variable was set in global scope
@@ -178,7 +222,7 @@ func TestSetVariable_GlobalScope(t *testing.T) {
 	}
 }
 
-func TestSetVariable_ValueFromInput(t *testing.T) {
+func TestSetVariableExecuteEnvelope_ValueFromInput(t *testing.T) {
 	// Reset variable store for clean test
 	api.SetVariableStore(api.NewMemoryVariableStore())
 
@@ -203,9 +247,19 @@ func TestSetVariable_ValueFromInput(t *testing.T) {
 		},
 	}
 
-	_, err := def.Execute(ctx, node, input)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
+	}
+	inputEnvelope := core.NewEnvelope(interface{}(input), trace)
+
+	_, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
 	if err != nil {
-		t.Fatalf("Execute failed: %v", err)
+		t.Fatalf("ExecuteEnvelope failed: %v", err)
 	}
 
 	// Verify extracted value was set
@@ -224,7 +278,7 @@ func TestSetVariable_ValueFromInput(t *testing.T) {
 	}
 }
 
-func TestSetVariable_InputAsValue(t *testing.T) {
+func TestSetVariableExecuteEnvelope_InputAsValue(t *testing.T) {
 	// Reset variable store for clean test
 	api.SetVariableStore(api.NewMemoryVariableStore())
 
@@ -248,9 +302,19 @@ func TestSetVariable_InputAsValue(t *testing.T) {
 		"count":   42,
 	}
 
-	_, err := def.Execute(ctx, node, input)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
+	}
+	inputEnvelope := core.NewEnvelope(interface{}(input), trace)
+
+	_, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
 	if err != nil {
-		t.Fatalf("Execute failed: %v", err)
+		t.Fatalf("ExecuteEnvelope failed: %v", err)
 	}
 
 	// Verify entire input was set as value
@@ -278,7 +342,7 @@ func TestSetVariable_InputAsValue(t *testing.T) {
 	}
 }
 
-func TestSetVariable_MissingKey(t *testing.T) {
+func TestSetVariableExecuteEnvelope_MissingKey(t *testing.T) {
 	def := setVariableDefinition{}
 	ctx := api.ExecutionContext{
 		AgentID: "test-agent",
@@ -294,7 +358,17 @@ func TestSetVariable_MissingKey(t *testing.T) {
 		},
 	}
 
-	_, err := def.Execute(ctx, node, nil)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
+	}
+	inputEnvelope := core.NewEnvelope(interface{}(nil), trace)
+
+	_, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
 	if err == nil {
 		t.Fatal("Expected error for missing key")
 	}
@@ -309,7 +383,7 @@ func TestSetVariable_MissingKey(t *testing.T) {
 	}
 }
 
-func TestSetVariable_InvalidScope(t *testing.T) {
+func TestSetVariableExecuteEnvelope_InvalidScope(t *testing.T) {
 	def := setVariableDefinition{}
 	ctx := api.ExecutionContext{
 		AgentID: "test-agent",
@@ -325,7 +399,17 @@ func TestSetVariable_InvalidScope(t *testing.T) {
 		},
 	}
 
-	_, err := def.Execute(ctx, node, nil)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
+	}
+	inputEnvelope := core.NewEnvelope(interface{}(nil), trace)
+
+	_, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
 	if err == nil {
 		t.Fatal("Expected error for invalid scope")
 	}

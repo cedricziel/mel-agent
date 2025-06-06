@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/cedricziel/mel-agent/pkg/api"
+	"github.com/cedricziel/mel-agent/pkg/core"
 )
 
 func TestHttpRequestMeta(t *testing.T) {
@@ -48,7 +49,7 @@ func TestHttpRequestMeta(t *testing.T) {
 	}
 }
 
-func TestHttpRequestExecute_GET(t *testing.T) {
+func TestHttpRequestExecuteEnvelope_GET(t *testing.T) {
 	// Create test server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" {
@@ -65,7 +66,11 @@ func TestHttpRequestExecute_GET(t *testing.T) {
 	defer server.Close()
 
 	def := httpRequestDefinition{}
-	ctx := api.ExecutionContext{AgentID: "test-agent"}
+	ctx := api.ExecutionContext{
+		AgentID: "test-agent",
+		RunID:   "test-run",
+		Mel:     api.NewMel(),
+	}
 	node := api.Node{
 		ID:   "test-node",
 		Type: "http_request",
@@ -75,12 +80,26 @@ func TestHttpRequestExecute_GET(t *testing.T) {
 		},
 	}
 
-	result, err := def.Execute(ctx, node, nil)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
+	}
+	inputEnvelope := core.NewEnvelope(interface{}(nil), trace)
+
+	outputEnvelope, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
 	if err != nil {
-		t.Fatalf("Execute failed: %v", err)
+		t.Fatalf("ExecuteEnvelope failed: %v", err)
 	}
 
-	resultMap, ok := result.(map[string]interface{})
+	if outputEnvelope == nil {
+		t.Fatal("ExecuteEnvelope returned nil envelope")
+	}
+
+	resultMap, ok := outputEnvelope.Data.(map[string]interface{})
 	if !ok {
 		t.Fatal("Result is not a map")
 	}
@@ -109,7 +128,7 @@ func TestHttpRequestExecute_GET(t *testing.T) {
 	}
 }
 
-func TestHttpRequestExecute_POST_WithBody(t *testing.T) {
+func TestHttpRequestExecuteEnvelope_POST_WithBody(t *testing.T) {
 	// Create test server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
@@ -140,7 +159,11 @@ func TestHttpRequestExecute_POST_WithBody(t *testing.T) {
 	defer server.Close()
 
 	def := httpRequestDefinition{}
-	ctx := api.ExecutionContext{AgentID: "test-agent"}
+	ctx := api.ExecutionContext{
+		AgentID: "test-agent",
+		RunID:   "test-run",
+		Mel:     api.NewMel(),
+	}
 	node := api.Node{
 		ID:   "test-node",
 		Type: "http_request",
@@ -152,12 +175,26 @@ func TestHttpRequestExecute_POST_WithBody(t *testing.T) {
 		},
 	}
 
-	result, err := def.Execute(ctx, node, nil)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
+	}
+	inputEnvelope := core.NewEnvelope(interface{}(nil), trace)
+
+	outputEnvelope, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
 	if err != nil {
-		t.Fatalf("Execute failed: %v", err)
+		t.Fatalf("ExecuteEnvelope failed: %v", err)
 	}
 
-	resultMap, ok := result.(map[string]interface{})
+	if outputEnvelope == nil {
+		t.Fatal("ExecuteEnvelope returned nil envelope")
+	}
+
+	resultMap, ok := outputEnvelope.Data.(map[string]interface{})
 	if !ok {
 		t.Fatal("Result is not a map")
 	}
@@ -171,7 +208,7 @@ func TestHttpRequestExecute_POST_WithBody(t *testing.T) {
 	}
 }
 
-func TestHttpRequestExecute_WithCustomHeaders(t *testing.T) {
+func TestHttpRequestExecuteEnvelope_WithCustomHeaders(t *testing.T) {
 	// Create test server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("X-Custom-Header") != "custom-value" {
@@ -188,7 +225,11 @@ func TestHttpRequestExecute_WithCustomHeaders(t *testing.T) {
 	defer server.Close()
 
 	def := httpRequestDefinition{}
-	ctx := api.ExecutionContext{AgentID: "test-agent"}
+	ctx := api.ExecutionContext{
+		AgentID: "test-agent",
+		RunID:   "test-run",
+		Mel:     api.NewMel(),
+	}
 	node := api.Node{
 		ID:   "test-node",
 		Type: "http_request",
@@ -202,12 +243,26 @@ func TestHttpRequestExecute_WithCustomHeaders(t *testing.T) {
 		},
 	}
 
-	result, err := def.Execute(ctx, node, nil)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
+	}
+	inputEnvelope := core.NewEnvelope(interface{}(nil), trace)
+
+	outputEnvelope, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
 	if err != nil {
-		t.Fatalf("Execute failed: %v", err)
+		t.Fatalf("ExecuteEnvelope failed: %v", err)
 	}
 
-	resultMap, ok := result.(map[string]interface{})
+	if outputEnvelope == nil {
+		t.Fatal("ExecuteEnvelope returned nil envelope")
+	}
+
+	resultMap, ok := outputEnvelope.Data.(map[string]interface{})
 	if !ok {
 		t.Fatal("Result is not a map")
 	}
@@ -217,7 +272,7 @@ func TestHttpRequestExecute_WithCustomHeaders(t *testing.T) {
 	}
 }
 
-func TestHttpRequestExecute_BearerAuth(t *testing.T) {
+func TestHttpRequestExecuteEnvelope_BearerAuth(t *testing.T) {
 	// Create test server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
@@ -231,7 +286,11 @@ func TestHttpRequestExecute_BearerAuth(t *testing.T) {
 	defer server.Close()
 
 	def := httpRequestDefinition{}
-	ctx := api.ExecutionContext{AgentID: "test-agent"}
+	ctx := api.ExecutionContext{
+		AgentID: "test-agent",
+		RunID:   "test-run",
+		Mel:     api.NewMel(),
+	}
 	node := api.Node{
 		ID:   "test-node",
 		Type: "http_request",
@@ -243,12 +302,26 @@ func TestHttpRequestExecute_BearerAuth(t *testing.T) {
 		},
 	}
 
-	result, err := def.Execute(ctx, node, nil)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
+	}
+	inputEnvelope := core.NewEnvelope(interface{}(nil), trace)
+
+	outputEnvelope, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
 	if err != nil {
-		t.Fatalf("Execute failed: %v", err)
+		t.Fatalf("ExecuteEnvelope failed: %v", err)
 	}
 
-	resultMap, ok := result.(map[string]interface{})
+	if outputEnvelope == nil {
+		t.Fatal("ExecuteEnvelope returned nil envelope")
+	}
+
+	resultMap, ok := outputEnvelope.Data.(map[string]interface{})
 	if !ok {
 		t.Fatal("Result is not a map")
 	}
@@ -263,7 +336,7 @@ func TestHttpRequestExecute_BearerAuth(t *testing.T) {
 	}
 }
 
-func TestHttpRequestExecute_ApiKeyAuth(t *testing.T) {
+func TestHttpRequestExecuteEnvelope_ApiKeyAuth(t *testing.T) {
 	// Create test server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		apiKey := r.Header.Get("X-API-Key")
@@ -277,7 +350,11 @@ func TestHttpRequestExecute_ApiKeyAuth(t *testing.T) {
 	defer server.Close()
 
 	def := httpRequestDefinition{}
-	ctx := api.ExecutionContext{AgentID: "test-agent"}
+	ctx := api.ExecutionContext{
+		AgentID: "test-agent",
+		RunID:   "test-run",
+		Mel:     api.NewMel(),
+	}
 	node := api.Node{
 		ID:   "test-node",
 		Type: "http_request",
@@ -290,12 +367,26 @@ func TestHttpRequestExecute_ApiKeyAuth(t *testing.T) {
 		},
 	}
 
-	result, err := def.Execute(ctx, node, nil)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
+	}
+	inputEnvelope := core.NewEnvelope(interface{}(nil), trace)
+
+	outputEnvelope, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
 	if err != nil {
-		t.Fatalf("Execute failed: %v", err)
+		t.Fatalf("ExecuteEnvelope failed: %v", err)
 	}
 
-	resultMap, ok := result.(map[string]interface{})
+	if outputEnvelope == nil {
+		t.Fatal("ExecuteEnvelope returned nil envelope")
+	}
+
+	resultMap, ok := outputEnvelope.Data.(map[string]interface{})
 	if !ok {
 		t.Fatal("Result is not a map")
 	}
@@ -305,7 +396,7 @@ func TestHttpRequestExecute_ApiKeyAuth(t *testing.T) {
 	}
 }
 
-func TestHttpRequestExecute_BasicAuth(t *testing.T) {
+func TestHttpRequestExecuteEnvelope_BasicAuth(t *testing.T) {
 	// Create test server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
@@ -319,7 +410,11 @@ func TestHttpRequestExecute_BasicAuth(t *testing.T) {
 	defer server.Close()
 
 	def := httpRequestDefinition{}
-	ctx := api.ExecutionContext{AgentID: "test-agent"}
+	ctx := api.ExecutionContext{
+		AgentID: "test-agent",
+		RunID:   "test-run",
+		Mel:     api.NewMel(),
+	}
 	node := api.Node{
 		ID:   "test-node",
 		Type: "http_request",
@@ -331,12 +426,26 @@ func TestHttpRequestExecute_BasicAuth(t *testing.T) {
 		},
 	}
 
-	result, err := def.Execute(ctx, node, nil)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
+	}
+	inputEnvelope := core.NewEnvelope(interface{}(nil), trace)
+
+	outputEnvelope, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
 	if err != nil {
-		t.Fatalf("Execute failed: %v", err)
+		t.Fatalf("ExecuteEnvelope failed: %v", err)
 	}
 
-	resultMap, ok := result.(map[string]interface{})
+	if outputEnvelope == nil {
+		t.Fatal("ExecuteEnvelope returned nil envelope")
+	}
+
+	resultMap, ok := outputEnvelope.Data.(map[string]interface{})
 	if !ok {
 		t.Fatal("Result is not a map")
 	}
@@ -346,9 +455,13 @@ func TestHttpRequestExecute_BasicAuth(t *testing.T) {
 	}
 }
 
-func TestHttpRequestExecute_MissingURL(t *testing.T) {
+func TestHttpRequestExecuteEnvelope_MissingURL(t *testing.T) {
 	def := httpRequestDefinition{}
-	ctx := api.ExecutionContext{AgentID: "test-agent"}
+	ctx := api.ExecutionContext{
+		AgentID: "test-agent",
+		RunID:   "test-run",
+		Mel:     api.NewMel(),
+	}
 	node := api.Node{
 		ID:   "test-node",
 		Type: "http_request",
@@ -358,7 +471,17 @@ func TestHttpRequestExecute_MissingURL(t *testing.T) {
 		},
 	}
 
-	_, err := def.Execute(ctx, node, nil)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
+	}
+	inputEnvelope := core.NewEnvelope(interface{}(nil), trace)
+
+	_, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
 	if err == nil {
 		t.Fatal("Expected error for missing URL")
 	}
@@ -368,9 +491,13 @@ func TestHttpRequestExecute_MissingURL(t *testing.T) {
 	}
 }
 
-func TestHttpRequestExecute_InvalidURL(t *testing.T) {
+func TestHttpRequestExecuteEnvelope_InvalidURL(t *testing.T) {
 	def := httpRequestDefinition{}
-	ctx := api.ExecutionContext{AgentID: "test-agent"}
+	ctx := api.ExecutionContext{
+		AgentID: "test-agent",
+		RunID:   "test-run",
+		Mel:     api.NewMel(),
+	}
 	node := api.Node{
 		ID:   "test-node",
 		Type: "http_request",
@@ -380,7 +507,17 @@ func TestHttpRequestExecute_InvalidURL(t *testing.T) {
 		},
 	}
 
-	_, err := def.Execute(ctx, node, nil)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
+	}
+	inputEnvelope := core.NewEnvelope(interface{}(nil), trace)
+
+	_, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
 	if err == nil {
 		t.Fatal("Expected error for invalid URL")
 	}
@@ -391,7 +528,7 @@ func TestHttpRequestExecute_InvalidURL(t *testing.T) {
 	}
 }
 
-func TestHttpRequestExecute_Timeout(t *testing.T) {
+func TestHttpRequestExecuteEnvelope_Timeout(t *testing.T) {
 	// Create slow test server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Sleep longer than the timeout
@@ -402,7 +539,11 @@ func TestHttpRequestExecute_Timeout(t *testing.T) {
 	defer server.Close()
 
 	def := httpRequestDefinition{}
-	ctx := api.ExecutionContext{AgentID: "test-agent"}
+	ctx := api.ExecutionContext{
+		AgentID: "test-agent",
+		RunID:   "test-run",
+		Mel:     api.NewMel(),
+	}
 	node := api.Node{
 		ID:   "test-node",
 		Type: "http_request",
@@ -413,13 +554,27 @@ func TestHttpRequestExecute_Timeout(t *testing.T) {
 		},
 	}
 
-	result, err := def.Execute(ctx, node, nil)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
+	}
+	inputEnvelope := core.NewEnvelope(interface{}(nil), trace)
+
+	outputEnvelope, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
 	if err != nil {
-		t.Fatalf("Execute failed: %v", err)
+		t.Fatalf("ExecuteEnvelope failed: %v", err)
+	}
+
+	if outputEnvelope == nil {
+		t.Fatal("ExecuteEnvelope returned nil envelope")
 	}
 
 	// Should succeed since we're not actually sleeping
-	resultMap, ok := result.(map[string]interface{})
+	resultMap, ok := outputEnvelope.Data.(map[string]interface{})
 	if !ok {
 		t.Fatal("Result is not a map")
 	}
@@ -429,7 +584,7 @@ func TestHttpRequestExecute_Timeout(t *testing.T) {
 	}
 }
 
-func TestHttpRequestExecute_NonJSONResponse(t *testing.T) {
+func TestHttpRequestExecuteEnvelope_NonJSONResponse(t *testing.T) {
 	// Create test server that returns plain text
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
@@ -439,7 +594,11 @@ func TestHttpRequestExecute_NonJSONResponse(t *testing.T) {
 	defer server.Close()
 
 	def := httpRequestDefinition{}
-	ctx := api.ExecutionContext{AgentID: "test-agent"}
+	ctx := api.ExecutionContext{
+		AgentID: "test-agent",
+		RunID:   "test-run",
+		Mel:     api.NewMel(),
+	}
 	node := api.Node{
 		ID:   "test-node",
 		Type: "http_request",
@@ -449,12 +608,26 @@ func TestHttpRequestExecute_NonJSONResponse(t *testing.T) {
 		},
 	}
 
-	result, err := def.Execute(ctx, node, nil)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
+	}
+	inputEnvelope := core.NewEnvelope(interface{}(nil), trace)
+
+	outputEnvelope, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
 	if err != nil {
-		t.Fatalf("Execute failed: %v", err)
+		t.Fatalf("ExecuteEnvelope failed: %v", err)
 	}
 
-	resultMap, ok := result.(map[string]interface{})
+	if outputEnvelope == nil {
+		t.Fatal("ExecuteEnvelope returned nil envelope")
+	}
+
+	resultMap, ok := outputEnvelope.Data.(map[string]interface{})
 	if !ok {
 		t.Fatal("Result is not a map")
 	}

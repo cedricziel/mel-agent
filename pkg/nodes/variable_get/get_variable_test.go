@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/cedricziel/mel-agent/pkg/api"
+	"github.com/cedricziel/mel-agent/pkg/core"
 )
 
 func TestGetVariableMeta(t *testing.T) {
@@ -27,7 +28,7 @@ func TestGetVariableMeta(t *testing.T) {
 	}
 }
 
-func TestGetVariable_ValueOnly(t *testing.T) {
+func TestGetVariableExecuteEnvelope_ValueOnly(t *testing.T) {
 	// Reset variable store and set a test variable
 	api.SetVariableStore(api.NewMemoryVariableStore())
 
@@ -49,17 +50,33 @@ func TestGetVariable_ValueOnly(t *testing.T) {
 		},
 	}
 
-	result, err := def.Execute(ctx, node, "input data")
-	if err != nil {
-		t.Fatalf("Execute failed: %v", err)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
 	}
+	inputEnvelope := core.NewEnvelope(interface{}("input data"), trace)
+
+	outputEnvelope, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
+	if err != nil {
+		t.Fatalf("ExecuteEnvelope failed: %v", err)
+	}
+
+	if outputEnvelope == nil {
+		t.Fatal("ExecuteEnvelope returned nil envelope")
+	}
+
+	result := outputEnvelope.Data
 
 	if result != "test value" {
 		t.Errorf("Expected 'test value', got %v", result)
 	}
 }
 
-func TestGetVariable_WithMetadata(t *testing.T) {
+func TestGetVariableExecuteEnvelope_WithMetadata(t *testing.T) {
 	// Reset variable store and set a test variable
 	api.SetVariableStore(api.NewMemoryVariableStore())
 
@@ -81,10 +98,26 @@ func TestGetVariable_WithMetadata(t *testing.T) {
 		},
 	}
 
-	result, err := def.Execute(ctx, node, nil)
-	if err != nil {
-		t.Fatalf("Execute failed: %v", err)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
 	}
+	inputEnvelope := core.NewEnvelope(interface{}(nil), trace)
+
+	outputEnvelope, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
+	if err != nil {
+		t.Fatalf("ExecuteEnvelope failed: %v", err)
+	}
+
+	if outputEnvelope == nil {
+		t.Fatal("ExecuteEnvelope returned nil envelope")
+	}
+
+	result := outputEnvelope.Data
 
 	resultMap, ok := result.(map[string]interface{})
 	if !ok {
@@ -108,7 +141,7 @@ func TestGetVariable_WithMetadata(t *testing.T) {
 	}
 }
 
-func TestGetVariable_MergeInput(t *testing.T) {
+func TestGetVariableExecuteEnvelope_MergeInput(t *testing.T) {
 	// Reset variable store and set a test variable
 	api.SetVariableStore(api.NewMemoryVariableStore())
 
@@ -135,10 +168,26 @@ func TestGetVariable_MergeInput(t *testing.T) {
 		"count":    1,
 	}
 
-	result, err := def.Execute(ctx, node, input)
-	if err != nil {
-		t.Fatalf("Execute failed: %v", err)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
 	}
+	inputEnvelope := core.NewEnvelope(interface{}(input), trace)
+
+	outputEnvelope, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
+	if err != nil {
+		t.Fatalf("ExecuteEnvelope failed: %v", err)
+	}
+
+	if outputEnvelope == nil {
+		t.Fatal("ExecuteEnvelope returned nil envelope")
+	}
+
+	result := outputEnvelope.Data
 
 	resultMap, ok := result.(map[string]interface{})
 	if !ok {
@@ -160,7 +209,7 @@ func TestGetVariable_MergeInput(t *testing.T) {
 	}
 }
 
-func TestGetVariable_MergeInputNonMap(t *testing.T) {
+func TestGetVariableExecuteEnvelope_MergeInputNonMap(t *testing.T) {
 	// Reset variable store and set a test variable
 	api.SetVariableStore(api.NewMemoryVariableStore())
 
@@ -182,10 +231,26 @@ func TestGetVariable_MergeInputNonMap(t *testing.T) {
 		},
 	}
 
-	result, err := def.Execute(ctx, node, "string input")
-	if err != nil {
-		t.Fatalf("Execute failed: %v", err)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
 	}
+	inputEnvelope := core.NewEnvelope(interface{}("string input"), trace)
+
+	outputEnvelope, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
+	if err != nil {
+		t.Fatalf("ExecuteEnvelope failed: %v", err)
+	}
+
+	if outputEnvelope == nil {
+		t.Fatal("ExecuteEnvelope returned nil envelope")
+	}
+
+	result := outputEnvelope.Data
 
 	resultMap, ok := result.(map[string]interface{})
 	if !ok {
@@ -203,7 +268,7 @@ func TestGetVariable_MergeInputNonMap(t *testing.T) {
 	}
 }
 
-func TestGetVariable_MissingVariable(t *testing.T) {
+func TestGetVariableExecuteEnvelope_MissingVariable(t *testing.T) {
 	// Reset variable store for clean test
 	api.SetVariableStore(api.NewMemoryVariableStore())
 
@@ -221,10 +286,26 @@ func TestGetVariable_MissingVariable(t *testing.T) {
 		},
 	}
 
-	result, err := def.Execute(ctx, node, "input data")
-	if err != nil {
-		t.Fatalf("Execute failed: %v", err)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
 	}
+	inputEnvelope := core.NewEnvelope(interface{}("input data"), trace)
+
+	outputEnvelope, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
+	if err != nil {
+		t.Fatalf("ExecuteEnvelope failed: %v", err)
+	}
+
+	if outputEnvelope == nil {
+		t.Fatal("ExecuteEnvelope returned nil envelope")
+	}
+
+	result := outputEnvelope.Data
 
 	// Should merge with input and set variable to nil
 	resultMap, ok := result.(map[string]interface{})
@@ -241,7 +322,7 @@ func TestGetVariable_MissingVariable(t *testing.T) {
 	}
 }
 
-func TestGetVariable_MissingVariableWithDefault(t *testing.T) {
+func TestGetVariableExecuteEnvelope_MissingVariableWithDefault(t *testing.T) {
 	// Reset variable store for clean test
 	api.SetVariableStore(api.NewMemoryVariableStore())
 
@@ -261,17 +342,33 @@ func TestGetVariable_MissingVariableWithDefault(t *testing.T) {
 		},
 	}
 
-	result, err := def.Execute(ctx, node, nil)
-	if err != nil {
-		t.Fatalf("Execute failed: %v", err)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
 	}
+	inputEnvelope := core.NewEnvelope(interface{}(nil), trace)
+
+	outputEnvelope, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
+	if err != nil {
+		t.Fatalf("ExecuteEnvelope failed: %v", err)
+	}
+
+	if outputEnvelope == nil {
+		t.Fatal("ExecuteEnvelope returned nil envelope")
+	}
+
+	result := outputEnvelope.Data
 
 	if result != "default value" {
 		t.Errorf("Expected 'default value', got %v", result)
 	}
 }
 
-func TestGetVariable_MissingVariableFailIfMissing(t *testing.T) {
+func TestGetVariableExecuteEnvelope_MissingVariableFailIfMissing(t *testing.T) {
 	// Reset variable store for clean test
 	api.SetVariableStore(api.NewMemoryVariableStore())
 
@@ -290,7 +387,17 @@ func TestGetVariable_MissingVariableFailIfMissing(t *testing.T) {
 		},
 	}
 
-	_, err := def.Execute(ctx, node, nil)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
+	}
+	inputEnvelope := core.NewEnvelope(interface{}(nil), trace)
+
+	_, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
 	if err == nil {
 		t.Fatal("Expected error for missing variable")
 	}
@@ -306,7 +413,7 @@ func TestGetVariable_MissingVariableFailIfMissing(t *testing.T) {
 	}
 }
 
-func TestGetVariable_MissingKey(t *testing.T) {
+func TestGetVariableExecuteEnvelope_MissingKey(t *testing.T) {
 	def := getVariableDefinition{}
 	ctx := api.ExecutionContext{
 		AgentID: "test-agent",
@@ -321,7 +428,17 @@ func TestGetVariable_MissingKey(t *testing.T) {
 		},
 	}
 
-	_, err := def.Execute(ctx, node, nil)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
+	}
+	inputEnvelope := core.NewEnvelope(interface{}(nil), trace)
+
+	_, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
 	if err == nil {
 		t.Fatal("Expected error for missing key")
 	}
@@ -336,7 +453,7 @@ func TestGetVariable_MissingKey(t *testing.T) {
 	}
 }
 
-func TestGetVariable_InvalidScope(t *testing.T) {
+func TestGetVariableExecuteEnvelope_InvalidScope(t *testing.T) {
 	def := getVariableDefinition{}
 	ctx := api.ExecutionContext{
 		AgentID: "test-agent",
@@ -351,7 +468,17 @@ func TestGetVariable_InvalidScope(t *testing.T) {
 		},
 	}
 
-	_, err := def.Execute(ctx, node, nil)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
+	}
+	inputEnvelope := core.NewEnvelope(interface{}(nil), trace)
+
+	_, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
 	if err == nil {
 		t.Fatal("Expected error for invalid scope")
 	}
@@ -366,7 +493,7 @@ func TestGetVariable_InvalidScope(t *testing.T) {
 	}
 }
 
-func TestGetVariable_InvalidOutputMode(t *testing.T) {
+func TestGetVariableExecuteEnvelope_InvalidOutputMode(t *testing.T) {
 	// Reset variable store and set a test variable
 	api.SetVariableStore(api.NewMemoryVariableStore())
 
@@ -388,7 +515,17 @@ func TestGetVariable_InvalidOutputMode(t *testing.T) {
 		},
 	}
 
-	_, err := def.Execute(ctx, node, nil)
+	// Create input envelope
+	trace := api.Trace{
+		AgentID: ctx.AgentID,
+		RunID:   ctx.RunID,
+		NodeID:  node.ID,
+		Step:    node.ID,
+		Attempt: 1,
+	}
+	inputEnvelope := core.NewEnvelope(interface{}(nil), trace)
+
+	_, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
 	if err == nil {
 		t.Fatal("Expected error for invalid output mode")
 	}

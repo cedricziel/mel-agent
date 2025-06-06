@@ -5,9 +5,10 @@ import (
 	"testing"
 
 	"github.com/cedricziel/mel-agent/pkg/api"
+	"github.com/cedricziel/mel-agent/pkg/core"
 )
 
-func TestIfNode_BasicConditions(t *testing.T) {
+func TestIfNode_BasicConditionsExecuteEnvelope(t *testing.T) {
 	def := ifDefinition{}
 
 	tests := []struct {
@@ -108,6 +109,8 @@ func TestIfNode_BasicConditions(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			node := api.Node{
+				ID:   "if-node",
+				Type: "if",
 				Data: map[string]interface{}{
 					"conditions": tt.conditions,
 					"hasElse":    tt.hasElse,
@@ -116,17 +119,32 @@ func TestIfNode_BasicConditions(t *testing.T) {
 
 			ctx := api.ExecutionContext{
 				AgentID:   "test-agent",
+				RunID:     "test-run",
 				Variables: map[string]interface{}{},
 			}
 
-			result, err := def.Execute(ctx, node, tt.input)
+			// Create input envelope
+			trace := api.Trace{
+				AgentID: ctx.AgentID,
+				RunID:   ctx.RunID,
+				NodeID:  node.ID,
+				Step:    node.ID,
+				Attempt: 1,
+			}
+			inputEnvelope := core.NewEnvelope(interface{}(tt.input), trace)
+
+			outputEnvelope, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
 			if err != nil {
-				t.Fatalf("Execute() error = %v", err)
+				t.Fatalf("ExecuteEnvelope() error = %v", err)
 			}
 
-			ifResult, ok := result.(*IfResult)
+			if outputEnvelope == nil {
+				t.Fatal("ExecuteEnvelope() returned nil envelope")
+			}
+
+			ifResult, ok := outputEnvelope.Data.(*IfResult)
 			if !ok {
-				t.Fatalf("Expected *IfResult, got %T", result)
+				t.Fatalf("Expected *IfResult, got %T", outputEnvelope.Data)
 			}
 
 			if ifResult.Branch != tt.expectedBranch {
@@ -135,6 +153,11 @@ func TestIfNode_BasicConditions(t *testing.T) {
 
 			if ifResult.Matched != tt.expectedMatch {
 				t.Errorf("Expected matched %v, got %v", tt.expectedMatch, ifResult.Matched)
+			}
+
+			// Verify trace is properly updated
+			if outputEnvelope.Trace.NodeID != node.ID {
+				t.Errorf("Expected trace NodeID %s, got %s", node.ID, outputEnvelope.Trace.NodeID)
 			}
 		})
 	}
@@ -254,7 +277,7 @@ func TestIfNode_Meta(t *testing.T) {
 	}
 }
 
-func TestIfNode_InvalidConditions(t *testing.T) {
+func TestIfNode_InvalidConditionsExecuteEnvelope(t *testing.T) {
 	def := ifDefinition{}
 
 	tests := []struct {
@@ -292,14 +315,31 @@ func TestIfNode_InvalidConditions(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			node := api.Node{
+				ID:   "if-node",
+				Type: "if",
 				Data: map[string]interface{}{
 					"conditions": tt.conditions,
 					"hasElse":    false,
 				},
 			}
 
-			ctx := api.ExecutionContext{}
-			_, err := def.Execute(ctx, node, map[string]interface{}{})
+			ctx := api.ExecutionContext{
+				AgentID:   "test-agent",
+				RunID:     "test-run",
+				Variables: map[string]interface{}{},
+			}
+
+			// Create input envelope
+			trace := api.Trace{
+				AgentID: ctx.AgentID,
+				RunID:   ctx.RunID,
+				NodeID:  node.ID,
+				Step:    node.ID,
+				Attempt: 1,
+			}
+			inputEnvelope := core.NewEnvelope(interface{}(map[string]interface{}{}), trace)
+
+			_, err := def.ExecuteEnvelope(ctx, node, inputEnvelope)
 
 			if tt.shouldErr {
 				if err == nil {

@@ -28,10 +28,18 @@ func TestBaserowNodeMeta(t *testing.T) {
 		paramNames[param.Name] = true
 	}
 
-	requiredParams := []string{"connectionId", "operation", "databaseId", "tableId"}
+	requiredParams := []string{"credentialId", "resource", "operation"}
 	for _, required := range requiredParams {
 		if !paramNames[required] {
 			t.Errorf("Missing required parameter: %s", required)
+		}
+	}
+	
+	// Check that optional dynamic parameters exist
+	optionalParams := []string{"databaseId", "tableId", "rowId"}
+	for _, optional := range optionalParams {
+		if !paramNames[optional] {
+			t.Errorf("Missing optional parameter: %s", optional)
 		}
 	}
 }

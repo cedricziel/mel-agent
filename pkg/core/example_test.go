@@ -234,17 +234,16 @@ func TestEnvelopeWorkflow(t *testing.T) {
 		t.Errorf("Expected restored DataType '%s', got '%s'", envelope.DataType, restored.DataType)
 	}
 
-	// Test envelope to legacy adapter (since httpNode implements EnvelopeNodeDefinition)
-	legacyAdapter := api.NewEnvelopeToLegacyAdapter(httpNode)
-	legacyResult, err := legacyAdapter.Execute(ctx, httpNodeConfig, initialData)
+	// Test direct envelope execution (without legacy adapter)
+	directResult, err := httpNode.ExecuteEnvelope(ctx, httpNodeConfig, envelope)
 	if err != nil {
-		t.Fatalf("Legacy adapter failed: %v", err)
+		t.Fatalf("Direct envelope execution failed: %v", err)
 	}
 
-	if legacyPayload, ok := legacyResult.(HTTPPayload); !ok {
-		t.Error("Legacy adapter should return HTTPPayload")
-	} else if legacyPayload.Method != "POST" {
-		t.Errorf("Legacy result method should be POST, got %s", legacyPayload.Method)
+	if directPayload, ok := directResult.Data.(HTTPPayload); !ok {
+		t.Error("Direct execution should return HTTPPayload")
+	} else if directPayload.Method != "POST" {
+		t.Errorf("Direct result method should be POST, got %s", directPayload.Method)
 	}
 }
 
