@@ -146,6 +146,10 @@ func TestBaserowConnectionStructure(t *testing.T) {
 		Password: "testpass",
 	}
 	
+	if jwtConn.BaseURL != "https://example.baserow.io" {
+		t.Errorf("Expected BaseURL to be set")
+	}
+	
 	if jwtConn.Username != "testuser" {
 		t.Errorf("Expected Username to be set")
 	}
