@@ -295,6 +295,10 @@ export function useWorkflowState(workflowId, enableAutoPersistence = true) {
         case 'remove':
           deleteNode(change.id);
           break;
+        case 'dimensions':
+          // Ignore dimensions changes - these are handled internally by ReactFlow
+          // and don't need to be persisted to the backend
+          break;
         default:
           console.warn('Unhandled node change:', change);
       }
