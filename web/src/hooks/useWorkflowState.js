@@ -1,18 +1,51 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import workflowClient from '../api/workflowClient';
+import { DraftAPI, useAutoSaver } from '../api/draftClient';
 
-export function useWorkflowState(workflowId) {
+export function useWorkflowState(workflowId, enableAutoPersistence = true) {
   const [workflow, setWorkflow] = useState(null);
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isDirty, setIsDirty] = useState(false);
+  const [isDraft, setIsDraft] = useState(true); // New: track if we're in draft mode
   
   // Keep track of pending operations to avoid conflicts
   const pendingOperations = useRef(new Set());
+  
+  // Auto-persistence for drafts
+  const { 
+    scheduleSave, 
+    saveNow, 
+    isSaving, 
+    lastSaved, 
+    saveError 
+  } = useAutoSaver(enableAutoPersistence ? workflowId : null);
 
-  // Load initial workflow data
+  // Helper to trigger auto-save of draft
+  const triggerAutoSave = useCallback(() => {
+    if (enableAutoPersistence && isDraft && scheduleSave) {
+      const draftData = {
+        nodes: nodes.map(node => ({
+          id: node.id,
+          type: node.type,
+          position: node.position,
+          data: node.data
+        })),
+        edges: edges.map(edge => ({
+          id: edge.id,
+          source: edge.source,
+          target: edge.target,
+          sourceHandle: edge.sourceHandle,
+          targetHandle: edge.targetHandle
+        }))
+      };
+      scheduleSave(draftData);
+    }
+  }, [enableAutoPersistence, isDraft, scheduleSave, nodes, edges]);
+
+  // Load initial workflow data - prioritize draft over latest version
   const loadWorkflow = useCallback(async () => {
     if (!workflowId) return;
     
@@ -20,19 +53,46 @@ export function useWorkflowState(workflowId) {
       setLoading(true);
       setError(null);
       
-      const { workflow, nodes, edges } = await workflowClient.loadWorkflowData(workflowId);
+      let workflowData = null;
+      let isDraftMode = true;
       
-      setWorkflow(workflow);
-      setNodes(nodes);
-      setEdges(edges);
+      // Try to load draft first
+      if (enableAutoPersistence) {
+        try {
+          const draft = await DraftAPI.getDraft(workflowId);
+          if (draft && (draft.nodes.length > 0 || draft.edges.length > 0)) {
+            workflowData = {
+              workflow: { id: workflowId, name: 'Draft' },
+              nodes: draft.nodes,
+              edges: draft.edges
+            };
+            console.log('✅ Loaded draft with', draft.nodes.length, 'nodes');
+          }
+        } catch (draftErr) {
+          console.log('No draft found, loading latest version:', draftErr.message);
+        }
+      }
+      
+      // Fall back to latest version if no draft
+      if (!workflowData) {
+        workflowData = await workflowClient.loadWorkflowData(workflowId);
+        isDraftMode = false;
+      }
+      
+      setWorkflow(workflowData.workflow);
+      setNodes(workflowData.nodes);
+      setEdges(workflowData.edges);
+      setIsDraft(isDraftMode);
       setIsDirty(false);
+      
+      console.log(isDraftMode ? '📝 Draft mode active' : '🚀 Production mode active');
     } catch (err) {
       console.error('Failed to load workflow:', err);
       setError(err.message || 'Failed to load workflow');
     } finally {
       setLoading(false);
     }
-  }, [workflowId]);
+  }, [workflowId, enableAutoPersistence]);
 
   useEffect(() => {
     loadWorkflow();
@@ -80,7 +140,10 @@ export function useWorkflowState(workflowId) {
       () => workflowClient.createNode(workflowId, apiNodeData),
       () => setNodes(prev => prev.filter(n => n.id !== nodeData.id))
     );
-  }, [workflowId, withOptimisticUpdate]);
+    
+    // Trigger auto-save after successful creation
+    triggerAutoSave();
+  }, [workflowId, withOptimisticUpdate, triggerAutoSave]);
 
   const updateNode = useCallback(async (nodeId, updates) => {
     let originalNode = null;
@@ -123,7 +186,10 @@ export function useWorkflowState(workflowId) {
         }
       }
     );
-  }, [workflowId, withOptimisticUpdate]);
+    
+    // Trigger auto-save after successful update
+    triggerAutoSave();
+  }, [workflowId, withOptimisticUpdate, triggerAutoSave]);
 
   const deleteNode = useCallback(async (nodeId) => {
     let originalNode = null;
@@ -140,7 +206,10 @@ export function useWorkflowState(workflowId) {
         }
       }
     );
-  }, [workflowId, withOptimisticUpdate]);
+    
+    // Trigger auto-save after successful deletion
+    triggerAutoSave();
+  }, [workflowId, withOptimisticUpdate, triggerAutoSave]);
 
   // Edge operations
   const createEdge = useCallback(async (edgeData) => {
@@ -151,7 +220,10 @@ export function useWorkflowState(workflowId) {
       () => workflowClient.createEdge(workflowId, apiEdgeData),
       () => setEdges(prev => prev.filter(e => e.id !== edgeData.id))
     );
-  }, [workflowId, withOptimisticUpdate]);
+    
+    // Trigger auto-save after successful edge creation
+    triggerAutoSave();
+  }, [workflowId, withOptimisticUpdate, triggerAutoSave]);
 
   const deleteEdge = useCallback(async (edgeId) => {
     let originalEdge = null;
@@ -168,7 +240,10 @@ export function useWorkflowState(workflowId) {
         }
       }
     );
-  }, [workflowId, withOptimisticUpdate]);
+    
+    // Trigger auto-save after successful edge deletion
+    triggerAutoSave();
+  }, [workflowId, withOptimisticUpdate, triggerAutoSave]);
 
   // Workflow operations
   const updateWorkflow = useCallback(async (updates) => {
@@ -244,6 +319,45 @@ export function useWorkflowState(workflowId) {
     }
   }, [workflowId, nodes, edges]);
 
+  // Test draft node functionality
+  const testDraftNode = useCallback(async (nodeId, testData = {}) => {
+    if (!isDraft) {
+      throw new Error('Node testing is only available in draft mode');
+    }
+    
+    try {
+      const result = await DraftAPI.testDraftNode(workflowId, nodeId, testData);
+      return result;
+    } catch (err) {
+      console.error('Failed to test draft node:', err);
+      setError(err.message || 'Failed to test draft node');
+      throw err;
+    }
+  }, [workflowId, isDraft]);
+
+  // Deploy current draft as a new version
+  const deployDraft = useCallback(async (notes = '') => {
+    if (!isDraft) {
+      throw new Error('Can only deploy from draft mode');
+    }
+    
+    try {
+      // First save current state as a version
+      await saveVersion();
+      
+      // Then deploy that version
+      const result = await DraftAPI.deployVersion(workflowId, 1, notes); // Assume version 1 for now
+      
+      setIsDraft(false);
+      console.log('🚀 Draft deployed successfully');
+      return result;
+    } catch (err) {
+      console.error('Failed to deploy draft:', err);
+      setError(err.message || 'Failed to deploy draft');
+      throw err;
+    }
+  }, [isDraft, workflowId, saveVersion]);
+
   return {
     // State
     workflow,
@@ -252,6 +366,12 @@ export function useWorkflowState(workflowId) {
     loading,
     error,
     isDirty,
+    isDraft,
+    
+    // Auto-persistence state
+    isSaving,
+    lastSaved,
+    saveError,
     
     // Operations
     loadWorkflow,
@@ -262,6 +382,11 @@ export function useWorkflowState(workflowId) {
     deleteEdge,
     updateWorkflow,
     autoLayout,
+    
+    // Draft operations
+    testDraftNode,
+    deployDraft,
+    saveNow,
     
     // ReactFlow compatibility
     applyNodeChanges,

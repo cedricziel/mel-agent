@@ -26,6 +26,16 @@ func Handler() http.Handler {
 	r.Post("/agents", createAgent)
 	r.Post("/agents/{agentID}/versions", createAgentVersion)
 
+	// Draft workflow endpoints for auto-persistence
+	r.Route("/agents/{agentID}/draft", func(r chi.Router) {
+		r.Get("/", getDraftHandler)
+		r.Put("/", updateDraftHandler)
+		r.Post("/nodes/{nodeID}/test", testDraftNodeHandler)
+	})
+
+	// Version deployment
+	r.Post("/agents/{agentID}/deploy", deployVersionHandler)
+
 	// Workflow management (agents are workflows)
 	r.Route("/workflows", func(r chi.Router) {
 		r.Get("/", listAgents)   // reuse existing handler
