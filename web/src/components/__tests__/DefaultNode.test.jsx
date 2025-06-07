@@ -97,9 +97,7 @@ describe('DefaultNode', () => {
       data: {
         ...defaultProps.data,
         nullValue: null,
-        undefinedValue: undefined,
-        emptyString: '',
-        zeroValue: 0
+        undefinedValue: undefined
       }
     }
     
@@ -107,7 +105,21 @@ describe('DefaultNode', () => {
     
     expect(screen.getByText(/nullValue: null/)).toBeInTheDocument()
     expect(screen.getByText(/undefinedValue: undefined/)).toBeInTheDocument()
-    expect(screen.getByText(/emptyString: /)).toBeInTheDocument()
+  })
+
+  it('should handle empty string and zero values', () => {
+    const propsWithEmptyValues = {
+      ...defaultProps,
+      data: {
+        ...defaultProps.data,
+        emptyString: '',
+        zeroValue: 0
+      }
+    }
+    
+    render(<DefaultNode {...propsWithEmptyValues} />)
+    
+    expect(screen.getByText('emptyString:')).toBeInTheDocument()
     expect(screen.getByText(/zeroValue: 0/)).toBeInTheDocument()
   })
 

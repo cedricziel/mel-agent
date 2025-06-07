@@ -5,7 +5,7 @@ import 'reactflow/dist/style.css';
 // Generic node renderer: one input, one output, shows label
 export default function DefaultNode({ data, onAddClick, icon }) {
   const summaryKeys = Object.keys(data).filter(
-    (k) => k !== 'label' && k !== 'status'
+    (k) => k !== 'label' && k !== 'status' && k !== 'nodeTypeLabel' && k !== 'error'
   );
   const nodeIcon = icon || '📦';
   return (

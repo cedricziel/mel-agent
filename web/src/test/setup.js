@@ -1,3 +1,4 @@
+import { vi } from 'vitest'
 import '@testing-library/jest-dom'
 
 // Mock fetch globally
@@ -23,7 +24,7 @@ global.WebSocket = vi.fn().mockImplementation(() => ({
 // Mock crypto.randomUUID
 Object.defineProperty(global, 'crypto', {
   value: {
-    randomUUID: () => 'mock-uuid-' + Math.random().toString(36).substr(2, 9)
+    randomUUID: () => 'mock-uuid-' + Math.random().toString(36).substring(2, 11)
   }
 })
 

@@ -158,7 +158,7 @@ describe('AutoSaver', () => {
     const draftData = { nodes: [], edges: [] }
     
     // Mock fetch for the DraftAPI call
-    global.fetch.mockResolvedValueOnce({
+    global.fetch.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({})
     })
@@ -168,6 +168,9 @@ describe('AutoSaver', () => {
     
     expect(autoSaver.isSaving).toBe(false)
     expect(autoSaver.pendingChanges).toEqual(draftData)
+    
+    // Reset fetch call count before advancing timers
+    global.fetch.mockClear()
     
     // Fast-forward past the delay
     await act(async () => {
@@ -186,10 +189,13 @@ describe('AutoSaver', () => {
   it('should save immediately when saveNow is called', async () => {
     const draftData = { nodes: [], edges: [] }
     
-    global.fetch.mockResolvedValueOnce({
+    global.fetch.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({})
     })
+    
+    // Clear any previous fetch calls
+    global.fetch.mockClear()
     
     autoSaver.pendingChanges = draftData
     await autoSaver.saveNow()
@@ -253,11 +259,11 @@ describe('useAutoSaver', () => {
     vi.useRealTimers()
   })
 
-  it('should return null functions when agentId is not provided', () => {
+  it('should return no-op functions when agentId is not provided', () => {
     const { result } = renderHook(() => useAutoSaver(null))
     
-    expect(result.current.scheduleSave).toBe(null)
-    expect(result.current.saveNow).toBe(null)
+    expect(result.current.scheduleSave).toBeTypeOf('function')
+    expect(result.current.saveNow).toBeTypeOf('function')
     expect(result.current.isSaving).toBe(false)
     expect(result.current.lastSaved).toBe(null)
     expect(result.current.saveError).toBe(null)
