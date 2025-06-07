@@ -61,9 +61,16 @@ export function useWorkflowState(workflowId, enableAutoPersistence = true) {
         try {
           const draft = await DraftAPI.getDraft(workflowId);
           if (draft && (draft.nodes.length > 0 || draft.edges.length > 0)) {
+            // Ensure draft nodes have proper ReactFlow format
+            const formattedNodes = draft.nodes.map(node => ({
+              ...node,
+              position: node.position || { x: 100, y: 100 }, // Default position if missing
+              data: node.data || {}
+            }));
+            
             workflowData = {
               workflow: { id: workflowId, name: 'Draft' },
-              nodes: draft.nodes,
+              nodes: formattedNodes,
               edges: draft.edges
             };
             console.log('✅ Loaded draft with', draft.nodes.length, 'nodes');
