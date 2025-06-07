@@ -83,6 +83,35 @@ function BuilderPage({ agentId }) {
     setWsEdges(edges);
   }, [nodes, edges]);
 
+  // Dynamically create nodeTypes based on available node definitions
+  const nodeTypes = useMemo(() => {
+    const types = {
+      default: DefaultNode,
+      if: IfNode,
+      http_request: HttpRequestNode,
+    };
+
+    // Add trigger nodes with special rendering
+    const triggerTypes = ['webhook', 'schedule', 'manual_trigger', 'workflow_trigger', 'slack', 'timer'];
+    triggerTypes.forEach(type => {
+      types[type] = (props) => {
+        const nodeDef = nodeDefs.find(def => def.type === type);
+        return <TriggerNode {...props} type={type} agentId={agentId} icon={nodeDef?.icon} />;
+      };
+    });
+
+    // Add all other node types to use DefaultNode (defensive check for nodeDefs)
+    if (Array.isArray(nodeDefs)) {
+      nodeDefs.forEach(nodeDef => {
+        if (!types[nodeDef.type]) {
+          types[nodeDef.type] = DefaultNode;
+        }
+      });
+    }
+
+    return types;
+  }, [nodeDefs, agentId]);
+
   // Load node definitions
   useEffect(() => {
     axios.get('/api/node-types')
@@ -527,27 +556,7 @@ function BuilderPage({ agentId }) {
           onConnect={onConnect}
           onNodeClick={onNodeClick}
           onNodeDoubleClick={onNodeDoubleClick}
-          nodeTypes={{
-            default: DefaultNode,
-            if: IfNode,
-            webhook: (props) => {
-              const nodeDef = nodeDefs.find(def => def.type === 'webhook');
-              return <TriggerNode {...props} type="webhook" agentId={agentId} icon={nodeDef?.icon} />;
-            },
-            schedule: (props) => {
-              const nodeDef = nodeDefs.find(def => def.type === 'schedule');
-              return <TriggerNode {...props} type="schedule" agentId={agentId} icon={nodeDef?.icon} />;
-            },
-            manual_trigger: (props) => {
-              const nodeDef = nodeDefs.find(def => def.type === 'manual_trigger');
-              return <TriggerNode {...props} type="manual_trigger" agentId={agentId} icon={nodeDef?.icon} />;
-            },
-            workflow_trigger: (props) => {
-              const nodeDef = nodeDefs.find(def => def.type === 'workflow_trigger');
-              return <TriggerNode {...props} type="workflow_trigger" agentId={agentId} icon={nodeDef?.icon} />;
-            },
-            http_request: HttpRequestNode,
-          }}
+          nodeTypes={nodeTypes}
           fitView
         >
           <Background />
