@@ -62,16 +62,11 @@ jobs:
           path: server
           retention-days: 1
 
-  # Parallel E2E tests - let Cypress action drive everything
+  # E2E tests - let Cypress action drive everything
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-24.04
     needs: [backend]
-    
-    strategy:
-      fail-fast: false
-      matrix:
-        containers: [1, 2]
     
     services:
       postgres:
@@ -134,7 +129,6 @@ jobs:
           wait-on: 'http://localhost:5173'
           wait-on-timeout: 60
           browser: chrome
-          parallel: true
           spec: cypress/e2e/**/*.cy.js
         env:
           CYPRESS_baseUrl: http://localhost:5173
