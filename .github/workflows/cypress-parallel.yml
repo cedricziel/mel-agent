@@ -134,13 +134,10 @@ jobs:
           wait-on: 'http://localhost:5173'
           wait-on-timeout: 60
           browser: chrome
-          record: true
           parallel: true
-          group: 'E2E Tests'
           spec: cypress/e2e/**/*.cy.js
         env:
           CYPRESS_baseUrl: http://localhost:5173
-          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Stop backend server
