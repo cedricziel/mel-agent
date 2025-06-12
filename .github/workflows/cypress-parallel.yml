@@ -155,6 +155,10 @@ jobs:
           restore-keys: |
             cypress-${{ runner.os }}-
 
+      - name: Install frontend dependencies (needed for Cypress)
+        run: pnpm install
+        working-directory: web
+
       - name: Start backend server
         run: |
           ./server &

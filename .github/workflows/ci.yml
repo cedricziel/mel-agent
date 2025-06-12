@@ -148,12 +148,6 @@ jobs:
         with:
           name: server-binary
 
-      - name: Download frontend build
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-build
-          path: web/dist
-
       - name: Make server binary executable
         run: chmod +x server
 
@@ -176,6 +170,16 @@ jobs:
           key: cypress-${{ runner.os }}-${{ hashFiles('web/pnpm-lock.yaml') }}
           restore-keys: |
             cypress-${{ runner.os }}-
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: web/dist
+
+      - name: Install frontend dependencies (needed for preview)
+        run: pnpm install
+        working-directory: web
 
       - name: Start backend server
         run: |

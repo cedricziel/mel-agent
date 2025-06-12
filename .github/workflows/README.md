@@ -209,6 +209,30 @@ pnpm test:e2e:dev      # Interactive GUI
 3. Verify build artifacts are properly uploaded/downloaded
 4. Check that preview server starts on correct port
 
+### ❌ "The directory 'dist' does not exist"
+
+**Problem**: `pnpm preview` fails because build artifacts are missing
+
+**Solution**: Ensure proper order and dependencies in E2E job:
+```yaml
+# 1. Download build artifacts BEFORE starting preview
+- name: Download frontend build
+  uses: actions/download-artifact@v4
+  with:
+    name: frontend-build
+    path: web/dist
+
+# 2. Install dependencies needed for preview command
+- name: Install frontend dependencies
+  run: pnpm install
+  working-directory: web
+
+# 3. Then run Cypress with preview
+- uses: cypress-io/github-action@v6
+  with:
+    start: pnpm preview  # Now dist/ exists
+```
+
 ### ❌ Database connection errors
 
 **Problem**: Backend can't connect to PostgreSQL
