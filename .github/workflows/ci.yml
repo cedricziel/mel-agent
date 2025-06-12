@@ -9,6 +9,22 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: agentsaas
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
     steps:
       - uses: actions/checkout@v4
 
@@ -64,3 +80,29 @@ jobs:
       - name: Lint web
         run: npm run lint
         working-directory: web
+
+      - name: Start backend for E2E tests
+        run: go run ./cmd/server &
+        env:
+          PORT: 8080
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/agentsaas?sslmode=disable
+
+      - name: Wait for backend to be ready
+        run: |
+          timeout 30 bash -c 'until curl -f http://localhost:8080/health; do sleep 1; done'
+
+      - name: Start frontend for E2E tests
+        run: npm run preview &
+        working-directory: web
+        env:
+          PORT: 5173
+
+      - name: Wait for frontend to be ready
+        run: |
+          timeout 30 bash -c 'until curl -f http://localhost:5173; do sleep 1; done'
+
+      - name: Run Cypress E2E tests
+        run: npm run test:e2e
+        working-directory: web
+        env:
+          CYPRESS_baseUrl: http://localhost:5173

@@ -7,6 +7,10 @@ bin/
 web/node_modules/
 web/dist/
 
+# Cypress
+web/cypress/screenshots/
+web/cypress/videos/
+
 # Environment
 .env
 .gocache

@@ -9,7 +9,12 @@
     "lint": "echo \"(eslint placeholder)\"",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "cypress:run:headless": "cypress run --headless",
+    "test:e2e": "cypress run --headless",
+    "test:e2e:dev": "cypress open"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
@@ -27,6 +32,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@vitejs/plugin-react": "^4.5.2",
     "autoprefixer": "^10.4.0",
+    "cypress": "^14.4.1",
     "jsdom": "^26.1.0",
     "postcss": "^8.5.5",
     "tailwindcss": "^3.4.0",
