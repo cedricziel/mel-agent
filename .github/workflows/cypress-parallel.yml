@@ -62,25 +62,11 @@ jobs:
           path: server
           retention-days: 1
 
-  # Install dependencies only - Cypress action will handle build/test
-  install:
-    name: Install Dependencies
-    runs-on: ubuntu-24.04
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - uses: cypress-io/github-action@v6
-        with:
-          working-directory: web
-          runTests: false
-
   # Parallel E2E tests - let Cypress action drive everything
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-24.04
-    needs: [backend, install]
+    needs: [backend]
     
     strategy:
       fail-fast: false
