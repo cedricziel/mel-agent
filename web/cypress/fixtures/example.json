@@ -1,0 +1,93 @@
+{
+  "agents": [
+    {
+      "id": "agent-1",
+      "name": "Test Workflow",
+      "description": "A sample workflow for testing",
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "agent-2",
+      "name": "Data Processing Workflow",
+      "description": "Processes incoming data",
+      "created_at": "2024-01-02T00:00:00Z",
+      "updated_at": "2024-01-02T00:00:00Z"
+    }
+  ],
+  "nodeTypes": [
+    {
+      "type": "http_request",
+      "label": "HTTP Request",
+      "category": "Actions",
+      "parameters": [
+        {
+          "name": "url",
+          "label": "URL",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "method",
+          "label": "Method",
+          "type": "select",
+          "options": ["GET", "POST", "PUT", "DELETE"],
+          "default": "GET"
+        }
+      ]
+    },
+    {
+      "type": "log",
+      "label": "Log",
+      "category": "Utility",
+      "parameters": [
+        {
+          "name": "message",
+          "label": "Message",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "level",
+          "label": "Log Level",
+          "type": "select",
+          "options": ["info", "warn", "error"],
+          "default": "info"
+        }
+      ]
+    }
+  ],
+  "workflow": {
+    "nodes": [
+      {
+        "id": "node-1",
+        "type": "http_request",
+        "position": { "x": 100, "y": 100 },
+        "data": {
+          "label": "Fetch Data",
+          "url": "https://api.example.com/data",
+          "method": "GET"
+        }
+      },
+      {
+        "id": "node-2",
+        "type": "log",
+        "position": { "x": 300, "y": 100 },
+        "data": {
+          "label": "Log Response",
+          "message": "Data fetched successfully",
+          "level": "info"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge-1",
+        "source": "node-1",
+        "target": "node-2",
+        "sourceHandle": "out",
+        "targetHandle": "in"
+      }
+    ]
+  }
+}
