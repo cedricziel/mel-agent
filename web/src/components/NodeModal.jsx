@@ -3,7 +3,7 @@ import CodeEditor from './CodeEditor';
 import DataViewer from './DataViewer';
 
 // Full-screen modal for editing nodes with input/output panels like n8n
-export default function NodeModal({ node, nodeDef, isOpen, onClose, onChange, onExecute, onSave, viewMode, selectedExecution, agentId }) {
+export default function NodeModal({ node, nodeDef, nodes, isOpen, onClose, onChange, onExecute, onSave, viewMode, selectedExecution, agentId }) {
   const [currentFormData, setCurrentFormData] = useState({});
   const [inputData, setInputData] = useState({});
   const [outputData, setOutputData] = useState({});
@@ -250,6 +250,30 @@ export default function NodeModal({ node, nodeDef, isOpen, onClose, onChange, on
             />
             <span>{param.label}</span>
           </div>
+        );
+
+      case 'nodeReference':
+        // Node reference selection - allows referencing other nodes in the workflow
+        const availableNodes = (nodes || []).filter(n => 
+          n.id !== node?.id && // Exclude self-reference
+          n.type !== 'manual_trigger' && // Exclude trigger nodes
+          n.type !== 'workflow_trigger' && 
+          n.type !== 'schedule'
+        );
+        
+        return (
+          <select
+            value={val || ''}
+            onChange={(e) => handleChange(param.name, e.target.value)}
+            className={`w-full border rounded px-3 py-2 ${baseClass}`}
+          >
+            <option value="">Select Node</option>
+            {availableNodes.map((availableNode) => (
+              <option key={availableNode.id} value={availableNode.id}>
+                {availableNode.data?.label || availableNode.type} ({availableNode.type})
+              </option>
+            ))}
+          </select>
         );
 
       default:

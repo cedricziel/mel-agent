@@ -553,6 +553,49 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
                         )}
                       </div>
                     );
+                  case 'nodeReference':
+                    // Node reference selection - allows referencing other nodes in the workflow
+                    const availableNodes = (nodes || []).filter(n => 
+                      n.id !== selectedNodeId && // Exclude self-reference
+                      n.type !== 'manual_trigger' && // Exclude trigger nodes
+                      n.type !== 'workflow_trigger' && 
+                      n.type !== 'schedule'
+                    );
+                    
+                    return (
+                      <div key={p.name} className="mb-3">
+                        <label className="block text-sm mb-1">
+                          {p.label}{p.required && <span className="text-red-500">*</span>}
+                        </label>
+                        <select
+                          value={val || ''}
+                          onChange={(e) => handleChange(p.name, e.target.value)}
+                          className={`w-full border rounded px-2 py-1 ${baseClass}`}
+                        >
+                          <option value="">Select Node</option>
+                          {availableNodes.map((node) => (
+                            <option key={node.id} value={node.id}>
+                              {node.data?.label || node.type} ({node.type})
+                            </option>
+                          ))}
+                        </select>
+                        {availableNodes.length === 0 && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            No compatible nodes available. Add some nodes to the workflow first.
+                          </div>
+                        )}
+                        {error && (
+                          <div className="text-xs text-red-600 mt-1">
+                            {p.label} is required
+                          </div>
+                        )}
+                        {p.description && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            {p.description}
+                          </div>
+                        )}
+                      </div>
+                    );
                   default:
                     // Fallback for unknown parameter types - treat as string
                     return (

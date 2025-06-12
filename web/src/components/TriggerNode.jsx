@@ -2,6 +2,7 @@ import React from 'react';
 import { Handle, Position } from 'reactflow';
 import axios from 'axios';
 import 'reactflow/dist/style.css';
+import { HANDLE_TYPES, getHandleColor } from '../utils/connectionTypes';
 
 // Trigger node: entry point without input handle, with n8n-style curved left side
 export default function TriggerNode({ data, onAddClick, icon, id, type, agentId }) {
@@ -109,8 +110,10 @@ export default function TriggerNode({ data, onAddClick, icon, id, type, agentId 
         <Handle
           type="source"
           position={Position.Right}
-          id="out"
-          className="!bg-gray-600"
+          id="trigger-out"
+          style={{ 
+            backgroundColor: getHandleColor(HANDLE_TYPES.TRIGGER_OUTPUT)
+          }}
         />
       </div>
     </div>

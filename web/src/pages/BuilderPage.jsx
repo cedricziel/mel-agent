@@ -11,14 +11,24 @@ import IfNode from "../components/IfNode";
 import DefaultNode from "../components/DefaultNode";
 import TriggerNode from "../components/TriggerNode";
 import HttpRequestNode from "../components/HttpRequestNode";
+import AgentNode from "../components/AgentNode";
+import ModelNode from "../components/ModelNode";
+import ToolsNode from "../components/ToolsNode";
+import MemoryNode from "../components/MemoryNode";
 import NodeDetailsPanel from "../components/NodeDetailsPanel";
 import NodeModal from "../components/NodeModal";
 import "reactflow/dist/style.css";
 import ChatAssistant from "../components/ChatAssistant";
 import { useWorkflowState } from "../hooks/useWorkflowState";
+import { isValidConnection } from "../utils/connectionTypes";
 
 function BuilderPage({ agentId }) {
   const navigate = useNavigate();
+  
+  // Guard against undefined agentId
+  if (!agentId) {
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  }
   
   // Use the new workflow state hook with auto-persistence
   const {
@@ -87,6 +97,10 @@ function BuilderPage({ agentId }) {
   const nodeTypes = useMemo(() => {
     const types = {
       default: DefaultNode,
+      agent: AgentNode,
+      model: ModelNode,
+      tools: ToolsNode,
+      memory: MemoryNode,
       if: IfNode,
       http_request: HttpRequestNode,
     };
@@ -338,6 +352,28 @@ function BuilderPage({ agentId }) {
     async (params) => {
       if (isLiveMode || viewMode === 'executions') return;
       
+      // Find source and target nodes
+      const sourceNode = nodes.find(n => n.id === params.source);
+      const targetNode = nodes.find(n => n.id === params.target);
+      
+      if (!sourceNode || !targetNode) {
+        console.error('Source or target node not found');
+        return;
+      }
+      
+      // Validate connection type compatibility
+      const isValid = isValidConnection(
+        params.sourceHandle,
+        params.targetHandle,
+        sourceNode.type,
+        targetNode.type
+      );
+      
+      if (!isValid) {
+        // Silently prevent invalid connections
+        return;
+      }
+      
       const edgeId = `edge-${Date.now()}`;
       const newEdge = { ...params, id: edgeId };
       
@@ -348,7 +384,7 @@ function BuilderPage({ agentId }) {
         console.error('Failed to create edge:', err);
       }
     },
-    [createEdge, broadcastNodeChange, isLiveMode, viewMode]
+    [createEdge, broadcastNodeChange, isLiveMode, viewMode, nodes]
   );
 
   // Test run functionality
@@ -456,6 +492,122 @@ function BuilderPage({ agentId }) {
     }
   }, [nodes, edges, saveVersion]);
 
+  // Helper function to create configuration nodes for an agent
+  const createAgentConfigurationNodes = useCallback(async (agentId, agentPosition) => {
+    const baseTimestamp = Date.now();
+    const configNodes = [];
+    const configEdges = [];
+
+    // Create model configuration node
+    const modelId = `${baseTimestamp + 1}`;
+    const modelNode = {
+      id: modelId,
+      type: 'model',
+      data: { 
+        label: 'Model Config',
+        nodeTypeLabel: 'Model Configuration',
+        provider: 'openai',
+        model: 'gpt-4'
+      },
+      position: { x: agentPosition.x - 200, y: agentPosition.y - 100 }
+    };
+
+    // Create tools configuration node
+    const toolsId = `${baseTimestamp + 2}`;
+    const toolsNode = {
+      id: toolsId,
+      type: 'tools',
+      data: { 
+        label: 'Tools Config',
+        nodeTypeLabel: 'Tools Configuration',
+        allowCodeExecution: false,
+        allowWebSearch: true
+      },
+      position: { x: agentPosition.x - 200, y: agentPosition.y }
+    };
+
+    // Create memory configuration node
+    const memoryId = `${baseTimestamp + 3}`;
+    const memoryNode = {
+      id: memoryId,
+      type: 'memory',
+      data: { 
+        label: 'Memory Config',
+        nodeTypeLabel: 'Memory Configuration',
+        memoryType: 'short_term',
+        maxMessages: 100
+      },
+      position: { x: agentPosition.x - 200, y: agentPosition.y + 100 }
+    };
+
+    // Create edges connecting config nodes to agent (using specific handles)
+    const modelEdge = {
+      id: `edge-model-${baseTimestamp}`,
+      source: modelId,
+      sourceHandle: 'out',
+      target: agentId,
+      targetHandle: 'model-config',
+      type: 'default',
+      style: { stroke: '#3b82f6' } // Blue for model
+    };
+
+    const toolsEdge = {
+      id: `edge-tools-${baseTimestamp}`,
+      source: toolsId,
+      sourceHandle: 'out',
+      target: agentId,
+      targetHandle: 'tools-config',
+      type: 'default',
+      style: { stroke: '#10b981' } // Green for tools
+    };
+
+    const memoryEdge = {
+      id: `edge-memory-${baseTimestamp}`,
+      source: memoryId,
+      sourceHandle: 'out',
+      target: agentId,
+      targetHandle: 'memory-config',
+      type: 'default',
+      style: { stroke: '#8b5cf6' } // Purple for memory
+    };
+
+    try {
+      // Create all configuration nodes
+      await createNode(modelNode);
+      await createNode(toolsNode);
+      await createNode(memoryNode);
+
+      // Create edges
+      await createEdge(modelEdge);
+      await createEdge(toolsEdge);
+      await createEdge(memoryEdge);
+
+      // Update agent node to reference the configuration nodes
+      const agentNode = nodes.find(n => n.id === agentId);
+      if (agentNode) {
+        await updateNode(agentId, {
+          data: {
+            ...agentNode.data,
+            modelConfig: modelId,
+            toolsConfig: toolsId,
+            memoryConfig: memoryId
+          }
+        });
+      }
+
+      // Broadcast all changes
+      broadcastNodeChange('nodeCreated', { node: modelNode });
+      broadcastNodeChange('nodeCreated', { node: toolsNode });
+      broadcastNodeChange('nodeCreated', { node: memoryNode });
+      broadcastNodeChange('edgeCreated', { edge: modelEdge });
+      broadcastNodeChange('edgeCreated', { edge: toolsEdge });
+      broadcastNodeChange('edgeCreated', { edge: memoryEdge });
+
+    } catch (err) {
+      console.error('Failed to create agent configuration nodes:', err);
+    }
+  }, [createNode, createEdge, updateNode, broadcastNodeChange, nodes]);
+
   // Assistant tool callbacks
   const handleAddNode = useCallback(async ({ type, label, parameters, position }) => {
     const id = Date.now().toString();
@@ -466,6 +618,12 @@ function BuilderPage({ agentId }) {
     try {
       await createNode(newNode);
       broadcastNodeChange('nodeCreated', { node: newNode });
+
+      // Auto-create configuration nodes for agent nodes
+      if (type === 'agent') {
+        await createAgentConfigurationNodes(id, pos);
+      }
+
       return { node_id: id };
     } catch (err) {
       console.error('Failed to add node:', err);
@@ -557,6 +715,17 @@ function BuilderPage({ agentId }) {
           onNodeClick={onNodeClick}
           onNodeDoubleClick={onNodeDoubleClick}
           nodeTypes={nodeTypes}
+          isValidConnection={(connection) => {
+            const sourceNode = nodes.find(n => n.id === connection.source);
+            const targetNode = nodes.find(n => n.id === connection.target);
+            if (!sourceNode || !targetNode) return false;
+            return isValidConnection(
+              connection.sourceHandle,
+              connection.targetHandle,
+              sourceNode.type,
+              targetNode.type
+            );
+          }}
           fitView
         >
           <Background />
@@ -863,6 +1032,7 @@ function BuilderPage({ agentId }) {
       <NodeModal
         node={selectedNode}
         nodeDef={selectedNodeDef}
+        nodes={nodes}
         isOpen={nodeModalOpen}
         viewMode={viewMode}
         selectedExecution={selectedExecution}

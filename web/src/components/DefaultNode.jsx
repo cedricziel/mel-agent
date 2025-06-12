@@ -1,6 +1,7 @@
 import React from 'react';
 import { Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
+import { HANDLE_TYPES, getHandleColor } from '../utils/connectionTypes';
 
 // Generic node renderer: one input, one output, shows label
 export default function DefaultNode({ data, onAddClick, icon }) {
@@ -54,14 +55,18 @@ export default function DefaultNode({ data, onAddClick, icon }) {
       <Handle
         type="target"
         position={Position.Left}
-        id="in"
-        className="!bg-gray-600"
+        id="workflow-in"
+        style={{ 
+          backgroundColor: getHandleColor(HANDLE_TYPES.WORKFLOW_INPUT)
+        }}
       />
       <Handle
         type="source"
         position={Position.Right}
-        id="out"
-        className="!bg-gray-600"
+        id="workflow-out"
+        style={{ 
+          backgroundColor: getHandleColor(HANDLE_TYPES.WORKFLOW_OUTPUT)
+        }}
       />
     </div>
   );
