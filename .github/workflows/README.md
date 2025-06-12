@@ -159,6 +159,45 @@ pnpm test:e2e:dev      # Interactive GUI
 - Working directory specifications
 - Service isolation per job
 
+## Common Issues & Solutions
+
+### ❌ "Unable to locate executable file: pnpm"
+
+**Problem**: Cypress GitHub Action can't find pnpm executable
+
+**Solution**: Ensure this order in your workflow:
+```yaml
+- uses: pnpm/action-setup@v4
+  with:
+    version: 10
+- uses: actions/setup-node@v4
+  with:
+    node-version: '22'
+    cache: 'pnpm'
+- uses: cypress-io/github-action@v6
+  with:
+    start: pnpm preview  # Now pnpm is available
+```
+
+### ❌ Cypress tests timeout waiting for server
+
+**Problem**: Frontend server not starting properly
+
+**Solutions**:
+1. Check `wait-on` URL matches your server
+2. Increase `wait-on-timeout` to 120 seconds
+3. Verify build artifacts are properly uploaded/downloaded
+4. Check that preview server starts on correct port
+
+### ❌ Database connection errors
+
+**Problem**: Backend can't connect to PostgreSQL
+
+**Solutions**:
+1. Verify service health checks pass
+2. Check DATABASE_URL format
+3. Ensure postgres service starts before backend
+
 ## Monitoring and Maintenance
 
 ### Weekly Tasks
