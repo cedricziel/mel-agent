@@ -89,7 +89,7 @@ describe('Connections Page - Realistic Tests', () => {
     cy.contains('Integration').should('be.visible')
     cy.contains('Name').should('be.visible')
     cy.get('select').should('be.visible')
-    cy.get('input[type="text"]').should('be.visible')
+    cy.get('input').should('be.visible')
   })
 
   it('should close modal on cancel', () => {

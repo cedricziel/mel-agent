@@ -8,7 +8,8 @@
       "Bash(ls:*)",
       "Bash(go vet:*)",
       "Bash(pnpm run test:*)",
-      "Bash(pnpm dev:*)"
+      "Bash(pnpm dev:*)",
+      "Bash(npm run test:e2e:*)"
     ],
     "deny": []
   },
