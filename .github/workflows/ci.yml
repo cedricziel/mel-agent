@@ -193,13 +193,21 @@ jobs:
         run: |
           timeout 30 bash -c 'until curl -f http://localhost:8080/health; do sleep 1; done'
 
+      - name: Start frontend preview server
+        run: |
+          pnpm preview --port 5173 &
+          echo $! > preview.pid
+        working-directory: web
+
+      - name: Wait for frontend to be ready
+        run: |
+          timeout 30 bash -c 'until curl -f http://localhost:5173; do sleep 1; done'
+
       - name: Run Cypress E2E tests
         uses: cypress-io/github-action@v6
         with:
           working-directory: web
-          start: pnpm preview --port 5173
-          wait-on: 'http://localhost:5173'
-          wait-on-timeout: 60
+          install: false
           browser: chrome
           spec: cypress/e2e/**/*.cy.js
         env:
@@ -222,10 +230,14 @@ jobs:
           path: web/cypress/videos
           retention-days: 7
 
-      - name: Stop backend server
+      - name: Stop servers
         if: always()
         run: |
           if [ -f server.pid ]; then
             kill $(cat server.pid) || true
             rm server.pid
+          fi
+          if [ -f web/preview.pid ]; then
+            kill $(cat web/preview.pid) || true
+            rm web/preview.pid
           fi

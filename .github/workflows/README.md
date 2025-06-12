@@ -211,26 +211,38 @@ pnpm test:e2e:dev      # Interactive GUI
 
 ### ❌ "The directory 'dist' does not exist"
 
-**Problem**: `pnpm preview` fails because build artifacts are missing
+**Problem**: `pnpm preview` fails because build artifacts are missing when Cypress action tries to start the server
 
-**Solution**: Ensure proper order and dependencies in E2E job:
+**Solution**: Start the preview server manually AFTER downloading artifacts:
 ```yaml
-# 1. Download build artifacts BEFORE starting preview
+# 1. Download build artifacts first
 - name: Download frontend build
   uses: actions/download-artifact@v4
   with:
     name: frontend-build
     path: web/dist
 
-# 2. Install dependencies needed for preview command
+# 2. Install dependencies
 - name: Install frontend dependencies
   run: pnpm install
   working-directory: web
 
-# 3. Then run Cypress with preview
+# 3. Start preview server manually
+- name: Start frontend preview server
+  run: |
+    pnpm preview --port 5173 &
+    echo $! > preview.pid
+  working-directory: web
+
+# 4. Wait for server to be ready
+- name: Wait for frontend to be ready
+  run: timeout 30 bash -c 'until curl -f http://localhost:5173; do sleep 1; done'
+
+# 5. Run Cypress without starting server
 - uses: cypress-io/github-action@v6
   with:
-    start: pnpm preview --port 5173  # Now dist/ exists and port matches
+    install: false  # Don't reinstall, we already did
+    # No 'start' parameter - server already running
 ```
 
 ### ❌ "http://localhost:5173 timed out"
