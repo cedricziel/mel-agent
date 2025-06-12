@@ -87,12 +87,6 @@ jobs:
         run: pnpm install
         working-directory: web
 
-      - name: Cache node_modules
-        uses: actions/cache@v4
-        with:
-          path: web/node_modules
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('web/pnpm-lock.yaml') }}
-
       - name: Run frontend unit tests
         run: pnpm test:run
         working-directory: web
@@ -156,15 +150,12 @@ jobs:
         with:
           version: 10
 
-      - name: Restore node_modules cache
-        uses: actions/cache@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          path: web/node_modules
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('web/pnpm-lock.yaml') }}
-
-      - name: Install frontend dependencies (if cache miss)
-        run: pnpm install
-        working-directory: web
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: web/pnpm-lock.yaml
 
       - name: Start backend server
         run: |

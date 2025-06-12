@@ -120,6 +120,16 @@ pnpm test:e2e:dev      # Interactive GUI
    - Frontend wait-on timeout set to 60 seconds
    - All Cypress timeouts set to 10 seconds
 
+4. **pnpm Issues**
+   - Always set up pnpm BEFORE using cypress-io/github-action
+   - Node.js setup with pnpm cache must come before Cypress action
+   - Working directory must be specified for all pnpm commands
+
+5. **Artifact Issues**
+   - Build artifacts are passed between jobs
+   - Frontend build must complete before E2E tests
+   - Binary permissions need to be set with `chmod +x`
+
 ## Performance Metrics
 
 | Metric | Before | After | Improvement |
