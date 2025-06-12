@@ -22,6 +22,7 @@ The main CI workflow is split into **3 parallel jobs** for optimal performance:
 #### ✅ **Proper Caching Strategy**
 - Go modules cached with `~/go/pkg/mod` path
 - Node.js dependencies cached with pnpm
+- **Cypress binary cached** at `~/.cache/Cypress` (prevents binary missing errors)
 - Build artifacts passed between jobs via `actions/upload-artifact@v4`
 
 #### ✅ **Official Cypress GitHub Action**
@@ -177,6 +178,25 @@ pnpm test:e2e:dev      # Interactive GUI
 - uses: cypress-io/github-action@v6
   with:
     start: pnpm preview  # Now pnpm is available
+```
+
+### ❌ "Cypress binary is missing"
+
+**Problem**: Cypress binary not cached properly between jobs
+
+**Solution**: Add Cypress binary caching to all jobs that use Cypress:
+```yaml
+- name: Cache Cypress binary
+  uses: actions/cache@v4
+  with:
+    path: ~/.cache/Cypress
+    key: cypress-${{ runner.os }}-${{ hashFiles('web/pnpm-lock.yaml') }}
+    restore-keys: |
+      cypress-${{ runner.os }}-
+
+- name: Install Cypress binary (if needed)
+  run: npx cypress install
+  working-directory: web
 ```
 
 ### ❌ Cypress tests timeout waiting for server
