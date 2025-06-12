@@ -75,8 +75,8 @@ Cypress.Commands.add('addNodeToCanvas', (nodeType, position = { x: 300, y: 200 }
     .trigger('dragstart')
   
   cy.get('[data-testid="workflow-canvas"]')
-    .trigger('dragover', position.x, position.y)
-    .trigger('drop', position.x, position.y)
+    .trigger('dragover', { clientX: position.x, clientY: position.y })
+    .trigger('drop', { clientX: position.x, clientY: position.y })
 })
 
 // Connect two nodes
