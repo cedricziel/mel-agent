@@ -230,7 +230,25 @@ pnpm test:e2e:dev      # Interactive GUI
 # 3. Then run Cypress with preview
 - uses: cypress-io/github-action@v6
   with:
-    start: pnpm preview  # Now dist/ exists
+    start: pnpm preview --port 5173  # Now dist/ exists and port matches
+```
+
+### ❌ "http://localhost:5173 timed out"
+
+**Problem**: Port mismatch - `vite preview` runs on port 4173 by default, but tests expect 5173
+
+**Solution**: Specify the correct port in the preview command:
+```yaml
+- uses: cypress-io/github-action@v6
+  with:
+    start: pnpm preview --port 5173  # ✅ Force preview to use 5173
+    wait-on: 'http://localhost:5173'  # ✅ Wait for the same port
+    
+# Alternative: Update wait-on to match default preview port
+- uses: cypress-io/github-action@v6
+  with:
+    start: pnpm preview  # Uses default port 4173
+    wait-on: 'http://localhost:4173'  # Wait for default port
 ```
 
 ### ❌ Database connection errors

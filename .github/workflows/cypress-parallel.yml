@@ -175,7 +175,7 @@ jobs:
         uses: cypress-io/github-action@v6
         with:
           working-directory: web
-          start: pnpm preview
+          start: pnpm preview --port 5173
           wait-on: 'http://localhost:5173'
           wait-on-timeout: 60
           browser: chrome
