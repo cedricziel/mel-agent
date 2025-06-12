@@ -62,46 +62,25 @@ jobs:
           path: server
           retention-days: 1
 
-  # Frontend install and build
-  frontend-install:
-    name: Install Frontend Dependencies
+  # Install dependencies only (no build needed - Cypress action will handle it)
+  install:
+    name: Install Dependencies
     runs-on: ubuntu-24.04
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
-        name: Install pnpm
-        with:
-          version: 10
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'pnpm'
-          cache-dependency-path: web/pnpm-lock.yaml
-
-      - name: Cache Cypress binary
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/Cypress
-          key: cypress-${{ runner.os }}-${{ hashFiles('web/pnpm-lock.yaml') }}
-          restore-keys: |
-            cypress-${{ runner.os }}-
-
       - uses: cypress-io/github-action@v6
         with:
           working-directory: web
           runTests: false
-          build: pnpm build
 
   # Parallel E2E tests with Cypress
   e2e-tests:
     name: E2E Tests
     runs-on: ubuntu-24.04
-    needs: [backend, frontend-install]
+    needs: [backend, install]
     
     strategy:
       fail-fast: false
@@ -135,30 +114,6 @@ jobs:
       - name: Make server binary executable
         run: chmod +x server
 
-      - uses: pnpm/action-setup@v4
-        name: Install pnpm
-        with:
-          version: 10
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'pnpm'
-          cache-dependency-path: web/pnpm-lock.yaml
-
-      - name: Cache Cypress binary
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/Cypress
-          key: cypress-${{ runner.os }}-${{ hashFiles('web/pnpm-lock.yaml') }}
-          restore-keys: |
-            cypress-${{ runner.os }}-
-
-      - name: Install frontend dependencies (needed for Cypress)
-        run: pnpm install
-        working-directory: web
-
       - name: Start backend server
         run: |
           ./server &
@@ -171,21 +126,14 @@ jobs:
         run: |
           timeout 30 bash -c 'until curl -f http://localhost:8080/health; do sleep 1; done'
 
-      - name: Start frontend preview server
-        run: |
-          pnpm preview --port 5173 &
-          echo $! > preview.pid
-        working-directory: web
-
-      - name: Wait for frontend to be ready
-        run: |
-          timeout 30 bash -c 'until curl -f http://localhost:5173; do sleep 1; done'
-
       - name: Run Cypress E2E tests
         uses: cypress-io/github-action@v6
         with:
           working-directory: web
-          install: false
+          build: pnpm build
+          start: pnpm preview --port 5173
+          wait-on: 'http://localhost:5173'
+          wait-on-timeout: 60
           browser: chrome
           record: true
           parallel: true
@@ -196,30 +144,10 @@ jobs:
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload Cypress screenshots
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: cypress-screenshots-${{ matrix.containers }}
-          path: web/cypress/screenshots
-          retention-days: 7
-
-      - name: Upload Cypress videos
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: cypress-videos-${{ matrix.containers }}
-          path: web/cypress/videos
-          retention-days: 7
-
-      - name: Stop servers
+      - name: Stop backend server
         if: always()
         run: |
           if [ -f server.pid ]; then
             kill $(cat server.pid) || true
             rm server.pid
-          fi
-          if [ -f web/preview.pid ]; then
-            kill $(cat web/preview.pid) || true
-            rm web/preview.pid
           fi

@@ -107,6 +107,14 @@ jobs:
         run: pnpm lint
         working-directory: web
 
+      - name: Cache frontend build
+        uses: actions/cache@v4
+        with:
+          path: web/dist
+          key: frontend-build-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            frontend-build-${{ runner.os }}-
+
       - name: Build frontend
         run: pnpm build
         working-directory: web
@@ -171,8 +179,18 @@ jobs:
           restore-keys: |
             cypress-${{ runner.os }}-
 
-      - name: Download frontend build
+      - name: Cache frontend build
+        id: cache-frontend
+        uses: actions/cache@v4
+        with:
+          path: web/dist
+          key: frontend-build-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            frontend-build-${{ runner.os }}-
+
+      - name: Download frontend build (fallback)
         uses: actions/download-artifact@v4
+        if: steps.cache-frontend.outputs.cache-hit != 'true'
         with:
           name: frontend-build
           path: web/dist

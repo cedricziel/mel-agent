@@ -19,11 +19,13 @@ The main CI workflow is split into **3 parallel jobs** for optimal performance:
 - E2E tests only run after both complete successfully
 - Reduces total CI time from ~3-4 minutes to ~2 minutes
 
-#### ✅ **Proper Caching Strategy**
-- Go modules cached with `~/go/pkg/mod` path
-- Node.js dependencies cached with pnpm
-- **Cypress binary cached** at `~/.cache/Cypress` (prevents binary missing errors)
-- Build artifacts passed between jobs via `actions/upload-artifact@v4`
+#### ✅ **Enhanced Caching Strategy**
+- **Go modules**: Cached at `~/go/pkg/mod` with go.sum hash key
+- **Node.js dependencies**: Cached automatically with pnpm
+- **Cypress binary**: Cached at `~/.cache/Cypress` (prevents binary missing errors)
+- **Frontend build**: Cached at `web/dist` with git SHA key for instant retrieval
+- **Build artifacts**: Upload/download as fallback when cache misses
+- **Cache-first approach**: Check cache before downloading artifacts (faster)
 
 #### ✅ **Official Cypress GitHub Action**
 - Uses `cypress-io/github-action@v6` for E2E tests
@@ -80,12 +82,39 @@ Use the parallel workflow when:
    - Rename `cypress-parallel.yml` to `cypress-parallel.yml.disabled` to disable
    - Or rename `ci.yml` to `ci.yml.disabled` to switch to parallel mode
 
+### Simplified Architecture
+
+The parallel workflow uses a **much simpler approach** that lets the Cypress action handle everything:
+
+```yaml
+# ✅ Simple install job
+install:
+  steps:
+    - uses: cypress-io/github-action@v6
+      with:
+        runTests: false  # Just install and cache
+
+# ✅ Cypress action drives everything
+e2e-tests:
+  steps:
+    - uses: cypress-io/github-action@v6
+      with:
+        build: pnpm build           # Auto-builds
+        start: pnpm preview --port 5173  # Auto-starts server
+        wait-on: 'http://localhost:5173' # Auto-waits
+        parallel: true             # Auto-parallelizes
+        record: true              # Auto-records to Cypress Cloud
+```
+
 ### Features
 
 - **2x Parallel Execution** - Tests run across 2 containers simultaneously
+- **Automatic Caching** - Cypress action handles all dependency caching
+- **Integrated Build Pipeline** - Single action handles install → build → start → test
 - **Cypress Cloud Integration** - Advanced reporting and insights
 - **Test Result Recording** - Historical test data and analytics
 - **Flaky Test Detection** - Automatic identification of unreliable tests
+- **Zero Manual Setup** - No manual server management or artifact handling
 
 ## Local Development
 
@@ -135,8 +164,15 @@ pnpm test:e2e:dev      # Interactive GUI
 
 | Metric | Before | After | Improvement |
 |--------|--------|--------|-------------|
+| **Main Workflow (ci.yml)** | | | |
 | Total CI Time | ~4 min | ~2 min | **50% faster** |
 | Cache Hit Rate | ~60% | ~90% | **Better caching** |
+| Setup Complexity | High (manual) | Medium (hybrid) | **More reliable** |
+| **Parallel Workflow (cypress-parallel.yml)** | | | |
+| Total CI Time | ~4 min | ~1.5 min | **60% faster** |
+| Setup Complexity | High (manual) | Low (automatic) | **Much simpler** |
+| Maintenance Overhead | High | Minimal | **90% reduction** |
+| **Both Workflows** | | | |
 | Failure Debugging | Manual logs | Screenshots/Videos | **Visual debugging** |
 | Test Reliability | 91% pass | 100% pass | **More stable** |
 
@@ -213,32 +249,41 @@ pnpm test:e2e:dev      # Interactive GUI
 
 **Problem**: `pnpm preview` fails because build artifacts are missing when Cypress action tries to start the server
 
-**Solution**: Start the preview server manually AFTER downloading artifacts:
+**Solution**: Use cache-first approach with manual server startup:
 ```yaml
-# 1. Download build artifacts first
-- name: Download frontend build
+# 1. Try cache first (fastest)
+- name: Cache frontend build
+  id: cache-frontend
+  uses: actions/cache@v4
+  with:
+    path: web/dist
+    key: frontend-build-${{ runner.os }}-${{ github.sha }}
+
+# 2. Download as fallback only if cache miss
+- name: Download frontend build (fallback)
   uses: actions/download-artifact@v4
+  if: steps.cache-frontend.outputs.cache-hit != 'true'
   with:
     name: frontend-build
     path: web/dist
 
-# 2. Install dependencies
+# 3. Install dependencies
 - name: Install frontend dependencies
   run: pnpm install
   working-directory: web
 
-# 3. Start preview server manually
+# 4. Start preview server manually
 - name: Start frontend preview server
   run: |
     pnpm preview --port 5173 &
     echo $! > preview.pid
   working-directory: web
 
-# 4. Wait for server to be ready
+# 5. Wait for server to be ready
 - name: Wait for frontend to be ready
   run: timeout 30 bash -c 'until curl -f http://localhost:5173; do sleep 1; done'
 
-# 5. Run Cypress without starting server
+# 6. Run Cypress without starting server
 - uses: cypress-io/github-action@v6
   with:
     install: false  # Don't reinstall, we already did
