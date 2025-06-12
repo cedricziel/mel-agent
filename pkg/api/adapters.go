@@ -90,4 +90,3 @@ func AutoDetectNodeType(def interface{}) interface{} {
 
 	return nil
 }
-

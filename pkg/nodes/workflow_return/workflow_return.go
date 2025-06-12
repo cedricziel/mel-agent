@@ -56,7 +56,7 @@ func (d workflowReturnDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node
 
 	// Prepare return data
 	returnData := make(map[string]interface{})
-	
+
 	// Add custom return data if provided
 	if customData, ok := node.Data["returnData"].(string); ok && customData != "" {
 		var parsed interface{}
@@ -97,13 +97,13 @@ func (d workflowReturnDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node
 		result.DataType = "object"
 		result.Data = map[string]interface{}{
 			"returnResponse": map[string]interface{}{
-				"returnId":         fmt.Sprintf("return-%d", time.Now().UnixNano()),
-				"returnedAt":       time.Now().Format(time.RFC3339),
-				"sourceWorkflow":   ctx.AgentID,
-				"sourceRun":        ctx.RunID,
-				"sourceNode":       node.ID,
-				"status":           returnStatus,
-				"callId":           callId,
+				"returnId":          fmt.Sprintf("return-%d", time.Now().UnixNano()),
+				"returnedAt":        time.Now().Format(time.RFC3339),
+				"sourceWorkflow":    ctx.AgentID,
+				"sourceRun":         ctx.RunID,
+				"sourceNode":        node.ID,
+				"status":            returnStatus,
+				"callId":            callId,
 				"terminateWorkflow": terminateWorkflow,
 			},
 			"data":       returnData,
@@ -121,15 +121,15 @@ func (d workflowReturnDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node
 
 	// Fallback implementation
 	returnResponse := map[string]interface{}{
-		"returnId":         fmt.Sprintf("return-%d", time.Now().UnixNano()),
-		"returnedAt":       time.Now().Format(time.RFC3339),
-		"sourceWorkflow":   ctx.AgentID,
-		"sourceRun":        ctx.RunID,
-		"sourceNode":       node.ID,
-		"status":           returnStatus,
-		"data":             returnData,
+		"returnId":          fmt.Sprintf("return-%d", time.Now().UnixNano()),
+		"returnedAt":        time.Now().Format(time.RFC3339),
+		"sourceWorkflow":    ctx.AgentID,
+		"sourceRun":         ctx.RunID,
+		"sourceNode":        node.ID,
+		"status":            returnStatus,
+		"data":              returnData,
 		"terminateWorkflow": terminateWorkflow,
-		"mode":             "fallback",
+		"mode":              "fallback",
 	}
 
 	if returnMessage != "" {

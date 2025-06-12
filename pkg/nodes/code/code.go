@@ -21,12 +21,12 @@ type CodeExecutionContext struct {
 	// Input data from envelope
 	Data      interface{}            `json:"data"`
 	Variables map[string]interface{} `json:"variables"`
-	
+
 	// Node context
 	NodeData map[string]interface{} `json:"nodeData"`
 	NodeID   string                 `json:"nodeId"`
 	AgentID  string                 `json:"agentId"`
-	
+
 	// Platform utilities
 	Mel api.Mel `json:"-"`
 }
@@ -43,7 +43,7 @@ func (codeDefinition) Meta() api.NodeType {
 		Label:    "Code",
 		Category: "Code",
 		Parameters: []api.ParameterDefinition{
-			api.NewEnumParameter("language", "Language", 
+			api.NewEnumParameter("language", "Language",
 				[]string{"javascript", "python", "typescript"}, true).
 				WithDefault("javascript").
 				WithGroup("Settings").
@@ -76,23 +76,23 @@ func (d *codeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node
 	if !ok || code == "" {
 		return nil, api.NewNodeError(node.ID, "code", "code parameter is required")
 	}
-	
+
 	language, ok := node.Data["language"].(string)
 	if !ok || language == "" {
 		language = "javascript" // Default language
 	}
-	
+
 	timeout, _ := node.Data["timeout"].(float64)
 	if timeout <= 0 {
 		timeout = 30
 	}
-	
+
 	// Get runtime for selected language
 	runtime, exists := d.runtimes[language]
 	if !exists {
 		return nil, api.NewNodeError(node.ID, "code", "unsupported language: "+language)
 	}
-	
+
 	// Prepare execution context
 	execContext := CodeExecutionContext{
 		Data:      envelope.Data,
@@ -102,7 +102,7 @@ func (d *codeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node
 		AgentID:   ctx.AgentID,
 		Mel:       ctx.Mel,
 	}
-	
+
 	// Execute with timeout
 	resultChan := make(chan codeExecutionResult, 1)
 	go func() {
@@ -113,30 +113,30 @@ func (d *codeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node
 				}
 			}
 		}()
-		
+
 		result, err := runtime.Execute(code, execContext)
 		resultChan <- codeExecutionResult{
 			Value: result,
 			Error: err,
 		}
 	}()
-	
+
 	// Wait for result or timeout
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
 	defer cancel()
-	
+
 	select {
 	case result := <-resultChan:
 		if result.Error != nil {
 			return nil, api.NewNodeError(node.ID, "code", "execution error: "+result.Error.Error())
 		}
-		
+
 		resultEnvelope := envelope.Clone()
 		resultEnvelope.Trace = envelope.Trace.Next(node.ID)
 		resultEnvelope.Data = result.Value
-		
+
 		return resultEnvelope, nil
-		
+
 	case <-timeoutCtx.Done():
 		return nil, api.NewNodeError(node.ID, "code", "execution timeout exceeded")
 	}
@@ -148,7 +148,7 @@ func (d *codeDefinition) Initialize(mel api.Mel) error {
 	if d.runtimes == nil {
 		d.runtimes = make(map[string]Runtime)
 	}
-	
+
 	// Add JavaScript runtime if not already present
 	if _, exists := d.runtimes["javascript"]; !exists {
 		jsRuntime := NewJavaScriptRuntime()
@@ -157,13 +157,13 @@ func (d *codeDefinition) Initialize(mel api.Mel) error {
 		}
 		d.runtimes["javascript"] = jsRuntime
 	}
-	
+
 	// Future: Add other language runtimes here
 	// if _, exists := d.runtimes["python"]; !exists {
 	//     pythonRuntime := NewPythonRuntime()
 	//     d.runtimes["python"] = pythonRuntime
 	// }
-	
+
 	return nil
 }
 

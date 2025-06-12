@@ -17,6 +17,7 @@ AI Agents SaaS platform with Go backend and React frontend. This is a monorepo t
 - **Test**: `go test ./...`
 - **Build**: `go build ./cmd/server`
 - **Lint**: `go vet ./...`
+- **Run go fmt from time**: `go fmt ./...`
 
 ### Frontend (React)
 - **Install dependencies**: `cd web && pnpm install`

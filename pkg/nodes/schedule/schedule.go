@@ -29,29 +29,29 @@ func (d scheduleDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.N
 	// Create schedule execution data with current timestamp
 	now := time.Now()
 	scheduleData := map[string]interface{}{
-		"timestamp":     now.Format(time.RFC3339),
-		"unix":          now.Unix(),
-		"unixNano":      now.UnixNano(),
-		"year":          now.Year(),
-		"month":         int(now.Month()),
-		"monthName":     now.Month().String(),
-		"day":           now.Day(),
-		"weekday":       int(now.Weekday()),
-		"weekdayName":   now.Weekday().String(),
-		"hour":          now.Hour(),
-		"minute":        now.Minute(),
-		"second":        now.Second(),
-		"timezone":      now.Location().String(),
-		"scheduledAt":   now.Format(time.RFC3339),
-		"cron":          node.Data["cron"],
-		"triggerType":   "schedule",
+		"timestamp":   now.Format(time.RFC3339),
+		"unix":        now.Unix(),
+		"unixNano":    now.UnixNano(),
+		"year":        now.Year(),
+		"month":       int(now.Month()),
+		"monthName":   now.Month().String(),
+		"day":         now.Day(),
+		"weekday":     int(now.Weekday()),
+		"weekdayName": now.Weekday().String(),
+		"hour":        now.Hour(),
+		"minute":      now.Minute(),
+		"second":      now.Second(),
+		"timezone":    now.Location().String(),
+		"scheduledAt": now.Format(time.RFC3339),
+		"cron":        node.Data["cron"],
+		"triggerType": "schedule",
 	}
 
 	result := envelope.Clone()
 	result.Trace = envelope.Trace.Next(node.ID)
 	result.Data = scheduleData
 	result.DataType = "object"
-	
+
 	return result, nil
 }
 
