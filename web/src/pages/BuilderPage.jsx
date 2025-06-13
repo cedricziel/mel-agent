@@ -10,12 +10,17 @@ import AgentNode from '../components/AgentNode';
 import ModelNode from '../components/ModelNode';
 import ToolsNode from '../components/ToolsNode';
 import MemoryNode from '../components/MemoryNode';
+import OpenAIModelNode from '../components/OpenAIModelNode';
+import AnthropicModelNode from '../components/AnthropicModelNode';
+import LocalMemoryNode from '../components/LocalMemoryNode';
+import ConfigSelectionDialog from '../components/ConfigSelectionDialog';
 import NodeDetailsPanel from '../components/NodeDetailsPanel';
 import NodeModal from '../components/NodeModal';
 import 'reactflow/dist/style.css';
 import ChatAssistant from '../components/ChatAssistant';
 import { useWorkflowState } from '../hooks/useWorkflowState';
 import { isValidConnection } from '../utils/connectionTypes';
+import CustomEdge from '../components/CustomEdge';
 
 function BuilderPage({ agentId }) {
   const navigate = useNavigate();
@@ -73,6 +78,12 @@ function BuilderPage({ agentId }) {
   const [selectedExecution, setSelectedExecution] = useState(null);
   const [loadingExecutions, setLoadingExecutions] = useState(false);
 
+  // Config selection dialog state
+  const [configDialogOpen, setConfigDialogOpen] = useState(false);
+  const [configDialogType, setConfigDialogType] = useState(null);
+  const [configDialogAgentId, setConfigDialogAgentId] = useState(null);
+  const [configDialogHandleId, setConfigDialogHandleId] = useState(null);
+
   // Node definitions and triggers
   const [nodeDefs, setNodeDefs] = useState([]);
   const [triggers, setTriggers] = useState([]);
@@ -109,60 +120,67 @@ function BuilderPage({ agentId }) {
     [clientId, agentId]
   );
 
-  // Config node creation function
-  const createConfigNode = useCallback(
-    async (agentNodeId, configType, handleId) => {
-      const agentNode = nodes.find((n) => n.id === agentNodeId);
+  // Open config selection dialog
+  const openConfigDialog = useCallback((agentNodeId, configType, handleId) => {
+    setConfigDialogAgentId(agentNodeId);
+    setConfigDialogType(configType);
+    setConfigDialogHandleId(handleId);
+    setConfigDialogOpen(true);
+  }, []);
+
+  // Handle node deletion
+  const handleNodeDelete = useCallback(
+    async (nodeId) => {
+      try {
+        await deleteNode(nodeId);
+        broadcastNodeChange('nodeDeleted', { nodeId });
+      } catch (err) {
+        console.error('Failed to delete node:', err);
+      }
+    },
+    [deleteNode, broadcastNodeChange]
+  );
+
+  // Handle config selection from dialog
+  const handleConfigSelection = useCallback(
+    async (configOption) => {
+      const agentNode = nodes.find((n) => n.id === configDialogAgentId);
       if (!agentNode) return;
 
       const baseTimestamp = Date.now();
       const configId = `${baseTimestamp}`;
 
-      // Default configurations for each type
-      const configDefaults = {
-        model: {
-          label: 'Model Config',
-          nodeTypeLabel: 'Model Configuration',
-          provider: 'openai',
-          model: 'gpt-4',
-        },
-        tools: {
-          label: 'Tools Config',
-          nodeTypeLabel: 'Tools Configuration',
-          allowCodeExecution: false,
-          allowWebSearch: true,
-        },
-        memory: {
-          label: 'Memory Config',
-          nodeTypeLabel: 'Memory Configuration',
-          memoryType: 'short_term',
-          maxMessages: 100,
-        },
-      };
-
-      // Position the new config node below the agent (since handles are at bottom and connect upward)
+      // Position the new config node below the agent
       const configPosition = {
         x:
           agentNode.position.x -
           50 +
-          (configType === 'model' ? -100 : configType === 'tools' ? 0 : 100),
+          (configDialogType === 'model'
+            ? -100
+            : configDialogType === 'tools'
+              ? 0
+              : 100),
         y: agentNode.position.y + 150,
       };
 
       const configNode = {
         id: configId,
-        type: configType,
-        data: configDefaults[configType],
+        type: configOption.type,
+        data: {
+          label: configOption.label,
+          nodeTypeLabel: configOption.label,
+          ...configOption.defaultData,
+        },
         position: configPosition,
       };
 
       // Create edge with proper handle IDs
       const configEdge = {
-        id: `edge-${configType}-${baseTimestamp}`,
+        id: `edge-${configOption.type}-${baseTimestamp}`,
         source: configId,
         sourceHandle: 'config-out',
-        target: agentNodeId,
-        targetHandle: handleId,
+        target: configDialogAgentId,
+        targetHandle: configDialogHandleId,
         type: 'default',
       };
 
@@ -178,10 +196,10 @@ function BuilderPage({ agentId }) {
           memory: 'memoryConfig',
         };
 
-        await updateNode(agentNodeId, {
+        await updateNode(configDialogAgentId, {
           data: {
             ...agentNode.data,
-            [configFieldMap[configType]]: configId,
+            [configFieldMap[configDialogType]]: configId,
           },
         });
 
@@ -192,26 +210,54 @@ function BuilderPage({ agentId }) {
         console.error('Failed to create configuration node:', err);
       }
     },
-    [nodes, createNode, createEdge, updateNode, broadcastNodeChange]
+    [
+      nodes,
+      createNode,
+      createEdge,
+      updateNode,
+      broadcastNodeChange,
+      configDialogAgentId,
+      configDialogType,
+      configDialogHandleId,
+    ]
   );
 
   // Dynamically create nodeTypes based on available node definitions
   const nodeTypes = useMemo(() => {
     const types = {
-      default: DefaultNode,
+      default: (props) => (
+        <DefaultNode {...props} onDelete={handleNodeDelete} />
+      ),
       agent: (props) => (
         <AgentNode
           {...props}
+          onDelete={handleNodeDelete}
           onAddConfigNode={(configType, handleId) => {
-            createConfigNode(props.id, configType, handleId);
+            openConfigDialog(props.id, configType, handleId);
           }}
         />
       ),
-      model: ModelNode,
-      tools: ToolsNode,
-      memory: MemoryNode,
-      if: IfNode,
-      http_request: HttpRequestNode,
+      // Legacy generic config nodes (keeping for backward compatibility)
+      model: (props) => <ModelNode {...props} onDelete={handleNodeDelete} />,
+      tools: (props) => <ToolsNode {...props} onDelete={handleNodeDelete} />,
+      memory: (props) => <MemoryNode {...props} onDelete={handleNodeDelete} />,
+      // Specific config nodes
+      openai_model: (props) => (
+        <OpenAIModelNode {...props} onDelete={handleNodeDelete} />
+      ),
+      anthropic_model: (props) => (
+        <AnthropicModelNode {...props} onDelete={handleNodeDelete} />
+      ),
+      local_memory: (props) => (
+        <LocalMemoryNode {...props} onDelete={handleNodeDelete} />
+      ),
+      workflow_tools: (props) => (
+        <ToolsNode {...props} onDelete={handleNodeDelete} />
+      ),
+      if: (props) => <IfNode {...props} onDelete={handleNodeDelete} />,
+      http_request: (props) => (
+        <HttpRequestNode {...props} onDelete={handleNodeDelete} />
+      ),
     };
 
     // Add trigger nodes with special rendering
@@ -232,6 +278,7 @@ function BuilderPage({ agentId }) {
             type={type}
             agentId={agentId}
             icon={nodeDef?.icon}
+            onDelete={handleNodeDelete}
           />
         );
       };
@@ -241,13 +288,15 @@ function BuilderPage({ agentId }) {
     if (Array.isArray(nodeDefs)) {
       nodeDefs.forEach((nodeDef) => {
         if (!types[nodeDef.type]) {
-          types[nodeDef.type] = DefaultNode;
+          types[nodeDef.type] = (props) => (
+            <DefaultNode {...props} onDelete={handleNodeDelete} />
+          );
         }
       });
     }
 
     return types;
-  }, [nodeDefs, agentId, createConfigNode]);
+  }, [nodeDefs, agentId, openConfigDialog, handleNodeDelete]);
 
   // Load node definitions
   useEffect(() => {
@@ -800,16 +849,149 @@ function BuilderPage({ agentId }) {
     return { nodes, edges };
   }, [nodes, edges]);
 
-  // Auto-layout handler
+  // Auto-layout handler that excludes configuration nodes
   const handleAutoLayout = useCallback(async () => {
     try {
-      await autoLayout();
+      const configNodeTypes = [
+        'model',
+        'tools',
+        'memory',
+        'openai_model',
+        'anthropic_model',
+        'local_memory',
+        'workflow_tools',
+      ];
+
+      // Separate workflow nodes from configuration nodes
+      const workflowNodes = nodes.filter(
+        (node) => !configNodeTypes.includes(node.type)
+      );
+      const configNodes = nodes.filter((node) =>
+        configNodeTypes.includes(node.type)
+      );
+
+      // Store configuration node positions and their parent relationships
+      const configNodeData = new Map();
+      configNodes.forEach((configNode) => {
+        // Find the agent this config node belongs to by looking at edges
+        const targetEdge = edges.find(
+          (edge) =>
+            edge.source === configNode.id &&
+            edge.targetHandle &&
+            (edge.targetHandle.includes('config') ||
+              edge.targetHandle === 'model-config' ||
+              edge.targetHandle === 'tools-config' ||
+              edge.targetHandle === 'memory-config')
+        );
+
+        if (targetEdge) {
+          const agentNode = nodes.find((n) => n.id === targetEdge.target);
+          if (agentNode) {
+            configNodeData.set(configNode.id, {
+              agentId: agentNode.id,
+              relativeX: configNode.position.x - agentNode.position.x,
+              relativeY: configNode.position.y - agentNode.position.y,
+              currentPosition: { ...configNode.position },
+            });
+          }
+        }
+      });
+
+      // Temporarily remove configuration nodes from the workflow state
+      // This prevents them from being sent to the backend auto-layout
+      const configNodeIds = configNodes.map((n) => n.id);
+      const tempRemovedNodes = [];
+
+      for (const nodeId of configNodeIds) {
+        tempRemovedNodes.push({
+          nodeId,
+          position: nodes.find((n) => n.id === nodeId)?.position,
+        });
+        // Don't actually delete, just mark them to exclude from layout
+      }
+
+      // Create a custom auto-layout that only affects workflow nodes
+      // We'll implement a simple client-side layout for now
+      const layoutWorkflowNodes = async () => {
+        const GRID_SIZE = 200;
+        const VERTICAL_SPACING = 150;
+        let currentX = 100;
+        let currentY = 100;
+
+        // Find trigger nodes (starting points)
+        const triggerNodes = workflowNodes.filter((node) =>
+          [
+            'webhook',
+            'schedule',
+            'manual_trigger',
+            'workflow_trigger',
+            'slack',
+            'timer',
+          ].includes(node.type)
+        );
+
+        // Simple left-to-right layout
+        const layoutNodes = [
+          ...triggerNodes,
+          ...workflowNodes.filter(
+            (node) =>
+              ![
+                'webhook',
+                'schedule',
+                'manual_trigger',
+                'workflow_trigger',
+                'slack',
+                'timer',
+              ].includes(node.type)
+          ),
+        ];
+
+        for (let i = 0; i < layoutNodes.length; i++) {
+          const node = layoutNodes[i];
+          await updateNode(node.id, {
+            position: {
+              x: currentX,
+              y: currentY,
+            },
+          });
+
+          currentX += GRID_SIZE;
+          if ((i + 1) % 4 === 0) {
+            // New row every 4 nodes
+            currentX = 100;
+            currentY += VERTICAL_SPACING;
+          }
+        }
+      };
+
+      // Apply layout to workflow nodes only
+      await layoutWorkflowNodes();
+
+      // Wait a moment for the layout to propagate, then reposition config nodes
+      setTimeout(() => {
+        configNodeData.forEach((data, configNodeId) => {
+          // Get the updated position of the agent node
+          const currentNodes = wsNodes.length > 0 ? wsNodes : nodes;
+          const agentNode = currentNodes.find((n) => n.id === data.agentId);
+
+          if (agentNode) {
+            const newPosition = {
+              x: agentNode.position.x + data.relativeX,
+              y: agentNode.position.y + data.relativeY,
+            };
+
+            // Update the config node position to maintain relative positioning
+            updateNode(configNodeId, { position: newPosition });
+          }
+        });
+      }, 500);
+
       alert('Layout updated!');
     } catch (err) {
       console.error('Auto-layout failed:', err);
       alert('Auto-layout failed');
     }
-  }, [autoLayout]);
+  }, [nodes, edges, wsNodes, updateNode]);
 
   // Add node from modal
   const handleModalAddNode = useCallback(
@@ -876,6 +1058,7 @@ function BuilderPage({ agentId }) {
           onNodeClick={onNodeClick}
           onNodeDoubleClick={onNodeDoubleClick}
           nodeTypes={nodeTypes}
+          edgeTypes={{ default: CustomEdge }}
           isValidConnection={(connection) => {
             const sourceNode = nodes.find((n) => n.id === connection.source);
             const targetNode = nodes.find((n) => n.id === connection.target);
@@ -1251,6 +1434,14 @@ function BuilderPage({ agentId }) {
           }
         }}
         onSave={save}
+      />
+
+      {/* Config Selection Dialog */}
+      <ConfigSelectionDialog
+        isOpen={configDialogOpen}
+        configType={configDialogType}
+        onClose={() => setConfigDialogOpen(false)}
+        onSelect={handleConfigSelection}
       />
     </div>
   );

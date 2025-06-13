@@ -4,7 +4,7 @@ import 'reactflow/dist/style.css';
 import { HANDLE_TYPES, getHandleColor } from '../utils/connectionTypes';
 
 // Generic node renderer: one input, one output, shows label
-export default function DefaultNode({ data, onAddClick, icon }) {
+export default function DefaultNode({ data, onAddClick, icon, onDelete, id }) {
   const summaryKeys = Object.keys(data).filter(
     (k) =>
       k !== 'label' && k !== 'status' && k !== 'nodeTypeLabel' && k !== 'error'
@@ -17,6 +17,21 @@ export default function DefaultNode({ data, onAddClick, icon }) {
       }`}
     >
       <div className="absolute top-1 left-1 text-xs">{nodeIcon}</div>
+
+      {/* Delete button */}
+      {onDelete && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(id);
+          }}
+          className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 hover:bg-red-600 text-white text-xs rounded-full flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity"
+          title="Delete node"
+        >
+          ×
+        </button>
+      )}
+
       {/* Quick-add button */}
       {onAddClick && (
         <button

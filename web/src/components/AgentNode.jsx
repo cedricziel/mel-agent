@@ -3,7 +3,13 @@ import 'reactflow/dist/style.css';
 import { HANDLE_TYPES, getHandleColor } from '../utils/connectionTypes';
 
 // Specialized node renderer for agent nodes with configuration inputs at the bottom
-export default function AgentNode({ data, onAddClick, onAddConfigNode }) {
+export default function AgentNode({
+  data,
+  onAddClick,
+  onAddConfigNode,
+  onDelete,
+  id,
+}) {
   const summaryKeys = Object.keys(data).filter(
     (k) =>
       k !== 'label' &&
@@ -22,6 +28,20 @@ export default function AgentNode({ data, onAddClick, onAddConfigNode }) {
       }`}
     >
       <div className="absolute top-1 left-1 text-xs">🤖</div>
+
+      {/* Delete button */}
+      {onDelete && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(id);
+          }}
+          className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 hover:bg-red-600 text-white text-xs rounded-full flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity"
+          title="Delete node"
+        >
+          ×
+        </button>
+      )}
 
       {/* Quick-add button */}
       {onAddClick && (

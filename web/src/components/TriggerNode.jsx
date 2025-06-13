@@ -12,6 +12,7 @@ export default function TriggerNode({
   id,
   type,
   agentId,
+  onDelete,
 }) {
   const summaryKeys = Object.keys(data).filter(
     (k) => k !== 'label' && k !== 'status'
@@ -62,6 +63,20 @@ export default function TriggerNode({
         }}
       >
         <div className="absolute top-1 left-1 text-xs">{nodeIcon}</div>
+
+        {/* Delete button */}
+        {onDelete && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(id);
+            }}
+            className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 hover:bg-red-600 text-white text-xs rounded-full flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity"
+            title="Delete node"
+          >
+            ×
+          </button>
+        )}
 
         {/* Status indicator: running */}
         {data.status === 'running' && (
