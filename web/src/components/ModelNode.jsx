@@ -4,49 +4,57 @@ import { HANDLE_TYPES, getHandleColor } from '../utils/connectionTypes';
 
 export default function ModelNode({ data, onAddClick }) {
   const summaryKeys = Object.keys(data).filter(
-    (k) => k !== 'label' && k !== 'status' && k !== 'nodeTypeLabel' && k !== 'error'
+    (k) =>
+      k !== 'label' && k !== 'status' && k !== 'nodeTypeLabel' && k !== 'error'
   );
-  
+
   return (
     <div
-      className={
-        `relative bg-blue-50 border-blue-200 rounded p-2 pl-6 min-w-[100px] ${
-          data.error ? 'border-2 border-red-500' : 'border-2'
-        }`
-      }
+      className={`relative bg-blue-50 border-blue-200 rounded p-2 pl-6 min-w-[100px] ${
+        data.error ? 'border-2 border-red-500' : 'border-2'
+      }`}
     >
       <div className="absolute top-1 left-1 text-xs">🧠</div>
-      
+
       {/* Quick-add button */}
       {onAddClick && (
         <button
-          onClick={(e) => { e.stopPropagation(); onAddClick(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddClick();
+          }}
           className="absolute top-1 right-1 w-5 h-5 bg-blue-600 text-white text-xs rounded flex items-center justify-center"
         >
           +
         </button>
       )}
-      
+
       {/* Status indicators */}
       {data.status === 'running' && (
         <div className="absolute -top-1 -left-1 w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
       )}
-      
+
       {data.error && (
         <div className="absolute -top-1 -left-1 w-3 h-3 bg-red-500 rounded-full"></div>
       )}
-      
+
       <div className="font-semibold text-sm text-blue-700">{data.label}</div>
-      
+
       {/* Show key parameters */}
       {summaryKeys.length > 0 && (
         <div className="mt-1">
           {summaryKeys.slice(0, 3).map((key) => {
             const val = data[key];
-            const display = val !== null && typeof val === 'object' ? JSON.stringify(val) : String(val);
+            const display =
+              val !== null && typeof val === 'object'
+                ? JSON.stringify(val)
+                : String(val);
             return (
               <div key={key} className="text-xs text-blue-600">
-                {key}: {display.length > 15 ? display.substring(0, 15) + '...' : display}
+                {key}:{' '}
+                {display.length > 15
+                  ? display.substring(0, 15) + '...'
+                  : display}
               </div>
             );
           })}
@@ -55,15 +63,15 @@ export default function ModelNode({ data, onAddClick }) {
           )}
         </div>
       )}
-      
+
       {/* Output handle at the top - connects to agent */}
       <Handle
         type="source"
         position={Position.Top}
         id="config-out"
-        style={{ 
+        style={{
           backgroundColor: getHandleColor(HANDLE_TYPES.MODEL_CONFIG),
-          top: '-6px'
+          top: '-6px',
         }}
       />
     </div>

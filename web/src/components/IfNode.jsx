@@ -8,17 +8,18 @@ export default function IfNode({ id, data, onAddClick, icon }) {
   const nodeIcon = icon || '❓';
   return (
     <div
-      className={
-        `relative bg-yellow-50 rounded p-2 pl-6 min-w-[120px] ${
-          data.error ? 'border-2 border-red-500' : 'border border-yellow-400'
-        }`
-      }
+      className={`relative bg-yellow-50 rounded p-2 pl-6 min-w-[120px] ${
+        data.error ? 'border-2 border-red-500' : 'border border-yellow-400'
+      }`}
     >
       <div className="absolute top-1 left-1 text-xs">{nodeIcon}</div>
       {/* Quick-add button */}
       {onAddClick && (
         <button
-          onClick={(e) => { e.stopPropagation(); onAddClick(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddClick();
+          }}
           className="absolute top-1 right-1 w-5 h-5 bg-indigo-600 text-white text-xs rounded flex items-center justify-center"
         >
           +

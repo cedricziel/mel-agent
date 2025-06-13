@@ -6,22 +6,24 @@ import { HANDLE_TYPES, getHandleColor } from '../utils/connectionTypes';
 // Generic node renderer: one input, one output, shows label
 export default function DefaultNode({ data, onAddClick, icon }) {
   const summaryKeys = Object.keys(data).filter(
-    (k) => k !== 'label' && k !== 'status' && k !== 'nodeTypeLabel' && k !== 'error'
+    (k) =>
+      k !== 'label' && k !== 'status' && k !== 'nodeTypeLabel' && k !== 'error'
   );
   const nodeIcon = icon || '📦';
   return (
     <div
-      className={
-        `relative bg-white rounded p-2 pl-6 min-w-[100px] ${
-          data.error ? 'border-2 border-red-500' : 'border'
-        }`
-      }
+      className={`relative bg-white rounded p-2 pl-6 min-w-[100px] ${
+        data.error ? 'border-2 border-red-500' : 'border'
+      }`}
     >
       <div className="absolute top-1 left-1 text-xs">{nodeIcon}</div>
       {/* Quick-add button */}
       {onAddClick && (
         <button
-          onClick={(e) => { e.stopPropagation(); onAddClick(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddClick();
+          }}
           className="absolute top-1 right-1 w-5 h-5 bg-indigo-600 text-white text-xs rounded flex items-center justify-center"
         >
           +
@@ -40,7 +42,10 @@ export default function DefaultNode({ data, onAddClick, icon }) {
         <div className="mt-1 space-y-0.5">
           {summaryKeys.slice(0, 2).map((key) => {
             const val = data[key];
-            const display = val !== null && typeof val === 'object' ? JSON.stringify(val) : String(val);
+            const display =
+              val !== null && typeof val === 'object'
+                ? JSON.stringify(val)
+                : String(val);
             return (
               <div key={key} className="text-xs text-gray-600">
                 {key}: {display}
@@ -56,16 +61,16 @@ export default function DefaultNode({ data, onAddClick, icon }) {
         type="target"
         position={Position.Left}
         id="workflow-in"
-        style={{ 
-          backgroundColor: getHandleColor(HANDLE_TYPES.WORKFLOW_INPUT)
+        style={{
+          backgroundColor: getHandleColor(HANDLE_TYPES.WORKFLOW_INPUT),
         }}
       />
       <Handle
         type="source"
         position={Position.Right}
         id="workflow-out"
-        style={{ 
-          backgroundColor: getHandleColor(HANDLE_TYPES.WORKFLOW_OUTPUT)
+        style={{
+          backgroundColor: getHandleColor(HANDLE_TYPES.WORKFLOW_OUTPUT),
         }}
       />
     </div>

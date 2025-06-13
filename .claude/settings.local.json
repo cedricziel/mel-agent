@@ -13,7 +13,8 @@
       "WebFetch(domain:docs.cypress.io)",
       "Bash(grep:*)",
       "Bash(mkdir:*)",
-      "Bash(go fmt:*)"
+      "Bash(go fmt:*)",
+      "Bash(pnpm add:*)"
     ],
     "deny": []
   },

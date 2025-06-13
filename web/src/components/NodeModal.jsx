@@ -3,7 +3,19 @@ import CodeEditor from './CodeEditor';
 import DataViewer from './DataViewer';
 
 // Full-screen modal for editing nodes with input/output panels like n8n
-export default function NodeModal({ node, nodeDef, nodes, isOpen, onClose, onChange, onExecute, onSave, viewMode, selectedExecution, agentId }) {
+export default function NodeModal({
+  node,
+  nodeDef,
+  nodes,
+  isOpen,
+  onClose,
+  onChange,
+  onExecute,
+  onSave,
+  viewMode,
+  selectedExecution,
+  agentId,
+}) {
   const [currentFormData, setCurrentFormData] = useState({});
   const [inputData, setInputData] = useState({});
   const [outputData, setOutputData] = useState({});
@@ -21,64 +33,64 @@ export default function NodeModal({ node, nodeDef, nodes, isOpen, onClose, onCha
 
   // Helper to update both local state and parent
   const handleChange = (key, value) => {
-    setCurrentFormData(prev => ({ ...prev, [key]: value }));
+    setCurrentFormData((prev) => ({ ...prev, [key]: value }));
     onChange(key, value);
   };
 
   // Function to load dynamic options for a specific parameter
   const loadDynamicOptionsForParam = async (paramName) => {
-    const param = nodeDef?.parameters?.find(p => p.name === paramName);
+    const param = nodeDef?.parameters?.find((p) => p.name === paramName);
     if (!param?.dynamicOptions) return;
-    
+
     try {
-      setLoadingOptions(prev => ({ ...prev, [paramName]: true }));
-      
+      setLoadingOptions((prev) => ({ ...prev, [paramName]: true }));
+
       const queryParams = new URLSearchParams();
       Object.entries(currentFormData || {}).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
           queryParams.append(key, value);
         }
       });
-      
+
       const url = `/api/node-types/${nodeDef.type}/parameters/${paramName}/options?${queryParams}`;
       const response = await fetch(url);
-      
+
       if (response.ok) {
         const data = await response.json();
-        setDynamicOptions(prev => ({ 
-          ...prev, 
-          [paramName]: data.options || [] 
+        setDynamicOptions((prev) => ({
+          ...prev,
+          [paramName]: data.options || [],
         }));
       } else {
-        setDynamicOptions(prev => ({ 
-          ...prev, 
-          [paramName]: [] 
+        setDynamicOptions((prev) => ({
+          ...prev,
+          [paramName]: [],
         }));
       }
     } catch (error) {
       console.error(`Error loading dynamic options for ${paramName}:`, error);
-      setDynamicOptions(prev => ({ 
-        ...prev, 
-        [paramName]: [] 
+      setDynamicOptions((prev) => ({
+        ...prev,
+        [paramName]: [],
       }));
     } finally {
-      setLoadingOptions(prev => ({ ...prev, [paramName]: false }));
+      setLoadingOptions((prev) => ({ ...prev, [paramName]: false }));
     }
   };
 
   // Load credentials for credential parameters
   useEffect(() => {
     if (!nodeDef || !nodeDef.parameters) return;
-    
-    const credentialParams = nodeDef.parameters.filter(p => 
-      p.type === 'credential' || p.parameterType === 'credential'
+
+    const credentialParams = nodeDef.parameters.filter(
+      (p) => p.type === 'credential' || p.parameterType === 'credential'
     );
-    
+
     if (credentialParams.length > 0) {
       // Load credentials for each credential parameter
       const promises = credentialParams.map(async (param) => {
         try {
-          const url = param.credentialType 
+          const url = param.credentialType
             ? `/api/credentials?credential_type=${param.credentialType}`
             : '/api/credentials';
           const response = await fetch(url);
@@ -89,7 +101,7 @@ export default function NodeModal({ node, nodeDef, nodes, isOpen, onClose, onCha
           return { paramName: param.name, credentials: [] };
         }
       });
-      
+
       Promise.all(promises).then((results) => {
         const credentialsMap = {};
         results.forEach(({ paramName, credentials }) => {
@@ -108,7 +120,7 @@ export default function NodeModal({ node, nodeDef, nodes, isOpen, onClose, onCha
 
   useEffect(() => {
     if (!nodeDef || !currentFormData?.databaseId) {
-      setDynamicOptions(prev => ({ ...prev, tableId: [] }));
+      setDynamicOptions((prev) => ({ ...prev, tableId: [] }));
       return;
     }
     loadDynamicOptionsForParam('tableId');
@@ -116,18 +128,23 @@ export default function NodeModal({ node, nodeDef, nodes, isOpen, onClose, onCha
 
   // Load execution data for this node when in executions mode
   useEffect(() => {
-    if (!isOpen || !node || !selectedExecution || viewMode !== 'executions') return;
-    
+    if (!isOpen || !node || !selectedExecution || viewMode !== 'executions')
+      return;
+
     const loadNodeExecutionData = async () => {
       try {
         // Fetch the full execution details
-        const response = await fetch(`/api/agents/${agentId}/runs/${selectedExecution.id}`);
+        const response = await fetch(
+          `/api/agents/${agentId}/runs/${selectedExecution.id}`
+        );
         if (response.ok) {
           const executionData = await response.json();
-          
+
           // Find the trace step for this specific node
           if (executionData.trace) {
-            const nodeStep = executionData.trace.find(step => step.nodeId === node.id);
+            const nodeStep = executionData.trace.find(
+              (step) => step.nodeId === node.id
+            );
             if (nodeStep) {
               setInputData(nodeStep.input?.[0]?.data || {});
               setOutputData(nodeStep.output?.[0]?.data || {});
@@ -138,19 +155,23 @@ export default function NodeModal({ node, nodeDef, nodes, isOpen, onClose, onCha
         console.error('Error loading node execution data:', error);
       }
     };
-    
+
     loadNodeExecutionData();
   }, [isOpen, node, selectedExecution, viewMode, agentId]);
 
   if (!isOpen || !node || !nodeDef) return null;
 
   const renderParameterField = (param) => {
-    const val = currentFormData[param.name] != null ? currentFormData[param.name] : param.default;
+    const val =
+      currentFormData[param.name] != null
+        ? currentFormData[param.name]
+        : param.default;
     const error = param.required && (val === '' || val == null);
     const baseClass = error ? 'border-red-500' : 'border-gray-300';
     const paramType = param.parameterType || param.type;
-    
-    const hasDynamicOptions = dynamicOptions[param.name] && dynamicOptions[param.name].length > 0;
+
+    const hasDynamicOptions =
+      dynamicOptions[param.name] && dynamicOptions[param.name].length > 0;
     const isLoadingOptions = loadingOptions[param.name];
     const isDynamicParameter = param.dynamicOptions;
 
@@ -181,12 +202,12 @@ export default function NodeModal({ node, nodeDef, nodes, isOpen, onClose, onCha
             </select>
           );
         }
-        
+
         // Check for code format (from jsonSchema.format)
         if (param.jsonSchema && param.jsonSchema.format === 'code') {
           // Get the language from the node's language parameter
           const nodeLanguage = currentFormData.language || 'javascript';
-          
+
           return (
             <CodeEditor
               value={val || ''}
@@ -197,7 +218,7 @@ export default function NodeModal({ node, nodeDef, nodes, isOpen, onClose, onCha
             />
           );
         }
-        
+
         return (
           <input
             type="text"
@@ -233,9 +254,12 @@ export default function NodeModal({ node, nodeDef, nodes, isOpen, onClose, onCha
             onChange={(e) => handleChange(param.name, e.target.value)}
             className={`w-full border rounded px-3 py-2 ${baseClass}`}
           >
-            {param.options && param.options.map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
+            {param.options &&
+              param.options.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
           </select>
         );
 
@@ -254,13 +278,14 @@ export default function NodeModal({ node, nodeDef, nodes, isOpen, onClose, onCha
 
       case 'nodeReference':
         // Node reference selection - allows referencing other nodes in the workflow
-        const availableNodes = (nodes || []).filter(n => 
-          n.id !== node?.id && // Exclude self-reference
-          n.type !== 'manual_trigger' && // Exclude trigger nodes
-          n.type !== 'workflow_trigger' && 
-          n.type !== 'schedule'
+        const availableNodes = (nodes || []).filter(
+          (n) =>
+            n.id !== node?.id && // Exclude self-reference
+            n.type !== 'manual_trigger' && // Exclude trigger nodes
+            n.type !== 'workflow_trigger' &&
+            n.type !== 'schedule'
         );
-        
+
         return (
           <select
             value={val || ''}
@@ -270,7 +295,8 @@ export default function NodeModal({ node, nodeDef, nodes, isOpen, onClose, onCha
             <option value="">Select Node</option>
             {availableNodes.map((availableNode) => (
               <option key={availableNode.id} value={availableNode.id}>
-                {availableNode.data?.label || availableNode.type} ({availableNode.type})
+                {availableNode.data?.label || availableNode.type} (
+                {availableNode.type})
               </option>
             ))}
           </select>
@@ -299,7 +325,7 @@ export default function NodeModal({ node, nodeDef, nodes, isOpen, onClose, onCha
             <h2 className="text-xl font-semibold">{nodeDef.label}</h2>
             <span className="text-sm text-gray-500">({node.id})</span>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <button
               onClick={onSave}
@@ -329,9 +355,9 @@ export default function NodeModal({ node, nodeDef, nodes, isOpen, onClose, onCha
               <h3 className="font-medium">Input Data</h3>
             </div>
             <div className="flex-1 overflow-auto">
-              <DataViewer 
-                data={inputData} 
-                title="Input Data" 
+              <DataViewer
+                data={inputData}
+                title="Input Data"
                 searchable={true}
               />
             </div>
@@ -344,8 +370,8 @@ export default function NodeModal({ node, nodeDef, nodes, isOpen, onClose, onCha
                 <button
                   onClick={() => setActiveTab('config')}
                   className={`px-4 py-2 font-medium ${
-                    activeTab === 'config' 
-                      ? 'border-b-2 border-blue-500 text-blue-600' 
+                    activeTab === 'config'
+                      ? 'border-b-2 border-blue-500 text-blue-600'
                       : 'text-gray-600 hover:text-gray-800'
                   }`}
                 >
@@ -361,22 +387,30 @@ export default function NodeModal({ node, nodeDef, nodes, isOpen, onClose, onCha
                     // In executions mode, show read-only node info
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium mb-1">Node Name</label>
+                        <label className="block text-sm font-medium mb-1">
+                          Node Name
+                        </label>
                         <div className="w-full border rounded px-3 py-2 bg-gray-50 text-gray-700">
                           {node.data.label || node.id}
                         </div>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium mb-1">Node Type</label>
+                        <label className="block text-sm font-medium mb-1">
+                          Node Type
+                        </label>
                         <div className="w-full border rounded px-3 py-2 bg-gray-50 text-gray-700">
                           {nodeDef.label}
                         </div>
                       </div>
                       {selectedExecution && (
                         <div>
-                          <label className="block text-sm font-medium mb-1">Execution</label>
+                          <label className="block text-sm font-medium mb-1">
+                            Execution
+                          </label>
                           <div className="w-full border rounded px-3 py-2 bg-gray-50 text-gray-700">
-                            {new Date(selectedExecution.created_at).toLocaleString()}
+                            {new Date(
+                              selectedExecution.created_at
+                            ).toLocaleString()}
                           </div>
                         </div>
                       )}
@@ -386,29 +420,38 @@ export default function NodeModal({ node, nodeDef, nodes, isOpen, onClose, onCha
                     <>
                       {/* Node name */}
                       <div>
-                        <label className="block text-sm font-medium mb-1">Node Name</label>
+                        <label className="block text-sm font-medium mb-1">
+                          Node Name
+                        </label>
                         <input
                           type="text"
                           value={currentFormData.label || ''}
-                          onChange={(e) => handleChange('label', e.target.value)}
+                          onChange={(e) =>
+                            handleChange('label', e.target.value)
+                          }
                           className="w-full border rounded px-3 py-2"
                           placeholder="Enter node name"
                         />
                       </div>
 
                       {/* Parameters */}
-                      {nodeDef.parameters && nodeDef.parameters.map((param) => (
-                        <div key={param.name}>
-                          <label className="block text-sm font-medium mb-1">
-                            {param.label}
-                            {param.required && <span className="text-red-500 ml-1">*</span>}
-                          </label>
-                          {renderParameterField(param)}
-                          {param.description && (
-                            <p className="text-xs text-gray-500 mt-1">{param.description}</p>
-                          )}
-                        </div>
-                      ))}
+                      {nodeDef.parameters &&
+                        nodeDef.parameters.map((param) => (
+                          <div key={param.name}>
+                            <label className="block text-sm font-medium mb-1">
+                              {param.label}
+                              {param.required && (
+                                <span className="text-red-500 ml-1">*</span>
+                              )}
+                            </label>
+                            {renderParameterField(param)}
+                            {param.description && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                {param.description}
+                              </p>
+                            )}
+                          </div>
+                        ))}
                     </>
                   )}
                 </div>
@@ -422,14 +465,15 @@ export default function NodeModal({ node, nodeDef, nodes, isOpen, onClose, onCha
               <h3 className="font-medium">Output Data</h3>
               {selectedExecution && viewMode === 'executions' && (
                 <p className="text-xs text-gray-500">
-                  From execution: {new Date(selectedExecution.created_at).toLocaleString()}
+                  From execution:{' '}
+                  {new Date(selectedExecution.created_at).toLocaleString()}
                 </p>
               )}
             </div>
             <div className="flex-1 overflow-auto">
-              <DataViewer 
-                data={outputData} 
-                title="Output Data" 
+              <DataViewer
+                data={outputData}
+                title="Output Data"
                 searchable={true}
               />
             </div>
@@ -443,7 +487,10 @@ export default function NodeModal({ node, nodeDef, nodes, isOpen, onClose, onCha
               // In executions mode, show execution info
               <div className="flex items-center gap-4">
                 <span className="text-sm text-gray-600">
-                  Viewing execution data from {selectedExecution ? new Date(selectedExecution.created_at).toLocaleString() : 'unknown time'}
+                  Viewing execution data from{' '}
+                  {selectedExecution
+                    ? new Date(selectedExecution.created_at).toLocaleString()
+                    : 'unknown time'}
                 </span>
               </div>
             ) : (
@@ -457,7 +504,9 @@ export default function NodeModal({ node, nodeDef, nodes, isOpen, onClose, onCha
                         setOutputData(result || {});
                       } catch (error) {
                         console.error('Node execution error:', error);
-                        setOutputData({ error: error.message || 'Execution failed' });
+                        setOutputData({
+                          error: error.message || 'Execution failed',
+                        });
                       }
                     }
                   }}

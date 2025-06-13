@@ -4,7 +4,14 @@ import CodeEditor from './CodeEditor';
 import DataViewer from './DataViewer';
 
 // Panel to configure node details and preview data flow
-export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, publicUrl, readOnly }) {
+export default function NodeDetailsPanel({
+  node,
+  nodeDef,
+  onChange,
+  onExecute,
+  publicUrl,
+  readOnly,
+}) {
   // All hooks must be called before any conditional returns
   const [connections, setConnections] = useState([]);
   const [credentials, setCredentials] = useState([]);
@@ -23,7 +30,7 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
 
   // Helper to update both local state and parent
   const handleChange = (key, value) => {
-    setCurrentFormData(prev => ({ ...prev, [key]: value }));
+    setCurrentFormData((prev) => ({ ...prev, [key]: value }));
     onChange(key, value);
   };
 
@@ -39,16 +46,16 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
   // Load credentials for credential parameters
   useEffect(() => {
     if (!nodeDef || !nodeDef.parameters) return;
-    
-    const credentialParams = nodeDef.parameters.filter(p => 
-      p.type === 'credential' || p.parameterType === 'credential'
+
+    const credentialParams = nodeDef.parameters.filter(
+      (p) => p.type === 'credential' || p.parameterType === 'credential'
     );
-    
+
     if (credentialParams.length > 0) {
       // Load credentials for each credential parameter
       const promises = credentialParams.map(async (param) => {
         try {
-          const url = param.credentialType 
+          const url = param.credentialType
             ? `/api/credentials?credential_type=${param.credentialType}`
             : '/api/credentials';
           const response = await fetch(url);
@@ -59,7 +66,7 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
           return { paramName: param.name, credentials: [] };
         }
       });
-      
+
       Promise.all(promises).then((results) => {
         const credentialsMap = {};
         results.forEach(({ paramName, credentials }) => {
@@ -72,13 +79,13 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
 
   // Function to load dynamic options for a specific parameter
   const loadDynamicOptionsForParam = async (paramName) => {
-    const param = nodeDef?.parameters?.find(p => p.name === paramName);
+    const param = nodeDef?.parameters?.find((p) => p.name === paramName);
     if (!param?.dynamicOptions) return;
-    
+
     try {
       // Set loading state for this specific parameter
-      setLoadingOptions(prev => ({ ...prev, [paramName]: true }));
-      
+      setLoadingOptions((prev) => ({ ...prev, [paramName]: true }));
+
       // Build query parameters from current form data
       const queryParams = new URLSearchParams();
       Object.entries(currentFormData || {}).forEach(([key, value]) => {
@@ -86,42 +93,46 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
           queryParams.append(key, value);
         }
       });
-      
+
       const url = `/api/node-types/${nodeDef.type}/parameters/${paramName}/options?${queryParams}`;
       console.log(`Loading dynamic options for ${paramName}:`, url);
-      
+
       const response = await fetch(url);
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log(`Dynamic options for ${paramName}:`, data);
-        setDynamicOptions(prev => ({ 
-          ...prev, 
-          [paramName]: data.options || [] 
+        setDynamicOptions((prev) => ({
+          ...prev,
+          [paramName]: data.options || [],
         }));
       } else {
-        console.log(`No dynamic options for ${paramName}:`, response.status, await response.text());
-        setDynamicOptions(prev => ({ 
-          ...prev, 
-          [paramName]: [] 
+        console.log(
+          `No dynamic options for ${paramName}:`,
+          response.status,
+          await response.text()
+        );
+        setDynamicOptions((prev) => ({
+          ...prev,
+          [paramName]: [],
         }));
       }
     } catch (error) {
       console.log(`Error loading dynamic options for ${paramName}:`, error);
-      setDynamicOptions(prev => ({ 
-        ...prev, 
-        [paramName]: [] 
+      setDynamicOptions((prev) => ({
+        ...prev,
+        [paramName]: [],
       }));
     } finally {
       // Clear loading state for this specific parameter
-      setLoadingOptions(prev => ({ ...prev, [paramName]: false }));
+      setLoadingOptions((prev) => ({ ...prev, [paramName]: false }));
     }
   };
 
   // Load initial dynamic options when credential changes
   useEffect(() => {
     if (!nodeDef || !currentFormData?.credentialId) return;
-    
+
     // Only load database options initially
     loadDynamicOptionsForParam('databaseId');
   }, [nodeDef, currentFormData?.credentialId]);
@@ -130,18 +141,18 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
   useEffect(() => {
     if (!nodeDef || !currentFormData?.databaseId) {
       // Clear table options when no database is selected
-      setDynamicOptions(prev => ({ ...prev, tableId: [] }));
+      setDynamicOptions((prev) => ({ ...prev, tableId: [] }));
       return;
     }
-    
+
     loadDynamicOptionsForParam('tableId');
   }, [nodeDef, currentFormData?.databaseId]);
 
   // Early returns after all hooks
   if (!node || !nodeDef) return null;
-  
+
   const { data } = node;
-  
+
   // In live/read-only mode, show config but disable edits
   if (readOnly) {
     const fallbackKeys = Object.keys(data).filter(
@@ -150,18 +161,20 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
     return (
       <div className="bg-gray-50 p-4 h-full">
         <h2 className="text-lg font-bold mb-4">{nodeDef.label} Details</h2>
-        {// only show public URL for webhook nodes
-        nodeDef.type === 'webhook' && publicUrl && (
-          <div className="mb-4">
-            <h3 className="font-semibold mb-1">Public URL</h3>
-            <input
-              type="text"
-              readOnly
-              value={publicUrl}
-              className="w-full border rounded px-2 py-1 text-sm bg-gray-100"
-            />
-          </div>
-        )}
+        {
+          // only show public URL for webhook nodes
+          nodeDef.type === 'webhook' && publicUrl && (
+            <div className="mb-4">
+              <h3 className="font-semibold mb-1">Public URL</h3>
+              <input
+                type="text"
+                readOnly
+                value={publicUrl}
+                className="w-full border rounded px-2 py-1 text-sm bg-gray-100"
+              />
+            </div>
+          )
+        }
         <div className="mb-4">
           <h3 className="font-semibold mb-2">Name</h3>
           <div className="text-sm text-gray-700">{data.label}</div>
@@ -183,26 +196,32 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
     );
   }
   // fallback data keys
-  const fallbackKeys = Object.keys(data).filter((k) => k !== 'label' && k !== 'status' && k !== 'lastOutput');
+  const fallbackKeys = Object.keys(data).filter(
+    (k) => k !== 'label' && k !== 'status' && k !== 'lastOutput'
+  );
   return (
     <div className="bg-gray-50 p-4 h-full">
       <h2 className="text-lg font-bold mb-4">{nodeDef.label} Details</h2>
-      {// only show public URL for webhook nodes
-      nodeDef.type === 'webhook' && (
-        <div className="mb-4">
-          <h3 className="font-semibold mb-1">Public URL</h3>
-          {publicUrl ? (
-            <input
-              type="text"
-              readOnly
-              value={publicUrl}
-              className="w-full border rounded px-2 py-1 text-sm bg-gray-100"
-            />
-          ) : (
-            <div className="text-sm text-gray-500">Save version to generate URL</div>
-          )}
-        </div>
-      )}
+      {
+        // only show public URL for webhook nodes
+        nodeDef.type === 'webhook' && (
+          <div className="mb-4">
+            <h3 className="font-semibold mb-1">Public URL</h3>
+            {publicUrl ? (
+              <input
+                type="text"
+                readOnly
+                value={publicUrl}
+                className="w-full border rounded px-2 py-1 text-sm bg-gray-100"
+              />
+            ) : (
+              <div className="text-sm text-gray-500">
+                Save version to generate URL
+              </div>
+            )}
+          </div>
+        )
+      }
       {/* Configuration form generated from nodeDef.parameters */}
       <div className="mb-6">
         <h3 className="font-semibold mb-2">Configuration</h3>
@@ -220,25 +239,29 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
         {(() => {
           // parameters may come from schema or legacy defaults
           // Normalize parameters: use server-defined parameters if available, otherwise fallback
-          const parameters = Array.isArray(nodeDef.parameters) && nodeDef.parameters.length > 0
-            ? nodeDef.parameters
-            : fallbackKeys.map((key) => ({
-                name: key,
-                label: key,
-                type: 'string',
-                required: false,
-                default: data[key] ?? '',
-                group: 'General',
-                description: '',
-                validators: []
-              }));
+          const parameters =
+            Array.isArray(nodeDef.parameters) && nodeDef.parameters.length > 0
+              ? nodeDef.parameters
+              : fallbackKeys.map((key) => ({
+                  name: key,
+                  label: key,
+                  type: 'string',
+                  required: false,
+                  default: data[key] ?? '',
+                  group: 'General',
+                  description: '',
+                  validators: [],
+                }));
           // filter visible parameters
           const visible = parameters.filter((p) => {
             if (!p.visibilityCondition) return true;
             try {
               // naive evaluation of visibility condition (CEL-like)
               // eslint-disable-next-line no-new-func
-              return new Function('data', `with(data) { return ${p.visibilityCondition} }`)(data);
+              return new Function(
+                'data',
+                `with(data) { return ${p.visibilityCondition} }`
+              )(data);
             } catch {
               return true;
             }
@@ -253,17 +276,21 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
             <div key={group} className="mb-4">
               <h4 className="text-sm font-semibold mb-2">{group}</h4>
               {params.map((p) => {
-                const val = currentFormData[p.name] != null ? currentFormData[p.name] : p.default;
+                const val =
+                  currentFormData[p.name] != null
+                    ? currentFormData[p.name]
+                    : p.default;
                 const error = p.required && (val === '' || val == null);
                 const baseClass = error ? 'border-red-500' : 'border-gray-300';
                 // Use parameterType if available, otherwise fall back to type
                 const paramType = p.parameterType || p.type;
-                
+
                 // Check if this parameter has dynamic options available or is marked as dynamic
-                const hasDynamicOptions = dynamicOptions[p.name] && dynamicOptions[p.name].length > 0;
+                const hasDynamicOptions =
+                  dynamicOptions[p.name] && dynamicOptions[p.name].length > 0;
                 const isLoadingOptions = loadingOptions[p.name];
                 const isDynamicParameter = p.dynamicOptions;
-                
+
                 switch (paramType) {
                   case 'string':
                     // Check for specific UI components based on parameter name/metadata
@@ -271,7 +298,10 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
                       return (
                         <div key={p.name} className="mb-3">
                           <label className="block text-sm mb-1">
-                            {p.label}{p.required && <span className="text-red-500">*</span>}
+                            {p.label}
+                            {p.required && (
+                              <span className="text-red-500">*</span>
+                            )}
                           </label>
                           <CronEditor
                             value={val}
@@ -285,23 +315,29 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
                         </div>
                       );
                     }
-                    
+
                     // Check for code format (from jsonSchema.format)
                     if (p.jsonSchema && p.jsonSchema.format === 'code') {
                       // Get the language from the node's language parameter
-                      const nodeLanguage = currentFormData.language || 'javascript';
-                      
+                      const nodeLanguage =
+                        currentFormData.language || 'javascript';
+
                       return (
                         <div key={p.name} className="mb-3">
                           <label className="block text-sm mb-1">
-                            {p.label}{p.required && <span className="text-red-500">*</span>}
+                            {p.label}
+                            {p.required && (
+                              <span className="text-red-500">*</span>
+                            )}
                           </label>
                           <CodeEditor
                             value={val || ''}
                             onChange={(code) => handleChange(p.name, code)}
                             language={nodeLanguage}
                             height="300px"
-                            placeholder={p.description || 'Enter your code here...'}
+                            placeholder={
+                              p.description || 'Enter your code here...'
+                            }
                             readOnly={readOnly}
                           />
                           {error && (
@@ -317,17 +353,22 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
                         </div>
                       );
                     }
-                    
+
                     // Special handling for legacy connectionId (LLM nodes)
                     if (p.name === 'connectionId' && connections.length > 0) {
                       return (
                         <div key={p.name} className="mb-3">
                           <label className="block text-sm mb-1">
-                            {p.label}{p.required && <span className="text-red-500">*</span>}
+                            {p.label}
+                            {p.required && (
+                              <span className="text-red-500">*</span>
+                            )}
                           </label>
                           <select
                             value={val || ''}
-                            onChange={(e) => handleChange(p.name, e.target.value)}
+                            onChange={(e) =>
+                              handleChange(p.name, e.target.value)
+                            }
                             className={`w-full border rounded px-2 py-1 ${baseClass}`}
                           >
                             <option value="">Select Connection</option>
@@ -345,17 +386,22 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
                         </div>
                       );
                     }
-                    
+
                     // Dynamic parameters always show as select (with loading/empty states)
                     if (isDynamicParameter) {
                       return (
                         <div key={p.name} className="mb-3">
                           <label className="block text-sm mb-1">
-                            {p.label}{p.required && <span className="text-red-500">*</span>}
+                            {p.label}
+                            {p.required && (
+                              <span className="text-red-500">*</span>
+                            )}
                           </label>
                           <select
                             value={val || ''}
-                            onChange={(e) => handleChange(p.name, e.target.value)}
+                            onChange={(e) =>
+                              handleChange(p.name, e.target.value)
+                            }
                             className={`w-full border rounded px-2 py-1 ${baseClass}`}
                             disabled={isLoadingOptions}
                           >
@@ -365,7 +411,10 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
                               <>
                                 <option value="">Select {p.label}</option>
                                 {dynamicOptions[p.name].map((option) => (
-                                  <option key={option.value} value={option.value}>
+                                  <option
+                                    key={option.value}
+                                    value={option.value}
+                                  >
                                     {option.label}
                                   </option>
                                 ))}
@@ -387,12 +436,15 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
                         </div>
                       );
                     }
-                    
+
                     // Default string input
                     return (
                       <div key={p.name} className="mb-3">
                         <label className="block text-sm mb-1">
-                          {p.label}{p.required && <span className="text-red-500">*</span>}
+                          {p.label}
+                          {p.required && (
+                            <span className="text-red-500">*</span>
+                          )}
                         </label>
                         <input
                           type="text"
@@ -418,12 +470,20 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
                     return (
                       <div key={p.name} className="mb-3">
                         <label className="block text-sm mb-1">
-                          {p.label}{p.required && <span className="text-red-500">*</span>}
+                          {p.label}
+                          {p.required && (
+                            <span className="text-red-500">*</span>
+                          )}
                         </label>
                         <input
                           type="number"
                           value={val || ''}
-                          onChange={(e) => handleChange(p.name, parseFloat(e.target.value) || 0)}
+                          onChange={(e) =>
+                            handleChange(
+                              p.name,
+                              parseFloat(e.target.value) || 0
+                            )
+                          }
                           className={`w-full border rounded px-2 py-1 ${baseClass}`}
                           placeholder={p.description}
                         />
@@ -446,11 +506,16 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
                           <input
                             type="checkbox"
                             checked={!!val}
-                            onChange={(e) => handleChange(p.name, e.target.checked)}
+                            onChange={(e) =>
+                              handleChange(p.name, e.target.checked)
+                            }
                             className="mr-2"
                           />
                           <label className="text-sm">
-                            {p.label}{p.required && <span className="text-red-500">*</span>}
+                            {p.label}
+                            {p.required && (
+                              <span className="text-red-500">*</span>
+                            )}
                           </label>
                         </div>
                         {p.description && (
@@ -464,16 +529,22 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
                     return (
                       <div key={p.name} className="mb-3">
                         <label className="block text-sm mb-1">
-                          {p.label}{p.required && <span className="text-red-500">*</span>}
+                          {p.label}
+                          {p.required && (
+                            <span className="text-red-500">*</span>
+                          )}
                         </label>
                         <select
                           value={val || ''}
                           onChange={(e) => handleChange(p.name, e.target.value)}
                           className={`w-full border rounded px-2 py-1 ${baseClass}`}
                         >
-                          {p.options && p.options.map((opt) => (
-                            <option key={opt} value={opt}>{opt}</option>
-                          ))}
+                          {p.options &&
+                            p.options.map((opt) => (
+                              <option key={opt} value={opt}>
+                                {opt}
+                              </option>
+                            ))}
                         </select>
                         {error && (
                           <div className="text-xs text-red-600 mt-1">
@@ -492,11 +563,18 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
                     return (
                       <div key={p.name} className="mb-3">
                         <label className="block text-sm mb-1">
-                          {p.label}{p.required && <span className="text-red-500">*</span>}
+                          {p.label}
+                          {p.required && (
+                            <span className="text-red-500">*</span>
+                          )}
                         </label>
                         <textarea
                           rows={4}
-                          value={typeof val === 'string' ? val : JSON.stringify(val || {}, null, 2)}
+                          value={
+                            typeof val === 'string'
+                              ? val
+                              : JSON.stringify(val || {}, null, 2)
+                          }
                           onChange={(e) => {
                             try {
                               const v = JSON.parse(e.target.value);
@@ -527,7 +605,10 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
                     return (
                       <div key={p.name} className="mb-3">
                         <label className="block text-sm mb-1">
-                          {p.label}{p.required && <span className="text-red-500">*</span>}
+                          {p.label}
+                          {p.required && (
+                            <span className="text-red-500">*</span>
+                          )}
                         </label>
                         <select
                           value={val || ''}
@@ -555,17 +636,21 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
                     );
                   case 'nodeReference':
                     // Node reference selection - allows referencing other nodes in the workflow
-                    const availableNodes = (nodes || []).filter(n => 
-                      n.id !== selectedNodeId && // Exclude self-reference
-                      n.type !== 'manual_trigger' && // Exclude trigger nodes
-                      n.type !== 'workflow_trigger' && 
-                      n.type !== 'schedule'
+                    const availableNodes = (nodes || []).filter(
+                      (n) =>
+                        n.id !== selectedNodeId && // Exclude self-reference
+                        n.type !== 'manual_trigger' && // Exclude trigger nodes
+                        n.type !== 'workflow_trigger' &&
+                        n.type !== 'schedule'
                     );
-                    
+
                     return (
                       <div key={p.name} className="mb-3">
                         <label className="block text-sm mb-1">
-                          {p.label}{p.required && <span className="text-red-500">*</span>}
+                          {p.label}
+                          {p.required && (
+                            <span className="text-red-500">*</span>
+                          )}
                         </label>
                         <select
                           value={val || ''}
@@ -581,7 +666,8 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
                         </select>
                         {availableNodes.length === 0 && (
                           <div className="text-xs text-gray-500 mt-1">
-                            No compatible nodes available. Add some nodes to the workflow first.
+                            No compatible nodes available. Add some nodes to the
+                            workflow first.
                           </div>
                         )}
                         {error && (
@@ -601,7 +687,10 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
                     return (
                       <div key={p.name} className="mb-3">
                         <label className="block text-sm mb-1">
-                          {p.label}{p.required && <span className="text-red-500">*</span>}
+                          {p.label}
+                          {p.required && (
+                            <span className="text-red-500">*</span>
+                          )}
                         </label>
                         <input
                           type="text"
@@ -681,17 +770,15 @@ export default function NodeDetailsPanel({ node, nodeDef, onChange, onExecute, p
             >
               {running ? 'Running...' : 'Run Node'}
             </button>
-            {execError && <div className="text-red-500 text-sm">{execError}</div>}
+            {execError && (
+              <div className="text-red-500 text-sm">{execError}</div>
+            )}
           </div>
           {execOutput !== null && (
             <div>
               <div className="font-medium text-sm mb-1">Output</div>
               <div className="bg-white border rounded max-h-32 overflow-auto">
-                <DataViewer 
-                  data={execOutput} 
-                  title="" 
-                  searchable={false}
-                />
+                <DataViewer data={execOutput} title="" searchable={false} />
               </div>
             </div>
           )}
