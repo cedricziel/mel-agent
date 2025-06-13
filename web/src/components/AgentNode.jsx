@@ -121,8 +121,8 @@ export default function AgentNode({ data, onAddClick, onAddConfigNode }) {
         }}
       />
       
-      {/* Add buttons for configuration nodes - temporarily disabled */}
-      {false && !data.modelConfig && onAddConfigNode && (
+      {/* Add buttons for configuration nodes */}
+      {!data.modelConfig && onAddConfigNode && (
         <button
           onClick={(e) => { 
             e.stopPropagation(); 
@@ -131,6 +131,34 @@ export default function AgentNode({ data, onAddClick, onAddConfigNode }) {
           className="absolute -bottom-2 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center hover:bg-blue-600 transition-colors"
           style={{ left: 'calc(25% - 8px)' }}
           title="Add Model Configuration"
+        >
+          +
+        </button>
+      )}
+      
+      {!data.toolsConfig && onAddConfigNode && (
+        <button
+          onClick={(e) => { 
+            e.stopPropagation(); 
+            onAddConfigNode('tools', 'tools-config');
+          }}
+          className="absolute -bottom-2 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center hover:bg-green-600 transition-colors"
+          style={{ left: 'calc(50% - 8px)' }}
+          title="Add Tools Configuration"
+        >
+          +
+        </button>
+      )}
+      
+      {!data.memoryConfig && onAddConfigNode && (
+        <button
+          onClick={(e) => { 
+            e.stopPropagation(); 
+            onAddConfigNode('memory', 'memory-config');
+          }}
+          className="absolute -bottom-2 bg-purple-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center hover:bg-purple-600 transition-colors"
+          style={{ left: 'calc(75% - 8px)' }}
+          title="Add Memory Configuration"
         >
           +
         </button>

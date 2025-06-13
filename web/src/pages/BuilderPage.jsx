@@ -93,11 +93,111 @@ function BuilderPage({ agentId }) {
     setWsEdges(edges);
   }, [nodes, edges]);
 
+  // Broadcast node changes to other clients
+  const broadcastNodeChange = useCallback((type, data) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ 
+        clientId, 
+        type, 
+        workflowId: agentId,
+        ...data 
+      }));
+    }
+  }, [clientId, agentId]);
+
+  // Config node creation function
+  const createConfigNode = useCallback(async (agentNodeId, configType, handleId) => {
+    const agentNode = nodes.find(n => n.id === agentNodeId);
+    if (!agentNode) return;
+
+    const baseTimestamp = Date.now();
+    const configId = `${baseTimestamp}`;
+    
+    // Default configurations for each type
+    const configDefaults = {
+      model: {
+        label: 'Model Config',
+        nodeTypeLabel: 'Model Configuration',
+        provider: 'openai',
+        model: 'gpt-4'
+      },
+      tools: {
+        label: 'Tools Config',
+        nodeTypeLabel: 'Tools Configuration',
+        allowCodeExecution: false,
+        allowWebSearch: true
+      },
+      memory: {
+        label: 'Memory Config',
+        nodeTypeLabel: 'Memory Configuration',
+        memoryType: 'short_term',
+        maxMessages: 100
+      }
+    };
+
+    // Position the new config node below the agent (since handles are at bottom and connect upward)
+    const configPosition = {
+      x: agentNode.position.x - 50 + (configType === 'model' ? -100 : configType === 'tools' ? 0 : 100),
+      y: agentNode.position.y + 150
+    };
+
+    const configNode = {
+      id: configId,
+      type: configType,
+      data: configDefaults[configType],
+      position: configPosition
+    };
+
+    // Create edge with proper handle IDs
+    const configEdge = {
+      id: `edge-${configType}-${baseTimestamp}`,
+      source: configId,
+      sourceHandle: 'config-out',
+      target: agentNodeId,
+      targetHandle: handleId,
+      type: 'default'
+    };
+
+    try {
+      // Create the configuration node
+      await createNode(configNode);
+      await createEdge(configEdge);
+
+      // Update the agent node to reference the new configuration
+      const configFieldMap = {
+        model: 'modelConfig',
+        tools: 'toolsConfig',
+        memory: 'memoryConfig'
+      };
+
+      await updateNode(agentNodeId, {
+        data: {
+          ...agentNode.data,
+          [configFieldMap[configType]]: configId
+        }
+      });
+
+      // Broadcast changes
+      broadcastNodeChange('nodeCreated', { node: configNode });
+      broadcastNodeChange('edgeCreated', { edge: configEdge });
+
+    } catch (err) {
+      console.error('Failed to create configuration node:', err);
+    }
+  }, [nodes, createNode, createEdge, updateNode, broadcastNodeChange]);
+
   // Dynamically create nodeTypes based on available node definitions
   const nodeTypes = useMemo(() => {
     const types = {
       default: DefaultNode,
-      agent: AgentNode,
+      agent: (props) => (
+        <AgentNode 
+          {...props} 
+          onAddConfigNode={(configType, handleId) => {
+            createConfigNode(props.id, configType, handleId);
+          }}
+        />
+      ),
       model: ModelNode,
       tools: ToolsNode,
       memory: MemoryNode,
@@ -124,7 +224,7 @@ function BuilderPage({ agentId }) {
     }
 
     return types;
-  }, [nodeDefs, agentId]);
+  }, [nodeDefs, agentId, createConfigNode]);
 
   // Load node definitions
   useEffect(() => {
@@ -292,18 +392,6 @@ function BuilderPage({ agentId }) {
     ws.onclose = () => { wsRef.current = null; };
     return () => { ws.close(); wsRef.current = null; };
   }, [agentId, clientId]);
-
-  // Broadcast node changes to other clients
-  const broadcastNodeChange = useCallback((type, data) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ 
-        clientId, 
-        type, 
-        workflowId: agentId,
-        ...data 
-      }));
-    }
-  }, [clientId, agentId]);
 
   // ReactFlow event handlers with collaborative updates
   const onNodesChange = useCallback(
