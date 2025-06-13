@@ -4,15 +4,16 @@ package api
 type ParameterType string
 
 const (
-	TypeString     ParameterType = "string"
-	TypeNumber     ParameterType = "number"
-	TypeInteger    ParameterType = "integer"
-	TypeBoolean    ParameterType = "boolean"
-	TypeEnum       ParameterType = "enum"
-	TypeObject     ParameterType = "object"
-	TypeArray      ParameterType = "array"
-	TypeJSON       ParameterType = "json"       // backward compatibility alias for object
-	TypeCredential ParameterType = "credential" // for selecting saved credentials
+	TypeString        ParameterType = "string"
+	TypeNumber        ParameterType = "number"
+	TypeInteger       ParameterType = "integer"
+	TypeBoolean       ParameterType = "boolean"
+	TypeEnum          ParameterType = "enum"
+	TypeObject        ParameterType = "object"
+	TypeArray         ParameterType = "array"
+	TypeJSON          ParameterType = "json"          // backward compatibility alias for object
+	TypeCredential    ParameterType = "credential"    // for selecting saved credentials
+	TypeNodeReference ParameterType = "nodeReference" // for referencing other nodes
 )
 
 // JSONSchema represents a JSON schema definition.
@@ -52,6 +53,8 @@ func (pt ParameterType) ToJSONSchema() *JSONSchema {
 		return &JSONSchema{Type: "array"}
 	case TypeCredential:
 		return &JSONSchema{Type: "string"} // credential IDs are strings
+	case TypeNodeReference:
+		return &JSONSchema{Type: "string"} // node IDs are strings
 	default:
 		return &JSONSchema{Type: "string"} // fallback
 	}
@@ -65,7 +68,7 @@ func (pt ParameterType) String() string {
 // IsValid checks if the parameter type is valid.
 func (pt ParameterType) IsValid() bool {
 	switch pt {
-	case TypeString, TypeNumber, TypeInteger, TypeBoolean, TypeEnum, TypeObject, TypeArray, TypeJSON, TypeCredential:
+	case TypeString, TypeNumber, TypeInteger, TypeBoolean, TypeEnum, TypeObject, TypeArray, TypeJSON, TypeCredential, TypeNodeReference:
 		return true
 	default:
 		return false
@@ -348,6 +351,17 @@ func NewCredentialParameter(name, label string, credentialType string, required 
 		ParameterType:  TypeCredential,
 		Required:       required,
 		CredentialType: credentialType,
+	}
+}
+
+// NewNodeReferenceParameter creates a parameter definition for referencing another node.
+func NewNodeReferenceParameter(name, label string, required bool) ParameterDefinition {
+	return ParameterDefinition{
+		Name:          name,
+		Label:         label,
+		Type:          string(TypeNodeReference),
+		ParameterType: TypeNodeReference,
+		Required:      required,
 	}
 }
 

@@ -293,9 +293,9 @@ func TestCodeDefinition_ExecuteEnvelope_Timeout(t *testing.T) {
 	// This test would need a runtime that can simulate long execution
 	// For now, we'll test the timeout logic with a mock that sleeps
 	mockRT := &mockRuntime{
-		language:     "javascript",
+		language:      "javascript",
 		simulateDelay: 2 * time.Second, // Longer than timeout
-		result:       map[string]interface{}{"result": "slow"},
+		result:        map[string]interface{}{"result": "slow"},
 	}
 
 	def := &codeDefinition{
@@ -338,7 +338,7 @@ func TestCodeDefinition_Initialize(t *testing.T) {
 
 	err := def.Initialize(nil)
 	assert.NoError(t, err)
-	
+
 	// Verify JavaScript runtime was initialized
 	jsRuntime, exists := def.runtimes["javascript"]
 	assert.True(t, exists)

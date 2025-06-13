@@ -1,9 +1,9 @@
-import { Link, Route, Routes, NavLink, useParams } from "react-router-dom";
-import AgentsPage from "./pages/AgentsPage";
-import ConnectionsPage from "./pages/ConnectionsPage";
-import BuilderPage from "./pages/BuilderPage";
-import RunsPage from "./pages/RunsPage";
-import ErrorBoundary from "./components/ErrorBoundary";
+import { Link, Route, Routes, NavLink, useParams } from 'react-router-dom';
+import AgentsPage from './pages/AgentsPage';
+import ConnectionsPage from './pages/ConnectionsPage';
+import BuilderPage from './pages/BuilderPage';
+import RunsPage from './pages/RunsPage';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
   return (
@@ -17,7 +17,9 @@ function App() {
             <NavLink
               to="/agents"
               className={({ isActive }) =>
-                isActive ? "text-indigo-600" : "text-gray-600 hover:text-indigo-600"
+                isActive
+                  ? 'text-indigo-600'
+                  : 'text-gray-600 hover:text-indigo-600'
               }
             >
               Agents
@@ -25,7 +27,9 @@ function App() {
             <NavLink
               to="/connections"
               className={({ isActive }) =>
-                isActive ? "text-indigo-600" : "text-gray-600 hover:text-indigo-600"
+                isActive
+                  ? 'text-indigo-600'
+                  : 'text-gray-600 hover:text-indigo-600'
               }
             >
               Connections
@@ -46,10 +50,7 @@ function App() {
               </ErrorBoundary>
             }
           />
-          <Route
-            path="/agents/:id/runs"
-            element={<RunsPage />}
-          />
+          <Route path="/agents/:id/runs" element={<RunsPage />} />
         </Routes>
       </main>
     </div>
@@ -59,7 +60,9 @@ function App() {
 function Landing() {
   return (
     <div className="text-center text-gray-700">
-      <h1 className="text-3xl font-bold text-indigo-600">Welcome to Agent SaaS</h1>
+      <h1 className="text-3xl font-bold text-indigo-600">
+        Welcome to Agent SaaS
+      </h1>
       <p className="mt-2">Use the navigation to get started.</p>
     </div>
   );

@@ -28,7 +28,7 @@ func TestCodeNode_Integration(t *testing.T) {
 func TestCodeNode_RealWorldScenarios(t *testing.T) {
 	def := NewCodeDefinition().(*codeDefinition)
 	require.NoError(t, def.Initialize(nil))
-	
+
 	// Debug: Check if JavaScript runtime is available
 	jsRuntime, exists := def.runtimes["javascript"]
 	require.True(t, exists, "JavaScript runtime should be available")
@@ -186,7 +186,7 @@ func TestCodeNode_RealWorldScenarios(t *testing.T) {
 				},
 			},
 			expected: map[string]interface{}{
-				"original": int64(42),
+				"original":  int64(42),
 				"processed": "CALC: 84",
 			},
 		},
@@ -222,8 +222,8 @@ func TestCodeNode_RealWorldScenarios(t *testing.T) {
 					"notifications": true,
 					"timeout":       30.0, // JSON parsing returns float64 for numbers
 				},
-				"hashedEmail":     "b58996c504c5638798eb6b511e6f49af", // MD5 of "user@example.com"
-				"trackingIdLength": int64(36),                               // UUID length
+				"hashedEmail":      "b58996c504c5638798eb6b511e6f49af", // MD5 of "user@example.com"
+				"trackingIdLength": int64(36),                          // UUID length
 			},
 		},
 		{
@@ -294,7 +294,7 @@ func TestCodeNode_RealWorldScenarios(t *testing.T) {
 			for key, expectedValue := range tt.expected.(map[string]interface{}) {
 				actualValue, exists := resultData[key]
 				require.True(t, exists, "Expected key %s should exist in result", key)
-				
+
 				// For complex nested structures, just check type and presence
 				if key == "users" || key == "settingsApplied" {
 					assert.NotNil(t, actualValue, "Value for %s should not be nil", key)

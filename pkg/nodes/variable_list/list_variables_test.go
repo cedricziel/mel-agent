@@ -53,7 +53,7 @@ func TestListVariablesExecuteEnvelope_AllScopes(t *testing.T) {
 	}
 
 	input := map[string]interface{}{"original": "data"}
-	
+
 	// Create input envelope
 	trace := api.Trace{
 		AgentID: ctx.AgentID,

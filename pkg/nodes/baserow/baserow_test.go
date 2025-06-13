@@ -34,7 +34,7 @@ func TestBaserowNodeMeta(t *testing.T) {
 			t.Errorf("Missing required parameter: %s", required)
 		}
 	}
-	
+
 	// Check that optional dynamic parameters exist
 	optionalParams := []string{"databaseId", "tableId", "rowId"}
 	for _, optional := range optionalParams {
@@ -92,15 +92,15 @@ func TestGetIntParameter(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := getIntParameter(tt.data, tt.key)
-			
+
 			if tt.hasError && err == nil {
 				t.Errorf("Expected error but got none")
 			}
-			
+
 			if !tt.hasError && err != nil {
 				t.Errorf("Unexpected error: %v", err)
 			}
-			
+
 			if result != tt.expected {
 				t.Errorf("Expected %d, got %d", tt.expected, result)
 			}
@@ -110,15 +110,15 @@ func TestGetIntParameter(t *testing.T) {
 
 func TestBaserowClientCreation(t *testing.T) {
 	client := NewBaserowClient("https://example.baserow.io", "test-token")
-	
+
 	if client.BaseURL != "https://example.baserow.io" {
 		t.Errorf("Expected BaseURL 'https://example.baserow.io', got '%s'", client.BaseURL)
 	}
-	
+
 	if client.Token != "test-token" {
 		t.Errorf("Expected Token 'test-token', got '%s'", client.Token)
 	}
-	
+
 	if client.Client == nil {
 		t.Error("Expected HTTP client to be initialized")
 	}
@@ -130,30 +130,30 @@ func TestBaserowConnectionStructure(t *testing.T) {
 		BaseURL: "https://example.baserow.io",
 		Token:   "test-token",
 	}
-	
+
 	if tokenConn.BaseURL != "https://example.baserow.io" {
 		t.Errorf("Expected BaseURL to be set")
 	}
-	
+
 	if tokenConn.Token != "test-token" {
 		t.Errorf("Expected Token to be set")
 	}
-	
+
 	// Test JWT-based connection
 	jwtConn := BaserowConnection{
 		BaseURL:  "https://example.baserow.io",
 		Username: "testuser",
 		Password: "testpass",
 	}
-	
+
 	if jwtConn.BaseURL != "https://example.baserow.io" {
 		t.Errorf("Expected BaseURL to be set")
 	}
-	
+
 	if jwtConn.Username != "testuser" {
 		t.Errorf("Expected Username to be set")
 	}
-	
+
 	if jwtConn.Password != "testpass" {
 		t.Errorf("Expected Password to be set")
 	}

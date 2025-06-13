@@ -51,17 +51,17 @@ func (baserowJWTCredential) Validate(data map[string]interface{}) error {
 	if !ok || baseURL == "" {
 		return fmt.Errorf("baseUrl is required and must be a non-empty string")
 	}
-	
+
 	username, ok := data["username"].(string)
 	if !ok || username == "" {
 		return fmt.Errorf("username is required and must be a non-empty string")
 	}
-	
+
 	password, ok := data["password"].(string)
 	if !ok || password == "" {
 		return fmt.Errorf("password is required and must be a non-empty string")
 	}
-	
+
 	return nil
 }
 
@@ -69,13 +69,13 @@ func (baserowJWTCredential) Transform(data map[string]interface{}) (map[string]i
 	baseURL := data["baseUrl"].(string)
 	username := data["username"].(string)
 	password := data["password"].(string)
-	
+
 	// Test authentication but don't store the token (it will expire)
 	_, err := authenticateWithBaserow(baseURL, username, password)
 	if err != nil {
 		return nil, fmt.Errorf("authentication test failed: %w", err)
 	}
-	
+
 	// Store credentials for fresh authentication each time
 	return map[string]interface{}{
 		"baseUrl":  baseURL,
@@ -96,38 +96,38 @@ func authenticateWithBaserow(baseURL, username, password string) (string, error)
 		"email":    username, // Baserow uses "email" not "username"
 		"password": password,
 	}
-	
+
 	jsonBody, err := json.Marshal(authPayload)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal auth payload: %w", err)
 	}
-	
+
 	client := &http.Client{Timeout: 30 * time.Second}
 	req, err := http.NewRequest("POST", baseURL+"/api/user/token-auth/", bytes.NewReader(jsonBody))
 	if err != nil {
 		return "", fmt.Errorf("failed to create auth request: %w", err)
 	}
-	
+
 	req.Header.Set("Content-Type", "application/json")
-	
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("auth request failed: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != 200 {
 		body, _ := io.ReadAll(resp.Body)
 		return "", fmt.Errorf("authentication failed with status %d: %s", resp.StatusCode, string(body))
 	}
-	
+
 	var jwtResp struct {
 		AccessToken string `json:"access_token"` // /api/user/token-auth/ now returns "access_token"
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&jwtResp); err != nil {
 		return "", fmt.Errorf("failed to decode JWT response: %w", err)
 	}
-	
+
 	return jwtResp.AccessToken, nil
 }
 
@@ -135,13 +135,13 @@ func (baserowJWTCredential) Test(data map[string]interface{}) error {
 	baseURL := data["baseUrl"].(string)
 	username := data["username"].(string)
 	password := data["password"].(string)
-	
+
 	// Test by attempting to authenticate
 	_, err := authenticateWithBaserow(baseURL, username, password)
 	if err != nil {
 		return fmt.Errorf("authentication test failed: %w", err)
 	}
-	
+
 	return nil
 }
 

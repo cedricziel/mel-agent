@@ -5,30 +5,30 @@ import { useState, useEffect } from 'react';
  * CodeEditor component that provides syntax highlighting and auto-completion
  * for the Code node. Adapts language highlighting based on the node's language parameter.
  */
-export default function CodeEditor({ 
-  value = '', 
-  onChange, 
+export default function CodeEditor({
+  value = '',
+  onChange,
   language = 'javascript',
   height = '200px',
   className = '',
   placeholder = 'Enter your code here...',
-  readOnly = false 
+  readOnly = false,
 }) {
   const [editorLanguage, setEditorLanguage] = useState('javascript');
 
   // Map MEL Agent language names to Monaco Editor language identifiers
   useEffect(() => {
     const languageMap = {
-      'javascript': 'javascript',
-      'typescript': 'typescript', 
-      'python': 'python',
-      'json': 'json',
-      'yaml': 'yaml',
-      'sql': 'sql',
-      'html': 'html',
-      'css': 'css'
+      javascript: 'javascript',
+      typescript: 'typescript',
+      python: 'python',
+      json: 'json',
+      yaml: 'yaml',
+      sql: 'sql',
+      html: 'html',
+      css: 'css',
     };
-    
+
     setEditorLanguage(languageMap[language] || 'javascript');
   }, [language]);
 
@@ -53,7 +53,7 @@ export default function CodeEditor({
     lineDecorationsWidth: 0,
     lineNumbersMinChars: 3,
     glyphMargin: false,
-    fixedOverflowWidgets: true
+    fixedOverflowWidgets: true,
   };
 
   const handleEditorChange = (value) => {
@@ -69,7 +69,8 @@ export default function CodeEditor({
       monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
         target: monaco.languages.typescript.ScriptTarget.ES2020,
         allowNonTsExtensions: true,
-        moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
+        moduleResolution:
+          monaco.languages.typescript.ModuleResolutionKind.NodeJs,
         module: monaco.languages.typescript.ModuleKind.CommonJS,
         noEmit: true,
         esModuleInterop: true,
@@ -79,7 +80,7 @@ export default function CodeEditor({
         strict: false,
         noImplicitAny: false,
         noImplicitReturns: false,
-        noImplicitThis: false
+        noImplicitThis: false,
       });
 
       // More comprehensive MEL Agent type definitions
@@ -137,19 +138,22 @@ declare const Object: ObjectConstructor;
 `;
 
       // Add the type definitions
-      monaco.languages.typescript.javascriptDefaults.addExtraLib(melAgentTypes, 'file:///mel-agent-globals.d.ts');
-      
+      monaco.languages.typescript.javascriptDefaults.addExtraLib(
+        melAgentTypes,
+        'file:///mel-agent-globals.d.ts'
+      );
+
       // Configure diagnostics to be more permissive
       monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
         noSemanticValidation: false,
         noSyntaxValidation: false,
         noSuggestionDiagnostics: true,
-        diagnosticCodesToIgnore: [1108, 1005, 1109, 1056]
+        diagnosticCodesToIgnore: [1108, 1005, 1109, 1056],
       });
 
       // Configure IntelliSense options
       monaco.languages.typescript.javascriptDefaults.setEagerModelSync(true);
-      
+
       // Register completion provider for better suggestions
       monaco.languages.registerCompletionItemProvider('javascript', {
         provideCompletionItems: (model, position) => {
@@ -158,7 +162,7 @@ declare const Object: ObjectConstructor;
             startLineNumber: position.lineNumber,
             endLineNumber: position.lineNumber,
             startColumn: word.startColumn,
-            endColumn: word.endColumn
+            endColumn: word.endColumn,
           };
 
           const suggestions = [
@@ -166,55 +170,57 @@ declare const Object: ObjectConstructor;
               label: 'input',
               kind: monaco.languages.CompletionItemKind.Variable,
               insertText: 'input',
-              documentation: 'MEL Agent input context with data, variables, nodeData, nodeId, and agentId',
-              range: range
+              documentation:
+                'MEL Agent input context with data, variables, nodeData, nodeId, and agentId',
+              range: range,
             },
             {
               label: 'input.data',
               kind: monaco.languages.CompletionItemKind.Property,
               insertText: 'input.data',
               documentation: 'Input data from the previous node',
-              range: range
+              range: range,
             },
             {
               label: 'input.variables',
               kind: monaco.languages.CompletionItemKind.Property,
               insertText: 'input.variables',
               documentation: 'Workflow variables available across nodes',
-              range: range
+              range: range,
             },
             {
               label: 'utils',
               kind: monaco.languages.CompletionItemKind.Module,
               insertText: 'utils',
               documentation: 'MEL Agent utility functions',
-              range: range
+              range: range,
             },
             {
               label: 'utils.parseJSON',
               kind: monaco.languages.CompletionItemKind.Function,
               insertText: 'utils.parseJSON(${1:jsonString})',
-              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              insertTextRules:
+                monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
               documentation: 'Parse JSON string into object',
-              range: range
+              range: range,
             },
             {
               label: 'utils.generateUUID',
               kind: monaco.languages.CompletionItemKind.Function,
               insertText: 'utils.generateUUID()',
               documentation: 'Generate UUID v4 string',
-              range: range
-            }
+              range: range,
+            },
           ];
 
           return { suggestions: suggestions };
-        }
+        },
       });
     }
 
     // Set theme to match the UI
     monaco.editor.setTheme('vs');
-    
+
     // Focus the editor
     editor.focus();
   };

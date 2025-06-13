@@ -43,12 +43,12 @@ func (baserowTokenCredential) Validate(data map[string]interface{}) error {
 	if !ok || baseURL == "" {
 		return fmt.Errorf("baseUrl is required and must be a non-empty string")
 	}
-	
+
 	token, ok := data["token"].(string)
 	if !ok || token == "" {
 		return fmt.Errorf("token is required and must be a non-empty string")
 	}
-	
+
 	return nil
 }
 
@@ -65,28 +65,28 @@ func (baserowTokenCredential) Transform(data map[string]interface{}) (map[string
 func (baserowTokenCredential) Test(data map[string]interface{}) error {
 	baseURL := data["baseUrl"].(string)
 	token := data["token"].(string)
-	
+
 	// Test by making a simple API call to list applications
 	client := &http.Client{Timeout: 30 * time.Second}
 	req, err := http.NewRequest("GET", baseURL+"/api/applications/", nil)
 	if err != nil {
 		return fmt.Errorf("failed to create test request: %w", err)
 	}
-	
+
 	req.Header.Set("Authorization", "Token "+token)
 	req.Header.Set("Content-Type", "application/json")
-	
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("test request failed: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != 200 {
 		body, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("authentication test failed with status %d: %s", resp.StatusCode, string(body))
 	}
-	
+
 	return nil
 }
 

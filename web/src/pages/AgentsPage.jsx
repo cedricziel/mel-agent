@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 
 function AgentsPage() {
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", description: "" });
+  const [form, setForm] = useState({ name: '', description: '' });
 
   useEffect(() => {
     fetchAgents();
@@ -14,7 +14,7 @@ function AgentsPage() {
   async function fetchAgents() {
     setLoading(true);
     try {
-      const res = await axios.get("/api/agents");
+      const res = await axios.get('/api/agents');
       setAgents(res.data);
     } catch (err) {
       console.error(err);
@@ -26,13 +26,13 @@ function AgentsPage() {
   async function submit(e) {
     e.preventDefault();
     try {
-      await axios.post("/api/agents", form);
-      setForm({ name: "", description: "" });
+      await axios.post('/api/agents', form);
+      setForm({ name: '', description: '' });
       setModalOpen(false);
       fetchAgents();
     } catch (err) {
       console.error(err);
-      alert("Failed to create agent");
+      alert('Failed to create agent');
     }
   }
 
@@ -88,7 +88,9 @@ function AgentsPage() {
             <textarea
               className="w-full border rounded px-2 py-1 mb-4"
               value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, description: e.target.value })
+              }
             />
             <div className="flex justify-end gap-2">
               <button

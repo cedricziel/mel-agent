@@ -192,4 +192,3 @@ func generateEnvelopeID() string {
 	// Simple timestamp-based ID for now
 	return "env-" + time.Now().Format("20060102150405")
 }
-

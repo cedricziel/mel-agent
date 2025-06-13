@@ -28,17 +28,25 @@ class WorkflowClient {
   }
 
   async createNode(workflowId, nodeData) {
-    const response = await this.client.post(`/workflows/${workflowId}/nodes`, nodeData);
+    const response = await this.client.post(
+      `/workflows/${workflowId}/nodes`,
+      nodeData
+    );
     return response.data;
   }
 
   async getNode(workflowId, nodeId) {
-    const response = await this.client.get(`/workflows/${workflowId}/nodes/${nodeId}`);
+    const response = await this.client.get(
+      `/workflows/${workflowId}/nodes/${nodeId}`
+    );
     return response.data;
   }
 
   async updateNode(workflowId, nodeId, updates) {
-    const response = await this.client.put(`/workflows/${workflowId}/nodes/${nodeId}`, updates);
+    const response = await this.client.put(
+      `/workflows/${workflowId}/nodes/${nodeId}`,
+      updates
+    );
     return response.data;
   }
 
@@ -53,7 +61,10 @@ class WorkflowClient {
   }
 
   async createEdge(workflowId, edgeData) {
-    const response = await this.client.post(`/workflows/${workflowId}/edges`, edgeData);
+    const response = await this.client.post(
+      `/workflows/${workflowId}/edges`,
+      edgeData
+    );
     return response.data;
   }
 
@@ -72,14 +83,14 @@ class WorkflowClient {
     return {
       id: apiNode.node_id,
       type: apiNode.node_type,
-      position: { 
-        x: apiNode.position_x || 0, 
-        y: apiNode.position_y || 0 
+      position: {
+        x: apiNode.position_x || 0,
+        y: apiNode.position_y || 0,
       },
       data: {
         ...apiNode.config,
-        label: apiNode.config?.label || apiNode.node_type
-      }
+        label: apiNode.config?.label || apiNode.node_type,
+      },
     };
   }
 
@@ -92,8 +103,8 @@ class WorkflowClient {
       config: {
         ...rfNode.data,
         // Remove ReactFlow-specific properties
-        label: rfNode.data.label
-      }
+        label: rfNode.data.label,
+      },
     };
   }
 
@@ -104,7 +115,7 @@ class WorkflowClient {
       target: apiEdge.target_node_id,
       sourceHandle: apiEdge.source_handle || null,
       targetHandle: apiEdge.target_handle || null,
-      type: 'default'
+      type: 'default',
     };
   }
 
@@ -114,7 +125,7 @@ class WorkflowClient {
       source_node_id: rfEdge.source,
       target_node_id: rfEdge.target,
       source_handle: rfEdge.sourceHandle || null,
-      target_handle: rfEdge.targetHandle || null
+      target_handle: rfEdge.targetHandle || null,
     };
   }
 
@@ -123,13 +134,13 @@ class WorkflowClient {
     const [workflow, nodes, edges] = await Promise.all([
       this.getWorkflow(workflowId),
       this.getNodes(workflowId),
-      this.getEdges(workflowId)
+      this.getEdges(workflowId),
     ]);
 
     return {
       workflow,
-      nodes: nodes.map(node => this.toReactFlowNode(node)),
-      edges: edges.map(edge => this.toReactFlowEdge(edge))
+      nodes: nodes.map((node) => this.toReactFlowNode(node)),
+      edges: edges.map((edge) => this.toReactFlowEdge(edge)),
     };
   }
 
@@ -137,16 +148,18 @@ class WorkflowClient {
   async saveWorkflowVersion(workflowId, graph) {
     // For now, maintain compatibility with existing agent versions API
     const response = await this.client.post(`/agents/${workflowId}/versions`, {
-      semantic_version: "1.0.0",
+      semantic_version: '1.0.0',
       graph,
-      default_params: {}
+      default_params: {},
     });
     return response.data;
   }
 
   // Backward compatibility - load latest version
   async getLatestWorkflowVersion(workflowId) {
-    const response = await this.client.get(`/agents/${workflowId}/versions/latest`);
+    const response = await this.client.get(
+      `/agents/${workflowId}/versions/latest`
+    );
     return response.data;
   }
 }

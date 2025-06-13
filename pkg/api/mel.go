@@ -58,11 +58,11 @@ type Mel interface {
 	// Platform Utilities
 	// HTTP client for making external requests
 	HTTPRequest(ctx context.Context, req HTTPRequest) (*HTTPResponse, error)
-	
+
 	// Workflow management
 	CallWorkflow(ctx context.Context, req WorkflowCallRequest) (*WorkflowCallResponse, error)
 	ReturnToWorkflow(ctx context.Context, callID string, data map[string]interface{}, status string) error
-	
+
 	// Data storage for cross-workflow communication
 	StoreData(ctx context.Context, key string, data interface{}, ttl time.Duration) error
 	RetrieveData(ctx context.Context, key string) (interface{}, error)
@@ -216,7 +216,7 @@ func (m *melImpl) HTTPRequest(ctx context.Context, req HTTPRequest) (*HTTPRespon
 	start := time.Now()
 	resp, err := client.Do(httpReq)
 	duration := time.Since(start)
-	
+
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +247,7 @@ func (m *melImpl) HTTPRequest(ctx context.Context, req HTTPRequest) (*HTTPRespon
 // CallWorkflow calls another workflow via the API
 func (m *melImpl) CallWorkflow(ctx context.Context, req WorkflowCallRequest) (*WorkflowCallResponse, error) {
 	callID := fmt.Sprintf("call-%d", time.Now().UnixNano())
-	
+
 	// Prepare the payload for the target workflow
 	payload := map[string]interface{}{
 		"callId":           callID,
@@ -261,7 +261,7 @@ func (m *melImpl) CallWorkflow(ctx context.Context, req WorkflowCallRequest) (*W
 
 	if req.CallMode == "sync" {
 		// For synchronous calls, register a pending call and wait for workflow_return
-		
+
 		// Step 1: Register pending call before triggering workflow
 		responseChan := make(chan WorkflowCallResponse, 1)
 		m.pendingCallsMu.Lock()
@@ -272,7 +272,7 @@ func (m *melImpl) CallWorkflow(ctx context.Context, req WorkflowCallRequest) (*W
 			ExpiresAt:     time.Now().Add(time.Duration(req.TimeoutSeconds) * time.Second),
 		}
 		m.pendingCallsMu.Unlock()
-		
+
 		// Cleanup function to remove pending call if we exit early
 		defer func() {
 			m.pendingCallsMu.Lock()
@@ -280,10 +280,10 @@ func (m *melImpl) CallWorkflow(ctx context.Context, req WorkflowCallRequest) (*W
 			close(responseChan)
 			m.pendingCallsMu.Unlock()
 		}()
-		
+
 		// Step 2: Trigger the workflow asynchronously
 		triggerURL := fmt.Sprintf("%s/agents/%s/runs/test", m.workflowEndpoint, req.TargetWorkflowID)
-		
+
 		// Create the HTTP request to trigger the workflow
 		httpReq := HTTPRequest{
 			Method: "POST",
@@ -294,37 +294,37 @@ func (m *melImpl) CallWorkflow(ctx context.Context, req WorkflowCallRequest) (*W
 			Body:    strings.NewReader(marshalJSON(payload)),
 			Timeout: 30 * time.Second, // Use shorter timeout for triggering
 		}
-		
+
 		resp, err := m.HTTPRequest(ctx, httpReq)
 		if err != nil {
 			return nil, fmt.Errorf("failed to trigger workflow: %w", err)
 		}
-		
+
 		if resp.StatusCode >= 400 {
 			return nil, fmt.Errorf("workflow trigger failed with status %d: %s", resp.StatusCode, string(resp.Body))
 		}
-		
+
 		// Step 3: Wait for workflow_return node to call ReturnToWorkflow
 		timeoutDuration := time.Duration(req.TimeoutSeconds) * time.Second
 		select {
 		case response := <-responseChan:
 			// Received response from workflow_return node
 			return &response, nil
-			
+
 		case <-time.After(timeoutDuration):
 			// Timeout waiting for response
 			return nil, fmt.Errorf("timeout waiting for workflow response after %v", timeoutDuration)
-			
+
 		case <-ctx.Done():
 			// Context cancelled
 			return nil, ctx.Err()
 		}
-		
+
 	} else {
 		// For asynchronous calls, use the test endpoint for immediate execution
 		// This is more reliable than the async runs endpoint for now
 		triggerURL := fmt.Sprintf("%s/agents/%s/runs/test", m.workflowEndpoint, req.TargetWorkflowID)
-		
+
 		httpReq := HTTPRequest{
 			Method: "POST",
 			URL:    triggerURL,
@@ -334,16 +334,16 @@ func (m *melImpl) CallWorkflow(ctx context.Context, req WorkflowCallRequest) (*W
 			Body:    strings.NewReader(marshalJSON(payload)),
 			Timeout: 30 * time.Second, // Shorter timeout for async triggers
 		}
-		
+
 		resp, err := m.HTTPRequest(ctx, httpReq)
 		if err != nil {
 			return nil, fmt.Errorf("failed to trigger async workflow: %w", err)
 		}
-		
+
 		if resp.StatusCode >= 400 {
 			return nil, fmt.Errorf("async workflow trigger failed with status %d: %s", resp.StatusCode, string(resp.Body))
 		}
-		
+
 		return &WorkflowCallResponse{
 			CallID:      callID,
 			Status:      "sent",
@@ -364,24 +364,24 @@ func marshalJSON(v interface{}) string {
 func (m *melImpl) ReturnToWorkflow(ctx context.Context, callID string, data map[string]interface{}, status string) error {
 	m.pendingCallsMu.Lock()
 	defer m.pendingCallsMu.Unlock()
-	
+
 	// Find the pending call
 	pendingCall, exists := m.pendingCalls[callID]
 	if !exists {
 		// If no pending call found, store the response in case it's retrieved later
 		return m.StoreData(ctx, "workflow_return:"+callID, map[string]interface{}{
-			"data":        data,
-			"status":      status,
-			"returnedAt":  time.Now().Format(time.RFC3339),
+			"data":       data,
+			"status":     status,
+			"returnedAt": time.Now().Format(time.RFC3339),
 		}, 1*time.Hour) // Store for 1 hour
 	}
-	
+
 	// Check if the call has expired
 	if time.Now().After(pendingCall.ExpiresAt) {
 		delete(m.pendingCalls, callID)
 		return fmt.Errorf("workflow call %s has expired", callID)
 	}
-	
+
 	// Send the response to the waiting workflow call
 	response := WorkflowCallResponse{
 		CallID:      callID,
@@ -390,7 +390,7 @@ func (m *melImpl) ReturnToWorkflow(ctx context.Context, callID string, data map[
 		Message:     fmt.Sprintf("Workflow return received with status: %s", status),
 		CompletedAt: time.Now(),
 	}
-	
+
 	// Try to send the response without blocking
 	select {
 	case pendingCall.ResponseChan <- response:
@@ -408,17 +408,17 @@ func (m *melImpl) ReturnToWorkflow(ctx context.Context, callID string, data map[
 func (m *melImpl) StoreData(ctx context.Context, key string, data interface{}, ttl time.Duration) error {
 	m.dataStoreMu.Lock()
 	defer m.dataStoreMu.Unlock()
-	
+
 	expiresAt := time.Now().Add(ttl)
 	if ttl <= 0 {
 		expiresAt = time.Now().Add(24 * time.Hour) // Default 24h TTL
 	}
-	
+
 	m.dataStore[key] = dataStoreEntry{
 		Data:      data,
 		ExpiresAt: expiresAt,
 	}
-	
+
 	return nil
 }
 
@@ -426,19 +426,19 @@ func (m *melImpl) StoreData(ctx context.Context, key string, data interface{}, t
 func (m *melImpl) RetrieveData(ctx context.Context, key string) (interface{}, error) {
 	m.dataStoreMu.RLock()
 	defer m.dataStoreMu.RUnlock()
-	
+
 	entry, exists := m.dataStore[key]
 	if !exists {
 		return nil, fmt.Errorf("data not found for key: %s", key)
 	}
-	
+
 	// Check if expired
 	if time.Now().After(entry.ExpiresAt) {
 		// Clean up expired entry (we do this in read to avoid needing a background cleanup goroutine)
 		delete(m.dataStore, key)
 		return nil, fmt.Errorf("data expired for key: %s", key)
 	}
-	
+
 	return entry.Data, nil
 }
 
@@ -446,7 +446,7 @@ func (m *melImpl) RetrieveData(ctx context.Context, key string) (interface{}, er
 func (m *melImpl) DeleteData(ctx context.Context, key string) error {
 	m.dataStoreMu.Lock()
 	defer m.dataStoreMu.Unlock()
-	
+
 	delete(m.dataStore, key)
 	return nil
 }

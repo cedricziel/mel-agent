@@ -102,7 +102,7 @@ func (d workflowTriggerDefinition) ExecuteEnvelope(ctx api.ExecutionContext, nod
 					// TODO: Implement proper caller validation
 					allowed = true // Simplified for initial implementation
 				}
-				
+
 				if !allowed {
 					triggerData["error"] = "Caller not authorized"
 					triggerData["authorized"] = false
@@ -137,7 +137,7 @@ func (d workflowTriggerDefinition) ExecuteEnvelope(ctx api.ExecutionContext, nod
 	result.Trace = envelope.Trace.Next(node.ID)
 	result.Data = triggerData
 	result.DataType = "object"
-	
+
 	return result, nil
 }
 

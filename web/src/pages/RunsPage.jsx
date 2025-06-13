@@ -22,13 +22,14 @@ export default function RunsPage() {
 
   // Fetch node definitions for renderer
   useEffect(() => {
-    axios.get('/api/node-types')
-      .then(res => setNodeDefs(res.data))
-      .catch(err => console.error('fetch node-types failed', err));
+    axios
+      .get('/api/node-types')
+      .then((res) => setNodeDefs(res.data))
+      .catch((err) => console.error('fetch node-types failed', err));
   }, []);
   const nodeTypes = useMemo(() => {
     const m = {};
-    nodeDefs.forEach(def => {
+    nodeDefs.forEach((def) => {
       if (def.entry_point) m[def.type] = TriggerNode;
       else if (def.branching) m[def.type] = IfNode;
       else m[def.type] = DefaultNode;
@@ -38,11 +39,17 @@ export default function RunsPage() {
 
   // derive selected node and its step
   const selectedRunStep = useMemo(
-    () => runDetails?.trace?.find(s => s.nodeId === selectedRunNodeID),
+    () => runDetails?.trace?.find((s) => s.nodeId === selectedRunNodeID),
     [runDetails, selectedRunNodeID]
   );
   const selectedRunNodeDef = useMemo(
-    () => nodeDefs.find(def => def.type === runDetails?.graph?.nodes?.find(n => n.id === selectedRunNodeID)?.type),
+    () =>
+      nodeDefs.find(
+        (def) =>
+          def.type ===
+          runDetails?.graph?.nodes?.find((n) => n.id === selectedRunNodeID)
+            ?.type
+      ),
     [nodeDefs, runDetails, selectedRunNodeID]
   );
 
@@ -60,20 +67,25 @@ export default function RunsPage() {
   }, [runDetails]);
 
   // Handlers for ReactFlow
-  const onNodeClick = useCallback((_, node) => setSelectedRunNodeID(node.id), []);
+  const onNodeClick = useCallback(
+    (_, node) => setSelectedRunNodeID(node.id),
+    []
+  );
   const onPaneClick = useCallback(() => setSelectedRunNodeID(null), []);
 
   useEffect(() => {
-    axios.get(`/api/agents/${agentId}/runs`)
-      .then(res => setRuns(res.data))
-      .catch(err => console.error('fetch runs list failed', err));
+    axios
+      .get(`/api/agents/${agentId}/runs`)
+      .then((res) => setRuns(res.data))
+      .catch((err) => console.error('fetch runs list failed', err));
   }, [agentId]);
 
   useEffect(() => {
     if (selectedRunID) {
-      axios.get(`/api/agents/${agentId}/runs/${selectedRunID}`)
-        .then(res => setRunDetails(res.data))
-        .catch(err => console.error('fetch run details failed', err));
+      axios
+        .get(`/api/agents/${agentId}/runs/${selectedRunID}`)
+        .then((res) => setRunDetails(res.data))
+        .catch((err) => console.error('fetch run details failed', err));
     }
   }, [selectedRunID, agentId]);
 
@@ -83,7 +95,7 @@ export default function RunsPage() {
       <div className="w-1/4 border-r p-4 overflow-auto h-full">
         <h2 className="text-xl font-bold mb-4">Runs for Agent {agentId}</h2>
         <ul className="space-y-2">
-          {runs.map(run => (
+          {runs.map((run) => (
             <li key={run.id}>
               <button
                 onClick={() => setSelectedRunID(run.id)}
@@ -95,7 +107,10 @@ export default function RunsPage() {
           ))}
         </ul>
         <div className="mt-4">
-          <Link to={`/agents/${agentId}/edit`} className="text-indigo-600 hover:underline">
+          <Link
+            to={`/agents/${agentId}/edit`}
+            className="text-indigo-600 hover:underline"
+          >
             ← Back to Builder
           </Link>
         </div>
@@ -121,13 +136,23 @@ export default function RunsPage() {
               <Controls />
             </ReactFlow>
           )}
-          {!runDetails && <p className="p-4 text-gray-500">Select a run to view graph.</p>}
+          {!runDetails && (
+            <p className="p-4 text-gray-500">Select a run to view graph.</p>
+          )}
         </div>
         <div className="w-1/2 p-4 overflow-auto h-full">
-          {runDetails && selectedRunNodeID && selectedRunStep && selectedRunNodeDef ? (
-            <RunDetailsPanel nodeDef={selectedRunNodeDef} step={selectedRunStep} />
+          {runDetails &&
+          selectedRunNodeID &&
+          selectedRunStep &&
+          selectedRunNodeDef ? (
+            <RunDetailsPanel
+              nodeDef={selectedRunNodeDef}
+              step={selectedRunStep}
+            />
           ) : (
-            <p className="text-gray-500">Select a node to inspect inputs/outputs.</p>
+            <p className="text-gray-500">
+              Select a node to inspect inputs/outputs.
+            </p>
           )}
         </div>
       </div>

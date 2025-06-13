@@ -1,7 +1,11 @@
 import { useState } from 'react';
 
 // Structured data viewer component inspired by n8n
-export default function DataViewer({ data, title = "Data", searchable = true }) {
+export default function DataViewer({
+  data,
+  title = 'Data',
+  searchable = true,
+}) {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedPaths, setExpandedPaths] = useState(new Set(['root']));
 
@@ -21,24 +25,37 @@ export default function DataViewer({ data, title = "Data", searchable = true }) 
 
   const getTypeColor = (type) => {
     switch (type) {
-      case 'string': return 'text-green-600';
-      case 'number': return 'text-blue-600';
-      case 'boolean': return 'text-purple-600';
-      case 'null': return 'text-gray-500';
-      case 'undefined': return 'text-gray-400';
-      default: return 'text-gray-800';
+      case 'string':
+        return 'text-green-600';
+      case 'number':
+        return 'text-blue-600';
+      case 'boolean':
+        return 'text-purple-600';
+      case 'null':
+        return 'text-gray-500';
+      case 'undefined':
+        return 'text-gray-400';
+      default:
+        return 'text-gray-800';
     }
   };
 
   const getTypeIcon = (type) => {
     switch (type) {
-      case 'string': return '"abc"';
-      case 'number': return '123';
-      case 'boolean': return 'T/F';
-      case 'array': return '[]';
-      case 'object': return '{}';
-      case 'null': return 'null';
-      default: return '?';
+      case 'string':
+        return '"abc"';
+      case 'number':
+        return '123';
+      case 'boolean':
+        return 'T/F';
+      case 'array':
+        return '[]';
+      case 'object':
+        return '{}';
+      case 'null':
+        return 'null';
+      default:
+        return '?';
     }
   };
 
@@ -65,51 +82,56 @@ export default function DataViewer({ data, title = "Data", searchable = true }) 
   const shouldShowInSearch = (key, value, path) => {
     if (!searchTerm) return true;
     const searchLower = searchTerm.toLowerCase();
-    
+
     // Search in key name
     if (key.toLowerCase().includes(searchLower)) return true;
-    
+
     // Search in string values
-    if (typeof value === 'string' && value.toLowerCase().includes(searchLower)) return true;
-    
+    if (typeof value === 'string' && value.toLowerCase().includes(searchLower))
+      return true;
+
     // Search in path
     if (path.toLowerCase().includes(searchLower)) return true;
-    
+
     return false;
   };
 
   const renderArrayTable = (array, path) => {
     if (!Array.isArray(array) || array.length === 0) return null;
-    
+
     // Check if it's an array of objects with consistent keys
     const firstItem = array[0];
     if (typeof firstItem !== 'object' || firstItem === null) return null;
-    
+
     const allKeys = new Set();
-    array.forEach(item => {
+    array.forEach((item) => {
       if (typeof item === 'object' && item !== null) {
-        Object.keys(item).forEach(key => allKeys.add(key));
+        Object.keys(item).forEach((key) => allKeys.add(key));
       }
     });
-    
+
     if (allKeys.size === 0) return null;
-    
+
     return (
       <div className="mt-2 border rounded overflow-hidden">
         <table className="w-full text-xs">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-2 py-1 text-left border-r">#</th>
-              {Array.from(allKeys).map(key => (
-                <th key={key} className="px-2 py-1 text-left border-r">{key}</th>
+              {Array.from(allKeys).map((key) => (
+                <th key={key} className="px-2 py-1 text-left border-r">
+                  {key}
+                </th>
               ))}
             </tr>
           </thead>
           <tbody>
             {array.map((item, index) => (
               <tr key={index} className="border-t hover:bg-gray-50">
-                <td className="px-2 py-1 border-r font-mono text-gray-500">{index}</td>
-                {Array.from(allKeys).map(key => (
+                <td className="px-2 py-1 border-r font-mono text-gray-500">
+                  {index}
+                </td>
+                {Array.from(allKeys).map((key) => (
                   <td key={key} className="px-2 py-1 border-r">
                     <span className={getTypeColor(typeof item[key])}>
                       {formatValue(item[key])}
@@ -128,7 +150,7 @@ export default function DataViewer({ data, title = "Data", searchable = true }) 
     const currentPath = `${path}.${key}`;
     const isExpanded = expandedPaths.has(currentPath);
     const valueType = Array.isArray(value) ? 'array' : typeof value;
-    
+
     if (!shouldShowInSearch(key, value, currentPath)) {
       return null;
     }
@@ -137,7 +159,7 @@ export default function DataViewer({ data, title = "Data", searchable = true }) 
       const entries = Object.entries(value);
       return (
         <div key={currentPath} className="mb-1">
-          <div 
+          <div
             className="flex items-center gap-2 hover:bg-gray-50 p-1 rounded cursor-pointer"
             style={{ paddingLeft: `${level * 12 + 4}px` }}
             onClick={() => toggleExpanded(currentPath)}
@@ -146,8 +168,12 @@ export default function DataViewer({ data, title = "Data", searchable = true }) 
               {entries.length > 0 ? (isExpanded ? '▼' : '▶') : '○'}
             </span>
             <span className="font-medium text-gray-700">{key}</span>
-            <span className="text-xs bg-gray-100 px-1 rounded">{getTypeIcon(valueType)}</span>
-            <span className="text-xs text-gray-500">({entries.length} keys)</span>
+            <span className="text-xs bg-gray-100 px-1 rounded">
+              {getTypeIcon(valueType)}
+            </span>
+            <span className="text-xs text-gray-500">
+              ({entries.length} keys)
+            </span>
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -161,7 +187,7 @@ export default function DataViewer({ data, title = "Data", searchable = true }) 
           </div>
           {isExpanded && (
             <div className="ml-4">
-              {entries.map(([subKey, subValue]) => 
+              {entries.map(([subKey, subValue]) =>
                 renderValue(subKey, subValue, currentPath, level + 1)
               )}
             </div>
@@ -174,7 +200,7 @@ export default function DataViewer({ data, title = "Data", searchable = true }) 
       const tableView = renderArrayTable(value, currentPath);
       return (
         <div key={currentPath} className="mb-1">
-          <div 
+          <div
             className="flex items-center gap-2 hover:bg-gray-50 p-1 rounded cursor-pointer"
             style={{ paddingLeft: `${level * 12 + 4}px` }}
             onClick={() => toggleExpanded(currentPath)}
@@ -183,8 +209,12 @@ export default function DataViewer({ data, title = "Data", searchable = true }) 
               {value.length > 0 ? (isExpanded ? '▼' : '▶') : '○'}
             </span>
             <span className="font-medium text-gray-700">{key}</span>
-            <span className="text-xs bg-gray-100 px-1 rounded">{getTypeIcon(valueType)}</span>
-            <span className="text-xs text-gray-500">({value.length} items)</span>
+            <span className="text-xs bg-gray-100 px-1 rounded">
+              {getTypeIcon(valueType)}
+            </span>
+            <span className="text-xs text-gray-500">
+              ({value.length} items)
+            </span>
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -198,13 +228,11 @@ export default function DataViewer({ data, title = "Data", searchable = true }) 
           </div>
           {isExpanded && (
             <div className="ml-4">
-              {tableView ? (
-                tableView
-              ) : (
-                value.map((item, index) => 
-                  renderValue(`[${index}]`, item, currentPath, level + 1)
-                )
-              )}
+              {tableView
+                ? tableView
+                : value.map((item, index) =>
+                    renderValue(`[${index}]`, item, currentPath, level + 1)
+                  )}
             </div>
           )}
         </div>
@@ -214,13 +242,15 @@ export default function DataViewer({ data, title = "Data", searchable = true }) 
     // Primitive values
     return (
       <div key={currentPath} className="mb-1">
-        <div 
+        <div
           className="flex items-center gap-2 hover:bg-gray-50 p-1 rounded"
           style={{ paddingLeft: `${level * 12 + 4}px` }}
         >
           <span className="text-gray-400 w-3">○</span>
           <span className="font-medium text-gray-700">{key}</span>
-          <span className="text-xs bg-gray-100 px-1 rounded">{getTypeIcon(valueType)}</span>
+          <span className="text-xs bg-gray-100 px-1 rounded">
+            {getTypeIcon(valueType)}
+          </span>
           <span className={`flex-1 ${getTypeColor(valueType)}`}>
             {formatValue(value)}
           </span>
@@ -250,12 +280,12 @@ export default function DataViewer({ data, title = "Data", searchable = true }) 
       <div className="p-3">
         <div className="flex items-center gap-2 mb-2">
           <h4 className="font-medium text-gray-700">{title}</h4>
-          <span className="text-xs bg-gray-100 px-1 rounded">{getTypeIcon(typeof data)}</span>
+          <span className="text-xs bg-gray-100 px-1 rounded">
+            {getTypeIcon(typeof data)}
+          </span>
         </div>
         <div className="bg-gray-50 p-2 rounded">
-          <span className={getTypeColor(typeof data)}>
-            {formatValue(data)}
-          </span>
+          <span className={getTypeColor(typeof data)}>{formatValue(data)}</span>
         </div>
       </div>
     );
@@ -267,8 +297,12 @@ export default function DataViewer({ data, title = "Data", searchable = true }) 
     <div className="p-3">
       <div className="flex items-center gap-2 mb-3">
         <h4 className="font-medium text-gray-700">{title}</h4>
-        <span className="text-xs bg-gray-100 px-1 rounded">{getTypeIcon('object')}</span>
-        <span className="text-xs text-gray-500">({rootEntries.length} keys)</span>
+        <span className="text-xs bg-gray-100 px-1 rounded">
+          {getTypeIcon('object')}
+        </span>
+        <span className="text-xs text-gray-500">
+          ({rootEntries.length} keys)
+        </span>
         <button
           onClick={() => copyToClipboard(data)}
           className="ml-auto text-xs text-gray-400 hover:text-gray-600 px-1"

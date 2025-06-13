@@ -771,7 +771,7 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 func executeNodeHandler(w http.ResponseWriter, r *http.Request) {
 	agentID := chi.URLParam(r, "agentID")
 	nodeID := chi.URLParam(r, "nodeID")
-	
+
 	var input interface{}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
@@ -784,7 +784,7 @@ func executeNodeHandler(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to get agent version"})
 		return
 	}
-	
+
 	if !versionID.Valid {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "no workflow version available"})
 		return
@@ -1504,10 +1504,10 @@ func autoLayoutWorkflow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create a layered layout using BFS to group nodes by their distance from start nodes
-	layers := make(map[int][]string) // layer index -> list of node IDs
+	layers := make(map[int][]string)  // layer index -> list of node IDs
 	nodeLayer := make(map[string]int) // node ID -> layer index
 	visited := make(map[string]bool)
-	
+
 	// Find all nodes with no incoming edges (start nodes) - these go in layer 0
 	var startNodes []string
 	for _, nodeID := range allNodes {
@@ -1523,7 +1523,7 @@ func autoLayoutWorkflow(w http.ResponseWriter, r *http.Request) {
 	currentLayer := 0
 	for {
 		nextLayerNodes := []string{}
-		
+
 		// Process all nodes in current layer
 		for _, nodeID := range layers[currentLayer] {
 			// For each neighbor of current node
@@ -1542,7 +1542,7 @@ func autoLayoutWorkflow(w http.ResponseWriter, r *http.Request) {
 							break
 						}
 					}
-					
+
 					if allPredecessorsVisited {
 						nextLayerNodes = append(nextLayerNodes, neighbor)
 						visited[neighbor] = true
@@ -1551,15 +1551,15 @@ func autoLayoutWorkflow(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-		
+
 		if len(nextLayerNodes) == 0 {
 			break
 		}
-		
+
 		currentLayer++
 		layers[currentLayer] = nextLayerNodes
 	}
-	
+
 	// Add any remaining unvisited nodes (disconnected components) to the last layer
 	maxLayer := currentLayer
 	for _, nodeID := range allNodes {
@@ -1582,18 +1582,18 @@ func autoLayoutWorkflow(w http.ResponseWriter, r *http.Request) {
 		if len(layerNodes) == 0 {
 			continue
 		}
-		
+
 		// Calculate X position for this layer
 		x := startX + float64(layerIndex)*spacingX
-		
+
 		// Calculate starting Y position to center the nodes vertically
 		totalHeight := float64(len(layerNodes)-1) * spacingY
 		startYForLayer := startY - totalHeight/2
-		
+
 		// Position each node in this layer
 		for i, nodeID := range layerNodes {
 			y := startYForLayer + float64(i)*spacingY
-			
+
 			if _, err := db.DB.Exec(`UPDATE workflow_nodes SET position_x = $1, position_y = $2 WHERE agent_id = $3 AND node_id = $4`, x, y, workflowID, nodeID); err != nil {
 				writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 				return

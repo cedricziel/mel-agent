@@ -45,14 +45,14 @@ func TestWorkflowCallDefinition_ExecuteEnvelope(t *testing.T) {
 	defer server.Close()
 
 	def := workflowCallDefinition{}
-	
+
 	// Test with missing targetWorkflowId
 	ctx := api.ExecutionContext{
 		AgentID: "test-agent",
 		RunID:   "test-run",
 		Mel:     api.NewMelWithConfig(30*time.Second, server.URL), // Use mock server
 	}
-	
+
 	node := api.Node{
 		ID:   "test-node",
 		Type: "workflow_call",
@@ -60,7 +60,7 @@ func TestWorkflowCallDefinition_ExecuteEnvelope(t *testing.T) {
 			// Missing targetWorkflowId
 		},
 	}
-	
+
 	envelope := &api.Envelope[interface{}]{
 		ID:       "test-envelope",
 		IssuedAt: time.Now(),
@@ -73,29 +73,29 @@ func TestWorkflowCallDefinition_ExecuteEnvelope(t *testing.T) {
 			NodeID:  node.ID,
 		},
 	}
-	
+
 	_, err := def.ExecuteEnvelope(ctx, node, envelope)
 	if err == nil {
 		t.Error("Expected error for missing targetWorkflowId")
 	}
-	
+
 	// Test with valid targetWorkflowId
 	node.Data["targetWorkflowId"] = "target-workflow-123"
 	node.Data["callMode"] = "async"
-	
+
 	result, err := def.ExecuteEnvelope(ctx, node, envelope)
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	
+
 	if result == nil {
 		t.Error("Expected result to be non-nil")
 	}
-	
+
 	if result.DataType != "object" {
 		t.Errorf("Expected DataType 'object', got '%s'", result.DataType)
 	}
-	
+
 	// Check result data structure
 	if data, ok := result.Data.(map[string]interface{}); ok {
 		if callInfo, exists := data["callInfo"]; !exists {

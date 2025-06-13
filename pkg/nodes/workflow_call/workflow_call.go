@@ -66,7 +66,7 @@ func (d workflowCallDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node a
 
 	// Prepare call data
 	callData := make(map[string]interface{})
-	
+
 	// Add custom call data if provided
 	if customData, ok := node.Data["callData"].(string); ok && customData != "" {
 		var parsed interface{}

@@ -27,7 +27,7 @@ export class DraftAPI {
         },
         body: JSON.stringify(draftData),
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to update draft: ${response.statusText}`);
       }
@@ -40,17 +40,20 @@ export class DraftAPI {
 
   static async testDraftNode(agentId, nodeId, testData = {}) {
     try {
-      const response = await fetch(`${API_BASE}/agents/${agentId}/draft/nodes/${nodeId}/test`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          node_id: nodeId,
-          test_data: testData,
-        }),
-      });
-      
+      const response = await fetch(
+        `${API_BASE}/agents/${agentId}/draft/nodes/${nodeId}/test`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            node_id: nodeId,
+            test_data: testData,
+          }),
+        }
+      );
+
       if (!response.ok) {
         throw new Error(`Failed to test node: ${response.statusText}`);
       }
@@ -73,7 +76,7 @@ export class DraftAPI {
           notes: notes,
         }),
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to deploy version: ${response.statusText}`);
       }
@@ -100,12 +103,12 @@ export class AutoSaver {
   // Schedule an auto-save with debouncing
   scheduleSave(draftData) {
     this.pendingChanges = draftData;
-    
+
     // Clear existing timeout
     if (this.saveTimeout) {
       clearTimeout(this.saveTimeout);
     }
-    
+
     // Schedule new save
     this.saveTimeout = setTimeout(() => {
       this.performSave();
@@ -119,19 +122,22 @@ export class AutoSaver {
     }
 
     this.isSaving = true;
-    
+
     try {
-      const result = await DraftAPI.updateDraft(this.agentId, this.pendingChanges);
+      const result = await DraftAPI.updateDraft(
+        this.agentId,
+        this.pendingChanges
+      );
       this.pendingChanges = null;
-      
+
       if (this.onSave) {
         this.onSave(result);
       }
-      
+
       console.log('✅ Draft auto-saved at', new Date().toLocaleTimeString());
     } catch (error) {
       console.error('❌ Auto-save failed:', error);
-      
+
       if (this.onError) {
         this.onError(error);
       }
@@ -146,7 +152,7 @@ export class AutoSaver {
       clearTimeout(this.saveTimeout);
       this.saveTimeout = null;
     }
-    
+
     await this.performSave();
   }
 
@@ -188,13 +194,16 @@ export function useAutoSaver(agentId) {
     };
   }, [agentId]);
 
-  const scheduleSave = useCallback((draftData) => {
-    if (autoSaver) {
-      setIsSaving(true);
-      setSaveError(null);
-      autoSaver.scheduleSave(draftData);
-    }
-  }, [autoSaver]);
+  const scheduleSave = useCallback(
+    (draftData) => {
+      if (autoSaver) {
+        setIsSaving(true);
+        setSaveError(null);
+        autoSaver.scheduleSave(draftData);
+      }
+    },
+    [autoSaver]
+  );
 
   const saveNow = useCallback(async () => {
     if (autoSaver) {

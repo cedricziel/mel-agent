@@ -132,23 +132,23 @@ func TestDelayDefinition_ExecuteEnvelope(t *testing.T) {
 				t.Errorf("ExecuteEnvelope() error = %v", err)
 				return
 			}
-			
+
 			if outputEnvelope == nil {
 				t.Error("ExecuteEnvelope() returned nil envelope")
 				return
 			}
-			
+
 			if outputEnvelope.Data != tt.expectedOutput {
 				t.Errorf("ExecuteEnvelope() output = %v, expected %v", outputEnvelope.Data, tt.expectedOutput)
 			}
-			
+
 			if duration < tt.minDuration {
 				t.Errorf("ExecuteEnvelope() duration %v is less than expected minimum %v", duration, tt.minDuration)
 			}
 			if duration > tt.maxDuration {
 				t.Errorf("ExecuteEnvelope() duration %v is greater than expected maximum %v", duration, tt.maxDuration)
 			}
-			
+
 			// Verify trace is properly updated
 			if outputEnvelope.Trace.NodeID != tt.node.ID {
 				t.Errorf("Expected trace NodeID %s, got %s", tt.node.ID, outputEnvelope.Trace.NodeID)

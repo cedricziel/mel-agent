@@ -122,7 +122,7 @@ func (d httpRequestDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node ap
 
 	// Prepare headers
 	headers := make(map[string]string)
-	
+
 	// Set Content-Type header if we have a body
 	if bodyReader != nil {
 		headers["Content-Type"] = contentType
