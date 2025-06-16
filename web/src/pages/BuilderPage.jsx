@@ -774,7 +774,7 @@ function BuilderPage({ agentId }) {
       const modelEdge = {
         id: `edge-model-${crypto.randomUUID()}`,
         source: modelId,
-        sourceHandle: 'out',
+        sourceHandle: 'config-out',
         target: agentId,
         targetHandle: 'model-config',
         type: 'default',
@@ -784,7 +784,7 @@ function BuilderPage({ agentId }) {
       const toolsEdge = {
         id: `edge-tools-${crypto.randomUUID()}`,
         source: toolsId,
-        sourceHandle: 'out',
+        sourceHandle: 'config-out',
         target: agentId,
         targetHandle: 'tools-config',
         type: 'default',
@@ -794,7 +794,7 @@ function BuilderPage({ agentId }) {
       const memoryEdge = {
         id: `edge-memory-${crypto.randomUUID()}`,
         source: memoryId,
-        sourceHandle: 'out',
+        sourceHandle: 'config-out',
         target: agentId,
         targetHandle: 'memory-config',
         type: 'default',
