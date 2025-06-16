@@ -4,15 +4,15 @@ describe('Configuration Node Dialog', () => {
     cy.intercept('GET', '/api/agents/*/versions/latest', {
       fixture: 'agent.json'
     }).as('getAgent');
-    
+
     cy.intercept('GET', '/api/workflows/*/nodes', {
       fixture: 'nodes.json'
     }).as('getNodes');
-    
+
     cy.intercept('GET', '/api/workflows/*/edges', {
       fixture: 'edges.json'
     }).as('getEdges');
-    
+
     cy.intercept('GET', '/api/node-types', {
       fixture: 'node-types.json'
     }).as('getNodeTypes');
@@ -24,7 +24,7 @@ describe('Configuration Node Dialog', () => {
 
     // Visit the builder page
     cy.visit('/agents/test-agent-id');
-    
+
     // Wait for the page to load
     cy.wait(['@getAgent', '@getNodes', '@getEdges', '@getNodeTypes']);
   });
@@ -66,10 +66,10 @@ describe('Configuration Node Dialog', () => {
     cy.get('[data-testid="node-details-dialog"]').within(() => {
       // Change the model
       cy.get('select[name="model"]').select('gpt-3.5-turbo');
-      
+
       // Change temperature
       cy.get('input[name="temperature"]').clear().type('0.5');
-      
+
       // Change max tokens
       cy.get('input[name="maxTokens"]').clear().type('2000');
     });
@@ -90,7 +90,7 @@ describe('Configuration Node Dialog', () => {
   it('should show different configuration for different node types', () => {
     // Test Anthropic model node
     cy.get('[data-testid="anthropic-model-node"]').click();
-    
+
     cy.get('[data-testid="node-details-dialog"]').within(() => {
       cy.contains('Anthropic Model').should('be.visible');
       cy.contains('Model').should('be.visible');
@@ -101,7 +101,7 @@ describe('Configuration Node Dialog', () => {
 
     // Test Local Memory node
     cy.get('[data-testid="local-memory-node"]').click();
-    
+
     cy.get('[data-testid="node-details-dialog"]').within(() => {
       cy.contains('Local Memory').should('be.visible');
       cy.contains('Max Messages').should('be.visible');
@@ -128,7 +128,7 @@ describe('Configuration Node Dialog', () => {
 
   it('should show visual feedback when hovering over configuration nodes', () => {
     cy.get('[data-testid="openai-model-node"]').trigger('mouseover');
-    
+
     // Check if the node shows hover state (this depends on CSS implementation)
     cy.get('[data-testid="openai-model-node"]').should('have.class', 'cursor-pointer');
   });
@@ -137,12 +137,12 @@ describe('Configuration Node Dialog', () => {
     cy.get('[data-testid="openai-model-node"]').click();
 
     cy.get('[data-testid="node-details-dialog"]').within(() => {
-      // Clear required field
-      cy.get('input[name="model"]').clear();
-      
+      // Select empty option to trigger validation
+      cy.get('select[name="model"]').select('');
+
       // Try to save
       cy.get('[data-testid="save-node-config"]').click();
-      
+
       // Should show validation error
       cy.contains('required').should('be.visible');
     });
@@ -151,18 +151,18 @@ describe('Configuration Node Dialog', () => {
   it('should maintain node selection state after dialog operations', () => {
     // Click on a configuration node
     cy.get('[data-testid="openai-model-node"]').click();
-    
+
     // Verify it's selected (dialog is open)
     cy.get('[data-testid="node-details-dialog"]').should('be.visible');
-    
+
     // Make some changes
     cy.get('[data-testid="node-details-dialog"]').within(() => {
       cy.get('input[name="temperature"]').clear().type('0.8');
     });
-    
+
     // Close dialog
     cy.get('[data-testid="close-dialog"]').click();
-    
+
     // Node should still be visually selected if that's the expected behavior
     // This test depends on the exact UX design for selection states
   });
@@ -174,7 +174,7 @@ describe('Configuration Node Dialog', () => {
       // Tab through form fields
       cy.get('input[name="temperature"]').focus().tab();
       cy.get('input[name="maxTokens"]').should('be.focused');
-      
+
       // Escape should close dialog
       cy.get('body').type('{esc}');
     });

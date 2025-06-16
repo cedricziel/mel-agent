@@ -37,8 +37,12 @@ describe('DefaultNode', () => {
   it('should render handles for input and output', () => {
     render(<DefaultNode {...defaultProps} />);
 
-    expect(screen.getByTestId('handle-target-left-workflow-in')).toBeInTheDocument();
-    expect(screen.getByTestId('handle-source-right-workflow-out')).toBeInTheDocument();
+    expect(
+      screen.getByTestId('handle-target-left-workflow-in')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId('handle-source-right-workflow-out')
+    ).toBeInTheDocument();
   });
 
   it('should show error state when error is true', () => {
@@ -150,8 +154,9 @@ describe('DefaultNode', () => {
 
     render(<DefaultNode {...propsWithAddClick} />);
 
-    const addButton = screen.getByText('+');
-    fireEvent.click(addButton);
+    // Click the first add button (quick-add button in top-right corner)
+    const addButtons = screen.getAllByText('+');
+    fireEvent.click(addButtons[0]);
 
     expect(mockOnAddClick).toHaveBeenCalledTimes(1);
   });
@@ -167,8 +172,11 @@ describe('DefaultNode', () => {
 
     render(<DefaultNode {...propsWithAddClick} />);
 
-    const addButton = screen.getByText('+');
-    fireEvent.click(addButton, { stopPropagation: mockStopPropagation });
+    // Click the second add button (on output handle with title)
+    const addButtonWithTitle = screen.getByTitle('Add Next Node');
+    fireEvent.click(addButtonWithTitle, {
+      stopPropagation: mockStopPropagation,
+    });
 
     expect(mockOnAddClick).toHaveBeenCalled();
   });

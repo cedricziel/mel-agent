@@ -62,8 +62,8 @@ vi.mock('../../hooks/useWorkflowState', () => ({
 }));
 
 // Mock ReactFlow
-vi.mock('reactflow', () => ({
-  ReactFlow: ({
+vi.mock('reactflow', () => {
+  const MockReactFlow = ({
     children,
     edgeTypes,
     onNodesChange,
@@ -76,35 +76,41 @@ vi.mock('reactflow', () => ({
       </div>
       {children}
     </div>
-  ),
-  Background: () => <div data-testid="background" />,
-  Controls: () => <div data-testid="controls" />,
-  MiniMap: () => <div data-testid="minimap" />,
-  Panel: ({ children }) => <div data-testid="panel">{children}</div>,
-  Handle: ({ type, position, id }) => (
-    <div data-testid={`handle-${type}-${position}-${id}`} />
-  ),
-  Position: {
-    Top: 'top',
-    Bottom: 'bottom',
-    Left: 'left',
-    Right: 'right',
-  },
-  useReactFlow: () => ({
-    deleteElements: vi.fn(),
-  }),
-  BaseEdge: ({ onMouseEnter, onMouseLeave }) => (
-    <div
-      data-testid="base-edge"
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-    />
-  ),
-  EdgeLabelRenderer: ({ children }) => (
-    <div data-testid="edge-label-renderer">{children}</div>
-  ),
-  getBezierPath: () => ['M100,100 L200,200', 150, 150],
-}));
+  );
+
+  return {
+    default: MockReactFlow,
+    ReactFlow: MockReactFlow,
+    Background: () => <div data-testid="background" />,
+    Controls: () => <div data-testid="controls" />,
+    MiniMap: () => <div data-testid="minimap" />,
+    Panel: ({ children }) => <div data-testid="panel">{children}</div>,
+    Handle: ({ type, position, id }) => (
+      <div data-testid={`handle-${type}-${position}-${id}`} />
+    ),
+    Position: {
+      Top: 'top',
+      Bottom: 'bottom',
+      Left: 'left',
+      Right: 'right',
+    },
+    useReactFlow: () => ({
+      deleteElements: vi.fn(),
+    }),
+    BaseEdge: ({ onMouseEnter, onMouseLeave }) => (
+      <div
+        data-testid="base-edge"
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+      />
+    ),
+    EdgeLabelRenderer: ({ children }) => (
+      <div data-testid="edge-label-renderer">{children}</div>
+    ),
+    getBezierPath: () => ['M100,100 L200,200', 150, 150],
+    addEdge: vi.fn(),
+  };
+});
 
 // Mock WebSocket
 global.WebSocket = class MockWebSocket {
@@ -136,7 +142,7 @@ describe('BuilderPage Edge Deletion Integration', () => {
   const renderBuilderPage = () => {
     return render(
       <BrowserRouter>
-        <BuilderPage />
+        <BuilderPage agentId="test-agent-id" />
       </BrowserRouter>
     );
   };

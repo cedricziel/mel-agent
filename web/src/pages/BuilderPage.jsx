@@ -1011,7 +1011,7 @@ function BuilderPage({ agentId }) {
 
         // Collect all position updates in a batch
         const positionUpdates = [];
-        
+
         for (let i = 0; i < layoutNodes.length; i++) {
           const node = layoutNodes[i];
           positionUpdates.push({
@@ -1034,15 +1034,15 @@ function BuilderPage({ agentId }) {
         const batchSize = 5; // Update 5 nodes at a time
         for (let i = 0; i < positionUpdates.length; i += batchSize) {
           const batch = positionUpdates.slice(i, i + batchSize);
-          
+
           // Execute batch updates in parallel
           await Promise.all(
             batch.map(({ id, position }) => updateNode(id, { position }))
           );
-          
+
           // Add small delay between batches to prevent overwhelming the API
           if (i + batchSize < positionUpdates.length) {
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await new Promise((resolve) => setTimeout(resolve, 50));
           }
         }
       };
@@ -1053,7 +1053,7 @@ function BuilderPage({ agentId }) {
       // Wait a moment for the layout to propagate, then reposition config nodes
       setTimeout(async () => {
         const configUpdates = [];
-        
+
         configNodeData.forEach((data, configNodeId) => {
           // Get the updated position of the agent node
           const currentNodes = wsNodes.length > 0 ? wsNodes : nodes;
@@ -1075,7 +1075,9 @@ function BuilderPage({ agentId }) {
         // Apply config node updates in parallel
         if (configUpdates.length > 0) {
           await Promise.all(
-            configUpdates.map(({ id, position }) => updateNode(id, { position }))
+            configUpdates.map(({ id, position }) =>
+              updateNode(id, { position })
+            )
           );
         }
       }, 500);
@@ -1159,8 +1161,12 @@ function BuilderPage({ agentId }) {
             ),
           }}
           isValidConnection={(connection) => {
-            const sourceNode = displayedNodes.find((n) => n.id === connection.source);
-            const targetNode = displayedNodes.find((n) => n.id === connection.target);
+            const sourceNode = displayedNodes.find(
+              (n) => n.id === connection.source
+            );
+            const targetNode = displayedNodes.find(
+              (n) => n.id === connection.target
+            );
             if (!sourceNode || !targetNode) return false;
             return isValidConnection(
               connection.sourceHandle,
