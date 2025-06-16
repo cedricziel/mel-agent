@@ -595,8 +595,8 @@ function BuilderPage({ agentId }) {
       if (isLiveMode || viewMode === 'executions') return;
 
       // Find source and target nodes
-      const sourceNode = nodes.find((n) => n.id === params.source);
-      const targetNode = nodes.find((n) => n.id === params.target);
+      const sourceNode = displayedNodes.find((n) => n.id === params.source);
+      const targetNode = displayedNodes.find((n) => n.id === params.target);
 
       if (!sourceNode || !targetNode) {
         console.error('Source or target node not found');
@@ -626,7 +626,7 @@ function BuilderPage({ agentId }) {
         console.error('Failed to create edge:', err);
       }
     },
-    [createEdge, broadcastNodeChange, isLiveMode, viewMode, nodes]
+    [createEdge, broadcastNodeChange, isLiveMode, viewMode, displayedNodes]
   );
 
   // Test run functionality
@@ -1128,8 +1128,8 @@ function BuilderPage({ agentId }) {
             ),
           }}
           isValidConnection={(connection) => {
-            const sourceNode = nodes.find((n) => n.id === connection.source);
-            const targetNode = nodes.find((n) => n.id === connection.target);
+            const sourceNode = displayedNodes.find((n) => n.id === connection.source);
+            const targetNode = displayedNodes.find((n) => n.id === connection.target);
             if (!sourceNode || !targetNode) return false;
             return isValidConnection(
               connection.sourceHandle,
