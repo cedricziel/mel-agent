@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import CronEditor from './CronEditor';
-import CodeEditor from './CodeEditor';
-import DataViewer from './DataViewer';
+import useCredentials from '../hooks/useCredentials';
+import useDynamicOptions from '../hooks/useDynamicOptions';
+import ParameterField from './ParameterField';
+import NodeExecutionSection from './NodeExecutionSection';
 
 // Panel to configure node details and preview data flow
 export default function NodeDetailsPanel({
@@ -16,14 +17,14 @@ export default function NodeDetailsPanel({
 }) {
   // All hooks must be called before any conditional returns
   const [connections, setConnections] = useState([]);
-  const [credentials, setCredentials] = useState([]);
-  const [dynamicOptions, setDynamicOptions] = useState({});
-  const [loadingOptions, setLoadingOptions] = useState({});
   const [currentFormData, setCurrentFormData] = useState({});
-  const [execInput, setExecInput] = useState('{}');
-  const [execOutput, setExecOutput] = useState(null);
-  const [execError, setExecError] = useState(null);
-  const [running, setRunning] = useState(false);
+
+  // Use extracted hooks
+  const { credentials, loadingCredentials } = useCredentials(nodeDef);
+  const { dynamicOptions, loadingOptions } = useDynamicOptions(
+    nodeDef,
+    currentFormData
+  );
 
   // Track current form data locally
   useEffect(() => {
@@ -36,6 +37,7 @@ export default function NodeDetailsPanel({
     onChange(key, value);
   };
 
+  // Load connections for LLM nodes
   useEffect(() => {
     if (nodeDef && nodeDef.type === 'llm') {
       fetch('/api/connections')
@@ -44,111 +46,6 @@ export default function NodeDetailsPanel({
         .catch(() => setConnections([]));
     }
   }, [nodeDef]);
-
-  // Load credentials for credential parameters
-  useEffect(() => {
-    if (!nodeDef || !nodeDef.parameters) return;
-
-    const credentialParams = nodeDef.parameters.filter(
-      (p) => p.type === 'credential' || p.parameterType === 'credential'
-    );
-
-    if (credentialParams.length > 0) {
-      // Load credentials for each credential parameter
-      const promises = credentialParams.map(async (param) => {
-        try {
-          const url = param.credentialType
-            ? `/api/credentials?credential_type=${param.credentialType}`
-            : '/api/credentials';
-          const response = await fetch(url);
-          const data = await response.json();
-          return { paramName: param.name, credentials: data };
-        } catch (error) {
-          console.error(`Failed to load credentials for ${param.name}:`, error);
-          return { paramName: param.name, credentials: [] };
-        }
-      });
-
-      Promise.all(promises).then((results) => {
-        const credentialsMap = {};
-        results.forEach(({ paramName, credentials }) => {
-          credentialsMap[paramName] = credentials;
-        });
-        setCredentials(credentialsMap);
-      });
-    }
-  }, [nodeDef]);
-
-  // Function to load dynamic options for a specific parameter
-  const loadDynamicOptionsForParam = async (paramName) => {
-    const param = nodeDef?.parameters?.find((p) => p.name === paramName);
-    if (!param?.dynamicOptions) return;
-
-    try {
-      // Set loading state for this specific parameter
-      setLoadingOptions((prev) => ({ ...prev, [paramName]: true }));
-
-      // Build query parameters from current form data
-      const queryParams = new URLSearchParams();
-      Object.entries(currentFormData || {}).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          queryParams.append(key, value);
-        }
-      });
-
-      const url = `/api/node-types/${nodeDef.type}/parameters/${paramName}/options?${queryParams}`;
-      console.log(`Loading dynamic options for ${paramName}:`, url);
-
-      const response = await fetch(url);
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log(`Dynamic options for ${paramName}:`, data);
-        setDynamicOptions((prev) => ({
-          ...prev,
-          [paramName]: data.options || [],
-        }));
-      } else {
-        console.log(
-          `No dynamic options for ${paramName}:`,
-          response.status,
-          await response.text()
-        );
-        setDynamicOptions((prev) => ({
-          ...prev,
-          [paramName]: [],
-        }));
-      }
-    } catch (error) {
-      console.log(`Error loading dynamic options for ${paramName}:`, error);
-      setDynamicOptions((prev) => ({
-        ...prev,
-        [paramName]: [],
-      }));
-    } finally {
-      // Clear loading state for this specific parameter
-      setLoadingOptions((prev) => ({ ...prev, [paramName]: false }));
-    }
-  };
-
-  // Load initial dynamic options when credential changes
-  useEffect(() => {
-    if (!nodeDef || !currentFormData?.credentialId) return;
-
-    // Only load database options initially
-    loadDynamicOptionsForParam('databaseId');
-  }, [nodeDef, currentFormData?.credentialId]);
-
-  // Load table options when database changes
-  useEffect(() => {
-    if (!nodeDef || !currentFormData?.databaseId) {
-      // Clear table options when no database is selected
-      setDynamicOptions((prev) => ({ ...prev, tableId: [] }));
-      return;
-    }
-
-    loadDynamicOptionsForParam('tableId');
-  }, [nodeDef, currentFormData?.databaseId]);
 
   // Early returns after all hooks
   if (!node || !nodeDef) return null;
@@ -197,37 +94,40 @@ export default function NodeDetailsPanel({
       </div>
     );
   }
+
   // fallback data keys
   const fallbackKeys = Object.keys(data).filter(
     (k) => k !== 'label' && k !== 'status' && k !== 'lastOutput'
   );
+
   return (
     <div className="bg-gray-50 p-4 h-full">
       <h2 className="text-lg font-bold mb-4">{nodeDef.label} Details</h2>
-      {
-        // only show public URL for webhook nodes
-        nodeDef.type === 'webhook' && (
-          <div className="mb-4">
-            <h3 className="font-semibold mb-1">Public URL</h3>
-            {publicUrl ? (
-              <input
-                type="text"
-                readOnly
-                value={publicUrl}
-                className="w-full border rounded px-2 py-1 text-sm bg-gray-100"
-              />
-            ) : (
-              <div className="text-sm text-gray-500">
-                Save version to generate URL
-              </div>
-            )}
-          </div>
-        )
-      }
+
+      {/* Public URL for webhook nodes */}
+      {nodeDef.type === 'webhook' && (
+        <div className="mb-4">
+          <h3 className="font-semibold mb-1">Public URL</h3>
+          {publicUrl ? (
+            <input
+              type="text"
+              readOnly
+              value={publicUrl}
+              className="w-full border rounded px-2 py-1 text-sm bg-gray-100"
+            />
+          ) : (
+            <div className="text-sm text-gray-500">
+              Save version to generate URL
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Configuration form generated from nodeDef.parameters */}
       <div className="mb-6">
         <h3 className="font-semibold mb-2">Configuration</h3>
-        {/* Rename field */}
+
+        {/* Name field */}
         <div className="mb-4">
           <label className="block text-sm font-medium mb-1">Name</label>
           <input
@@ -237,9 +137,9 @@ export default function NodeDetailsPanel({
             className="w-full border rounded px-2 py-1"
           />
         </div>
+
         {/* Parameter groups */}
         {(() => {
-          // parameters may come from schema or legacy defaults
           // Normalize parameters: use server-defined parameters if available, otherwise fallback
           const parameters =
             Array.isArray(nodeDef.parameters) && nodeDef.parameters.length > 0
@@ -254,12 +154,12 @@ export default function NodeDetailsPanel({
                   description: '',
                   validators: [],
                 }));
-          // filter visible parameters
+
+          // Filter visible parameters
           const visible = parameters.filter((p) => {
             if (!p.visibilityCondition) return true;
             try {
               // naive evaluation of visibility condition (CEL-like)
-
               return new Function(
                 'data',
                 `with(data) { return ${p.visibilityCondition} }`
@@ -268,12 +168,15 @@ export default function NodeDetailsPanel({
               return true;
             }
           });
+
+          // Group parameters
           const groups = {};
           visible.forEach((p) => {
             const g = p.group || 'General';
             groups[g] = groups[g] || [];
             groups[g].push(p);
           });
+
           return Object.entries(groups).map(([group, params]) => (
             <div key={group} className="mb-4">
               <h4 className="text-sm font-semibold mb-2">{group}</h4>
@@ -282,446 +185,35 @@ export default function NodeDetailsPanel({
                   currentFormData[p.name] != null
                     ? currentFormData[p.name]
                     : p.default;
-                const error = p.required && (val === '' || val == null);
-                const baseClass = error ? 'border-red-500' : 'border-gray-300';
-                // Use parameterType if available, otherwise fall back to type
-                const paramType = p.parameterType || p.type;
 
-                // Check if this parameter has dynamic options available or is marked as dynamic
-                const hasDynamicOptions =
-                  dynamicOptions[p.name] && dynamicOptions[p.name].length > 0;
-                const isLoadingOptions = loadingOptions[p.name];
-                const isDynamicParameter = p.dynamicOptions;
+                // Prepare credentials for this parameter
+                const paramCredentials = {
+                  ...credentials,
+                  connections, // Add connections for legacy connectionId support
+                };
 
-                switch (paramType) {
-                  case 'string':
-                    // Check for specific UI components based on parameter name/metadata
-                    if (p.name === 'cron') {
-                      return (
-                        <div key={p.name} className="mb-3">
-                          <label className="block text-sm mb-1">
-                            {p.label}
-                            {p.required && (
-                              <span className="text-red-500">*</span>
-                            )}
-                          </label>
-                          <CronEditor
-                            value={val}
-                            onCronChange={(cron) => handleChange(p.name, cron)}
-                          />
-                          {error && (
-                            <div className="text-xs text-red-600 mt-1">
-                              {p.label} is required
-                            </div>
-                          )}
-                        </div>
-                      );
-                    }
-
-                    // Check for code format (from jsonSchema.format)
-                    if (p.jsonSchema && p.jsonSchema.format === 'code') {
-                      // Get the language from the node's language parameter
-                      const nodeLanguage =
-                        currentFormData.language || 'javascript';
-
-                      return (
-                        <div key={p.name} className="mb-3">
-                          <label className="block text-sm mb-1">
-                            {p.label}
-                            {p.required && (
-                              <span className="text-red-500">*</span>
-                            )}
-                          </label>
-                          <CodeEditor
-                            value={val || ''}
-                            onChange={(code) => handleChange(p.name, code)}
-                            language={nodeLanguage}
-                            height="300px"
-                            placeholder={
-                              p.description || 'Enter your code here...'
-                            }
-                            readOnly={readOnly}
-                          />
-                          {error && (
-                            <div className="text-xs text-red-600 mt-1">
-                              {p.label} is required
-                            </div>
-                          )}
-                          {p.description && (
-                            <div className="text-xs text-gray-500 mt-1">
-                              {p.description}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    }
-
-                    // Special handling for legacy connectionId (LLM nodes)
-                    if (p.name === 'connectionId' && connections.length > 0) {
-                      return (
-                        <div key={p.name} className="mb-3">
-                          <label className="block text-sm mb-1">
-                            {p.label}
-                            {p.required && (
-                              <span className="text-red-500">*</span>
-                            )}
-                          </label>
-                          <select
-                            value={val || ''}
-                            onChange={(e) =>
-                              handleChange(p.name, e.target.value)
-                            }
-                            className={`w-full border rounded px-2 py-1 ${baseClass}`}
-                          >
-                            <option value="">Select Connection</option>
-                            {connections.map((c) => (
-                              <option key={c.id} value={c.id}>
-                                {c.name}
-                              </option>
-                            ))}
-                          </select>
-                          {error && (
-                            <div className="text-xs text-red-600 mt-1">
-                              {p.label} is required
-                            </div>
-                          )}
-                        </div>
-                      );
-                    }
-
-                    // Dynamic parameters always show as select (with loading/empty states)
-                    if (isDynamicParameter) {
-                      return (
-                        <div key={p.name} className="mb-3">
-                          <label className="block text-sm mb-1">
-                            {p.label}
-                            {p.required && (
-                              <span className="text-red-500">*</span>
-                            )}
-                          </label>
-                          <select
-                            value={val || ''}
-                            onChange={(e) =>
-                              handleChange(p.name, e.target.value)
-                            }
-                            className={`w-full border rounded px-2 py-1 ${baseClass}`}
-                            disabled={isLoadingOptions}
-                          >
-                            {isLoadingOptions ? (
-                              <option value="">Loading...</option>
-                            ) : hasDynamicOptions ? (
-                              <>
-                                <option value="">Select {p.label}</option>
-                                {dynamicOptions[p.name].map((option) => (
-                                  <option
-                                    key={option.value}
-                                    value={option.value}
-                                  >
-                                    {option.label}
-                                  </option>
-                                ))}
-                              </>
-                            ) : (
-                              <option value="">No options available</option>
-                            )}
-                          </select>
-                          {error && (
-                            <div className="text-xs text-red-600 mt-1">
-                              {p.label} is required
-                            </div>
-                          )}
-                          {p.description && (
-                            <div className="text-xs text-gray-500 mt-1">
-                              {p.description}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    }
-
-                    // Default string input
-                    return (
-                      <div key={p.name} className="mb-3">
-                        <label className="block text-sm mb-1">
-                          {p.label}
-                          {p.required && (
-                            <span className="text-red-500">*</span>
-                          )}
-                        </label>
-                        <input
-                          type="text"
-                          value={val || ''}
-                          onChange={(e) => handleChange(p.name, e.target.value)}
-                          className={`w-full border rounded px-2 py-1 ${baseClass}`}
-                          placeholder={p.description}
-                        />
-                        {error && (
-                          <div className="text-xs text-red-600 mt-1">
-                            {p.label} is required
-                          </div>
-                        )}
-                        {p.description && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            {p.description}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  case 'number':
-                  case 'integer':
-                    return (
-                      <div key={p.name} className="mb-3">
-                        <label className="block text-sm mb-1">
-                          {p.label}
-                          {p.required && (
-                            <span className="text-red-500">*</span>
-                          )}
-                        </label>
-                        <input
-                          type="number"
-                          value={val || ''}
-                          onChange={(e) =>
-                            handleChange(
-                              p.name,
-                              parseFloat(e.target.value) || 0
-                            )
-                          }
-                          className={`w-full border rounded px-2 py-1 ${baseClass}`}
-                          placeholder={p.description}
-                        />
-                        {error && (
-                          <div className="text-xs text-red-600 mt-1">
-                            {p.label} is required
-                          </div>
-                        )}
-                        {p.description && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            {p.description}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  case 'boolean':
-                    return (
-                      <div key={p.name} className="mb-3">
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={!!val}
-                            onChange={(e) =>
-                              handleChange(p.name, e.target.checked)
-                            }
-                            className="mr-2"
-                          />
-                          <label className="text-sm">
-                            {p.label}
-                            {p.required && (
-                              <span className="text-red-500">*</span>
-                            )}
-                          </label>
-                        </div>
-                        {p.description && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            {p.description}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  case 'enum':
-                    return (
-                      <div key={p.name} className="mb-3">
-                        <label className="block text-sm mb-1">
-                          {p.label}
-                          {p.required && (
-                            <span className="text-red-500">*</span>
-                          )}
-                        </label>
-                        <select
-                          value={val || ''}
-                          onChange={(e) => handleChange(p.name, e.target.value)}
-                          className={`w-full border rounded px-2 py-1 ${baseClass}`}
-                        >
-                          {p.options &&
-                            p.options.map((opt) => (
-                              <option key={opt} value={opt}>
-                                {opt}
-                              </option>
-                            ))}
-                        </select>
-                        {error && (
-                          <div className="text-xs text-red-600 mt-1">
-                            {p.label} is required
-                          </div>
-                        )}
-                        {p.description && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            {p.description}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  case 'json':
-                  case 'object':
-                    return (
-                      <div key={p.name} className="mb-3">
-                        <label className="block text-sm mb-1">
-                          {p.label}
-                          {p.required && (
-                            <span className="text-red-500">*</span>
-                          )}
-                        </label>
-                        <textarea
-                          rows={4}
-                          value={
-                            typeof val === 'string'
-                              ? val
-                              : JSON.stringify(val || {}, null, 2)
-                          }
-                          onChange={(e) => {
-                            try {
-                              const v = JSON.parse(e.target.value);
-                              handleChange(p.name, v);
-                            } catch {
-                              // ignore parse error, store as string temporarily
-                              handleChange(p.name, e.target.value);
-                            }
-                          }}
-                          className={`w-full border rounded px-2 py-1 font-mono text-xs ${baseClass}`}
-                          placeholder={p.description}
-                        />
-                        {error && (
-                          <div className="text-xs text-red-600 mt-1">
-                            {p.label} is required
-                          </div>
-                        )}
-                        {p.description && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            {p.description}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  case 'credential': {
-                    // Dynamic credential selection
-                    const paramCredentials = credentials[p.name] || [];
-                    return (
-                      <div key={p.name} className="mb-3">
-                        <label className="block text-sm mb-1">
-                          {p.label}
-                          {p.required && (
-                            <span className="text-red-500">*</span>
-                          )}
-                        </label>
-                        <select
-                          value={val || ''}
-                          onChange={(e) => handleChange(p.name, e.target.value)}
-                          className={`w-full border rounded px-2 py-1 ${baseClass}`}
-                        >
-                          <option value="">Select Credential</option>
-                          {paramCredentials.map((cred) => (
-                            <option key={cred.id} value={cred.id}>
-                              {cred.name} ({cred.integration_name})
-                            </option>
-                          ))}
-                        </select>
-                        {error && (
-                          <div className="text-xs text-red-600 mt-1">
-                            {p.label} is required
-                          </div>
-                        )}
-                        {p.description && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            {p.description}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  }
-                  case 'nodeReference': {
-                    // Node reference selection - allows referencing other nodes in the workflow
-                    const availableNodes = (nodes || []).filter(
-                      (n) =>
-                        n.id !== selectedNodeId && // Exclude self-reference
-                        n.type !== 'manual_trigger' && // Exclude trigger nodes
-                        n.type !== 'workflow_trigger' &&
-                        n.type !== 'schedule'
-                    );
-
-                    return (
-                      <div key={p.name} className="mb-3">
-                        <label className="block text-sm mb-1">
-                          {p.label}
-                          {p.required && (
-                            <span className="text-red-500">*</span>
-                          )}
-                        </label>
-                        <select
-                          value={val || ''}
-                          onChange={(e) => handleChange(p.name, e.target.value)}
-                          className={`w-full border rounded px-2 py-1 ${baseClass}`}
-                        >
-                          <option value="">Select Node</option>
-                          {availableNodes.map((node) => (
-                            <option key={node.id} value={node.id}>
-                              {node.data?.label || node.type} ({node.type})
-                            </option>
-                          ))}
-                        </select>
-                        {availableNodes.length === 0 && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            No compatible nodes available. Add some nodes to the
-                            workflow first.
-                          </div>
-                        )}
-                        {error && (
-                          <div className="text-xs text-red-600 mt-1">
-                            {p.label} is required
-                          </div>
-                        )}
-                        {p.description && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            {p.description}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  }
-                  default:
-                    // Fallback for unknown parameter types - treat as string
-                    return (
-                      <div key={p.name} className="mb-3">
-                        <label className="block text-sm mb-1">
-                          {p.label}
-                          {p.required && (
-                            <span className="text-red-500">*</span>
-                          )}
-                        </label>
-                        <input
-                          type="text"
-                          value={val || ''}
-                          onChange={(e) => handleChange(p.name, e.target.value)}
-                          className={`w-full border rounded px-2 py-1 ${baseClass}`}
-                          placeholder={p.description}
-                        />
-                        {error && (
-                          <div className="text-xs text-red-600 mt-1">
-                            {p.label} is required
-                          </div>
-                        )}
-                        {p.description && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            {p.description}
-                          </div>
-                        )}
-                      </div>
-                    );
-                }
+                return (
+                  <ParameterField
+                    key={p.name}
+                    param={p}
+                    value={val}
+                    onChange={handleChange}
+                    readOnly={readOnly}
+                    credentials={paramCredentials}
+                    dynamicOptions={dynamicOptions}
+                    isLoadingOptions={loadingOptions[p.name]}
+                    nodes={nodes}
+                    selectedNodeId={selectedNodeId}
+                  />
+                );
               })}
             </div>
           ));
         })()}
       </div>
-      <div>
+
+      {/* Preview section */}
+      <div className="mb-6">
         <h3 className="font-semibold mb-2">Preview</h3>
         <div className="mb-4">
           <div className="font-medium text-sm mb-1">Incoming Data</div>
@@ -736,58 +228,9 @@ export default function NodeDetailsPanel({
           </pre>
         </div>
       </div>
+
       {/* Execution section */}
-      {onExecute && (
-        <div className="mt-6">
-          <h3 className="font-semibold mb-2">Execution</h3>
-          <label className="block text-sm mb-1">Input Data (JSON)</label>
-          <textarea
-            rows={4}
-            value={execInput}
-            onChange={(e) => setExecInput(e.target.value)}
-            className="w-full border rounded px-2 py-1 text-xs font-mono mb-2"
-          />
-          <div className="flex items-center gap-2 mb-2">
-            <button
-              onClick={async () => {
-                setExecError(null);
-                setExecOutput(null);
-                let parsed;
-                try {
-                  parsed = JSON.parse(execInput);
-                } catch {
-                  setExecError('Invalid JSON');
-                  return;
-                }
-                setRunning(true);
-                try {
-                  const out = await onExecute(parsed);
-                  setExecOutput(out);
-                } catch (error) {
-                  setExecError(error.message || 'Execution error');
-                } finally {
-                  setRunning(false);
-                }
-              }}
-              disabled={running}
-              className="px-3 py-1 bg-indigo-600 text-white rounded text-sm"
-            >
-              {running ? 'Running...' : 'Run Node'}
-            </button>
-            {execError && (
-              <div className="text-red-500 text-sm">{execError}</div>
-            )}
-          </div>
-          {execOutput !== null && (
-            <div>
-              <div className="font-medium text-sm mb-1">Output</div>
-              <div className="bg-white border rounded max-h-32 overflow-auto">
-                <DataViewer data={execOutput} title="" searchable={false} />
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      <NodeExecutionSection onExecute={onExecute} />
     </div>
   );
 }
