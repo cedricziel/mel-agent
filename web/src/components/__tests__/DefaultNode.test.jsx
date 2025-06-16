@@ -37,8 +37,8 @@ describe('DefaultNode', () => {
   it('should render handles for input and output', () => {
     render(<DefaultNode {...defaultProps} />);
 
-    expect(screen.getByTestId('handle-target-left-in')).toBeInTheDocument();
-    expect(screen.getByTestId('handle-source-right-out')).toBeInTheDocument();
+    expect(screen.getByTestId('handle-target-left-workflow-in')).toBeInTheDocument();
+    expect(screen.getByTestId('handle-source-right-workflow-out')).toBeInTheDocument();
   });
 
   it('should show error state when error is true', () => {
