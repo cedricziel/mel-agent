@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -27,8 +28,11 @@ func TestMelHTTPRequest(t *testing.T) {
 		}
 
 		// Read and verify body
-		body := make([]byte, r.ContentLength)
-		r.Body.Read(body)
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Errorf("Failed to read request body: %v", err)
+			return
+		}
 		expectedBody := `{"test": "data"}`
 		if string(body) != expectedBody {
 			t.Errorf("Expected body %s, got %s", expectedBody, string(body))
