@@ -91,7 +91,10 @@ export function useNodeModalState(node, nodeDef, onChange) {
       } catch (error) {
         // Don't log errors for aborted requests
         if (error.name !== 'AbortError') {
-          console.error(`Error loading dynamic options for ${paramName}:`, error);
+          console.error(
+            `Error loading dynamic options for ${paramName}:`,
+            error
+          );
           // Only update state if this request wasn't aborted
           if (!abortController.signal.aborted) {
             setDynamicOptions((prev) => ({

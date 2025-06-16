@@ -167,7 +167,7 @@ describe('useWebSocket', () => {
     act(() => {
       result.current.broadcastNodeChange('nodeUpdated', {
         nodeId: 'node-1',
-        data: { position: { x: 100, y: 200 } },
+        position: { x: 100, y: 200 },
       });
     });
 
@@ -178,7 +178,7 @@ describe('useWebSocket', () => {
       type: 'nodeUpdated',
       workflowId: 'test-agent-id',
       nodeId: 'node-1',
-      data: { position: { x: 100, y: 200 } },
+      position: { x: 100, y: 200 },
     });
   });
 

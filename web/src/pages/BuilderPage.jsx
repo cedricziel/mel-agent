@@ -304,7 +304,7 @@ function BuilderPage({ agentId }) {
             if (change.position) {
               broadcastNodeChange('nodeUpdated', {
                 nodeId: change.id,
-                data: { position: change.position },
+                position: change.position,
               });
             }
             break;
