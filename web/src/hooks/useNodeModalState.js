@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 /**
  * Custom hook for managing NodeModal state including form data, dynamic options, and credentials
@@ -23,6 +23,9 @@ export function useNodeModalState(node, nodeDef, onChange) {
   // UI state
   const [activeTab, setActiveTab] = useState('config');
 
+  // Refs to track AbortControllers for each parameter
+  const abortControllersRef = useRef({});
+
   // Track current form data locally
   useEffect(() => {
     setCurrentFormData({ ...node?.data });
@@ -43,6 +46,15 @@ export function useNodeModalState(node, nodeDef, onChange) {
       const param = nodeDef?.parameters?.find((p) => p.name === paramName);
       if (!param?.dynamicOptions) return;
 
+      // Cancel any existing request for this parameter
+      if (abortControllersRef.current[paramName]) {
+        abortControllersRef.current[paramName].abort();
+      }
+
+      // Create new AbortController for this request
+      const abortController = new AbortController();
+      abortControllersRef.current[paramName] = abortController;
+
       try {
         setLoadingOptions((prev) => ({ ...prev, [paramName]: true }));
 
@@ -54,28 +66,49 @@ export function useNodeModalState(node, nodeDef, onChange) {
         });
 
         const url = `/api/node-types/${nodeDef.type}/parameters/${paramName}/options?${queryParams}`;
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          signal: abortController.signal,
+        });
 
         if (response.ok) {
           const data = await response.json();
-          setDynamicOptions((prev) => ({
-            ...prev,
-            [paramName]: data.options || [],
-          }));
+          // Only update state if this request wasn't aborted
+          if (!abortController.signal.aborted) {
+            setDynamicOptions((prev) => ({
+              ...prev,
+              [paramName]: data.options || [],
+            }));
+          }
         } else {
-          setDynamicOptions((prev) => ({
-            ...prev,
-            [paramName]: [],
-          }));
+          // Only update state if this request wasn't aborted
+          if (!abortController.signal.aborted) {
+            setDynamicOptions((prev) => ({
+              ...prev,
+              [paramName]: [],
+            }));
+          }
         }
       } catch (error) {
-        console.error(`Error loading dynamic options for ${paramName}:`, error);
-        setDynamicOptions((prev) => ({
-          ...prev,
-          [paramName]: [],
-        }));
+        // Don't log errors for aborted requests
+        if (error.name !== 'AbortError') {
+          console.error(`Error loading dynamic options for ${paramName}:`, error);
+          // Only update state if this request wasn't aborted
+          if (!abortController.signal.aborted) {
+            setDynamicOptions((prev) => ({
+              ...prev,
+              [paramName]: [],
+            }));
+          }
+        }
       } finally {
-        setLoadingOptions((prev) => ({ ...prev, [paramName]: false }));
+        // Only update loading state if this request wasn't aborted
+        if (!abortController.signal.aborted) {
+          setLoadingOptions((prev) => ({ ...prev, [paramName]: false }));
+        }
+        // Clean up the controller reference
+        if (abortControllersRef.current[paramName] === abortController) {
+          delete abortControllersRef.current[paramName];
+        }
       }
     },
     [nodeDef, currentFormData]
@@ -159,6 +192,17 @@ export function useNodeModalState(node, nodeDef, onChange) {
     },
     [node]
   );
+
+  // Cleanup: abort all pending requests when component unmounts
+  useEffect(() => {
+    return () => {
+      // Abort all pending requests
+      Object.values(abortControllersRef.current).forEach((controller) => {
+        controller.abort();
+      });
+      abortControllersRef.current = {};
+    };
+  }, []);
 
   return {
     // Form state
