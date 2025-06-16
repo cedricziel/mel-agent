@@ -209,6 +209,59 @@ describe('useWebSocket', () => {
     expect(onNodeExecution).toHaveBeenCalledWith('node-1', 'start');
   });
 
+  it('should make execTimers reactive with useSyncExternalStore', async () => {
+    const { result } = renderHook(() =>
+      useWebSocket('test-agent-id', 'test-client-id')
+    );
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+
+    // Initially, execTimers should be empty
+    expect(result.current.execTimers).toEqual({});
+
+    // Simulate node execution start - this should trigger a re-render
+    act(() => {
+      mockWebSocket.simulateMessage({
+        type: 'nodeExecution',
+        clientId: 'other-client',
+        workflowId: 'test-agent-id',
+        nodeId: 'node-1',
+        phase: 'start',
+      });
+    });
+
+    // execTimers should now contain the timer for node-1
+    expect(result.current.execTimers).toHaveProperty('node-1');
+    expect(result.current.execTimers['node-1']).toHaveProperty('start');
+    expect(result.current.execTimers['node-1']).toHaveProperty('timeoutId');
+
+    // Simulate node execution end - this should trigger another re-render
+    act(() => {
+      mockWebSocket.simulateMessage({
+        type: 'nodeExecution',
+        clientId: 'other-client',
+        workflowId: 'test-agent-id',
+        nodeId: 'node-1',
+        phase: 'end',
+      });
+    });
+
+    // Since the elapsed time is very short, a timeout should be set to remove the timer after 500ms
+    // The timer should still exist but have a timeoutId set
+    expect(result.current.execTimers).toHaveProperty('node-1');
+    expect(result.current.execTimers['node-1']).toHaveProperty('timeoutId');
+
+    // Wait for the timeout to complete and verify the timer is removed
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 600)); // Wait longer than 500ms
+    });
+
+    // Now the timer should be removed
+    expect(result.current.execTimers).not.toHaveProperty('node-1');
+  });
+
   it('should cleanup on unmount', async () => {
     const { unmount } = renderHook(() =>
       useWebSocket('test-agent-id', 'test-client-id')
