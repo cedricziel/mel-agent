@@ -28,7 +28,7 @@ func (manualTriggerDefinition) Meta() api.NodeType {
 // ExecuteEnvelope returns manual trigger data with optional custom payload.
 func (d manualTriggerDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
 	now := time.Now()
-	
+
 	// Start with the base trigger data
 	triggerData := map[string]interface{}{
 		"triggerType": "manual",
@@ -86,7 +86,7 @@ func (d manualTriggerDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node 
 	result.Trace = envelope.Trace.Next(node.ID)
 	result.Data = triggerData
 	result.DataType = "object"
-	
+
 	return result, nil
 }
 
@@ -120,25 +120,25 @@ func parseInt(s string) (int, error) {
 	var result int
 	var sign = 1
 	var i = 0
-	
+
 	if len(s) == 0 {
 		return 0, &parseError{s: s}
 	}
-	
+
 	if s[0] == '-' {
 		sign = -1
 		i = 1
 	} else if s[0] == '+' {
 		i = 1
 	}
-	
+
 	for ; i < len(s); i++ {
 		if s[i] < '0' || s[i] > '9' {
 			return 0, &parseError{s: s}
 		}
 		result = result*10 + int(s[i]-'0')
 	}
-	
+
 	return result * sign, nil
 }
 
@@ -149,18 +149,18 @@ func parseFloat(s string) (float64, error) {
 	var i = 0
 	var decimal = false
 	var decimalPlace float64 = 1
-	
+
 	if len(s) == 0 {
 		return 0, &parseError{s: s}
 	}
-	
+
 	if s[0] == '-' {
 		sign = -1
 		i = 1
 	} else if s[0] == '+' {
 		i = 1
 	}
-	
+
 	for ; i < len(s); i++ {
 		if s[i] == '.' {
 			if decimal {
@@ -169,13 +169,13 @@ func parseFloat(s string) (float64, error) {
 			decimal = true
 			continue
 		}
-		
+
 		if s[i] < '0' || s[i] > '9' {
 			return 0, &parseError{s: s}
 		}
-		
+
 		digit := float64(s[i] - '0')
-		
+
 		if decimal {
 			decimalPlace *= 10
 			result += digit / decimalPlace
@@ -183,7 +183,7 @@ func parseFloat(s string) (float64, error) {
 			result = result*10 + digit
 		}
 	}
-	
+
 	return result * sign, nil
 }
 

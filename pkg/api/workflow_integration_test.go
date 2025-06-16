@@ -17,7 +17,7 @@ func TestWorkflowCallIntegration(t *testing.T) {
 		// Parse the incoming call data
 		var payload map[string]interface{}
 		json.NewDecoder(r.Body).Decode(&payload)
-		
+
 		// Simulate a workflow that processes the call data and returns a response
 		response := map[string]interface{}{
 			"runId": "integration-test-run",
@@ -30,10 +30,10 @@ func TestWorkflowCallIntegration(t *testing.T) {
 					"output": []map[string]interface{}{
 						{
 							"data": map[string]interface{}{
-								"triggerType":    "workflow_call",
-								"callId":         payload["callId"],
+								"triggerType":     "workflow_call",
+								"callId":          payload["callId"],
 								"callingWorkflow": payload["sourceWorkflowId"],
-								"callData":       payload["callData"],
+								"callData":        payload["callData"],
 							},
 						},
 					},
@@ -70,12 +70,12 @@ func TestWorkflowCallIntegration(t *testing.T) {
 					"output": []map[string]interface{}{
 						{
 							"data": map[string]interface{}{
-								"finalResult": "workflow execution completed",
+								"finalResult":    "workflow execution completed",
 								"processedInput": payload["callData"],
-								"timestamp": time.Now().Format(time.RFC3339),
+								"timestamp":      time.Now().Format(time.RFC3339),
 								"returnResponse": map[string]interface{}{
-									"callId":   payload["callId"],
-									"status":   "success",
+									"callId": payload["callId"],
+									"status": "success",
 								},
 								"success": true,
 							},
@@ -84,7 +84,7 @@ func TestWorkflowCallIntegration(t *testing.T) {
 				},
 			},
 		}
-		
+
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(response)
 	}))
@@ -92,11 +92,11 @@ func TestWorkflowCallIntegration(t *testing.T) {
 
 	// Create Mel instance with mock server
 	mel := NewMelWithConfig(30*time.Second, server.URL)
-	
+
 	// Test the full workflow calling flow
 	t.Run("SynchronousWorkflowCall", func(t *testing.T) {
 		ctx := context.Background()
-		
+
 		// Prepare workflow call request
 		req := WorkflowCallRequest{
 			TargetWorkflowID: "target-workflow-123",
@@ -116,11 +116,11 @@ func TestWorkflowCallIntegration(t *testing.T) {
 				Mel:     mel,
 			},
 		}
-		
+
 		// Execute the workflow call in a goroutine since it will block waiting for response
 		responseChan := make(chan *WorkflowCallResponse, 1)
 		errorChan := make(chan error, 1)
-		
+
 		go func() {
 			response, err := mel.CallWorkflow(ctx, req)
 			if err != nil {
@@ -129,14 +129,14 @@ func TestWorkflowCallIntegration(t *testing.T) {
 			}
 			responseChan <- response
 		}()
-		
+
 		// Give the workflow call time to register the pending call and trigger the workflow
 		time.Sleep(100 * time.Millisecond)
-		
+
 		// Simulate workflow_return node calling ReturnToWorkflow
 		// We need to extract the callID from the payload that was sent to the mock server
 		// For this test, we'll simulate the return by directly calling ReturnToWorkflow
-		
+
 		// First, we need to find the pending call to get the callID
 		mel.(*melImpl).pendingCallsMu.RLock()
 		var callID string
@@ -145,23 +145,23 @@ func TestWorkflowCallIntegration(t *testing.T) {
 			break
 		}
 		mel.(*melImpl).pendingCallsMu.RUnlock()
-		
+
 		if callID == "" {
 			t.Fatal("No pending call found")
 		}
-		
+
 		// Simulate workflow_return node calling ReturnToWorkflow
 		returnData := map[string]interface{}{
 			"finalResult":    "workflow execution completed",
 			"processedInput": req.CallData,
 			"timestamp":      time.Now().Format(time.RFC3339),
 		}
-		
+
 		err := mel.ReturnToWorkflow(context.Background(), callID, returnData, "success")
 		if err != nil {
 			t.Fatalf("ReturnToWorkflow failed: %v", err)
 		}
-		
+
 		// Wait for the workflow call to complete
 		var response *WorkflowCallResponse
 		select {
@@ -172,16 +172,16 @@ func TestWorkflowCallIntegration(t *testing.T) {
 		case <-time.After(5 * time.Second):
 			t.Fatal("Timeout waiting for workflow call to complete")
 		}
-		
+
 		// Verify the response
 		if response.Status != "success" {
 			t.Errorf("Expected status 'success', got %s", response.Status)
 		}
-		
+
 		if response.CallID == "" {
 			t.Error("Expected non-empty call ID")
 		}
-		
+
 		// Verify the response data contains the expected final result
 		// Since this comes from ReturnToWorkflow, the data is directly in response.Data
 		if finalResult, exists := response.Data["finalResult"]; exists {
@@ -191,7 +191,7 @@ func TestWorkflowCallIntegration(t *testing.T) {
 		} else {
 			t.Error("Expected finalResult in response data")
 		}
-		
+
 		// Verify that the input data was processed correctly
 		if processedInput, exists := response.Data["processedInput"]; exists {
 			if inputMap, ok := processedInput.(map[string]interface{}); ok {
@@ -208,10 +208,10 @@ func TestWorkflowCallIntegration(t *testing.T) {
 			t.Error("Expected processedInput in response data")
 		}
 	})
-	
+
 	t.Run("SynchronousWorkflowCallTimeout", func(t *testing.T) {
 		ctx := context.Background()
-		
+
 		// Prepare workflow call request with very short timeout
 		req := WorkflowCallRequest{
 			TargetWorkflowID: "timeout-workflow-123",
@@ -226,21 +226,21 @@ func TestWorkflowCallIntegration(t *testing.T) {
 				Mel:     mel,
 			},
 		}
-		
+
 		// Execute the workflow call - this should timeout
 		_, err := mel.CallWorkflow(ctx, req)
 		if err == nil {
 			t.Error("Expected timeout error, but call succeeded")
 		}
-		
+
 		if !strings.Contains(err.Error(), "timeout") {
 			t.Errorf("Expected timeout error, got: %v", err)
 		}
 	})
-	
+
 	t.Run("AsynchronousWorkflowCall", func(t *testing.T) {
 		ctx := context.Background()
-		
+
 		// Prepare async workflow call
 		req := WorkflowCallRequest{
 			TargetWorkflowID: "async-target-workflow",
@@ -256,22 +256,22 @@ func TestWorkflowCallIntegration(t *testing.T) {
 				Mel:     mel,
 			},
 		}
-		
+
 		// Execute the async workflow call
 		response, err := mel.CallWorkflow(ctx, req)
 		if err != nil {
 			t.Fatalf("Async workflow call failed: %v", err)
 		}
-		
+
 		// Verify async response
 		if response.Status != "sent" {
 			t.Errorf("Expected status 'sent' for async call, got %s", response.Status)
 		}
-		
+
 		if response.CallID == "" {
 			t.Error("Expected non-empty call ID for async call")
 		}
-		
+
 		// For async calls, we should get a confirmation, not the final result
 		if message, exists := response.Data["message"]; exists {
 			if message != "Async workflow triggered" {
@@ -285,7 +285,7 @@ func TestWorkflowCallIntegration(t *testing.T) {
 func TestWorkflowReturnIntegration(t *testing.T) {
 	mel := NewMel()
 	ctx := context.Background()
-	
+
 	// Test storing and retrieving workflow return data
 	callID := "test-return-call-123"
 	returnData := map[string]interface{}{
@@ -293,19 +293,19 @@ func TestWorkflowReturnIntegration(t *testing.T) {
 		"count":     42,
 		"timestamp": time.Now().Format(time.RFC3339),
 	}
-	
+
 	// Test ReturnToWorkflow when no pending call exists (should store data)
 	err := mel.ReturnToWorkflow(ctx, callID, returnData, "success")
 	if err != nil {
 		t.Fatalf("ReturnToWorkflow failed: %v", err)
 	}
-	
+
 	// Verify that the return data was stored
 	storedData, err := mel.RetrieveData(ctx, "workflow_return:"+callID)
 	if err != nil {
 		t.Fatalf("Failed to retrieve stored return data: %v", err)
 	}
-	
+
 	if storedMap, ok := storedData.(map[string]interface{}); ok {
 		if returnedData, exists := storedMap["data"]; exists {
 			if dataMap, ok := returnedData.(map[string]interface{}); ok {
@@ -314,7 +314,7 @@ func TestWorkflowReturnIntegration(t *testing.T) {
 				}
 			}
 		}
-		
+
 		if status, exists := storedMap["status"]; exists && status != "success" {
 			t.Errorf("Expected status 'success', got %v", status)
 		}
@@ -326,7 +326,7 @@ func TestWorkflowReturnIntegration(t *testing.T) {
 // TestWorkflowDataFlow tests the complete data flow between workflow nodes
 func TestWorkflowDataFlow(t *testing.T) {
 	ctx := context.Background()
-	
+
 	// Simulate workflow_call node execution
 	t.Run("WorkflowCallNode", func(t *testing.T) {
 		// Create a mock server for the target workflow
@@ -351,16 +351,16 @@ func TestWorkflowDataFlow(t *testing.T) {
 			json.NewEncoder(w).Encode(response)
 		}))
 		defer server.Close()
-		
+
 		melWithMock := NewMelWithConfig(10*time.Second, server.URL)
-		
+
 		// Test that workflow call properly passes data through the platform
 		execCtx := ExecutionContext{
 			AgentID: "dataflow-source",
 			RunID:   "dataflow-run",
 			Mel:     melWithMock,
 		}
-		
+
 		// Create a simple envelope to test data passing
 		envelope := &Envelope[interface{}]{
 			Data: map[string]interface{}{
@@ -368,7 +368,7 @@ func TestWorkflowDataFlow(t *testing.T) {
 				"processingMode":  "batch",
 			},
 		}
-		
+
 		// Simulate workflow call data
 		workflowReq := WorkflowCallRequest{
 			TargetWorkflowID: "dataflow-target",
@@ -380,11 +380,11 @@ func TestWorkflowDataFlow(t *testing.T) {
 			TimeoutSeconds: 5,
 			SourceContext:  execCtx,
 		}
-		
+
 		// Execute the workflow call in a goroutine since it will block waiting for response
 		responseChan := make(chan *WorkflowCallResponse, 1)
 		errorChan := make(chan error, 1)
-		
+
 		go func() {
 			response, err := melWithMock.CallWorkflow(ctx, workflowReq)
 			if err != nil {
@@ -393,10 +393,10 @@ func TestWorkflowDataFlow(t *testing.T) {
 			}
 			responseChan <- response
 		}()
-		
+
 		// Give the workflow call time to register the pending call and trigger the workflow
 		time.Sleep(100 * time.Millisecond)
-		
+
 		// Find the pending call to get the callID
 		melWithMock.(*melImpl).pendingCallsMu.RLock()
 		var callID string
@@ -405,22 +405,22 @@ func TestWorkflowDataFlow(t *testing.T) {
 			break
 		}
 		melWithMock.(*melImpl).pendingCallsMu.RUnlock()
-		
+
 		if callID == "" {
 			t.Fatal("No pending call found")
 		}
-		
+
 		// Simulate workflow_return node calling ReturnToWorkflow
 		returnData := map[string]interface{}{
 			"flowResult": "data flow successful",
 			"nodeCount":  3,
 		}
-		
+
 		err := melWithMock.ReturnToWorkflow(context.Background(), callID, returnData, "success")
 		if err != nil {
 			t.Fatalf("ReturnToWorkflow failed: %v", err)
 		}
-		
+
 		// Wait for the workflow call to complete
 		var response *WorkflowCallResponse
 		select {
@@ -431,7 +431,7 @@ func TestWorkflowDataFlow(t *testing.T) {
 		case <-time.After(5 * time.Second):
 			t.Fatal("Timeout waiting for workflow call to complete")
 		}
-		
+
 		// Verify that data flowed through correctly
 		// Since this comes from ReturnToWorkflow, the data is directly in response.Data
 		if flowResult, exists := response.Data["flowResult"]; exists {
@@ -441,7 +441,7 @@ func TestWorkflowDataFlow(t *testing.T) {
 		} else {
 			t.Error("Expected flowResult in response data")
 		}
-		
+
 		if nodeCount, exists := response.Data["nodeCount"]; exists {
 			if nodeCount != 3 {
 				t.Errorf("Expected nodeCount 3, got %v", nodeCount)

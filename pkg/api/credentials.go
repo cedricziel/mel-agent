@@ -9,23 +9,23 @@ import (
 type CredentialDefinition interface {
 	// Type returns the unique identifier for this credential type
 	Type() string
-	
+
 	// Name returns the human-readable name for this credential type
 	Name() string
-	
+
 	// Description returns a description of what this credential type is for
 	Description() string
-	
+
 	// Parameters returns the parameter definitions for collecting credentials
 	Parameters() []ParameterDefinition
-	
+
 	// Validate validates the provided credential data
 	Validate(data map[string]interface{}) error
-	
+
 	// Transform allows the credential to transform the data before storage
 	// This can be used for things like exchanging username/password for tokens
 	Transform(data map[string]interface{}) (map[string]interface{}, error)
-	
+
 	// Test tests the credentials by attempting to authenticate/connect
 	// Returns nil if successful, error if failed
 	Test(data map[string]interface{}) error
@@ -58,7 +58,7 @@ func RegisterCredentialDefinition(def CredentialDefinition) {
 func ListCredentialDefinitions() []CredentialType {
 	credentialRegistry.mu.RLock()
 	defer credentialRegistry.mu.RUnlock()
-	
+
 	types := make([]CredentialType, 0, len(credentialRegistry.definitions))
 	for _, def := range credentialRegistry.definitions {
 		types = append(types, CredentialType{

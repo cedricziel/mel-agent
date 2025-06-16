@@ -155,4 +155,3 @@ func init() {
 
 // assert that getVariableDefinition implements the interface
 var _ api.NodeDefinition = (*getVariableDefinition)(nil)
-

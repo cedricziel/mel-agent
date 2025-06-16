@@ -10,7 +10,17 @@
       "Bash(pnpm run test:*)",
       "Bash(pnpm dev:*)",
       "Bash(npm run test:e2e:*)",
-      "WebFetch(domain:docs.cypress.io)"
+      "WebFetch(domain:docs.cypress.io)",
+      "Bash(grep:*)",
+      "Bash(mkdir:*)",
+      "Bash(go fmt:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm format:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run cypress:run:*)",
+      "Bash(npm run test:*)",
+      "Bash(npx cypress run:*)",
+      "Bash(pnpm test:*)"
     ],
     "deny": []
   },

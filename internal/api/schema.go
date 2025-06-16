@@ -87,7 +87,7 @@ func getNodeTypeSchemaHandler(w http.ResponseWriter, r *http.Request) {
 			// For database and table IDs, we'll need dynamic loading via API endpoints
 			// Set up the parameter to indicate it needs dynamic loading
 			prop["x-dynamicEnum"] = map[string]interface{}{
-				"type": p.Name,
+				"type":      p.Name,
 				"dependsOn": "connectionId",
 			}
 			if p.Name == "tableId" {

@@ -192,10 +192,10 @@ func testDraftNodeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	envelope := &api.Envelope[interface{}]{
-		ID:       uuid.New().String(),
-		IssuedAt: time.Now(),
-		Version:  1,
-		Data:     testData,
+		ID:        uuid.New().String(),
+		IssuedAt:  time.Now(),
+		Version:   1,
+		Data:      testData,
 		Variables: make(map[string]interface{}),
 		Trace: api.Trace{
 			AgentID: agentID.String(),

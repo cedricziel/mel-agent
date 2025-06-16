@@ -1,0 +1,53 @@
+[
+  {
+    "id": "agent-1",
+    "type": "agent",
+    "position": { "x": 300, "y": 200 },
+    "data": {
+      "label": "Test Agent",
+      "systemPrompt": "You are a helpful assistant"
+    }
+  },
+  {
+    "id": "openai-model-1",
+    "type": "openai_model",
+    "position": { "x": 200, "y": 350 },
+    "data": {
+      "label": "OpenAI Model",
+      "provider": "openai",
+      "model": "gpt-4",
+      "temperature": 0.7,
+      "maxTokens": 1000
+    }
+  },
+  {
+    "id": "anthropic-model-1",
+    "type": "anthropic_model", 
+    "position": { "x": 300, "y": 350 },
+    "data": {
+      "label": "Anthropic Model",
+      "provider": "anthropic",
+      "model": "claude-3-5-sonnet-20241022",
+      "temperature": 0.7
+    }
+  },
+  {
+    "id": "local-memory-1",
+    "type": "local_memory",
+    "position": { "x": 400, "y": 350 },
+    "data": {
+      "label": "Local Memory",
+      "memoryType": "local",
+      "maxMessages": 100,
+      "enableSummarization": true
+    }
+  },
+  {
+    "id": "trigger-1",
+    "type": "manual_trigger",
+    "position": { "x": 100, "y": 200 },
+    "data": {
+      "label": "Manual Trigger"
+    }
+  }
+]

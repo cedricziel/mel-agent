@@ -49,7 +49,7 @@ func (apiKeyCredential) Test(data map[string]interface{}) error {
 	if !ok || apiKey == "" {
 		return fmt.Errorf("api_key is required and must be a non-empty string")
 	}
-	
+
 	// For generic API keys, we can't test without knowing the endpoint
 	// This would be overridden by specific API key implementations
 	return nil

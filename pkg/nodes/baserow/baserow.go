@@ -100,10 +100,10 @@ type Database struct {
 
 // Table represents a Baserow table
 type Table struct {
-	ID           int    `json:"id"`
-	Name         string `json:"name"`
-	Order        int    `json:"order"`
-	DatabaseID   int    `json:"database_id"`
+	ID         int    `json:"id"`
+	Name       string `json:"name"`
+	Order      int    `json:"order"`
+	DatabaseID int    `json:"database_id"`
 }
 
 // Row represents a Baserow row
@@ -451,8 +451,8 @@ func (d baserowDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.No
 			return nil, api.NewNodeError(node.ID, node.Type, fmt.Sprintf("failed to list tables: %v", err))
 		}
 		result = map[string]interface{}{
-			"tables":     tables,
-			"count":      len(tables),
+			"tables":      tables,
+			"count":       len(tables),
 			"database_id": databaseID,
 		}
 

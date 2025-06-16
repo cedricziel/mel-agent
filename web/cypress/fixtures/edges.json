@@ -1,0 +1,23 @@
+[
+  {
+    "id": "edge-1",
+    "source": "trigger-1",
+    "target": "agent-1",
+    "sourceHandle": "trigger-out",
+    "targetHandle": "workflow-in"
+  },
+  {
+    "id": "edge-2", 
+    "source": "openai-model-1",
+    "target": "agent-1",
+    "sourceHandle": "config-out",
+    "targetHandle": "model-config"
+  },
+  {
+    "id": "edge-3",
+    "source": "local-memory-1", 
+    "target": "agent-1",
+    "sourceHandle": "config-out",
+    "targetHandle": "memory-config"
+  }
+]

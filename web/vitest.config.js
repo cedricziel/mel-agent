@@ -16,5 +16,11 @@ export default defineConfig({
         'src/test/',
       ],
     },
+    // Ensure proper environment configuration
+    environmentOptions: {
+      jsdom: {
+        resources: 'usable',
+      },
+    },
   },
 })
