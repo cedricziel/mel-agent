@@ -1,4 +1,3 @@
-import React from 'react';
 import { Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { HANDLE_TYPES, getHandleColor } from '../utils/connectionTypes';

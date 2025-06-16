@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 // Temporarily disabled due to React 19 compatibility issues
 // import ReactMarkdown from 'react-markdown';

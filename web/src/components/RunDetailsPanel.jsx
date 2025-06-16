@@ -1,5 +1,3 @@
-import React from 'react';
-
 // Panel for inspecting a node's input/output within a run
 export default function RunDetailsPanel({ nodeDef, step }) {
   if (!nodeDef || !step) return null;

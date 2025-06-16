@@ -1,9 +1,8 @@
-import React from 'react';
 import { Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 
 // Custom node for 'if' logic: one input, two outputs (true/false)
-export default function IfNode({ id, data, onAddClick, icon }) {
+export default function IfNode({ data, onAddClick, icon }) {
   const condition = data.condition || '';
   const nodeIcon = icon || '❓';
   return (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import CronEditor from './CronEditor';
 import CodeEditor from './CodeEditor';
 import DataViewer from './DataViewer';
@@ -11,6 +11,8 @@ export default function NodeDetailsPanel({
   onExecute,
   publicUrl,
   readOnly,
+  nodes,
+  selectedNodeId,
 }) {
   // All hooks must be called before any conditional returns
   const [connections, setConnections] = useState([]);
@@ -753,7 +755,7 @@ export default function NodeDetailsPanel({
                 let parsed;
                 try {
                   parsed = JSON.parse(execInput);
-                } catch (err) {
+                } catch {
                   setExecError('Invalid JSON');
                   return;
                 }
@@ -761,8 +763,8 @@ export default function NodeDetailsPanel({
                 try {
                   const out = await onExecute(parsed);
                   setExecOutput(out);
-                } catch (err) {
-                  setExecError(err.message || 'Execution error');
+                } catch (error) {
+                  setExecError(error.message || 'Execution error');
                 } finally {
                   setRunning(false);
                 }

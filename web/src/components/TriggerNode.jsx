@@ -1,4 +1,3 @@
-import React from 'react';
 import { Handle, Position } from 'reactflow';
 import axios from 'axios';
 import 'reactflow/dist/style.css';

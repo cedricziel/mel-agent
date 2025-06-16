@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function CronEditor({ value, onCronChange }) {
   const [mode, setMode] = useState('interval');
@@ -37,7 +37,15 @@ export default function CronEditor({ value, onCronChange }) {
     if (cron !== value) {
       onCronChange(cron);
     }
-  }, [mode, intervalValue, intervalUnit, dateTime, customCron]);
+  }, [
+    mode,
+    intervalValue,
+    intervalUnit,
+    dateTime,
+    customCron,
+    onCronChange,
+    value,
+  ]);
 
   return (
     <div className="bg-white border rounded p-2">

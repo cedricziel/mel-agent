@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import ReactFlow, { Background, Controls, addEdge, MiniMap } from 'reactflow';
+import ReactFlow, { Background, Controls, MiniMap } from 'reactflow';
 import IfNode from '../components/IfNode';
 import DefaultNode from '../components/DefaultNode';
 import TriggerNode from '../components/TriggerNode';
@@ -52,9 +51,7 @@ function BuilderPage({ agentId }) {
   const [nodeModalOpen, setNodeModalOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [sidebarTab, setSidebarTab] = useState(null);
-  const [addingFromNodeId, setAddingFromNodeId] = useState(null);
   const [testing, setTesting] = useState(false);
-  const [testRunResult, setTestRunResult] = useState(null);
   const [isLiveMode, setIsLiveMode] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [validationErrors, setValidationErrors] = useState({});
@@ -622,8 +619,7 @@ function BuilderPage({ agentId }) {
     }
     setTesting(true);
     try {
-      const res = await axios.post(`/api/agents/${agentId}/runs/test`);
-      if (!isLiveMode) setTestRunResult(res.data);
+      await axios.post(`/api/agents/${agentId}/runs/test`);
     } catch (err) {
       console.error('test run failed', err);
       alert('Test run failed');
