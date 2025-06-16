@@ -1,11 +1,10 @@
 import { renderHook, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import { useNodeModalState } from '../useNodeModalState';
 
-// Mock fetch globally
-global.fetch = vi.fn();
-
 describe('useNodeModalState', () => {
+  // Save original fetch to restore later
+  const originalFetch = global.fetch;
   const mockNode = {
     id: 'node-1',
     data: {
@@ -30,6 +29,11 @@ describe('useNodeModalState', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     global.fetch = vi.fn();
+  });
+
+  afterAll(() => {
+    // Restore original fetch to prevent test leakage
+    global.fetch = originalFetch;
   });
 
   it('should initialize with node data', () => {

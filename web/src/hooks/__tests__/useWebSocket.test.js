@@ -1,5 +1,13 @@
 import { renderHook, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  afterEach,
+  afterAll,
+} from 'vitest';
 import { useWebSocket } from '../useWebSocket';
 
 // Mock WebSocket
@@ -42,13 +50,14 @@ class MockWebSocket {
   }
 }
 
-// Mock global WebSocket
-global.WebSocket = MockWebSocket;
-
 describe('useWebSocket', () => {
+  // Save original WebSocket to restore later
+  const originalWebSocket = global.WebSocket;
   let mockWebSocket;
 
   beforeEach(() => {
+    // Mock global WebSocket for each test
+    global.WebSocket = MockWebSocket;
     vi.clearAllMocks();
     // Store reference to created WebSocket instances
     const originalWebSocket = global.WebSocket;
@@ -62,6 +71,11 @@ describe('useWebSocket', () => {
     if (mockWebSocket) {
       mockWebSocket.close();
     }
+  });
+
+  afterAll(() => {
+    // Restore original WebSocket to prevent test leakage
+    global.WebSocket = originalWebSocket;
   });
 
   it('should establish WebSocket connection', async () => {
