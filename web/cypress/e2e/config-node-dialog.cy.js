@@ -23,7 +23,7 @@ describe('Configuration Node Dialog', () => {
     }).as('updateNode');
 
     // Visit the builder page
-    cy.visit('/agents/test-agent-id');
+    cy.visit('/agents/test-agent-id/edit');
 
     // Wait for the page to load
     cy.wait(['@getAgent', '@getNodes', '@getEdges', '@getNodeTypes']);
