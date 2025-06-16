@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
 
 // Mock the updateNode function to track calls
 const mockUpdateNode = vi.fn().mockImplementation(() => Promise.resolve());

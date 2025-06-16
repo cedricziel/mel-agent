@@ -257,7 +257,7 @@ export default function NodeDetailsPanel({
             if (!p.visibilityCondition) return true;
             try {
               // naive evaluation of visibility condition (CEL-like)
-              // eslint-disable-next-line no-new-func
+
               return new Function(
                 'data',
                 `with(data) { return ${p.visibilityCondition} }`
@@ -599,7 +599,7 @@ export default function NodeDetailsPanel({
                         )}
                       </div>
                     );
-                  case 'credential':
+                  case 'credential': {
                     // Dynamic credential selection
                     const paramCredentials = credentials[p.name] || [];
                     return (
@@ -634,7 +634,8 @@ export default function NodeDetailsPanel({
                         )}
                       </div>
                     );
-                  case 'nodeReference':
+                  }
+                  case 'nodeReference': {
                     // Node reference selection - allows referencing other nodes in the workflow
                     const availableNodes = (nodes || []).filter(
                       (n) =>
@@ -682,6 +683,7 @@ export default function NodeDetailsPanel({
                         )}
                       </div>
                     );
+                  }
                   default:
                     // Fallback for unknown parameter types - treat as string
                     return (

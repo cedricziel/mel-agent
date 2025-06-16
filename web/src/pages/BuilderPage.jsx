@@ -23,20 +23,8 @@ import { isValidConnection } from '../utils/connectionTypes';
 import CustomEdge from '../components/CustomEdge';
 
 function BuilderPage({ agentId }) {
-  const navigate = useNavigate();
-
-  // Guard against undefined agentId
-  if (!agentId) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        Loading...
-      </div>
-    );
-  }
-
   // Use the new workflow state hook with auto-persistence
   const {
-    workflow,
     nodes,
     edges,
     loading,
@@ -51,13 +39,10 @@ function BuilderPage({ agentId }) {
     deleteNode,
     createEdge,
     deleteEdge,
-    updateWorkflow,
-    autoLayout,
     applyNodeChanges,
     applyEdgeChanges,
     testDraftNode,
     deployDraft,
-    saveNow,
     saveVersion,
     clearError,
   } = useWorkflowState(agentId);
@@ -666,8 +651,6 @@ function BuilderPage({ agentId }) {
 
   // Save functionality with validation
   const save = useCallback(async () => {
-    const graph = { nodes, edges };
-
     // Validate nodes before saving
     const errorsMap = {};
     nodes.forEach((n) => {
@@ -714,7 +697,7 @@ function BuilderPage({ agentId }) {
         }
         if (!found) {
           (errorsMap[n.id] = errorsMap[n.id] || []).push(
-            `Async Webhook node \"${n.data.label || n.id}\" must be followed by a Webhook Response node`
+            `Async Webhook node "${n.data.label || n.id}" must be followed by a Webhook Response node`
           );
         }
       }
@@ -747,8 +730,6 @@ function BuilderPage({ agentId }) {
   const createAgentConfigurationNodes = useCallback(
     async (agentId, agentPosition) => {
       const baseTimestamp = Date.now();
-      const configNodes = [];
-      const configEdges = [];
 
       // Create model configuration node
       const modelId = `${baseTimestamp + 1}`;
@@ -1114,6 +1095,15 @@ function BuilderPage({ agentId }) {
     },
     [nodeDefs, createNode, broadcastNodeChange]
   );
+
+  // Guard against undefined agentId (after all hooks)
+  if (!agentId) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        Loading...
+      </div>
+    );
+  }
 
   // Loading state
   if (loading) {

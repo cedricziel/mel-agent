@@ -229,7 +229,7 @@ export default function NodeModal({
           />
         );
 
-      case 'credential':
+      case 'credential': {
         // Dynamic credential selection
         const paramCredentials = credentials[param.name] || [];
         return (
@@ -246,6 +246,7 @@ export default function NodeModal({
             ))}
           </select>
         );
+      }
 
       case 'enum':
         return (
@@ -276,7 +277,7 @@ export default function NodeModal({
           </div>
         );
 
-      case 'nodeReference':
+      case 'nodeReference': {
         // Node reference selection - allows referencing other nodes in the workflow
         const availableNodes = (nodes || []).filter(
           (n) =>
@@ -301,6 +302,7 @@ export default function NodeModal({
             ))}
           </select>
         );
+      }
 
       default:
         return (
