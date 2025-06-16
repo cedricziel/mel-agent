@@ -17,6 +17,7 @@ import NodeDetailsPanel from '../components/NodeDetailsPanel';
 import NodeModal from '../components/NodeModal';
 import 'reactflow/dist/style.css';
 import ChatAssistant from '../components/ChatAssistant';
+import WorkflowToolbar from '../components/WorkflowToolbar';
 import { useWorkflowState } from '../hooks/useWorkflowState';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useNodeManagement } from '../hooks/useNodeManagement';
@@ -876,147 +877,39 @@ function BuilderPage({ agentId }) {
         </ReactFlow>
 
         {/* Top toolbar */}
-        <div className="absolute top-4 left-4 right-4 flex justify-between items-center">
-          <div className="flex gap-2 items-center">
-            {/* Draft/Auto-save status */}
-            <div className="flex items-center gap-3 mr-4">
-              {/* Draft vs Production indicator */}
-              <div
-                className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                  isDraft
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : 'bg-green-100 text-green-800'
-                }`}
-              >
-                <div
-                  className={`w-2 h-2 rounded-full ${
-                    isDraft ? 'bg-yellow-400' : 'bg-green-400'
-                  }`}
-                ></div>
-                {isDraft ? 'Draft' : 'Deployed'}
-              </div>
-
-              {/* Auto-save status */}
-              {isDraft && (
-                <div className="flex items-center gap-1 text-xs text-gray-600">
-                  {isSaving ? (
-                    <>
-                      <div className="animate-spin w-3 h-3 border border-blue-500 border-t-transparent rounded-full"></div>
-                      Saving...
-                    </>
-                  ) : saveError ? (
-                    <span className="text-red-600">Save failed</span>
-                  ) : lastSaved ? (
-                    <span>
-                      Saved {new Date(lastSaved).toLocaleTimeString()}
-                    </span>
-                  ) : (
-                    <span>Auto-save enabled</span>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* n8n-style toggle switch */}
-            <div className="flex bg-gray-100 rounded-lg p-1 mr-4">
-              <button
-                onClick={() => setViewMode('editor')}
-                className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                  viewMode === 'editor'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Editor
-              </button>
-              <button
-                onClick={() => setViewMode('executions')}
-                className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                  viewMode === 'executions'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Executions
-              </button>
-            </div>
-
-            <button
-              onClick={() => setModalOpen(true)}
-              disabled={viewMode === 'executions'}
-              className={`px-4 py-2 rounded ${
-                viewMode === 'executions'
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-blue-500 text-white'
-              }`}
-            >
-              + Add Node
-            </button>
-            <button
-              onClick={async () => {
-                if (isDraft) {
-                  // Deploy draft as new version
-                  try {
-                    await deployDraft('Deployed from draft');
-                    alert('Draft deployed successfully!');
-                  } catch (err) {
-                    alert(`Deploy failed: ${err.message}`);
-                  }
-                } else {
-                  // Traditional save
-                  await save();
-                }
-              }}
-              disabled={(!isDirty && !isDraft) || viewMode === 'executions'}
-              className={`px-4 py-2 rounded ${
-                (isDirty || isDraft) && viewMode === 'editor'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-300 text-gray-500'
-              }`}
-            >
-              {isDraft ? 'Deploy' : 'Save'}
-            </button>
-            <button
-              onClick={onTestRun}
-              disabled={testing || viewMode === 'executions'}
-              className={`px-4 py-2 rounded ${
-                viewMode === 'executions'
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-green-500 text-white'
-              }`}
-            >
-              {testing ? 'Running...' : 'Test Run'}
-            </button>
-            <button
-              onClick={handleAutoLayout}
-              disabled={viewMode === 'executions'}
-              className={`px-4 py-2 rounded ${
-                viewMode === 'executions'
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-purple-500 text-white'
-              }`}
-            >
-              Auto Layout
-            </button>
-          </div>
-
-          <div className="flex gap-2">
-            <button
-              onClick={() =>
-                setSidebarTab(sidebarTab === 'chat' ? null : 'chat')
+        <WorkflowToolbar
+          isDraft={isDraft}
+          isDirty={isDirty}
+          isSaving={isSaving}
+          lastSaved={lastSaved}
+          saveError={saveError}
+          viewMode={viewMode}
+          testing={testing}
+          isLiveMode={isLiveMode}
+          sidebarTab={sidebarTab}
+          onViewModeChange={setViewMode}
+          onAddNode={() => setModalOpen(true)}
+          onSave={async () => {
+            if (isDraft) {
+              // Deploy draft as new version
+              try {
+                await deployDraft('Deployed from draft');
+                alert('Draft deployed successfully!');
+              } catch (err) {
+                alert(`Deploy failed: ${err.message}`);
               }
-              className={`px-4 py-2 rounded ${sidebarTab === 'chat' ? 'bg-blue-500 text-white' : 'bg-gray-300'}`}
-            >
-              💬 Chat
-            </button>
-            <button
-              onClick={() => setIsLiveMode(!isLiveMode)}
-              className={`px-4 py-2 rounded ${isLiveMode ? 'bg-orange-500 text-white' : 'bg-gray-300'}`}
-            >
-              {isLiveMode ? 'Live Mode' : 'Edit Mode'}
-            </button>
-          </div>
-        </div>
+            } else {
+              // Traditional save
+              await save();
+            }
+          }}
+          onTestRun={onTestRun}
+          onAutoLayout={handleAutoLayout}
+          onToggleSidebar={(tab) =>
+            setSidebarTab(sidebarTab === tab ? null : tab)
+          }
+          onToggleLiveMode={() => setIsLiveMode(!isLiveMode)}
+        />
       </div>
 
       {/* Sidebar */}
