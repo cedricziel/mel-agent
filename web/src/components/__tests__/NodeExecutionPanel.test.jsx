@@ -39,8 +39,11 @@ describe('NodeExecutionPanel', () => {
       />
     );
 
+    // Use timezone-independent assertion - check for date components instead of exact format
+    const expectedDate = new Date('2023-01-01T00:00:00Z');
+    const formattedDate = expectedDate.toLocaleString();
     expect(
-      screen.getByText('Viewing execution data from 1/1/2023, 1:00:00 AM')
+      screen.getByText(`Viewing execution data from ${formattedDate}`)
     ).toBeInTheDocument();
     expect(screen.getByText('Mode: Execution View')).toBeInTheDocument();
     expect(screen.queryByText('Test Node')).not.toBeInTheDocument();

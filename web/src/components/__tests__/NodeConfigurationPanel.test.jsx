@@ -301,7 +301,11 @@ describe('NodeConfigurationPanel', () => {
 
     expect(screen.getByText('Test Node')).toBeInTheDocument();
     expect(screen.getByText('Test Node Type')).toBeInTheDocument();
-    expect(screen.getByText('1/1/2023, 1:00:00 AM')).toBeInTheDocument();
+
+    // Use timezone-independent assertion - check for date components instead of exact format
+    const expectedDate = new Date('2023-01-01T00:00:00Z');
+    const formattedDate = expectedDate.toLocaleString();
+    expect(screen.getByText(formattedDate)).toBeInTheDocument();
 
     // Should not have editable inputs
     expect(screen.queryByLabelText('Node Name')).not.toBeInTheDocument();
