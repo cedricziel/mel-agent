@@ -1,27 +1,18 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import ReactFlow, { Background, Controls, MiniMap } from 'reactflow';
-import IfNode from '../components/IfNode';
-import DefaultNode from '../components/DefaultNode';
-import TriggerNode from '../components/TriggerNode';
-import HttpRequestNode from '../components/HttpRequestNode';
-import AgentNode from '../components/AgentNode';
-import ModelNode from '../components/ModelNode';
-import ToolsNode from '../components/ToolsNode';
-import MemoryNode from '../components/MemoryNode';
-import OpenAIModelNode from '../components/OpenAIModelNode';
-import AnthropicModelNode from '../components/AnthropicModelNode';
-import LocalMemoryNode from '../components/LocalMemoryNode';
 import ConfigSelectionDialog from '../components/ConfigSelectionDialog';
-import NodeDetailsPanel from '../components/NodeDetailsPanel';
 import NodeModal from '../components/NodeModal';
+import AddNodeModal from '../components/AddNodeModal';
 import 'reactflow/dist/style.css';
-import ChatAssistant from '../components/ChatAssistant';
 import WorkflowToolbar from '../components/WorkflowToolbar';
 import WorkflowSidebar from '../components/WorkflowSidebar';
 import { useWorkflowState } from '../hooks/useWorkflowState';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useNodeManagement } from '../hooks/useNodeManagement';
+import { useNodeTypes } from '../hooks/useNodeTypes.jsx';
+import { useValidation } from '../hooks/useValidation';
+import { useAutoLayout } from '../hooks/useAutoLayout';
 import { isValidConnection } from '../utils/connectionTypes';
 import CustomEdge from '../components/CustomEdge';
 
@@ -53,12 +44,10 @@ function BuilderPage({ agentId }) {
   // UI state
   const [modalOpen, setModalOpen] = useState(false);
   const [nodeModalOpen, setNodeModalOpen] = useState(false);
-  const [search, setSearch] = useState('');
   const [sidebarTab, setSidebarTab] = useState(null);
   const [testing, setTesting] = useState(false);
   const [isLiveMode, setIsLiveMode] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
-  const [validationErrors, setValidationErrors] = useState({});
   const [viewMode, setViewMode] = useState('editor'); // 'editor', 'executions'
   const [executions, setExecutions] = useState([]);
   const [selectedExecution, setSelectedExecution] = useState(null);
@@ -69,10 +58,6 @@ function BuilderPage({ agentId }) {
   const [configDialogType, setConfigDialogType] = useState(null);
   const [configDialogAgentId, setConfigDialogAgentId] = useState(null);
   const [configDialogHandleId, setConfigDialogHandleId] = useState(null);
-
-  // Node definitions and triggers
-  const [nodeDefs, setNodeDefs] = useState([]);
-  const [triggers, setTriggers] = useState([]);
 
   // WebSocket for collaboration
   const clientId = useMemo(() => crypto.randomUUID(), []);
@@ -160,6 +145,29 @@ function BuilderPage({ agentId }) {
     setConfigDialogOpen(true);
   }, []);
 
+  // Node click handler for selection (works in both modes)
+  const onNodeClick = useCallback((event, node) => {
+    setSelectedNodeId(node.id);
+    setNodeModalOpen(true);
+  }, []);
+
+  // Use node types hook for node definitions and types
+  const {
+    nodeDefs,
+    triggers,
+    nodeTypes,
+    categories,
+    triggersMap,
+    refreshTriggers,
+  } = useNodeTypes(agentId, handleNodeDelete, openConfigDialog, onNodeClick);
+
+  // Use validation hook
+  const { validationErrors, validateWorkflow, clearValidationErrors } =
+    useValidation();
+
+  // Use auto-layout hook
+  const { handleAutoLayout } = useAutoLayout(nodes, edges, wsNodes, updateNode);
+
   // Handle config selection from dialog
   const handleConfigSelection = useCallback(
     async (configOption) => {
@@ -240,132 +248,6 @@ function BuilderPage({ agentId }) {
     ]
   );
 
-  // Dynamically create nodeTypes based on available node definitions
-  const nodeTypes = useMemo(() => {
-    const types = {
-      default: (props) => (
-        <DefaultNode {...props} onDelete={handleNodeDelete} />
-      ),
-      agent: (props) => (
-        <AgentNode
-          {...props}
-          onDelete={handleNodeDelete}
-          onAddConfigNode={(configType, handleId) => {
-            openConfigDialog(props.id, configType, handleId);
-          }}
-        />
-      ),
-      // Legacy generic config nodes (keeping for backward compatibility)
-      model: (props) => (
-        <ModelNode
-          {...props}
-          onDelete={handleNodeDelete}
-          onClick={() => onNodeClick(null, props)}
-        />
-      ),
-      tools: (props) => (
-        <ToolsNode
-          {...props}
-          onDelete={handleNodeDelete}
-          onClick={() => onNodeClick(null, props)}
-        />
-      ),
-      memory: (props) => (
-        <MemoryNode
-          {...props}
-          onDelete={handleNodeDelete}
-          onClick={() => onNodeClick(null, props)}
-        />
-      ),
-      // Specific config nodes
-      openai_model: (props) => (
-        <OpenAIModelNode
-          {...props}
-          onDelete={handleNodeDelete}
-          onClick={() => onNodeClick(null, props)}
-        />
-      ),
-      anthropic_model: (props) => (
-        <AnthropicModelNode
-          {...props}
-          onDelete={handleNodeDelete}
-          onClick={() => onNodeClick(null, props)}
-        />
-      ),
-      local_memory: (props) => (
-        <LocalMemoryNode
-          {...props}
-          onDelete={handleNodeDelete}
-          onClick={() => onNodeClick(null, props)}
-        />
-      ),
-      workflow_tools: (props) => (
-        <ToolsNode
-          {...props}
-          onDelete={handleNodeDelete}
-          onClick={() => onNodeClick(null, props)}
-        />
-      ),
-      if: (props) => <IfNode {...props} onDelete={handleNodeDelete} />,
-      http_request: (props) => (
-        <HttpRequestNode {...props} onDelete={handleNodeDelete} />
-      ),
-    };
-
-    // Add trigger nodes with special rendering
-    const triggerTypes = [
-      'webhook',
-      'schedule',
-      'manual_trigger',
-      'workflow_trigger',
-      'slack',
-      'timer',
-    ];
-    triggerTypes.forEach((type) => {
-      types[type] = (props) => {
-        const nodeDef = nodeDefs.find((def) => def.type === type);
-        return (
-          <TriggerNode
-            {...props}
-            type={type}
-            agentId={agentId}
-            icon={nodeDef?.icon}
-            onDelete={handleNodeDelete}
-          />
-        );
-      };
-    });
-
-    // Add all other node types to use DefaultNode (defensive check for nodeDefs)
-    if (Array.isArray(nodeDefs)) {
-      nodeDefs.forEach((nodeDef) => {
-        if (!types[nodeDef.type]) {
-          types[nodeDef.type] = (props) => (
-            <DefaultNode {...props} onDelete={handleNodeDelete} />
-          );
-        }
-      });
-    }
-
-    return types;
-  }, [nodeDefs, agentId, openConfigDialog, handleNodeDelete]);
-
-  // Load node definitions
-  useEffect(() => {
-    axios
-      .get('/api/node-types')
-      .then((res) => setNodeDefs(res.data))
-      .catch((err) => console.error('fetch node-types failed:', err));
-  }, []);
-
-  // Load triggers
-  useEffect(() => {
-    axios
-      .get('/api/triggers')
-      .then((res) => setTriggers(res.data))
-      .catch((err) => console.error('fetch triggers failed:', err));
-  }, []);
-
   // Load executions when switching to executions mode
   useEffect(() => {
     if (viewMode === 'executions') {
@@ -386,19 +268,6 @@ function BuilderPage({ agentId }) {
     }
   }, [viewMode, agentId, selectedExecution]);
 
-  // Node categories
-  const categories = useMemo(() => {
-    const map = {};
-    nodeDefs.forEach((def) => {
-      if (!map[def.category]) map[def.category] = [];
-      map[def.category].push(def);
-    });
-    return Object.entries(map).map(([category, types]) => ({
-      category,
-      types,
-    }));
-  }, [nodeDefs]);
-
   // Selected node and its definition
   const selectedNode = useMemo(
     () => wsNodes.find((n) => n.id === selectedNodeId),
@@ -408,17 +277,6 @@ function BuilderPage({ agentId }) {
     () => nodeDefs.find((def) => def.type === selectedNode?.type),
     [nodeDefs, selectedNode]
   );
-
-  // Map of nodeId to trigger instance for this agent
-  const triggersMap = useMemo(() => {
-    const map = {};
-    triggers.forEach((t) => {
-      if (t.agent_id === agentId && t.node_id) {
-        map[t.node_id] = t;
-      }
-    });
-    return map;
-  }, [triggers, agentId]);
 
   // Use WebSocket state for display (includes real-time updates from other clients)
   const displayedNodes = useMemo(
@@ -541,265 +399,30 @@ function BuilderPage({ agentId }) {
     [isLiveMode]
   );
 
-  // Node click handler for selection (works in both modes)
-  const onNodeClick = useCallback((event, node) => {
-    setSelectedNodeId(node.id);
-    setNodeModalOpen(true);
-  }, []);
-
   // Save functionality with validation
   const save = useCallback(async () => {
-    // Validate nodes before saving
-    const errorsMap = {};
-    nodes.forEach((n) => {
-      if (n.type === 'http_request') {
-        const url = n.data.url || '';
-        const method = n.data.method || '';
-        if (!url.trim()) {
-          (errorsMap[n.id] = errorsMap[n.id] || []).push(
-            `Node "${n.data.label || n.id}" is missing a URL`
-          );
-        }
-        if (!method.trim()) {
-          (errorsMap[n.id] = errorsMap[n.id] || []).push(
-            `Node "${n.data.label || n.id}" is missing a method`
-          );
-        }
-      }
-    });
-
-    // Validate async webhook flows
-    const nodeMap = Object.fromEntries(nodes.map((n) => [n.id, n]));
-    nodes.forEach((n) => {
-      if (n.type === 'webhook' && n.data.mode === 'async') {
-        const visited = new Set();
-        const queue = [n.id];
-        let found = false;
-        while (queue.length && !found) {
-          const curr = queue.shift();
-          visited.add(curr);
-          edges.forEach((e) => {
-            if (e.source === curr) {
-              const tgt = e.target;
-              if (visited.has(tgt)) return;
-              const child = nodeMap[tgt];
-              if (child) {
-                if (child.type === 'http_response') {
-                  found = true;
-                  return;
-                }
-                queue.push(tgt);
-              }
-            }
-          });
-        }
-        if (!found) {
-          (errorsMap[n.id] = errorsMap[n.id] || []).push(
-            `Async Webhook node "${n.data.label || n.id}" must be followed by a Webhook Response node`
-          );
-        }
-      }
-    });
-
-    if (Object.keys(errorsMap).length > 0) {
-      setValidationErrors(errorsMap);
+    const isValid = validateWorkflow(nodes, edges);
+    if (!isValid) {
       return;
     }
 
-    setValidationErrors({});
+    clearValidationErrors();
     try {
       await saveVersion();
       alert('Saved!');
-
-      // Refresh triggers
-      try {
-        const res = await axios.get('/api/triggers');
-        setTriggers(res.data);
-      } catch (err) {
-        console.error('refresh triggers failed:', err);
-      }
+      await refreshTriggers();
     } catch (err) {
       console.error(err);
       alert('Save failed');
     }
-  }, [nodes, edges, saveVersion]);
-
-  // Auto-layout handler that excludes configuration nodes
-  const handleAutoLayout = useCallback(async () => {
-    try {
-      const configNodeTypes = [
-        'model',
-        'tools',
-        'memory',
-        'openai_model',
-        'anthropic_model',
-        'local_memory',
-        'workflow_tools',
-      ];
-
-      // Separate workflow nodes from configuration nodes
-      const workflowNodes = nodes.filter(
-        (node) => !configNodeTypes.includes(node.type)
-      );
-      const configNodes = nodes.filter((node) =>
-        configNodeTypes.includes(node.type)
-      );
-
-      // Store configuration node positions and their parent relationships
-      const configNodeData = new Map();
-      configNodes.forEach((configNode) => {
-        // Find the agent this config node belongs to by looking at edges
-        const targetEdge = edges.find(
-          (edge) =>
-            edge.source === configNode.id &&
-            edge.targetHandle &&
-            (edge.targetHandle.includes('config') ||
-              edge.targetHandle === 'model-config' ||
-              edge.targetHandle === 'tools-config' ||
-              edge.targetHandle === 'memory-config')
-        );
-
-        if (targetEdge) {
-          const agentNode = nodes.find((n) => n.id === targetEdge.target);
-          if (agentNode) {
-            configNodeData.set(configNode.id, {
-              agentId: agentNode.id,
-              relativeX: configNode.position.x - agentNode.position.x,
-              relativeY: configNode.position.y - agentNode.position.y,
-              currentPosition: { ...configNode.position },
-            });
-          }
-        }
-      });
-
-      // Temporarily remove configuration nodes from the workflow state
-      // This prevents them from being sent to the backend auto-layout
-      const configNodeIds = configNodes.map((n) => n.id);
-      const tempRemovedNodes = [];
-
-      for (const nodeId of configNodeIds) {
-        tempRemovedNodes.push({
-          nodeId,
-          position: nodes.find((n) => n.id === nodeId)?.position,
-        });
-        // Don't actually delete, just mark them to exclude from layout
-      }
-
-      // Create a custom auto-layout that only affects workflow nodes
-      // We'll implement a simple client-side layout for now
-      const layoutWorkflowNodes = async () => {
-        const GRID_SIZE = 200;
-        const VERTICAL_SPACING = 150;
-        let currentX = 100;
-        let currentY = 100;
-
-        // Find trigger nodes (starting points)
-        const triggerNodes = workflowNodes.filter((node) =>
-          [
-            'webhook',
-            'schedule',
-            'manual_trigger',
-            'workflow_trigger',
-            'slack',
-            'timer',
-          ].includes(node.type)
-        );
-
-        // Simple left-to-right layout
-        const layoutNodes = [
-          ...triggerNodes,
-          ...workflowNodes.filter(
-            (node) =>
-              ![
-                'webhook',
-                'schedule',
-                'manual_trigger',
-                'workflow_trigger',
-                'slack',
-                'timer',
-              ].includes(node.type)
-          ),
-        ];
-
-        // Collect all position updates in a batch
-        const positionUpdates = [];
-
-        for (let i = 0; i < layoutNodes.length; i++) {
-          const node = layoutNodes[i];
-          positionUpdates.push({
-            id: node.id,
-            position: {
-              x: currentX,
-              y: currentY,
-            },
-          });
-
-          currentX += GRID_SIZE;
-          if ((i + 1) % 4 === 0) {
-            // New row every 4 nodes
-            currentX = 100;
-            currentY += VERTICAL_SPACING;
-          }
-        }
-
-        // Apply all updates in batches to prevent UI blocking and reduce API calls
-        const batchSize = 5; // Update 5 nodes at a time
-        for (let i = 0; i < positionUpdates.length; i += batchSize) {
-          const batch = positionUpdates.slice(i, i + batchSize);
-
-          // Execute batch updates in parallel
-          await Promise.all(
-            batch.map(({ id, position }) => updateNode(id, { position }))
-          );
-
-          // Add small delay between batches to prevent overwhelming the API
-          if (i + batchSize < positionUpdates.length) {
-            await new Promise((resolve) => setTimeout(resolve, 50));
-          }
-        }
-      };
-
-      // Apply layout to workflow nodes only
-      await layoutWorkflowNodes();
-
-      // Wait a moment for the layout to propagate, then reposition config nodes
-      setTimeout(async () => {
-        const configUpdates = [];
-
-        configNodeData.forEach((data, configNodeId) => {
-          // Get the updated position of the agent node
-          const currentNodes = wsNodes.length > 0 ? wsNodes : nodes;
-          const agentNode = currentNodes.find((n) => n.id === data.agentId);
-
-          if (agentNode) {
-            const newPosition = {
-              x: agentNode.position.x + data.relativeX,
-              y: agentNode.position.y + data.relativeY,
-            };
-
-            configUpdates.push({
-              id: configNodeId,
-              position: newPosition,
-            });
-          }
-        });
-
-        // Apply config node updates in parallel
-        if (configUpdates.length > 0) {
-          await Promise.all(
-            configUpdates.map(({ id, position }) =>
-              updateNode(id, { position })
-            )
-          );
-        }
-      }, 500);
-
-      alert('Layout updated!');
-    } catch (err) {
-      console.error('Auto-layout failed:', err);
-      alert('Auto-layout failed');
-    }
-  }, [nodes, edges, wsNodes, updateNode]);
+  }, [
+    nodes,
+    edges,
+    validateWorkflow,
+    clearValidationErrors,
+    saveVersion,
+    refreshTriggers,
+  ]);
 
   // Guard against undefined agentId (after all hooks)
   if (!agentId) {
@@ -905,7 +528,14 @@ function BuilderPage({ agentId }) {
             }
           }}
           onTestRun={onTestRun}
-          onAutoLayout={handleAutoLayout}
+          onAutoLayout={async () => {
+            const result = await handleAutoLayout();
+            if (result.success) {
+              alert('Layout updated!');
+            } else {
+              alert('Auto-layout failed');
+            }
+          }}
           onToggleSidebar={(tab) =>
             setSidebarTab(sidebarTab === tab ? null : tab)
           }
@@ -970,67 +600,12 @@ function BuilderPage({ agentId }) {
       )}
 
       {/* Add Node Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96 max-h-96 overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold">Add Node</h2>
-              <button
-                onClick={() => setModalOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
-            </div>
-
-            <input
-              type="text"
-              placeholder="Search nodes..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full border rounded px-3 py-2 mb-4"
-            />
-
-            {categories
-              .filter(({ types }) =>
-                types.some(
-                  (type) =>
-                    type.label.toLowerCase().includes(search.toLowerCase()) ||
-                    type.type.toLowerCase().includes(search.toLowerCase())
-                )
-              )
-              .map(({ category, types }) => (
-                <div key={category} className="mb-4">
-                  <h3 className="font-semibold text-sm text-gray-600 mb-2">
-                    {category}
-                  </h3>
-                  {types
-                    .filter(
-                      (type) =>
-                        type.label
-                          .toLowerCase()
-                          .includes(search.toLowerCase()) ||
-                        type.type.toLowerCase().includes(search.toLowerCase())
-                    )
-                    .map((type) => (
-                      <button
-                        key={type.type}
-                        onClick={() => handleModalAddNode(type.type)}
-                        className="w-full text-left p-2 hover:bg-gray-100 rounded"
-                      >
-                        <div className="font-medium">{type.label}</div>
-                        {type.description && (
-                          <div className="text-sm text-gray-500">
-                            {type.description}
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                </div>
-              ))}
-          </div>
-        </div>
-      )}
+      <AddNodeModal
+        isOpen={modalOpen}
+        categories={categories}
+        onClose={() => setModalOpen(false)}
+        onAddNode={handleModalAddNode}
+      />
 
       {/* Node editing modal */}
       <NodeModal
