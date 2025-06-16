@@ -135,15 +135,19 @@ export function useNodeManagement(broadcastNodeChange) {
       };
 
       try {
-        // Create all configuration nodes
-        await createNode(modelNode);
-        await createNode(toolsNode);
-        await createNode(memoryNode);
+        // Create all configuration nodes in parallel
+        await Promise.all([
+          createNode(modelNode),
+          createNode(toolsNode),
+          createNode(memoryNode),
+        ]);
 
-        // Create edges
-        await createEdge(modelEdge);
-        await createEdge(toolsEdge);
-        await createEdge(memoryEdge);
+        // Create edges in parallel
+        await Promise.all([
+          createEdge(modelEdge),
+          createEdge(toolsEdge),
+          createEdge(memoryEdge),
+        ]);
 
         // Update agent node to reference the configuration nodes
         const agentNode = nodes.find((n) => n.id === agentId);

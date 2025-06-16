@@ -253,4 +253,56 @@ describe('useNodeManagement', () => {
       edges: mockWorkflowState.edges,
     });
   });
+
+  it('should create agent configuration nodes in parallel for better performance', async () => {
+    // Add the agent node to the mock nodes array
+    mockWorkflowState.nodes = [
+      ...mockWorkflowState.nodes,
+      {
+        id: 'agent-1',
+        type: 'agent',
+        data: { label: 'Test Agent' },
+        position: { x: 100, y: 100 },
+      },
+    ];
+
+    const { result } = renderHook(() =>
+      useNodeManagement(mockBroadcastNodeChange)
+    );
+
+    // Mock timing to verify parallel execution
+    const createNodeTimes = [];
+    const createEdgeTimes = [];
+
+    mockWorkflowState.createNode.mockImplementation(async () => {
+      const start = Date.now();
+      await new Promise((resolve) => setTimeout(resolve, 10)); // Simulate async work
+      createNodeTimes.push(Date.now() - start);
+    });
+
+    mockWorkflowState.createEdge.mockImplementation(async () => {
+      const start = Date.now();
+      await new Promise((resolve) => setTimeout(resolve, 10)); // Simulate async work
+      createEdgeTimes.push(Date.now() - start);
+    });
+
+    const startTime = Date.now();
+    await act(async () => {
+      await result.current.createAgentConfigurationNodes('agent-1', {
+        x: 100,
+        y: 100,
+      });
+    });
+    const totalTime = Date.now() - startTime;
+
+    // Verify all nodes and edges were created
+    expect(mockWorkflowState.createNode).toHaveBeenCalledTimes(3); // model, tools, memory
+    expect(mockWorkflowState.createEdge).toHaveBeenCalledTimes(3); // 3 edges
+    expect(mockWorkflowState.updateNode).toHaveBeenCalledTimes(1); // agent update
+
+    // Verify parallel execution: total time should be less than sum of individual times
+    // If executed sequentially, it would take ~60ms (6 * 10ms)
+    // With parallel execution, it should take ~20ms (2 batches * 10ms)
+    expect(totalTime).toBeLessThan(40); // Allow some buffer for test execution
+  });
 });
