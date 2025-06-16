@@ -1,6 +1,24 @@
 import { vi } from 'vitest';
 import '@testing-library/jest-dom';
 
+// Configure React act environment for React 19 + Vitest compatibility
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+global.IS_REACT_ACT_ENVIRONMENT = true;
+window.IS_REACT_ACT_ENVIRONMENT = true;
+
+// Alternative approach for environment mismatch
+if (typeof self !== 'undefined') {
+  self.IS_REACT_ACT_ENVIRONMENT = true;
+}
+
+// Ensure cleanup after each test
+import { cleanup } from '@testing-library/react';
+import { afterEach } from 'vitest';
+
+afterEach(() => {
+  cleanup();
+});
+
 // Mock fetch globally
 global.fetch = vi.fn(() =>
   Promise.resolve({

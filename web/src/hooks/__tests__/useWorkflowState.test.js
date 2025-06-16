@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
-import { act } from 'react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { useWorkflowState } from '../useWorkflowState';
 import * as workflowClient from '../../api/workflowClient';
 import * as draftClient from '../../api/draftClient';
@@ -57,15 +56,13 @@ describe('useWorkflowState', () => {
     vi.restoreAllMocks();
   });
 
-  it('should initialize with loading state', async () => {
+  it('should initialize with loading state', () => {
     const { result } = renderHook(() => useWorkflowState(mockWorkflowId));
 
-    await act(async () => {
-      expect(result.current.loading).toBe(true);
-      expect(result.current.nodes).toEqual([]);
-      expect(result.current.edges).toEqual([]);
-      expect(result.current.error).toBe(null);
-    });
+    expect(result.current.loading).toBe(true);
+    expect(result.current.nodes).toEqual([]);
+    expect(result.current.edges).toEqual([]);
+    expect(result.current.error).toBe(null);
   });
 
   it('should load workflow data successfully', async () => {
@@ -79,10 +76,8 @@ describe('useWorkflowState', () => {
 
     const { result } = renderHook(() => useWorkflowState(mockWorkflowId));
 
-    await act(async () => {
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
     });
 
     expect(result.current.workflow).toEqual(mockWorkflowData.workflow);
@@ -103,10 +98,8 @@ describe('useWorkflowState', () => {
 
     const { result } = renderHook(() => useWorkflowState(mockWorkflowId));
 
-    await act(async () => {
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
     });
 
     expect(result.current.isDraft).toBe(true);
@@ -120,10 +113,8 @@ describe('useWorkflowState', () => {
 
     const { result } = renderHook(() => useWorkflowState(mockWorkflowId));
 
-    await act(async () => {
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
     });
 
     const newNode = { id: 'new-node', type: 'test', data: { label: 'Test' } };
@@ -157,10 +148,8 @@ describe('useWorkflowState', () => {
 
     const { result } = renderHook(() => useWorkflowState(mockWorkflowId));
 
-    await act(async () => {
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
     });
 
     const updates = { data: { label: 'Updated' } };
@@ -188,10 +177,8 @@ describe('useWorkflowState', () => {
 
     const { result } = renderHook(() => useWorkflowState(mockWorkflowId));
 
-    await act(async () => {
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
     });
 
     // Should already be in draft mode since we loaded a draft
@@ -215,10 +202,8 @@ describe('useWorkflowState', () => {
 
     const { result } = renderHook(() => useWorkflowState(mockWorkflowId));
 
-    await act(async () => {
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
     });
 
     expect(result.current.error).toBe('Network error');
@@ -241,10 +226,8 @@ describe('useWorkflowState', () => {
 
     const { result } = renderHook(() => useWorkflowState(mockWorkflowId));
 
-    await act(async () => {
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
     });
 
     const newNode = { id: 'new-node', type: 'test', data: { label: 'Test' } };
@@ -276,10 +259,8 @@ describe('useWorkflowState', () => {
 
     const { result } = renderHook(() => useWorkflowState(mockWorkflowId));
 
-    await act(async () => {
-      await waitFor(() => {
-        expect(result.current.loading).toBe(false);
-      });
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
     });
 
     // Should already be in draft mode since we loaded a draft
