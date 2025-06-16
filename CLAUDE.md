@@ -33,3 +33,7 @@ AI Agents SaaS platform with Go backend and React frontend. This is a monorepo t
 
 ## Development Principles
 - Our goal is to create a well-tested project. Always be mindful of creating reasonably well-sized components and testing them. Create e2e tests with Cypress where applicable
+- Remember to keep components at a reasonable size and add new tests for new components and functionality
+
+## Development Guidelines
+- When committing code via git, never mention claude

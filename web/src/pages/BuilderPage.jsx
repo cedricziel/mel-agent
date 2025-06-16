@@ -268,6 +268,21 @@ function BuilderPage({ agentId }) {
     }
   }, [viewMode, agentId, selectedExecution]);
 
+  // Handle escape key to close node details sidebar
+  useEffect(() => {
+    const handleEscapeKey = (event) => {
+      if (event.key === 'Escape') {
+        if (sidebarTab === 'details') {
+          setSidebarTab(null);
+          setSelectedNodeId(null);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => document.removeEventListener('keydown', handleEscapeKey);
+  }, [sidebarTab]);
+
   // Selected node and its definition
   const selectedNode = useMemo(
     () => wsNodes.find((n) => n.id === selectedNodeId),
