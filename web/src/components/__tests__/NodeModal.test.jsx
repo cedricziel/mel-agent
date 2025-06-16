@@ -5,7 +5,7 @@ import NodeModal from '../NodeModal';
 // Mock child components
 vi.mock('../DataViewer', () => ({
   default: ({ data, title }) => (
-    <div data-testid="data-viewer">
+    <div data-testid={`data-viewer-${title.toLowerCase().replace(' ', '-')}`}>
       {title}: {JSON.stringify(data)}
     </div>
   ),
@@ -150,7 +150,7 @@ describe('NodeModal', () => {
       render(<NodeModal {...defaultProps} />);
 
       expect(screen.getByText('Input Data')).toBeInTheDocument();
-      expect(screen.getByTestId('data-viewer')).toBeInTheDocument();
+      expect(screen.getByTestId('data-viewer-input-data')).toBeInTheDocument();
     });
 
     it('should render configuration panel', () => {
