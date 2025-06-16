@@ -1,6 +1,7 @@
 package code
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -358,12 +359,16 @@ type mockRuntime struct {
 	lastContext CodeExecutionContext
 }
 
-func (m *mockRuntime) Execute(code string, context CodeExecutionContext) (interface{}, error) {
+func (m *mockRuntime) Execute(ctx context.Context, code string, execContext CodeExecutionContext) (interface{}, error) {
 	m.lastCode = code
-	m.lastContext = context
+	m.lastContext = execContext
 
 	if m.simulateDelay > 0 {
-		time.Sleep(m.simulateDelay)
+		select {
+		case <-time.After(m.simulateDelay):
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
 	}
 
 	if m.err != nil {

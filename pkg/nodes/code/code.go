@@ -10,7 +10,7 @@ import (
 
 // Runtime defines the interface for executing code in different languages
 type Runtime interface {
-	Execute(code string, context CodeExecutionContext) (interface{}, error)
+	Execute(ctx context.Context, code string, context CodeExecutionContext) (interface{}, error)
 	GetLanguage() string
 	Initialize() error
 	Cleanup() error
@@ -104,27 +104,37 @@ func (d *codeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node
 	}
 
 	// Execute with timeout
+	// Create cancellable context for runtime execution
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
+	defer cancel()
+
 	resultChan := make(chan codeExecutionResult, 1)
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				resultChan <- codeExecutionResult{
+				select {
+				case resultChan <- codeExecutionResult{
 					Error: fmt.Errorf("panic during execution: %v", r),
+				}:
+				case <-timeoutCtx.Done():
+					// Context cancelled, don't block on channel send
 				}
 			}
 		}()
 
-		result, err := runtime.Execute(code, execContext)
-		resultChan <- codeExecutionResult{
+		// Pass cancellable context to runtime
+		result, err := runtime.Execute(timeoutCtx, code, execContext)
+		select {
+		case resultChan <- codeExecutionResult{
 			Value: result,
 			Error: err,
+		}:
+		case <-timeoutCtx.Done():
+			// Context cancelled, don't block on channel send
 		}
 	}()
 
 	// Wait for result or timeout
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
-	defer cancel()
-
 	select {
 	case result := <-resultChan:
 		if result.Error != nil {

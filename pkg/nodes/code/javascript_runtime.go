@@ -1,6 +1,7 @@
 package code
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
@@ -42,30 +43,52 @@ func (js *JavaScriptRuntime) Cleanup() error {
 }
 
 // Execute runs JavaScript code with the provided context
-func (js *JavaScriptRuntime) Execute(code string, context CodeExecutionContext) (interface{}, error) {
+func (js *JavaScriptRuntime) Execute(ctx context.Context, code string, execContext CodeExecutionContext) (interface{}, error) {
 	// Create new VM for this execution
 	vm := goja.New()
 
 	// Setup sandbox environment
-	if err := js.setupSandbox(vm, context); err != nil {
+	if err := js.setupSandbox(vm, execContext); err != nil {
 		return nil, fmt.Errorf("failed to setup sandbox: %w", err)
 	}
 
 	// Wrap code in a function to allow return statements
 	wrappedCode := fmt.Sprintf("(function() {\n%s\n})()", code)
 
-	// Execute the code
-	result, err := vm.RunString(wrappedCode)
-	if err != nil {
-		return nil, fmt.Errorf("execution error: %w", err)
-	}
+	// Create a channel to handle the execution with context cancellation
+	resultChan := make(chan goja.Value, 1)
+	errorChan := make(chan error, 1)
 
-	// Convert result to Go value
-	if result == nil || goja.IsUndefined(result) {
-		return nil, nil
-	}
+	// Execute in a separate goroutine to handle cancellation
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				errorChan <- fmt.Errorf("panic during JavaScript execution: %v", r)
+			}
+		}()
 
-	return result.Export(), nil
+		// Execute the code
+		result, err := vm.RunString(wrappedCode)
+		if err != nil {
+			errorChan <- fmt.Errorf("execution error: %w", err)
+			return
+		}
+		resultChan <- result
+	}()
+
+	// Wait for execution or cancellation
+	select {
+	case result := <-resultChan:
+		// Convert result to Go value
+		if result == nil || goja.IsUndefined(result) {
+			return nil, nil
+		}
+		return result.Export(), nil
+	case err := <-errorChan:
+		return nil, err
+	case <-ctx.Done():
+		return nil, fmt.Errorf("JavaScript execution cancelled: %w", ctx.Err())
+	}
 }
 
 // setupSandbox configures the JavaScript execution environment

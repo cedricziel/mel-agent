@@ -1,6 +1,7 @@
 package code
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -28,7 +29,7 @@ func TestJavaScriptRuntime_Execute_BasicReturn(t *testing.T) {
 	runtime := NewJavaScriptRuntime()
 	require.NoError(t, runtime.Initialize())
 
-	context := CodeExecutionContext{
+	execContext := CodeExecutionContext{
 		Data:      map[string]interface{}{"value": 42},
 		Variables: map[string]interface{}{"name": "test"},
 		NodeData:  map[string]interface{}{"setting": "enabled"},
@@ -38,7 +39,7 @@ func TestJavaScriptRuntime_Execute_BasicReturn(t *testing.T) {
 
 	code := `return {processed: true, value: input.data.value * 2};`
 
-	result, err := runtime.Execute(code, context)
+	result, err := runtime.Execute(context.Background(), code, execContext)
 	require.NoError(t, err)
 
 	expected := map[string]interface{}{
@@ -52,7 +53,7 @@ func TestJavaScriptRuntime_Execute_AccessInputData(t *testing.T) {
 	runtime := NewJavaScriptRuntime()
 	require.NoError(t, runtime.Initialize())
 
-	context := CodeExecutionContext{
+	execContext := CodeExecutionContext{
 		Data: map[string]interface{}{
 			"user": map[string]interface{}{
 				"name":  "John Doe",
@@ -75,7 +76,7 @@ func TestJavaScriptRuntime_Execute_AccessInputData(t *testing.T) {
 		};
 	`
 
-	result, err := runtime.Execute(code, context)
+	result, err := runtime.Execute(context.Background(), code, execContext)
 	require.NoError(t, err)
 
 	resultMap, ok := result.(map[string]interface{})
@@ -90,7 +91,7 @@ func TestJavaScriptRuntime_Execute_AccessVariables(t *testing.T) {
 	runtime := NewJavaScriptRuntime()
 	require.NoError(t, runtime.Initialize())
 
-	context := CodeExecutionContext{
+	execContext := CodeExecutionContext{
 		Data: map[string]interface{}{"input": "test"},
 		Variables: map[string]interface{}{
 			"apiKey":     "secret-key",
@@ -113,7 +114,7 @@ func TestJavaScriptRuntime_Execute_AccessVariables(t *testing.T) {
 		};
 	`
 
-	result, err := runtime.Execute(code, context)
+	result, err := runtime.Execute(context.Background(), code, execContext)
 	require.NoError(t, err)
 
 	resultMap, ok := result.(map[string]interface{})
@@ -132,7 +133,7 @@ func TestJavaScriptRuntime_Execute_AccessNodeData(t *testing.T) {
 	runtime := NewJavaScriptRuntime()
 	require.NoError(t, runtime.Initialize())
 
-	context := CodeExecutionContext{
+	execContext := CodeExecutionContext{
 		Data:      map[string]interface{}{"input": "test"},
 		Variables: map[string]interface{}{},
 		NodeData: map[string]interface{}{
@@ -156,7 +157,7 @@ func TestJavaScriptRuntime_Execute_AccessNodeData(t *testing.T) {
 		};
 	`
 
-	result, err := runtime.Execute(code, context)
+	result, err := runtime.Execute(context.Background(), code, execContext)
 	require.NoError(t, err)
 
 	resultMap, ok := result.(map[string]interface{})
@@ -172,7 +173,7 @@ func TestJavaScriptRuntime_Execute_UtilityFunctions(t *testing.T) {
 	runtime := NewJavaScriptRuntime()
 	require.NoError(t, runtime.Initialize())
 
-	context := CodeExecutionContext{
+	execContext := CodeExecutionContext{
 		Data:      map[string]interface{}{"json": `{"name": "test", "value": 42}`},
 		Variables: map[string]interface{}{},
 		NodeData:  map[string]interface{}{},
@@ -193,7 +194,7 @@ func TestJavaScriptRuntime_Execute_UtilityFunctions(t *testing.T) {
 		};
 	`
 
-	result, err := runtime.Execute(code, context)
+	result, err := runtime.Execute(context.Background(), code, execContext)
 	require.NoError(t, err)
 
 	resultMap, ok := result.(map[string]interface{})
@@ -221,7 +222,7 @@ func TestJavaScriptRuntime_Execute_Console(t *testing.T) {
 	runtime := NewJavaScriptRuntime()
 	require.NoError(t, runtime.Initialize())
 
-	context := CodeExecutionContext{
+	execContext := CodeExecutionContext{
 		Data:      map[string]interface{}{"debug": true},
 		Variables: map[string]interface{}{},
 		NodeData:  map[string]interface{}{},
@@ -237,7 +238,7 @@ func TestJavaScriptRuntime_Execute_Console(t *testing.T) {
 		return {success: true};
 	`
 
-	result, err := runtime.Execute(code, context)
+	result, err := runtime.Execute(context.Background(), code, execContext)
 	require.NoError(t, err)
 
 	resultMap, ok := result.(map[string]interface{})
@@ -252,7 +253,7 @@ func TestJavaScriptRuntime_Execute_SyntaxError(t *testing.T) {
 	runtime := NewJavaScriptRuntime()
 	require.NoError(t, runtime.Initialize())
 
-	context := CodeExecutionContext{
+	execContext := CodeExecutionContext{
 		Data:      map[string]interface{}{},
 		Variables: map[string]interface{}{},
 		NodeData:  map[string]interface{}{},
@@ -262,7 +263,7 @@ func TestJavaScriptRuntime_Execute_SyntaxError(t *testing.T) {
 
 	code := `invalid javascript syntax {{{`
 
-	result, err := runtime.Execute(code, context)
+	result, err := runtime.Execute(context.Background(), code, execContext)
 	assert.Nil(t, result)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "SyntaxError") // Should contain syntax error info
@@ -272,7 +273,7 @@ func TestJavaScriptRuntime_Execute_RuntimeError(t *testing.T) {
 	runtime := NewJavaScriptRuntime()
 	require.NoError(t, runtime.Initialize())
 
-	context := CodeExecutionContext{
+	execContext := CodeExecutionContext{
 		Data:      map[string]interface{}{},
 		Variables: map[string]interface{}{},
 		NodeData:  map[string]interface{}{},
@@ -282,7 +283,7 @@ func TestJavaScriptRuntime_Execute_RuntimeError(t *testing.T) {
 
 	code := `throw new Error("Custom runtime error");`
 
-	result, err := runtime.Execute(code, context)
+	result, err := runtime.Execute(context.Background(), code, execContext)
 	assert.Nil(t, result)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "Custom runtime error")
@@ -292,7 +293,7 @@ func TestJavaScriptRuntime_Execute_NoReturn(t *testing.T) {
 	runtime := NewJavaScriptRuntime()
 	require.NoError(t, runtime.Initialize())
 
-	context := CodeExecutionContext{
+	execContext := CodeExecutionContext{
 		Data:      map[string]interface{}{"value": 42},
 		Variables: map[string]interface{}{},
 		NodeData:  map[string]interface{}{},
@@ -306,7 +307,7 @@ func TestJavaScriptRuntime_Execute_NoReturn(t *testing.T) {
 		// No return statement
 	`
 
-	result, err := runtime.Execute(code, context)
+	result, err := runtime.Execute(context.Background(), code, execContext)
 	require.NoError(t, err)
 	// Should return undefined when no explicit return
 	assert.Nil(t, result)
@@ -316,7 +317,7 @@ func TestJavaScriptRuntime_Execute_ComplexDataTransformation(t *testing.T) {
 	runtime := NewJavaScriptRuntime()
 	require.NoError(t, runtime.Initialize())
 
-	context := CodeExecutionContext{
+	execContext := CodeExecutionContext{
 		Data: map[string]interface{}{
 			"users": []interface{}{
 				map[string]interface{}{"name": "Alice", "age": 25, "active": true},
@@ -349,7 +350,7 @@ func TestJavaScriptRuntime_Execute_ComplexDataTransformation(t *testing.T) {
 		};
 	`
 
-	result, err := runtime.Execute(code, context)
+	result, err := runtime.Execute(context.Background(), code, execContext)
 	require.NoError(t, err)
 
 	resultMap, ok := result.(map[string]interface{})
@@ -370,7 +371,7 @@ func TestJavaScriptRuntime_Execute_SecurityRestrictions(t *testing.T) {
 	runtime := NewJavaScriptRuntime()
 	require.NoError(t, runtime.Initialize())
 
-	context := CodeExecutionContext{
+	execContext := CodeExecutionContext{
 		Data:      map[string]interface{}{},
 		Variables: map[string]interface{}{},
 		NodeData:  map[string]interface{}{},
@@ -407,7 +408,7 @@ func TestJavaScriptRuntime_Execute_SecurityRestrictions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := runtime.Execute(tt.code, context)
+			result, err := runtime.Execute(context.Background(), tt.code, execContext)
 			if tt.shouldError {
 				assert.Error(t, err)
 			} else {
