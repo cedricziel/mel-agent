@@ -84,7 +84,8 @@ describe('NodeConfigurationPanel', () => {
 
     expect(screen.getByText('Parameter 1')).toBeInTheDocument();
     expect(screen.getByText('Parameter 2')).toBeInTheDocument();
-    expect(screen.getByText('Parameter 3')).toBeInTheDocument();
+    // Use getAllByText to handle multiple elements with same text
+    expect(screen.getAllByText('Parameter 3')).toHaveLength(2); // Label and span
   });
 
   it('should handle node name changes', () => {
