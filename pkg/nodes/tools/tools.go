@@ -13,7 +13,7 @@ func (toolsDefinition) Meta() api.NodeType {
 		Icon:     "🔧",
 		Category: "Configuration",
 		Parameters: []api.ParameterDefinition{
-			api.NewArrayParameter("toolList", "Available Tools", true).
+			api.NewArrayParameter("toolList", "Available Tools", false).
 				WithDescription("List of tools available to the agent"),
 			api.NewBooleanParameter("allowCodeExecution", "Allow Code Execution", false).
 				WithDescription("Enable code execution capabilities").
