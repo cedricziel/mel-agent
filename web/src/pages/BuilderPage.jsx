@@ -161,8 +161,7 @@ function BuilderPage({ agentId }) {
       const agentNode = nodes.find((n) => n.id === configDialogAgentId);
       if (!agentNode) return;
 
-      const baseTimestamp = Date.now();
-      const configId = `${baseTimestamp}`;
+      const configId = crypto.randomUUID();
 
       // Position the new config node below the agent
       const configPosition = {
@@ -190,7 +189,7 @@ function BuilderPage({ agentId }) {
 
       // Create edge with proper handle IDs
       const configEdge = {
-        id: `edge-${configOption.type}-${baseTimestamp}`,
+        id: `edge-${configOption.type}-${crypto.randomUUID()}`,
         source: configId,
         sourceHandle: 'config-out',
         target: configDialogAgentId,
@@ -601,7 +600,7 @@ function BuilderPage({ agentId }) {
         return;
       }
 
-      const edgeId = `edge-${Date.now()}`;
+      const edgeId = `edge-${crypto.randomUUID()}`;
       const newEdge = { ...params, id: edgeId };
 
       try {
@@ -729,10 +728,8 @@ function BuilderPage({ agentId }) {
   // Helper function to create configuration nodes for an agent
   const createAgentConfigurationNodes = useCallback(
     async (agentId, agentPosition) => {
-      const baseTimestamp = Date.now();
-
       // Create model configuration node
-      const modelId = `${baseTimestamp + 1}`;
+      const modelId = crypto.randomUUID();
       const modelNode = {
         id: modelId,
         type: 'model',
@@ -746,7 +743,7 @@ function BuilderPage({ agentId }) {
       };
 
       // Create tools configuration node
-      const toolsId = `${baseTimestamp + 2}`;
+      const toolsId = crypto.randomUUID();
       const toolsNode = {
         id: toolsId,
         type: 'tools',
@@ -760,7 +757,7 @@ function BuilderPage({ agentId }) {
       };
 
       // Create memory configuration node
-      const memoryId = `${baseTimestamp + 3}`;
+      const memoryId = crypto.randomUUID();
       const memoryNode = {
         id: memoryId,
         type: 'memory',
@@ -775,7 +772,7 @@ function BuilderPage({ agentId }) {
 
       // Create edges connecting config nodes to agent (using specific handles)
       const modelEdge = {
-        id: `edge-model-${baseTimestamp}`,
+        id: `edge-model-${crypto.randomUUID()}`,
         source: modelId,
         sourceHandle: 'out',
         target: agentId,
@@ -785,7 +782,7 @@ function BuilderPage({ agentId }) {
       };
 
       const toolsEdge = {
-        id: `edge-tools-${baseTimestamp}`,
+        id: `edge-tools-${crypto.randomUUID()}`,
         source: toolsId,
         sourceHandle: 'out',
         target: agentId,
@@ -795,7 +792,7 @@ function BuilderPage({ agentId }) {
       };
 
       const memoryEdge = {
-        id: `edge-memory-${baseTimestamp}`,
+        id: `edge-memory-${crypto.randomUUID()}`,
         source: memoryId,
         sourceHandle: 'out',
         target: agentId,
@@ -845,7 +842,7 @@ function BuilderPage({ agentId }) {
   // Assistant tool callbacks
   const handleAddNode = useCallback(
     async ({ type, label, parameters, position }) => {
-      const id = Date.now().toString();
+      const id = crypto.randomUUID();
       const data = {
         label: label || type,
         nodeTypeLabel: label || type,
@@ -874,7 +871,7 @@ function BuilderPage({ agentId }) {
 
   const handleConnectNodes = useCallback(
     async ({ source_id, target_id }) => {
-      const edgeId = `edge-${Date.now()}`;
+      const edgeId = `edge-${crypto.randomUUID()}`;
       const newEdge = { id: edgeId, source: source_id, target: target_id };
 
       try {
@@ -1073,7 +1070,7 @@ function BuilderPage({ agentId }) {
   // Add node from modal
   const handleModalAddNode = useCallback(
     async (nodeType) => {
-      const id = Date.now().toString();
+      const id = crypto.randomUUID();
       const nodeDef = nodeDefs.find((def) => def.type === nodeType);
       const newNode = {
         id,
