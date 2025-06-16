@@ -18,6 +18,7 @@ import NodeModal from '../components/NodeModal';
 import 'reactflow/dist/style.css';
 import ChatAssistant from '../components/ChatAssistant';
 import { useWorkflowState } from '../hooks/useWorkflowState';
+import { useWebSocket } from '../hooks/useWebSocket';
 import { isValidConnection } from '../utils/connectionTypes';
 import CustomEdge from '../components/CustomEdge';
 
@@ -72,8 +73,6 @@ function BuilderPage({ agentId }) {
 
   // WebSocket for collaboration
   const clientId = useMemo(() => crypto.randomUUID(), []);
-  const wsRef = useRef(null);
-  const execTimersRef = useRef({});
 
   // Local state for WebSocket updates (separate from workflow state)
   const [wsNodes, setWsNodes] = useState([]);
@@ -85,22 +84,59 @@ function BuilderPage({ agentId }) {
     setWsEdges(edges);
   }, [nodes, edges]);
 
-  // Broadcast node changes to other clients
-  const broadcastNodeChange = useCallback(
-    (type, data) => {
-      if (wsRef.current?.readyState === WebSocket.OPEN) {
-        wsRef.current.send(
-          JSON.stringify({
-            clientId,
-            type,
-            workflowId: agentId,
-            ...data,
-          })
+  // WebSocket callbacks for handling real-time updates
+  const handleNodeUpdated = useCallback((nodeId, data) => {
+    setWsNodes((prev) =>
+      prev.map((n) => (n.id === nodeId ? { ...n, ...data } : n))
+    );
+  }, []);
+
+  const handleNodeCreated = useCallback((node) => {
+    setWsNodes((prev) => [...prev, node]);
+  }, []);
+
+  const handleNodeDeleted = useCallback((nodeId) => {
+    setWsNodes((prev) => prev.filter((n) => n.id !== nodeId));
+  }, []);
+
+  const handleEdgeCreated = useCallback((edge) => {
+    setWsEdges((prev) => [...prev, edge]);
+  }, []);
+
+  const handleEdgeDeleted = useCallback((edgeId) => {
+    setWsEdges((prev) => prev.filter((e) => e.id !== edgeId));
+  }, []);
+
+  const handleNodeExecution = useCallback((nodeId, phase) => {
+    if (phase === 'start') {
+      setWsNodes((nds) =>
+        nds.map((n) =>
+          n.id === nodeId ? { ...n, data: { ...n.data, status: 'running' } } : n
+        )
+      );
+    } else if (phase === 'end') {
+      // Clear status after a short delay for visual feedback
+      setTimeout(() => {
+        setWsNodes((nds) =>
+          nds.map((n) =>
+            n.id === nodeId
+              ? { ...n, data: { ...n.data, status: undefined } }
+              : n
+          )
         );
-      }
-    },
-    [clientId, agentId]
-  );
+      }, 500);
+    }
+  }, []);
+
+  // Use WebSocket hook for collaborative editing
+  const { broadcastNodeChange } = useWebSocket(agentId, clientId, {
+    onNodeUpdated: handleNodeUpdated,
+    onNodeCreated: handleNodeCreated,
+    onNodeDeleted: handleNodeDeleted,
+    onEdgeCreated: handleEdgeCreated,
+    onEdgeDeleted: handleEdgeDeleted,
+    onNodeExecution: handleNodeExecution,
+  });
 
   // Open config selection dialog
   const openConfigDialog = useCallback((agentNodeId, configType, handleId) => {
@@ -422,111 +458,6 @@ function BuilderPage({ agentId }) {
       }),
     [wsNodes, validationErrors]
   );
-
-  // WebSocket setup for collaborative editing
-  useEffect(() => {
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${wsProtocol}//${window.location.host}/api/ws/agents/${agentId}`;
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
-
-    ws.onmessage = (event) => {
-      try {
-        const msg = JSON.parse(event.data);
-        if (msg.clientId === clientId) return;
-
-        switch (msg.type) {
-          case 'nodeUpdated':
-            // Handle individual node updates from other clients
-            if (msg.workflowId === agentId) {
-              // Update local WebSocket state without triggering API call
-              setWsNodes((prev) =>
-                prev.map((n) =>
-                  n.id === msg.nodeId ? { ...n, ...msg.data } : n
-                )
-              );
-            }
-            break;
-          case 'nodeCreated':
-            if (msg.workflowId === agentId) {
-              setWsNodes((prev) => [...prev, msg.node]);
-            }
-            break;
-          case 'nodeDeleted':
-            if (msg.workflowId === agentId) {
-              setWsNodes((prev) => prev.filter((n) => n.id !== msg.nodeId));
-            }
-            break;
-          case 'edgeCreated':
-            if (msg.workflowId === agentId) {
-              setWsEdges((prev) => [...prev, msg.edge]);
-            }
-            break;
-          case 'edgeDeleted':
-            if (msg.workflowId === agentId) {
-              setWsEdges((prev) => prev.filter((e) => e.id !== msg.edgeId));
-            }
-            break;
-          case 'nodeExecution': {
-            // Runtime status updates for Live mode
-            const { nodeId, phase } = msg;
-            if (phase === 'start') {
-              execTimersRef.current[nodeId] = {
-                start: Date.now(),
-                timeoutId: null,
-              };
-              setWsNodes((nds) =>
-                nds.map((n) =>
-                  n.id === nodeId
-                    ? { ...n, data: { ...n.data, status: 'running' } }
-                    : n
-                )
-              );
-            } else if (phase === 'end') {
-              const timer = execTimersRef.current[nodeId];
-              const now = Date.now();
-              const clearStatus = () => {
-                setWsNodes((nds) =>
-                  nds.map((n) =>
-                    n.id === nodeId
-                      ? { ...n, data: { ...n.data, status: undefined } }
-                      : n
-                  )
-                );
-                delete execTimersRef.current[nodeId];
-              };
-              if (timer) {
-                const elapsed = now - timer.start;
-                const remaining = 500 - elapsed;
-                if (timer.timeoutId) clearTimeout(timer.timeoutId);
-                if (remaining <= 0) {
-                  clearStatus();
-                } else {
-                  const tid = setTimeout(clearStatus, remaining);
-                  execTimersRef.current[nodeId].timeoutId = tid;
-                }
-              } else {
-                clearStatus();
-              }
-            }
-            break;
-          }
-          default:
-            console.warn('Unknown message type:', msg.type);
-        }
-      } catch (err) {
-        console.error('Failed to parse WebSocket message:', err);
-      }
-    };
-
-    ws.onclose = () => {
-      wsRef.current = null;
-    };
-    return () => {
-      ws.close();
-      wsRef.current = null;
-    };
-  }, [agentId, clientId]);
 
   // ReactFlow event handlers with collaborative updates
   const onNodesChange = useCallback(
