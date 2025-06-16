@@ -18,6 +18,7 @@ import NodeModal from '../components/NodeModal';
 import 'reactflow/dist/style.css';
 import ChatAssistant from '../components/ChatAssistant';
 import WorkflowToolbar from '../components/WorkflowToolbar';
+import WorkflowSidebar from '../components/WorkflowSidebar';
 import { useWorkflowState } from '../hooks/useWorkflowState';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useNodeManagement } from '../hooks/useNodeManagement';
@@ -913,115 +914,53 @@ function BuilderPage({ agentId }) {
       </div>
 
       {/* Sidebar */}
-      {(sidebarTab || viewMode === 'executions') && (
-        <div className="w-80 bg-white border-l shadow-lg h-screen overflow-y-auto">
-          {/* Executions panel */}
-          {viewMode === 'executions' && (
-            <div className="h-full flex flex-col">
-              <div className="p-4 border-b">
-                <h3 className="text-lg font-semibold">Executions</h3>
-                {loadingExecutions && (
-                  <div className="text-sm text-gray-500">
-                    Loading executions...
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 overflow-y-auto">
-                {executions.length === 0 && !loadingExecutions ? (
-                  <div className="p-4 text-center text-gray-500">
-                    No executions found. Run your workflow to see execution
-                    history.
-                  </div>
-                ) : (
-                  <div className="p-2">
-                    {executions.map((execution) => (
-                      <div
-                        key={execution.id}
-                        onClick={() => setSelectedExecution(execution)}
-                        className={`p-3 border rounded mb-2 cursor-pointer hover:bg-gray-50 ${
-                          selectedExecution?.id === execution.id
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">
-                            {new Date(execution.created_at).toLocaleString()}
-                          </span>
-                          <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
-                            Completed
-                          </span>
-                        </div>
-                        <div className="text-xs text-gray-500 mt-1">
-                          ID: {execution.id.slice(0, 8)}...
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {sidebarTab === 'details' &&
-            selectedNode &&
-            selectedNodeDef &&
-            viewMode === 'editor' && (
-              <NodeDetailsPanel
-                node={selectedNode}
-                nodeDef={selectedNodeDef}
-                readOnly={isLiveMode}
-                onChange={(key, value) => {
-                  updateNode(selectedNodeId, {
-                    data: { ...selectedNode.data, [key]: value },
-                  });
-                }}
-                onExecute={async (inputData) => {
-                  try {
-                    if (isDraft) {
-                      // Use draft testing API for instant feedback
-                      const result = await testDraftNode(
-                        selectedNodeId,
-                        inputData
-                      );
-                      if (result.success) {
-                        return result.result;
-                      } else {
-                        throw new Error(result.error);
-                      }
-                    } else {
-                      // Fall back to old API for production versions
-                      const res = await axios.post(
-                        `/api/agents/${agentId}/nodes/${selectedNodeId}/execute`,
-                        inputData
-                      );
-                      return res.data.output;
-                    }
-                  } catch (err) {
-                    console.error('Execution failed:', err);
-                    throw err;
-                  }
-                }}
-                publicUrl={
-                  selectedNodeDef.type === 'webhook' &&
-                  triggersMap[selectedNode.id]
-                    ? `${window.location.origin}/api/webhooks/${selectedNode.type}/${triggersMap[selectedNode.id].id}`
-                    : undefined
-                }
-              />
-            )}
-          {sidebarTab === 'chat' && (
-            <ChatAssistant
-              inline
-              agentId={agentId}
-              onAddNode={handleAddNode}
-              onConnectNodes={handleConnectNodes}
-              onGetWorkflow={handleGetWorkflow}
-              onClose={() => setSidebarTab(null)}
-            />
-          )}
-        </div>
-      )}
+      <WorkflowSidebar
+        isVisible={sidebarTab || viewMode === 'executions'}
+        sidebarTab={sidebarTab}
+        viewMode={viewMode}
+        selectedNode={selectedNode}
+        selectedNodeDef={selectedNodeDef}
+        selectedExecution={selectedExecution}
+        executions={executions}
+        loadingExecutions={loadingExecutions}
+        isLiveMode={isLiveMode}
+        isDraft={isDraft}
+        agentId={agentId}
+        triggersMap={triggersMap}
+        onExecutionSelect={setSelectedExecution}
+        onNodeChange={(key, value) => {
+          updateNode(selectedNodeId, {
+            data: { ...selectedNode.data, [key]: value },
+          });
+        }}
+        onNodeExecute={async (inputData) => {
+          try {
+            if (isDraft) {
+              // Use draft testing API for instant feedback
+              const result = await testDraftNode(selectedNodeId, inputData);
+              if (result.success) {
+                return result.result;
+              } else {
+                throw new Error(result.error);
+              }
+            } else {
+              // Fall back to old API for production versions
+              const res = await axios.post(
+                `/api/agents/${agentId}/nodes/${selectedNodeId}/execute`,
+                inputData
+              );
+              return res.data.output;
+            }
+          } catch (err) {
+            console.error('Execution failed:', err);
+            throw err;
+          }
+        }}
+        onChatClose={() => setSidebarTab(null)}
+        onAddNode={handleAddNode}
+        onConnectNodes={handleConnectNodes}
+        onGetWorkflow={handleGetWorkflow}
+      />
 
       {/* Status indicators */}
       {isDirty && (
