@@ -406,4 +406,80 @@ describe('useNodeTypes', () => {
     const triggersMap = result.current.triggersMap;
     expect(triggersMap).toEqual({});
   });
+
+  it('should maintain stable nodeTypes reference when function dependencies are stable', async () => {
+    const stableHandleNodeDelete = vi.fn();
+    const stableOpenConfigDialog = vi.fn();
+    const stableOnNodeClick = vi.fn();
+
+    const { result, rerender } = renderHook(
+      ({ agentId, handleNodeDelete, openConfigDialog, onNodeClick }) =>
+        useNodeTypes(agentId, handleNodeDelete, openConfigDialog, onNodeClick),
+      {
+        initialProps: {
+          agentId: mockAgentId,
+          handleNodeDelete: stableHandleNodeDelete,
+          openConfigDialog: stableOpenConfigDialog,
+          onNodeClick: stableOnNodeClick,
+        },
+      }
+    );
+
+    await waitFor(() => {
+      expect(result.current.nodeDefs).toEqual(mockNodeDefs);
+    });
+
+    const firstNodeTypes = result.current.nodeTypes;
+
+    // Re-render with the same stable functions
+    rerender({
+      agentId: mockAgentId,
+      handleNodeDelete: stableHandleNodeDelete,
+      openConfigDialog: stableOpenConfigDialog,
+      onNodeClick: stableOnNodeClick,
+    });
+
+    // nodeTypes should be the same reference (memoized)
+    expect(result.current.nodeTypes).toBe(firstNodeTypes);
+  });
+
+  it('should update nodeTypes reference when function dependencies change', async () => {
+    const stableHandleNodeDelete = vi.fn();
+    const stableOpenConfigDialog = vi.fn();
+    const stableOnNodeClick = vi.fn();
+
+    const { result, rerender } = renderHook(
+      ({ agentId, handleNodeDelete, openConfigDialog, onNodeClick }) =>
+        useNodeTypes(agentId, handleNodeDelete, openConfigDialog, onNodeClick),
+      {
+        initialProps: {
+          agentId: mockAgentId,
+          handleNodeDelete: stableHandleNodeDelete,
+          openConfigDialog: stableOpenConfigDialog,
+          onNodeClick: stableOnNodeClick,
+        },
+      }
+    );
+
+    await waitFor(() => {
+      expect(result.current.nodeDefs).toEqual(mockNodeDefs);
+    });
+
+    const firstNodeTypes = result.current.nodeTypes;
+
+    // Re-render with new function instances
+    const newHandleNodeDelete = vi.fn();
+    const newOpenConfigDialog = vi.fn();
+    const newOnNodeClick = vi.fn();
+
+    rerender({
+      agentId: mockAgentId,
+      handleNodeDelete: newHandleNodeDelete,
+      openConfigDialog: newOpenConfigDialog,
+      onNodeClick: newOnNodeClick,
+    });
+
+    // nodeTypes should be a new reference (re-memoized)
+    expect(result.current.nodeTypes).not.toBe(firstNodeTypes);
+  });
 });

@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo, useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import DefaultNode from '../components/DefaultNode';
 import AgentNode from '../components/AgentNode';
@@ -21,6 +21,34 @@ export function useNodeTypes(
   const [nodeDefs, setNodeDefs] = useState([]);
   const [triggers, setTriggers] = useState([]);
 
+  // Stabilize function dependencies to prevent unnecessary re-renders
+  const stableHandleNodeDelete = useCallback(
+    (nodeId) => {
+      if (handleNodeDelete) {
+        handleNodeDelete(nodeId);
+      }
+    },
+    [handleNodeDelete]
+  );
+
+  const stableOpenConfigDialog = useCallback(
+    (nodeId, configType, handleId) => {
+      if (openConfigDialog) {
+        openConfigDialog(nodeId, configType, handleId);
+      }
+    },
+    [openConfigDialog]
+  );
+
+  const stableOnNodeClick = useCallback(
+    (event, node) => {
+      if (onNodeClick) {
+        onNodeClick(event, node);
+      }
+    },
+    [onNodeClick]
+  );
+
   // Load node definitions
   useEffect(() => {
     axios
@@ -41,14 +69,14 @@ export function useNodeTypes(
   const nodeTypes = useMemo(() => {
     const types = {
       default: (props) => (
-        <DefaultNode {...props} onDelete={handleNodeDelete} />
+        <DefaultNode {...props} onDelete={stableHandleNodeDelete} />
       ),
       agent: (props) => (
         <AgentNode
           {...props}
-          onDelete={handleNodeDelete}
+          onDelete={stableHandleNodeDelete}
           onAddConfigNode={(configType, handleId) => {
-            openConfigDialog(props.id, configType, handleId);
+            stableOpenConfigDialog(props.id, configType, handleId);
           }}
         />
       ),
@@ -56,56 +84,56 @@ export function useNodeTypes(
       model: (props) => (
         <ModelNode
           {...props}
-          onDelete={handleNodeDelete}
-          onClick={() => onNodeClick(null, props)}
+          onDelete={stableHandleNodeDelete}
+          onClick={() => stableOnNodeClick(null, props)}
         />
       ),
       tools: (props) => (
         <ToolsNode
           {...props}
-          onDelete={handleNodeDelete}
-          onClick={() => onNodeClick(null, props)}
+          onDelete={stableHandleNodeDelete}
+          onClick={() => stableOnNodeClick(null, props)}
         />
       ),
       memory: (props) => (
         <MemoryNode
           {...props}
-          onDelete={handleNodeDelete}
-          onClick={() => onNodeClick(null, props)}
+          onDelete={stableHandleNodeDelete}
+          onClick={() => stableOnNodeClick(null, props)}
         />
       ),
       // Specific config nodes
       openai_model: (props) => (
         <OpenAIModelNode
           {...props}
-          onDelete={handleNodeDelete}
-          onClick={() => onNodeClick(null, props)}
+          onDelete={stableHandleNodeDelete}
+          onClick={() => stableOnNodeClick(null, props)}
         />
       ),
       anthropic_model: (props) => (
         <AnthropicModelNode
           {...props}
-          onDelete={handleNodeDelete}
-          onClick={() => onNodeClick(null, props)}
+          onDelete={stableHandleNodeDelete}
+          onClick={() => stableOnNodeClick(null, props)}
         />
       ),
       local_memory: (props) => (
         <LocalMemoryNode
           {...props}
-          onDelete={handleNodeDelete}
-          onClick={() => onNodeClick(null, props)}
+          onDelete={stableHandleNodeDelete}
+          onClick={() => stableOnNodeClick(null, props)}
         />
       ),
       workflow_tools: (props) => (
         <ToolsNode
           {...props}
-          onDelete={handleNodeDelete}
-          onClick={() => onNodeClick(null, props)}
+          onDelete={stableHandleNodeDelete}
+          onClick={() => stableOnNodeClick(null, props)}
         />
       ),
-      if: (props) => <IfNode {...props} onDelete={handleNodeDelete} />,
+      if: (props) => <IfNode {...props} onDelete={stableHandleNodeDelete} />,
       http_request: (props) => (
-        <HttpRequestNode {...props} onDelete={handleNodeDelete} />
+        <HttpRequestNode {...props} onDelete={stableHandleNodeDelete} />
       ),
     };
 
@@ -127,7 +155,7 @@ export function useNodeTypes(
             type={type}
             agentId={agentId}
             icon={nodeDef?.icon}
-            onDelete={handleNodeDelete}
+            onDelete={stableHandleNodeDelete}
           />
         );
       };
@@ -138,14 +166,20 @@ export function useNodeTypes(
       nodeDefs.forEach((nodeDef) => {
         if (!types[nodeDef.type]) {
           types[nodeDef.type] = (props) => (
-            <DefaultNode {...props} onDelete={handleNodeDelete} />
+            <DefaultNode {...props} onDelete={stableHandleNodeDelete} />
           );
         }
       });
     }
 
     return types;
-  }, [nodeDefs, agentId, openConfigDialog, handleNodeDelete, onNodeClick]);
+  }, [
+    nodeDefs,
+    agentId,
+    stableOpenConfigDialog,
+    stableHandleNodeDelete,
+    stableOnNodeClick,
+  ]);
 
   // Node categories for the add node modal
   const categories = useMemo(() => {
