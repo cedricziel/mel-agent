@@ -36,10 +36,10 @@ export default function AgentNode({
             e.stopPropagation();
             onDelete(id);
           }}
-          className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 hover:bg-red-600 text-white text-xs rounded-full flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity"
+          className="absolute -top-2 -right-2 w-4 h-4 text-xs flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity"
           title="Delete node"
         >
-          ×
+          🗑️
         </button>
       )}
 
@@ -107,8 +107,24 @@ export default function AgentNode({
         style={{
           backgroundColor: getHandleColor(HANDLE_TYPES.WORKFLOW_INPUT),
           top: '50%',
+          left: '-8px',
+          width: '16px',
+          height: '16px',
+          border: '2px solid white',
         }}
       />
+
+      {/* Input handle connector line */}
+      <div
+        className="absolute bg-gray-300"
+        style={{
+          left: '-8px',
+          top: 'calc(50% - 1px)',
+          width: '8px',
+          height: '2px',
+        }}
+      />
+
       <Handle
         type="source"
         position={Position.Right}
@@ -116,8 +132,38 @@ export default function AgentNode({
         style={{
           backgroundColor: getHandleColor(HANDLE_TYPES.WORKFLOW_OUTPUT),
           top: '50%',
+          right: '-8px',
+          width: '16px',
+          height: '16px',
+          border: '2px solid white',
         }}
       />
+
+      {/* Output handle connector line */}
+      <div
+        className="absolute bg-gray-300"
+        style={{
+          right: '-8px',
+          top: 'calc(50% - 1px)',
+          width: '8px',
+          height: '2px',
+        }}
+      />
+
+      {/* Add button on output handle */}
+      {onAddClick && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddClick();
+          }}
+          className="absolute bg-indigo-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center hover:bg-indigo-600 transition-colors z-10"
+          style={{ right: '-20px', top: 'calc(50% - 8px)' }}
+          title="Add Next Node"
+        >
+          +
+        </button>
+      )}
 
       {/* Configuration input handles at the bottom */}
       <Handle
@@ -127,8 +173,10 @@ export default function AgentNode({
         style={{
           backgroundColor: getHandleColor(HANDLE_TYPES.MODEL_CONFIG),
           left: '25%',
-          width: '12px',
-          height: '12px',
+          bottom: '-8px',
+          width: '16px',
+          height: '16px',
+          border: '2px solid white',
         }}
       />
       <Handle
@@ -138,8 +186,10 @@ export default function AgentNode({
         style={{
           backgroundColor: getHandleColor(HANDLE_TYPES.TOOLS_CONFIG),
           left: '50%',
-          width: '12px',
-          height: '12px',
+          bottom: '-8px',
+          width: '16px',
+          height: '16px',
+          border: '2px solid white',
         }}
       />
       <Handle
@@ -149,48 +199,79 @@ export default function AgentNode({
         style={{
           backgroundColor: getHandleColor(HANDLE_TYPES.MEMORY_CONFIG),
           left: '75%',
-          width: '12px',
-          height: '12px',
+          bottom: '-8px',
+          width: '16px',
+          height: '16px',
+          border: '2px solid white',
         }}
       />
 
-      {/* Add buttons for configuration nodes */}
-      {!data.modelConfig && onAddConfigNode && (
+      {/* Config handle connector lines */}
+      <div
+        className="absolute bg-gray-300"
+        style={{
+          left: 'calc(25% - 1px)',
+          bottom: '-8px',
+          width: '2px',
+          height: '8px',
+        }}
+      />
+      <div
+        className="absolute bg-gray-300"
+        style={{
+          left: 'calc(50% - 1px)',
+          bottom: '-8px',
+          width: '2px',
+          height: '8px',
+        }}
+      />
+      <div
+        className="absolute bg-gray-300"
+        style={{
+          left: 'calc(75% - 1px)',
+          bottom: '-8px',
+          width: '2px',
+          height: '8px',
+        }}
+      />
+
+      {/* Add buttons for configuration nodes - always visible */}
+      {onAddConfigNode && (
         <button
           onClick={(e) => {
             e.stopPropagation();
             onAddConfigNode('model', 'model-config');
           }}
-          className="absolute -bottom-2 bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center hover:bg-blue-600 transition-colors"
-          style={{ left: 'calc(25% - 8px)' }}
+          className="absolute bg-blue-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center hover:bg-blue-600 transition-colors z-10"
+          style={{ left: 'calc(25% - 8px)', bottom: '-20px' }}
           title="Add Model Configuration"
         >
           +
         </button>
       )}
 
-      {!data.toolsConfig && onAddConfigNode && (
+      {onAddConfigNode && (
         <button
           onClick={(e) => {
             e.stopPropagation();
             onAddConfigNode('tools', 'tools-config');
           }}
-          className="absolute -bottom-2 bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center hover:bg-green-600 transition-colors"
-          style={{ left: 'calc(50% - 8px)' }}
+          className="absolute bg-green-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center hover:bg-green-600 transition-colors z-10"
+          style={{ left: 'calc(50% - 8px)', bottom: '-20px' }}
           title="Add Tools Configuration"
         >
           +
         </button>
       )}
 
-      {!data.memoryConfig && onAddConfigNode && (
+      {onAddConfigNode && (
         <button
           onClick={(e) => {
             e.stopPropagation();
             onAddConfigNode('memory', 'memory-config');
           }}
-          className="absolute -bottom-2 bg-purple-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center hover:bg-purple-600 transition-colors"
-          style={{ left: 'calc(75% - 8px)' }}
+          className="absolute bg-purple-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center hover:bg-purple-600 transition-colors z-10"
+          style={{ left: 'calc(75% - 8px)', bottom: '-20px' }}
           title="Add Memory Configuration"
         >
           +

@@ -31,4 +31,5 @@ AI Agents SaaS platform with Go backend and React frontend. This is a monorepo t
 - **Migrations**: Located in `migrations/` directory
 - **Docker setup**: Postgres runs on localhost:5432
 
-[... rest of the file remains unchanged ...]
+## Development Principles
+- Our goal is to create a well-tested project. Always be mindful of creating reasonably well-sized components and testing them. Create e2e tests with Cypress where applicable

@@ -71,10 +71,10 @@ export default function TriggerNode({
               e.stopPropagation();
               onDelete(id);
             }}
-            className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 hover:bg-red-600 text-white text-xs rounded-full flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity"
+            className="absolute -top-2 -right-2 w-4 h-4 text-xs flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity"
             title="Delete node"
           >
-            ×
+            🗑️
           </button>
         )}
 
@@ -140,8 +140,39 @@ export default function TriggerNode({
           id="trigger-out"
           style={{
             backgroundColor: getHandleColor(HANDLE_TYPES.TRIGGER_OUTPUT),
+            right: '-8px',
+            top: '50%',
+            width: '16px',
+            height: '16px',
+            border: '2px solid white',
           }}
         />
+
+        {/* Output handle connector line */}
+        <div
+          className="absolute bg-gray-300"
+          style={{
+            right: '-8px',
+            top: 'calc(50% - 1px)',
+            width: '8px',
+            height: '2px',
+          }}
+        />
+
+        {/* Add button on output handle */}
+        {onAddClick && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddClick();
+            }}
+            className="absolute bg-indigo-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center hover:bg-indigo-600 transition-colors z-10"
+            style={{ right: '-20px', top: 'calc(50% - 8px)' }}
+            title="Add Next Node"
+          >
+            +
+          </button>
+        )}
       </div>
     </div>
   );

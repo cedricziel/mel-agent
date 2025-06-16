@@ -128,17 +128,46 @@ function BuilderPage({ agentId }) {
     setConfigDialogOpen(true);
   }, []);
 
-  // Handle node deletion
+  // Handle node deletion with edge cleanup
   const handleNodeDelete = useCallback(
     async (nodeId) => {
       try {
+        // Find all edges connected to this node
+        const connectedEdges = edges.filter(
+          (edge) => edge.source === nodeId || edge.target === nodeId
+        );
+
+        // Delete the node first
         await deleteNode(nodeId);
         broadcastNodeChange('nodeDeleted', { nodeId });
+
+        // Then delete all connected edges
+        for (const edge of connectedEdges) {
+          try {
+            await deleteEdge(edge.id);
+            broadcastNodeChange('edgeDeleted', { edgeId: edge.id });
+          } catch (edgeErr) {
+            console.error('Failed to delete edge:', edge.id, edgeErr);
+          }
+        }
       } catch (err) {
         console.error('Failed to delete node:', err);
       }
     },
-    [deleteNode, broadcastNodeChange]
+    [deleteNode, deleteEdge, broadcastNodeChange, edges]
+  );
+
+  // Handle edge deletion
+  const handleEdgeDelete = useCallback(
+    async (edgeId) => {
+      try {
+        await deleteEdge(edgeId);
+        broadcastNodeChange('edgeDeleted', { edgeId });
+      } catch (err) {
+        console.error('Failed to delete edge:', err);
+      }
+    },
+    [deleteEdge, broadcastNodeChange]
   );
 
   // Handle config selection from dialog
@@ -238,21 +267,55 @@ function BuilderPage({ agentId }) {
         />
       ),
       // Legacy generic config nodes (keeping for backward compatibility)
-      model: (props) => <ModelNode {...props} onDelete={handleNodeDelete} />,
-      tools: (props) => <ToolsNode {...props} onDelete={handleNodeDelete} />,
-      memory: (props) => <MemoryNode {...props} onDelete={handleNodeDelete} />,
+      model: (props) => (
+        <ModelNode
+          {...props}
+          onDelete={handleNodeDelete}
+          onClick={() => onNodeClick(null, props)}
+        />
+      ),
+      tools: (props) => (
+        <ToolsNode
+          {...props}
+          onDelete={handleNodeDelete}
+          onClick={() => onNodeClick(null, props)}
+        />
+      ),
+      memory: (props) => (
+        <MemoryNode
+          {...props}
+          onDelete={handleNodeDelete}
+          onClick={() => onNodeClick(null, props)}
+        />
+      ),
       // Specific config nodes
       openai_model: (props) => (
-        <OpenAIModelNode {...props} onDelete={handleNodeDelete} />
+        <OpenAIModelNode
+          {...props}
+          onDelete={handleNodeDelete}
+          onClick={() => onNodeClick(null, props)}
+        />
       ),
       anthropic_model: (props) => (
-        <AnthropicModelNode {...props} onDelete={handleNodeDelete} />
+        <AnthropicModelNode
+          {...props}
+          onDelete={handleNodeDelete}
+          onClick={() => onNodeClick(null, props)}
+        />
       ),
       local_memory: (props) => (
-        <LocalMemoryNode {...props} onDelete={handleNodeDelete} />
+        <LocalMemoryNode
+          {...props}
+          onDelete={handleNodeDelete}
+          onClick={() => onNodeClick(null, props)}
+        />
       ),
       workflow_tools: (props) => (
-        <ToolsNode {...props} onDelete={handleNodeDelete} />
+        <ToolsNode
+          {...props}
+          onDelete={handleNodeDelete}
+          onClick={() => onNodeClick(null, props)}
+        />
       ),
       if: (props) => <IfNode {...props} onDelete={handleNodeDelete} />,
       http_request: (props) => (
@@ -1050,6 +1113,7 @@ function BuilderPage({ agentId }) {
       {/* Main workflow area */}
       <div className="flex-1 relative">
         <ReactFlow
+          data-testid="react-flow"
           nodes={displayedNodes}
           edges={wsEdges}
           onNodesChange={onNodesChange}
@@ -1058,7 +1122,11 @@ function BuilderPage({ agentId }) {
           onNodeClick={onNodeClick}
           onNodeDoubleClick={onNodeDoubleClick}
           nodeTypes={nodeTypes}
-          edgeTypes={{ default: CustomEdge }}
+          edgeTypes={{
+            default: (props) => (
+              <CustomEdge {...props} onDelete={handleEdgeDelete} />
+            ),
+          }}
           isValidConnection={(connection) => {
             const sourceNode = nodes.find((n) => n.id === connection.source);
             const targetNode = nodes.find((n) => n.id === connection.target);

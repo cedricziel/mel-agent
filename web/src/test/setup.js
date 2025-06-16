@@ -71,3 +71,6 @@ Element.prototype.getBoundingClientRect = vi.fn(() => ({
   x: 0,
   y: 0,
 }));
+
+// Mock window.alert
+global.alert = vi.fn();

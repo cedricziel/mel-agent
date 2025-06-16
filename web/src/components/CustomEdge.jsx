@@ -1,10 +1,5 @@
 import { useState } from 'react';
-import {
-  BaseEdge,
-  EdgeLabelRenderer,
-  getBezierPath,
-  useReactFlow,
-} from 'reactflow';
+import { BaseEdge, EdgeLabelRenderer, getBezierPath } from 'reactflow';
 
 export default function CustomEdge({
   id,
@@ -16,8 +11,8 @@ export default function CustomEdge({
   targetPosition,
   style = {},
   markerEnd,
+  onDelete,
 }) {
-  const { deleteElements } = useReactFlow();
   const [isHovered, setIsHovered] = useState(false);
 
   const [edgePath, labelX, labelY] = getBezierPath({
@@ -30,7 +25,9 @@ export default function CustomEdge({
   });
 
   const onEdgeClick = () => {
-    deleteElements({ edges: [{ id }] });
+    if (onDelete) {
+      onDelete(id);
+    }
   };
 
   return (

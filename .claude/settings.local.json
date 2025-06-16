@@ -15,7 +15,12 @@
       "Bash(mkdir:*)",
       "Bash(go fmt:*)",
       "Bash(pnpm add:*)",
-      "Bash(pnpm format:*)"
+      "Bash(pnpm format:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run cypress:run:*)",
+      "Bash(npm run test:*)",
+      "Bash(npx cypress run:*)",
+      "Bash(pnpm test:*)"
     ],
     "deny": []
   },

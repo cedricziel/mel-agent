@@ -53,7 +53,9 @@ describe('TriggerNode', () => {
   it('should only render output handle (no input)', () => {
     render(<TriggerNode {...defaultProps} />);
 
-    expect(screen.getByTestId('handle-source-right-out')).toBeInTheDocument();
+    expect(
+      screen.getByTestId('handle-source-right-trigger-out')
+    ).toBeInTheDocument();
     expect(
       screen.queryByTestId('handle-target-left-in')
     ).not.toBeInTheDocument();
@@ -168,11 +170,13 @@ describe('TriggerNode', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
 
-    axios.post.mockRejectedValue(new Error('Network error'));
+    const networkError = new Error('Network error');
+    axios.post.mockRejectedValue(networkError);
 
     const manualTriggerProps = {
       ...defaultProps,
       type: 'manual_trigger',
+      agentId: 'test-agent-123', // Ensure agentId is present
     };
 
     render(<TriggerNode {...manualTriggerProps} />);
@@ -183,7 +187,7 @@ describe('TriggerNode', () => {
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalledWith(
         'Failed to trigger manually:',
-        expect.any(Error)
+        networkError
       );
       expect(alertSpy).toHaveBeenCalledWith('Failed to trigger workflow');
     });
@@ -212,7 +216,7 @@ describe('TriggerNode', () => {
     alertSpy.mockRestore();
   });
 
-  it('should render add button when onAddClick is provided and not manual trigger', () => {
+  it('should render add buttons when onAddClick is provided and not manual trigger', () => {
     const mockOnAddClick = vi.fn();
     const propsWithAddClick = {
       ...defaultProps,
@@ -222,14 +226,17 @@ describe('TriggerNode', () => {
 
     render(<TriggerNode {...propsWithAddClick} />);
 
-    const addButton = screen.getByText('+');
-    expect(addButton).toBeInTheDocument();
+    // Should have both quick-add button and output handle button
+    const addButtons = screen.getAllByText('+');
+    expect(addButtons).toHaveLength(2);
 
-    fireEvent.click(addButton);
+    // Test the quick-add button (without title)
+    const quickAddButton = addButtons.find((btn) => !btn.getAttribute('title'));
+    fireEvent.click(quickAddButton);
     expect(mockOnAddClick).toHaveBeenCalledTimes(1);
   });
 
-  it('should not render add button for manual trigger type', () => {
+  it('should render output handle add button for manual trigger type', () => {
     const mockOnAddClick = vi.fn();
     const manualTriggerProps = {
       ...defaultProps,
@@ -239,7 +246,10 @@ describe('TriggerNode', () => {
 
     render(<TriggerNode {...manualTriggerProps} />);
 
-    expect(screen.queryByText('+')).not.toBeInTheDocument();
+    // Should show the output handle + button but not the quick-add button
+    const addButtons = screen.getAllByText('+');
+    expect(addButtons).toHaveLength(1);
+    expect(addButtons[0]).toHaveAttribute('title', 'Add Next Node');
   });
 
   it('should use default icon when icon prop is not provided', () => {

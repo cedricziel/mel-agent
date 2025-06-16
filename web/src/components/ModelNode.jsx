@@ -2,7 +2,7 @@ import { Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { HANDLE_TYPES, getHandleColor } from '../utils/connectionTypes';
 
-export default function ModelNode({ data, onAddClick, onDelete, id }) {
+export default function ModelNode({ data, onAddClick, onDelete, id, onClick }) {
   const summaryKeys = Object.keys(data).filter(
     (k) =>
       k !== 'label' && k !== 'status' && k !== 'nodeTypeLabel' && k !== 'error'
@@ -10,9 +10,10 @@ export default function ModelNode({ data, onAddClick, onDelete, id }) {
 
   return (
     <div
-      className={`relative bg-blue-50 border-blue-200 rounded-full p-3 w-[120px] h-[120px] flex flex-col items-center justify-center ${
+      className={`relative bg-blue-50 border-blue-200 rounded-full p-3 w-[120px] h-[120px] flex flex-col items-center justify-center cursor-pointer ${
         data.error ? 'border-2 border-red-500' : 'border-2'
       }`}
+      onClick={onClick}
     >
       <div className="absolute top-2 text-lg">📋</div>
 
@@ -23,10 +24,10 @@ export default function ModelNode({ data, onAddClick, onDelete, id }) {
             e.stopPropagation();
             onDelete(id);
           }}
-          className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 hover:bg-red-600 text-white text-xs rounded-full flex items-center justify-center opacity-70 hover:opacity-100 transition-opacity"
+          className="absolute -top-2 -right-2 w-4 h-4 text-xs flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity"
           title="Delete node"
         >
-          ×
+          🗑️
         </button>
       )}
 
