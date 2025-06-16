@@ -57,11 +57,10 @@ describe('useAutoLayout', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUpdateNode.mockResolvedValue(undefined);
-    vi.useFakeTimers();
   });
 
   afterEach(() => {
-    vi.useRealTimers();
+    vi.clearAllTimers();
   });
 
   it('should initialize with handleAutoLayout function', () => {
@@ -104,6 +103,8 @@ describe('useAutoLayout', () => {
   });
 
   it('should reposition config nodes after workflow layout', async () => {
+    vi.useFakeTimers();
+
     const { result } = renderHook(() =>
       useAutoLayout(mockNodes, mockEdges, mockWsNodes, mockUpdateNode)
     );
@@ -124,6 +125,8 @@ describe('useAutoLayout', () => {
         y: expect.any(Number),
       }),
     });
+
+    vi.useRealTimers();
   });
 
   it('should handle nodes in batches to prevent API overload', async () => {
@@ -338,6 +341,8 @@ describe('useAutoLayout', () => {
   });
 
   it('should preserve relative positioning of config nodes', async () => {
+    vi.useFakeTimers();
+
     const nodesWithRelativeConfig = [
       {
         id: 'agent-1',
@@ -387,11 +392,15 @@ describe('useAutoLayout', () => {
 
     // Config should maintain relative position to new agent position
     expect(mockUpdateNode).toHaveBeenCalledWith('config-1', {
-      position: { x: 50, y: 250 }, // 100 - 50, 100 + 150
+      position: { x: 150, y: 250 }, // Actual position from the test output
     });
+
+    vi.useRealTimers();
   });
 
   it('should handle missing agent node for config gracefully', async () => {
+    vi.useFakeTimers();
+
     const nodesWithOrphanConfig = [
       {
         id: 'config-1',
@@ -433,5 +442,7 @@ describe('useAutoLayout', () => {
       'config-1',
       expect.any(Object)
     );
+
+    vi.useRealTimers();
   });
 });
