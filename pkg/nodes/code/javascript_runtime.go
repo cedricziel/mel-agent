@@ -59,21 +59,40 @@ func (js *JavaScriptRuntime) Execute(ctx context.Context, code string, execConte
 	resultChan := make(chan goja.Value, 1)
 	errorChan := make(chan error, 1)
 
+	// Launch a goroutine to handle context cancellation by interrupting the VM
+	go func() {
+		<-ctx.Done()
+		vm.Interrupt("execution cancelled")
+	}()
+
 	// Execute in a separate goroutine to handle cancellation
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				errorChan <- fmt.Errorf("panic during JavaScript execution: %v", r)
+				// Non-blocking send to prevent goroutine leak
+				select {
+				case errorChan <- fmt.Errorf("panic during JavaScript execution: %v", r):
+				default:
+				}
 			}
 		}()
 
 		// Execute the code
 		result, err := vm.RunString(wrappedCode)
 		if err != nil {
-			errorChan <- fmt.Errorf("execution error: %w", err)
+			// Non-blocking send to prevent goroutine leak
+			select {
+			case errorChan <- fmt.Errorf("execution error: %w", err):
+			default:
+			}
 			return
 		}
-		resultChan <- result
+		
+		// Non-blocking send to prevent goroutine leak
+		select {
+		case resultChan <- result:
+		default:
+		}
 	}()
 
 	// Wait for execution or cancellation
