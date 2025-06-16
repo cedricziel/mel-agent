@@ -5,11 +5,11 @@ import RunsGraph from '../RunsGraph';
 // Mock ReactFlow
 vi.mock('reactflow', () => ({
   __esModule: true,
-  default: ({ children, onNodeClick, onPaneClick, ...props }) => (
+  default: ({ children, onNodeClick, onPaneClick, nodes, edges, nodeTypes, fitView, nodesDraggable, nodesConnectable, elementsSelectable, ...otherProps }) => (
     <div className="w-1/2 h-full">
-      <div data-testid="react-flow" {...props}>
+      <div data-testid="react-flow">
         <div data-testid="react-flow-nodes">
-          {props.nodes?.map((node) => (
+          {nodes?.map((node) => (
             <div
               key={node.id}
               data-testid={`node-${node.id}`}
