@@ -279,6 +279,8 @@ describe('useWebSocket', () => {
   });
 
   it('should handle connection errors gracefully', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
     const { result } = renderHook(() =>
       useWebSocket('test-agent-id', 'test-client-id')
     );
@@ -292,6 +294,8 @@ describe('useWebSocket', () => {
     });
 
     expect(result.current.isConnected).toBe(true); // Should still be connected until close
+
+    consoleSpy.mockRestore();
   });
 
   it.skip('should not broadcast when WebSocket is not open', () => {

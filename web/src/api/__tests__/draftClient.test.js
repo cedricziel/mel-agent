@@ -28,6 +28,10 @@ describe('DraftAPI', () => {
     });
 
     it('should handle API errors', async () => {
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
       global.fetch.mockResolvedValueOnce({
         ok: false,
         statusText: 'Not Found',
@@ -36,6 +40,8 @@ describe('DraftAPI', () => {
       await expect(DraftAPI.getDraft('workflow-123')).rejects.toThrow(
         'Failed to get draft: Not Found'
       );
+
+      consoleSpy.mockRestore();
     });
   });
 
@@ -66,6 +72,10 @@ describe('DraftAPI', () => {
     });
 
     it('should handle update errors', async () => {
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
       global.fetch.mockResolvedValueOnce({
         ok: false,
         statusText: 'Internal Server Error',
@@ -74,6 +84,8 @@ describe('DraftAPI', () => {
       await expect(
         DraftAPI.updateDraft('workflow-123', { nodes: [], edges: [] })
       ).rejects.toThrow('Failed to update draft: Internal Server Error');
+
+      consoleSpy.mockRestore();
     });
   });
 
@@ -109,6 +121,10 @@ describe('DraftAPI', () => {
     });
 
     it('should handle test errors', async () => {
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
+
       global.fetch.mockResolvedValueOnce({
         ok: false,
         statusText: 'Bad Request',
@@ -117,6 +133,8 @@ describe('DraftAPI', () => {
       await expect(
         DraftAPI.testDraftNode('workflow-123', 'node-1', {})
       ).rejects.toThrow('Failed to test node: Bad Request');
+
+      consoleSpy.mockRestore();
     });
   });
 
@@ -172,6 +190,7 @@ describe('AutoSaver', () => {
   });
 
   it('should schedule save with debouncing', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const draftData = { nodes: [], edges: [] };
 
     // Mock fetch for the DraftAPI call
@@ -204,9 +223,12 @@ describe('AutoSaver', () => {
         body: JSON.stringify(draftData),
       }
     );
+
+    consoleSpy.mockRestore();
   });
 
   it('should save immediately when saveNow is called', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const draftData = { nodes: [], edges: [] };
 
     global.fetch.mockResolvedValue({
@@ -229,9 +251,14 @@ describe('AutoSaver', () => {
         body: JSON.stringify(draftData),
       }
     );
+
+    consoleSpy.mockRestore();
   });
 
   it('should handle save errors', async () => {
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
     const draftData = { nodes: [], edges: [] };
     const onErrorSpy = vi.fn();
 
@@ -249,9 +276,12 @@ describe('AutoSaver', () => {
     });
 
     expect(onErrorSpy).toHaveBeenCalledWith(expect.any(Error));
+
+    consoleErrorSpy.mockRestore();
   });
 
   it('should update save status correctly', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const draftData = { nodes: [], edges: [] };
     const onSaveSpy = vi.fn();
 
@@ -270,6 +300,8 @@ describe('AutoSaver', () => {
 
     expect(autoSaver.isSaving).toBe(false);
     expect(onSaveSpy).toHaveBeenCalled();
+
+    consoleSpy.mockRestore();
   });
 });
 
@@ -303,6 +335,8 @@ describe('useAutoSaver', () => {
   });
 
   it('should update state when AutoSaver state changes', async () => {
+    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
     global.fetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({}),
@@ -325,6 +359,8 @@ describe('useAutoSaver', () => {
 
     expect(result.current.lastSaved).toBeTruthy();
     expect(result.current.isSaving).toBe(false);
+
+    consoleSpy.mockRestore();
   });
 
   it('should cleanup AutoSaver on unmount', () => {
