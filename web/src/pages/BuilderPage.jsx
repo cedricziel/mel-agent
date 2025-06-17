@@ -18,6 +18,7 @@ import CustomEdge from '../components/CustomEdge';
 
 function BuilderPage({ agentId }) {
   // Use the new workflow state hook with auto-persistence
+  const workflowState = useWorkflowState(agentId);
   const {
     nodes,
     edges,
@@ -39,7 +40,7 @@ function BuilderPage({ agentId }) {
     deployDraft,
     saveVersion,
     clearError,
-  } = useWorkflowState(agentId);
+  } = workflowState;
 
   // UI state
   const [modalOpen, setModalOpen] = useState(false);
@@ -135,7 +136,7 @@ function BuilderPage({ agentId }) {
     handleConnectNodes,
     handleGetWorkflow,
     handleModalAddNode,
-  } = useNodeManagement(broadcastNodeChange);
+  } = useNodeManagement(agentId, broadcastNodeChange, workflowState);
 
   // Open config selection dialog
   const openConfigDialog = useCallback((agentNodeId, configType, handleId) => {
@@ -288,10 +289,26 @@ function BuilderPage({ agentId }) {
     () => wsNodes.find((n) => n.id === selectedNodeId),
     [wsNodes, selectedNodeId]
   );
-  const selectedNodeDef = useMemo(
-    () => nodeDefs.find((def) => def.type === selectedNode?.type),
-    [nodeDefs, selectedNode]
-  );
+  const selectedNodeDef = useMemo(() => {
+    const foundDef = nodeDefs.find((def) => def.type === selectedNode?.type);
+
+    // Debug logging when a node is selected
+    if (selectedNode) {
+      console.log('Selected node:', selectedNode);
+      console.log('Node type:', selectedNode.type);
+      console.log(
+        'Available nodeDefs:',
+        nodeDefs.map((def) => ({ type: def.type, label: def.label }))
+      );
+      console.log('Found nodeDef:', foundDef);
+
+      if (!foundDef) {
+        console.warn(`No nodeDef found for type: ${selectedNode.type}`);
+      }
+    }
+
+    return foundDef;
+  }, [nodeDefs, selectedNode]);
 
   // Use WebSocket state for display (includes real-time updates from other clients)
   const displayedNodes = useMemo(
@@ -619,7 +636,7 @@ function BuilderPage({ agentId }) {
         isOpen={modalOpen}
         categories={categories}
         onClose={() => setModalOpen(false)}
-        onAddNode={handleModalAddNode}
+        onAddNode={(nodeType) => handleModalAddNode(nodeType, nodeDefs)}
       />
 
       {/* Node editing modal */}
