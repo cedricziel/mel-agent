@@ -20,7 +20,8 @@
       "Bash(npm run cypress:run:*)",
       "Bash(npm run test:*)",
       "Bash(npx cypress run:*)",
-      "Bash(pnpm test:*)"
+      "Bash(pnpm test:*)",
+      "Bash(pnpm lint:*)"
     ],
     "deny": []
   },

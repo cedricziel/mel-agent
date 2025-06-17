@@ -24,6 +24,10 @@ export default function ChatAssistant({
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef();
+  const abortControllerRef = useRef(null);
+
+  // Maximum message history to prevent unbounded growth
+  const MAX_MESSAGES = 100;
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -32,20 +36,57 @@ export default function ChatAssistant({
     }
   }, [messages]);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
+  // Limit message history to prevent memory bloat
+  useEffect(() => {
+    if (messages.length > MAX_MESSAGES) {
+      setMessages((prev) => [prev[0], ...prev.slice(-MAX_MESSAGES + 1)]);
+    }
+  }, [messages]);
+
   const sendMessage = async () => {
     const text = input.trim();
     if (!text) return;
+
+    // Abort any existing request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new abort controller for this conversation
+    abortControllerRef.current = new AbortController();
+
     // Prepare a mutable copy of the conversation
     setIsLoading(true);
     let convo = [...messages, { role: 'user', content: text }];
     setMessages(convo);
     setInput('');
+
     try {
       // Loop until the model returns a non-function message
-      while (true) {
-        const res = await axios.post(`/api/agents/${agentId}/assistant/chat`, {
-          messages: convo,
-        });
+      // Add safety limit to prevent infinite loops
+      let loopCount = 0;
+      const MAX_FUNCTION_CALLS = 10;
+
+      while (loopCount < MAX_FUNCTION_CALLS) {
+        loopCount++;
+        const res = await axios.post(
+          `/api/agents/${agentId}/assistant/chat`,
+          {
+            messages: convo,
+          },
+          {
+            signal: abortControllerRef.current.signal,
+          }
+        );
         const msg = res.data.choices[0].message;
         if (msg.function_call) {
           // Append the function_call message
@@ -65,15 +106,21 @@ export default function ChatAssistant({
           if (fnName === 'add_node') result = onAddNode(fnArgs);
           else if (fnName === 'connect_nodes') result = onConnectNodes(fnArgs);
           else if (fnName === 'list_node_types') {
-            const r = await axios.get(`/api/node-types`);
+            const r = await axios.get(`/api/node-types`, {
+              signal: abortControllerRef.current.signal,
+            });
             result = r.data;
           } else if (fnName === 'get_node_type_schema') {
             const { type } = fnArgs;
-            const r = await axios.get(`/api/node-types/schema/${type}`);
+            const r = await axios.get(`/api/node-types/schema/${type}`, {
+              signal: abortControllerRef.current.signal,
+            });
             result = r.data;
           } else if (fnName === 'get_node_definition') {
             const { type } = fnArgs;
-            const r = await axios.get(`/api/node-types`);
+            const r = await axios.get(`/api/node-types`, {
+              signal: abortControllerRef.current.signal,
+            });
             result = (r.data || []).find((nt) => nt.type === type) || {};
           } else if (fnName === 'get_workflow') result = onGetWorkflow();
           const resultContent = JSON.stringify(result || {});
@@ -95,6 +142,18 @@ export default function ChatAssistant({
           ]);
           break;
         }
+      }
+
+      // If we exit the loop due to max function calls, add a warning
+      if (loopCount >= MAX_FUNCTION_CALLS) {
+        setMessages((ms) => [
+          ...ms,
+          {
+            role: 'assistant',
+            content:
+              'Warning: Maximum function call limit reached. Please try a simpler request.',
+          },
+        ]);
       }
     } catch (err) {
       console.error(err);

@@ -304,7 +304,7 @@ describe('useAutoLayout', () => {
   });
 
   it('should handle updateNode failures gracefully', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     mockUpdateNode.mockRejectedValue(new Error('Update failed'));
 
     const { result } = renderHook(() =>

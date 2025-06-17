@@ -197,6 +197,7 @@ describe('useWorkflowState', () => {
   });
 
   it('should handle errors gracefully', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const error = new Error('Network error');
     workflowClient.default.loadWorkflowData.mockRejectedValue(error);
 
@@ -207,9 +208,12 @@ describe('useWorkflowState', () => {
     });
 
     expect(result.current.error).toBe('Network error');
+
+    consoleSpy.mockRestore();
   });
 
   it('should rollback optimistic updates on failure', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const initialNodes = [
       { id: 'node-1', type: 'test', data: { label: 'Initial' } },
     ];
@@ -243,6 +247,8 @@ describe('useWorkflowState', () => {
     // Should rollback to original state
     expect(result.current.nodes).toEqual(initialNodes);
     expect(result.current.error).toBe('Create failed');
+
+    consoleSpy.mockRestore();
   });
 
   it('should deploy draft successfully when in draft mode', async () => {

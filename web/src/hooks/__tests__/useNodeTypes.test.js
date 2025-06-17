@@ -129,7 +129,7 @@ describe('useNodeTypes', () => {
   });
 
   it('should handle node definitions loading errors', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     axios.get.mockImplementation((url) => {
       if (url === '/api/node-types') {
         return Promise.reject(new Error('Network error'));
@@ -161,7 +161,7 @@ describe('useNodeTypes', () => {
   });
 
   it('should handle triggers loading errors', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     axios.get.mockImplementation((url) => {
       if (url === '/api/node-types') {
         return Promise.resolve({ data: mockNodeDefs });
@@ -317,7 +317,7 @@ describe('useNodeTypes', () => {
   });
 
   it('should handle refresh triggers errors', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const { result } = renderHook(() =>
       useNodeTypes(
         mockAgentId,

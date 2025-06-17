@@ -237,7 +237,7 @@ describe('useRunsData', () => {
   });
 
   it('should handle API errors gracefully', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     mockedAxios.get.mockRejectedValue(new Error('API Error'));
 
     renderHook(() => useRunsData(mockAgentId));

@@ -71,7 +71,7 @@ describe('NodeExecutionPanel', () => {
   });
 
   it('should handle test node execution errors', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const onExecute = vi.fn().mockRejectedValue(new Error('Test error'));
     const setOutputData = vi.fn();
 
@@ -153,7 +153,7 @@ describe('NodeExecutionPanel', () => {
   });
 
   it('should handle execution errors without message', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const onExecute = vi.fn().mockRejectedValue({});
     const setOutputData = vi.fn();
 

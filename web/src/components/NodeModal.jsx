@@ -40,6 +40,20 @@ export default function NodeModal({
     }
   }, [isOpen, selectedExecution, viewMode, agentId, loadNodeExecutionData]);
 
+  // Handle escape key to close modal
+  useEffect(() => {
+    const handleEscapeKey = (event) => {
+      if (event.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscapeKey);
+      return () => document.removeEventListener('keydown', handleEscapeKey);
+    }
+  }, [isOpen, onClose]);
+
   if (!isOpen || !node || !nodeDef) return null;
 
   return (
