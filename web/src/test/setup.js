@@ -17,6 +17,10 @@ import { afterEach } from 'vitest';
 
 afterEach(() => {
   cleanup();
+  // Clear all mocks after each test to prevent memory leaks
+  vi.clearAllMocks();
+  // Clear all timers to prevent memory leaks
+  vi.clearAllTimers();
 });
 
 // Mock fetch globally
