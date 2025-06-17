@@ -1,5 +1,6 @@
 import { useMemo, useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
+import { nodeTypesApi } from '../api/nodeTypesApi';
 import DefaultNode from '../components/DefaultNode';
 import AgentNode from '../components/AgentNode';
 import ModelNode from '../components/ModelNode';
@@ -51,117 +52,10 @@ export function useNodeTypes(
 
   // Load node definitions
   useEffect(() => {
-    axios
-      .get('/api/node-types')
-      .then((res) => {
-        // Add config node definitions that are missing from backend
-        const configNodeDefs = [
-          {
-            type: 'openai_model',
-            label: 'OpenAI Model',
-            category: 'Configuration',
-            icon: '🤖',
-            parameters: [
-              {
-                name: 'model',
-                label: 'Model',
-                type: 'enum',
-                required: true,
-                options: ['gpt-4', 'gpt-3.5-turbo', 'gpt-4-turbo'],
-                default: 'gpt-4',
-              },
-              {
-                name: 'temperature',
-                label: 'Temperature',
-                type: 'number',
-                required: false,
-                default: 0.7,
-                description: 'Controls randomness in output',
-              },
-              {
-                name: 'maxTokens',
-                label: 'Max Tokens',
-                type: 'integer',
-                required: false,
-                default: 1000,
-                description: 'Maximum number of tokens to generate',
-              },
-            ],
-          },
-          {
-            type: 'anthropic_model',
-            label: 'Anthropic Model',
-            category: 'Configuration',
-            icon: '🧠',
-            parameters: [
-              {
-                name: 'model',
-                label: 'Model',
-                type: 'enum',
-                required: true,
-                options: [
-                  'claude-3-5-sonnet-20241022',
-                  'claude-3-haiku-20240307',
-                  'claude-3-opus-20240229',
-                ],
-                default: 'claude-3-5-sonnet-20241022',
-              },
-              {
-                name: 'temperature',
-                label: 'Temperature',
-                type: 'number',
-                required: false,
-                default: 0.7,
-                description: 'Controls randomness in output',
-              },
-            ],
-          },
-          {
-            type: 'local_memory',
-            label: 'Local Memory',
-            category: 'Configuration',
-            icon: '💾',
-            parameters: [
-              {
-                name: 'maxMessages',
-                label: 'Max Messages',
-                type: 'integer',
-                required: false,
-                default: 100,
-                description: 'Maximum number of messages to remember',
-              },
-              {
-                name: 'enableSummarization',
-                label: 'Enable Summarization',
-                type: 'boolean',
-                required: false,
-                default: true,
-                description: 'Whether to summarize old messages',
-              },
-            ],
-          },
-          {
-            type: 'workflow_tools',
-            label: 'Workflow Tools',
-            category: 'Configuration',
-            icon: '🔧',
-            parameters: [
-              {
-                name: 'enabledTools',
-                label: 'Enabled Tools',
-                type: 'array',
-                required: false,
-                default: [],
-                description: 'List of enabled tools',
-              },
-            ],
-          },
-        ];
-
-        // Merge backend node defs with config node defs
-        const allNodeDefs = [...res.data, ...configNodeDefs];
-        setNodeDefs(allNodeDefs);
-      })
+    // Use the new API client that handles filtering and fallbacks
+    nodeTypesApi
+      .getAllNodeTypes()
+      .then((allNodeDefs) => setNodeDefs(allNodeDefs))
       .catch((err) => console.error('fetch node-types failed:', err));
   }, []);
 

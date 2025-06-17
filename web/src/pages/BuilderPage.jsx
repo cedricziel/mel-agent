@@ -289,26 +289,10 @@ function BuilderPage({ agentId }) {
     () => wsNodes.find((n) => n.id === selectedNodeId),
     [wsNodes, selectedNodeId]
   );
-  const selectedNodeDef = useMemo(() => {
-    const foundDef = nodeDefs.find((def) => def.type === selectedNode?.type);
-
-    // Debug logging when a node is selected
-    if (selectedNode) {
-      console.log('Selected node:', selectedNode);
-      console.log('Node type:', selectedNode.type);
-      console.log(
-        'Available nodeDefs:',
-        nodeDefs.map((def) => ({ type: def.type, label: def.label }))
-      );
-      console.log('Found nodeDef:', foundDef);
-
-      if (!foundDef) {
-        console.warn(`No nodeDef found for type: ${selectedNode.type}`);
-      }
-    }
-
-    return foundDef;
-  }, [nodeDefs, selectedNode]);
+  const selectedNodeDef = useMemo(
+    () => nodeDefs.find((def) => def.type === selectedNode?.type),
+    [nodeDefs, selectedNode]
+  );
 
   // Use WebSocket state for display (includes real-time updates from other clients)
   const displayedNodes = useMemo(
