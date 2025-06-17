@@ -1,5 +1,5 @@
 import { Editor } from '@monaco-editor/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 /**
  * CodeEditor component that provides syntax highlighting and auto-completion
@@ -15,6 +15,8 @@ export default function CodeEditor({
   readOnly = false,
 }) {
   const [editorLanguage, setEditorLanguage] = useState('javascript');
+  const editorRef = useRef(null);
+  const providersRef = useRef([]);
 
   // Map MEL Agent language names to Monaco Editor language identifiers
   useEffect(() => {
@@ -31,6 +33,25 @@ export default function CodeEditor({
 
     setEditorLanguage(languageMap[language] || 'javascript');
   }, [language]);
+
+  // Cleanup effect for Monaco Editor
+  useEffect(() => {
+    return () => {
+      // Dispose completion providers
+      providersRef.current.forEach((provider) => {
+        if (provider && provider.dispose) {
+          provider.dispose();
+        }
+      });
+      providersRef.current = [];
+
+      // Dispose editor instance
+      if (editorRef.current) {
+        editorRef.current.dispose();
+        editorRef.current = null;
+      }
+    };
+  }, []);
 
   const editorOptions = {
     minimap: { enabled: false },
@@ -63,6 +84,8 @@ export default function CodeEditor({
   };
 
   const handleEditorDidMount = (editor, monaco) => {
+    // Store editor reference for cleanup
+    editorRef.current = editor;
     // Configure JavaScript/TypeScript auto-completion with MEL Agent context
     if (editorLanguage === 'javascript' || editorLanguage === 'typescript') {
       // Enhanced compiler options for better IntelliSense
@@ -155,67 +178,71 @@ declare const Object: ObjectConstructor;
       monaco.languages.typescript.javascriptDefaults.setEagerModelSync(true);
 
       // Register completion provider for better suggestions
-      monaco.languages.registerCompletionItemProvider('javascript', {
-        provideCompletionItems: (model, position) => {
-          const word = model.getWordUntilPosition(position);
-          const range = {
-            startLineNumber: position.lineNumber,
-            endLineNumber: position.lineNumber,
-            startColumn: word.startColumn,
-            endColumn: word.endColumn,
-          };
+      const completionProvider =
+        monaco.languages.registerCompletionItemProvider('javascript', {
+          provideCompletionItems: (model, position) => {
+            const word = model.getWordUntilPosition(position);
+            const range = {
+              startLineNumber: position.lineNumber,
+              endLineNumber: position.lineNumber,
+              startColumn: word.startColumn,
+              endColumn: word.endColumn,
+            };
 
-          const suggestions = [
-            {
-              label: 'input',
-              kind: monaco.languages.CompletionItemKind.Variable,
-              insertText: 'input',
-              documentation:
-                'MEL Agent input context with data, variables, nodeData, nodeId, and agentId',
-              range: range,
-            },
-            {
-              label: 'input.data',
-              kind: monaco.languages.CompletionItemKind.Property,
-              insertText: 'input.data',
-              documentation: 'Input data from the previous node',
-              range: range,
-            },
-            {
-              label: 'input.variables',
-              kind: monaco.languages.CompletionItemKind.Property,
-              insertText: 'input.variables',
-              documentation: 'Workflow variables available across nodes',
-              range: range,
-            },
-            {
-              label: 'utils',
-              kind: monaco.languages.CompletionItemKind.Module,
-              insertText: 'utils',
-              documentation: 'MEL Agent utility functions',
-              range: range,
-            },
-            {
-              label: 'utils.parseJSON',
-              kind: monaco.languages.CompletionItemKind.Function,
-              insertText: 'utils.parseJSON(${1:jsonString})',
-              insertTextRules:
-                monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-              documentation: 'Parse JSON string into object',
-              range: range,
-            },
-            {
-              label: 'utils.generateUUID',
-              kind: monaco.languages.CompletionItemKind.Function,
-              insertText: 'utils.generateUUID()',
-              documentation: 'Generate UUID v4 string',
-              range: range,
-            },
-          ];
+            const suggestions = [
+              {
+                label: 'input',
+                kind: monaco.languages.CompletionItemKind.Variable,
+                insertText: 'input',
+                documentation:
+                  'MEL Agent input context with data, variables, nodeData, nodeId, and agentId',
+                range: range,
+              },
+              {
+                label: 'input.data',
+                kind: monaco.languages.CompletionItemKind.Property,
+                insertText: 'input.data',
+                documentation: 'Input data from the previous node',
+                range: range,
+              },
+              {
+                label: 'input.variables',
+                kind: monaco.languages.CompletionItemKind.Property,
+                insertText: 'input.variables',
+                documentation: 'Workflow variables available across nodes',
+                range: range,
+              },
+              {
+                label: 'utils',
+                kind: monaco.languages.CompletionItemKind.Module,
+                insertText: 'utils',
+                documentation: 'MEL Agent utility functions',
+                range: range,
+              },
+              {
+                label: 'utils.parseJSON',
+                kind: monaco.languages.CompletionItemKind.Function,
+                insertText: 'utils.parseJSON(${1:jsonString})',
+                insertTextRules:
+                  monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                documentation: 'Parse JSON string into object',
+                range: range,
+              },
+              {
+                label: 'utils.generateUUID',
+                kind: monaco.languages.CompletionItemKind.Function,
+                insertText: 'utils.generateUUID()',
+                documentation: 'Generate UUID v4 string',
+                range: range,
+              },
+            ];
 
-          return { suggestions: suggestions };
-        },
-      });
+            return { suggestions: suggestions };
+          },
+        });
+
+      // Store provider reference for cleanup
+      providersRef.current.push(completionProvider);
     }
 
     // Set theme to match the UI
