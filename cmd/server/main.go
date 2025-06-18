@@ -2,6 +2,7 @@ package main
 
 // Standard library + third‑party imports
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -12,8 +13,9 @@ import (
 	httpApi "github.com/cedricziel/mel-agent/internal/api"
 	"github.com/cedricziel/mel-agent/internal/db"
 	"github.com/cedricziel/mel-agent/internal/injector"
-	"github.com/cedricziel/mel-agent/internal/runs"
 	"github.com/cedricziel/mel-agent/internal/triggers"
+	"github.com/cedricziel/mel-agent/pkg/api"
+	"github.com/cedricziel/mel-agent/pkg/execution"
 	"github.com/cedricziel/mel-agent/pkg/plugin"
 )
 
@@ -33,13 +35,27 @@ func main() {
 		plugin.Register(p)
 	}
 
+	// initialize MEL instance for durable workflow execution
+	mel := api.NewMel()
+
+	// initialize durable workflow execution engine
+	httpApi.InitializeWorkflowEngine(db.DB, mel)
+
+	// start durable workflow workers
+	workerConfig := execution.DefaultWorkerConfig()
+	worker := execution.NewWorker(db.DB, mel, workerConfig)
+	go func() {
+		if err := worker.Start(context.Background()); err != nil {
+			log.Printf("Workflow worker error: %v", err)
+		}
+	}()
+
 	// start trigger scheduler engine
 	scheduler := triggers.NewEngine()
 	scheduler.Start()
 
-	// start run processor to execute enqueued workflows
-	runner := runs.NewRunner()
-	runner.Start()
+	// Note: Legacy runner disabled since we dropped agent_runs table
+	// The new durable workflow execution system handles all workflow processing
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)

@@ -22,7 +22,8 @@
       "Bash(npx cypress run:*)",
       "Bash(pnpm test:*)",
       "Bash(pnpm lint:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(go get:*)"
     ],
     "deny": []
   },

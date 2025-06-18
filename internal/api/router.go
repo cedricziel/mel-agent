@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -13,9 +14,22 @@ import (
 	"github.com/cedricziel/mel-agent/internal/plugin"
 	"github.com/cedricziel/mel-agent/pkg/api"
 	_ "github.com/cedricziel/mel-agent/pkg/credentials" // Register credential definitions
+	"github.com/cedricziel/mel-agent/pkg/execution"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
+
+// Global workflow execution engine instance
+var (
+	workflowEngine  execution.ExecutionEngine
+	workflowHandler *WorkflowRunsHandler
+)
+
+// InitializeWorkflowEngine initializes the workflow execution engine
+func InitializeWorkflowEngine(database *sql.DB, mel api.Mel) {
+	workflowEngine = execution.NewDurableExecutionEngine(database, mel, "api-server")
+	workflowHandler = NewWorkflowRunsHandler(database, workflowEngine)
+}
 
 // Handler returns a router with API routes mounted.
 func Handler() http.Handler {
@@ -97,14 +111,18 @@ func Handler() http.Handler {
 	r.Get("/node-types/{type}/parameters/{parameter}/options", getDynamicOptionsHandler)
 	// WebSocket for collaborative updates
 	r.Get("/ws/agents/{agentID}", wsHandler)
-	// Create a run via trigger or API
-	r.Post("/agents/{agentID}/runs", createRunHandler)
-	// Test-run an agent workflow
-	r.Post("/agents/{agentID}/runs/test", testRunHandler)
-	// List past runs
-	r.Get("/agents/{agentID}/runs", listRunsHandler)
-	// Get specific run details
-	r.Get("/agents/{agentID}/runs/{runID}", getRunHandler)
+	// Workflow Runs - Durable Execution System
+	r.Get("/workflow-runs", listWorkflowRunsHandler)
+	r.Post("/workflow-runs", createWorkflowRunHandler)
+	r.Get("/workflow-runs/{runID}", getWorkflowRunHandler)
+	r.Post("/workflow-runs/{runID}/control", controlWorkflowRunHandler) // pause/resume/cancel
+	r.Post("/workflow-runs/{runID}/steps/{stepID}/retry", retryWorkflowStepHandler)
+
+	// Legacy agent runs compatibility (redirect to workflow runs)
+	r.Post("/agents/{agentID}/runs", createAgentRunHandler)
+	r.Post("/agents/{agentID}/runs/test", testAgentRunHandler)
+	r.Get("/agents/{agentID}/runs", listAgentRunsHandler)
+	r.Get("/agents/{agentID}/runs/{runID}", getAgentRunHandler)
 	// Fetch latest version (graph) for an agent
 	r.Get("/agents/{agentID}/versions/latest", getLatestAgentVersionHandler)
 	// Execute a single node with provided input data (stub implementation)
@@ -123,6 +141,96 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(v)
+}
+
+// Workflow execution handler functions
+func listWorkflowRunsHandler(w http.ResponseWriter, r *http.Request) {
+	if workflowHandler == nil {
+		http.Error(w, "Workflow engine not initialized", http.StatusInternalServerError)
+		return
+	}
+	workflowHandler.listWorkflowRuns(w, r)
+}
+
+func createWorkflowRunHandler(w http.ResponseWriter, r *http.Request) {
+	if workflowHandler == nil {
+		http.Error(w, "Workflow engine not initialized", http.StatusInternalServerError)
+		return
+	}
+	workflowHandler.createWorkflowRun(w, r)
+}
+
+func getWorkflowRunHandler(w http.ResponseWriter, r *http.Request) {
+	if workflowHandler == nil {
+		http.Error(w, "Workflow engine not initialized", http.StatusInternalServerError)
+		return
+	}
+	workflowHandler.getWorkflowRun(w, r)
+}
+
+func controlWorkflowRunHandler(w http.ResponseWriter, r *http.Request) {
+	if workflowHandler == nil {
+		http.Error(w, "Workflow engine not initialized", http.StatusInternalServerError)
+		return
+	}
+	workflowHandler.controlWorkflowRun(w, r)
+}
+
+func retryWorkflowStepHandler(w http.ResponseWriter, r *http.Request) {
+	if workflowHandler == nil {
+		http.Error(w, "Workflow engine not initialized", http.StatusInternalServerError)
+		return
+	}
+	workflowHandler.retryWorkflowStep(w, r)
+}
+
+// Legacy agent runs handlers (redirecting to workflow runs)
+func createAgentRunHandler(w http.ResponseWriter, r *http.Request) {
+	// Extract agent ID from URL
+	agentIDStr := chi.URLParam(r, "agentID")
+	agentID, err := uuid.Parse(agentIDStr)
+	if err != nil {
+		http.Error(w, "Invalid agent ID", http.StatusBadRequest)
+		return
+	}
+
+	// Parse request body
+	var legacyReq map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&legacyReq); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	// Convert to new workflow run format
+	req := CreateWorkflowRunRequest{
+		AgentID:   agentID,
+		InputData: legacyReq,
+	}
+
+	// Marshal and create new request
+	reqJSON, _ := json.Marshal(req)
+	r.Body = io.NopCloser(strings.NewReader(string(reqJSON)))
+
+	createWorkflowRunHandler(w, r)
+}
+
+func testAgentRunHandler(w http.ResponseWriter, r *http.Request) {
+	createAgentRunHandler(w, r) // Same as create for now
+}
+
+func listAgentRunsHandler(w http.ResponseWriter, r *http.Request) {
+	// Extract agent ID from URL and add as query parameter
+	agentIDStr := chi.URLParam(r, "agentID")
+	q := r.URL.Query()
+	q.Set("agent_id", agentIDStr)
+	r.URL.RawQuery = q.Encode()
+
+	listWorkflowRunsHandler(w, r)
+}
+
+func getAgentRunHandler(w http.ResponseWriter, r *http.Request) {
+	// runID is already in the URL path, just redirect
+	getWorkflowRunHandler(w, r)
 }
 
 // listExtensionsHandler returns the catalog of registered plugins (GoPlugins and MCP servers).
