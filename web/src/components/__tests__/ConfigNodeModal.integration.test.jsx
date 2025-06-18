@@ -4,7 +4,20 @@ import axios from 'axios';
 import BuilderPage from '../../pages/BuilderPage';
 
 // Mock all the dependencies
-vi.mock('axios');
+vi.mock('axios', () => ({
+  default: {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
+    create: vi.fn(() => ({
+      get: vi.fn(),
+      post: vi.fn(),
+      put: vi.fn(),
+      delete: vi.fn(),
+    })),
+  },
+}));
 vi.mock('../../hooks/useWebSocket', () => ({
   useWebSocket: () => ({
     broadcastNodeChange: vi.fn(),
@@ -25,7 +38,7 @@ vi.mock('../../hooks/useAutoLayout', () => ({
   }),
 }));
 
-const mockedAxios = vi.mocked(axios);
+const mockedAxios = axios;
 
 // Mock ReactFlow
 vi.mock('reactflow', () => ({
