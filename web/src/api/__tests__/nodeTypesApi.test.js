@@ -45,7 +45,7 @@ describe('nodeTypesApi', () => {
   });
 
   describe('getNodeTypes with filtering', () => {
-    it('should call API with type filter for single type', async () => {
+    it('should call API with kind filter for single kind', async () => {
       const modelNodes = [
         { type: 'openai_model', category: 'Configuration' },
         { type: 'anthropic_model', category: 'Configuration' }
@@ -58,12 +58,12 @@ describe('nodeTypesApi', () => {
       const result = await nodeTypesApi.getNodeTypes('model');
 
       expect(mockedAxios.get).toHaveBeenCalledWith(
-        '/api/node-types?type=model'
+        '/api/node-types?kind=model'
       );
       expect(result).toEqual(modelNodes);
     });
 
-    it('should call API with type filter for multiple types', async () => {
+    it('should call API with kind filter for multiple kinds', async () => {
       const filteredNodes = [
         { type: 'agent', category: 'Core' },
         { type: 'openai_model', category: 'Configuration' },
@@ -76,7 +76,7 @@ describe('nodeTypesApi', () => {
       const result = await nodeTypesApi.getNodeTypes(['action', 'model']);
 
       expect(mockedAxios.get).toHaveBeenCalledWith(
-        '/api/node-types?type=action%2Cmodel'
+        '/api/node-types?kind=action%2Cmodel'
       );
       expect(result).toEqual(filteredNodes);
     });

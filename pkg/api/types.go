@@ -108,6 +108,7 @@ type NodeType struct {
 	Label      string                `json:"label"`
 	Icon       string                `json:"icon,omitempty"`
 	Category   string                `json:"category"`
+	Kinds      []NodeKind            `json:"kinds,omitempty"`
 	EntryPoint bool                  `json:"entry_point,omitempty"`
 	Branching  bool                  `json:"branching,omitempty"`
 	Parameters []ParameterDefinition `json:"parameters,omitempty"`

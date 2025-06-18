@@ -158,7 +158,9 @@ func (m *melImpl) ListNodeTypes() []NodeType {
 	defer m.mu.RUnlock()
 	result := make([]NodeType, 0, len(m.definitions))
 	for _, def := range m.definitions {
-		result = append(result, def.Meta())
+		meta := def.Meta()
+		meta.Kinds = GetNodeKinds(def)
+		result = append(result, meta)
 	}
 	return result
 }

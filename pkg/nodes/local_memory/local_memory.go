@@ -5,7 +5,12 @@ import (
 )
 
 // LocalMemoryNode represents a local memory configuration node
+// It implements both ActionNode and MemoryNode interfaces
 type LocalMemoryNode struct{}
+
+// Ensure LocalMemoryNode implements both ActionNode and MemoryNode
+var _ api.ActionNode = (*LocalMemoryNode)(nil)
+var _ api.MemoryNode = (*LocalMemoryNode)(nil)
 
 // Meta returns the node type metadata
 func (n *LocalMemoryNode) Meta() api.NodeType {
@@ -40,6 +45,24 @@ func (n *LocalMemoryNode) Initialize(mel api.Mel) error {
 func (n *LocalMemoryNode) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[any]) (*api.Envelope[any], error) {
 	// Config nodes typically don't execute, they provide configuration
 	return envelope, nil
+}
+
+// Store saves data to memory (MemoryNode interface)
+func (n *LocalMemoryNode) Store(ctx api.ExecutionContext, node api.Node, key string, data any) error {
+	// TODO: Implement actual memory storage
+	return nil
+}
+
+// Retrieve gets data from memory (MemoryNode interface)
+func (n *LocalMemoryNode) Retrieve(ctx api.ExecutionContext, node api.Node, key string) (any, error) {
+	// TODO: Implement actual memory retrieval
+	return nil, nil
+}
+
+// Search performs semantic search in memory (MemoryNode interface)
+func (n *LocalMemoryNode) Search(ctx api.ExecutionContext, node api.Node, query string, limit int) ([]api.MemoryResult, error) {
+	// TODO: Implement actual memory search
+	return []api.MemoryResult{}, nil
 }
 
 func init() {

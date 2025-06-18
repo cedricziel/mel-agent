@@ -6,15 +6,15 @@ import axios from 'axios';
 export const nodeTypesApi = {
   /**
    * Get node types with optional filtering
-   * @param {string|string[]} types - Filter by node type category (action, model, memory, trigger, tools)
+   * @param {string|string[]} kinds - Filter by node kind (action, model, memory, trigger, tool)
    * @returns {Promise<Array>} Node type definitions
    */
-  async getNodeTypes(types = null) {
+  async getNodeTypes(kinds = null) {
     let url = '/api/node-types';
 
-    if (types) {
-      const typeFilter = Array.isArray(types) ? types.join(',') : types;
-      url += `?type=${encodeURIComponent(typeFilter)}`;
+    if (kinds) {
+      const kindFilter = Array.isArray(kinds) ? kinds.join(',') : kinds;
+      url += `?kind=${encodeURIComponent(kindFilter)}`;
     }
 
     const response = await axios.get(url);

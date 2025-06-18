@@ -5,7 +5,12 @@ import (
 )
 
 // OpenAIModelNode represents an OpenAI model configuration node
+// It implements both ActionNode and ModelNode interfaces
 type OpenAIModelNode struct{}
+
+// Ensure OpenAIModelNode implements both ActionNode and ModelNode
+var _ api.ActionNode = (*OpenAIModelNode)(nil)
+var _ api.ModelNode = (*OpenAIModelNode)(nil)
 
 // Meta returns the node type metadata
 func (n *OpenAIModelNode) Meta() api.NodeType {
@@ -39,6 +44,13 @@ func (n *OpenAIModelNode) Initialize(mel api.Mel) error {
 func (n *OpenAIModelNode) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[any]) (*api.Envelope[any], error) {
 	// Config nodes typically don't execute, they provide configuration
 	return envelope, nil
+}
+
+// InteractWith handles model interaction with given input (ModelNode interface)
+func (n *OpenAIModelNode) InteractWith(ctx api.ExecutionContext, node api.Node, input string, options map[string]any) (string, error) {
+	// TODO: Implement actual OpenAI API interaction
+	// For now, return a placeholder response
+	return "OpenAI model response: " + input, nil
 }
 
 func init() {

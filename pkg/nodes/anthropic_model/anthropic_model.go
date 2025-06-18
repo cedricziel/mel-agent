@@ -5,7 +5,12 @@ import (
 )
 
 // AnthropicModelNode represents an Anthropic model configuration node
+// It implements both ActionNode and ModelNode interfaces
 type AnthropicModelNode struct{}
+
+// Ensure AnthropicModelNode implements both ActionNode and ModelNode
+var _ api.ActionNode = (*AnthropicModelNode)(nil)
+var _ api.ModelNode = (*AnthropicModelNode)(nil)
 
 // Meta returns the node type metadata
 func (n *AnthropicModelNode) Meta() api.NodeType {
@@ -39,6 +44,13 @@ func (n *AnthropicModelNode) Initialize(mel api.Mel) error {
 func (n *AnthropicModelNode) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[any]) (*api.Envelope[any], error) {
 	// Config nodes typically don't execute, they provide configuration
 	return envelope, nil
+}
+
+// InteractWith handles model interaction with given input (ModelNode interface)
+func (n *AnthropicModelNode) InteractWith(ctx api.ExecutionContext, node api.Node, input string, options map[string]any) (string, error) {
+	// TODO: Implement actual Anthropic API interaction
+	// For now, return a placeholder response
+	return "Anthropic model response: " + input, nil
 }
 
 func init() {
