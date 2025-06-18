@@ -41,18 +41,22 @@ func main() {
 	// initialize durable workflow execution engine
 	httpApi.InitializeWorkflowEngine(db.DB, mel)
 
+	// create cancellable context for clean shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	// start durable workflow workers
 	workerConfig := execution.DefaultWorkerConfig()
 	worker := execution.NewWorker(db.DB, mel, workerConfig)
 	go func() {
-		if err := worker.Start(context.Background()); err != nil {
+		if err := worker.Start(ctx); err != nil {
 			log.Printf("Workflow worker error: %v", err)
 		}
 	}()
 
 	// start trigger scheduler engine
 	scheduler := triggers.NewEngine()
-	scheduler.Start()
+	scheduler.Start(ctx)
 
 	// Note: Legacy runner disabled since we dropped agent_runs table
 	// The new durable workflow execution system handles all workflow processing
