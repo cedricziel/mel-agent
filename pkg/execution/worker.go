@@ -11,6 +11,7 @@ import (
 
 	"github.com/cedricziel/mel-agent/pkg/api"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 // Worker represents a workflow execution worker
@@ -465,14 +466,8 @@ func (w *Worker) areStepDependenciesReady(step *WorkflowStep) (bool, error) {
 		SELECT COUNT(*) FROM workflow_steps 
 		WHERE id = ANY($1) AND status = 'completed'`
 
-	// Convert UUID slice to interface{} slice for query
-	deps := make([]interface{}, len(step.DependsOn))
-	for i, dep := range step.DependsOn {
-		deps[i] = dep
-	}
-
 	var completedCount int
-	row := w.db.QueryRowContext(w.ctx, query, deps)
+	row := w.db.QueryRowContext(w.ctx, query, pq.Array(step.DependsOn))
 	if err := row.Scan(&completedCount); err != nil {
 		return false, err
 	}
