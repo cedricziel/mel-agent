@@ -17,15 +17,23 @@ export const nodeTypesApi = {
       url += `?kind=${encodeURIComponent(kindFilter)}`;
     }
 
-    const response = await axios.get(url);
-    return response.data;
+    try {
+      const response = await axios.get(url);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to fetch node types: ${error.message}`);
+    }
   },
 
   /**
    * Get all node types (convenience method)
    */
   async getAllNodeTypes() {
-    const response = await axios.get('/api/node-types');
-    return response.data;
+    try {
+      const response = await axios.get('/api/node-types');
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to fetch all node types: ${error.message}`);
+    }
   },
 };
