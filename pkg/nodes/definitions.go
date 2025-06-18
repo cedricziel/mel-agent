@@ -3,6 +3,7 @@ package nodes
 // Register all builder node definitions by blank-importing their packages.
 import (
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/agent"
+	_ "github.com/cedricziel/mel-agent/pkg/nodes/anthropic_model"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/baserow"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/code"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/db_query"
@@ -15,12 +16,14 @@ import (
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/if_node"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/inject"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/llm"
+	_ "github.com/cedricziel/mel-agent/pkg/nodes/local_memory"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/log"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/manual_trigger"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/memory"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/merge"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/model"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/noop"
+	_ "github.com/cedricziel/mel-agent/pkg/nodes/openai_model"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/random"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/schedule"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/script"
@@ -35,5 +38,6 @@ import (
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/webhook"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/workflow_call"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/workflow_return"
+	_ "github.com/cedricziel/mel-agent/pkg/nodes/workflow_tools"
 	_ "github.com/cedricziel/mel-agent/pkg/nodes/workflow_trigger"
 )

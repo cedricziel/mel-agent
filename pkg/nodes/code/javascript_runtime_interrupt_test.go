@@ -24,7 +24,7 @@ func TestJavaScriptRuntime_Execute_ContextCancellation(t *testing.T) {
 	t.Run("should interrupt VM execution on context cancellation", func(t *testing.T) {
 		// Create a context that will be cancelled
 		ctx, cancel := context.WithCancel(context.Background())
-		
+
 		// Code that would run for a long time without interruption
 		longRunningCode := `
 			let count = 0;
@@ -75,7 +75,7 @@ func TestJavaScriptRuntime_Execute_ContextCancellation(t *testing.T) {
 		code := `return 42;`
 
 		result, err := runtime.Execute(ctx, code, execContext)
-		
+
 		// Should get an error due to context cancellation
 		assert.Error(t, err)
 		assert.Nil(t, result)
@@ -84,11 +84,11 @@ func TestJavaScriptRuntime_Execute_ContextCancellation(t *testing.T) {
 
 	t.Run("should complete normally when context is not cancelled", func(t *testing.T) {
 		ctx := context.Background()
-		
+
 		code := `return input.data.value * 2;`
 
 		result, err := runtime.Execute(ctx, code, execContext)
-		
+
 		require.NoError(t, err)
 		assert.Equal(t, int64(84), result) // 42 * 2
 	})
@@ -97,7 +97,7 @@ func TestJavaScriptRuntime_Execute_ContextCancellation(t *testing.T) {
 		// Create a context with a very short timeout
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 		defer cancel()
-		
+
 		// Code that takes longer than the timeout
 		slowCode := `
 			// Simulate some work
@@ -109,14 +109,14 @@ func TestJavaScriptRuntime_Execute_ContextCancellation(t *testing.T) {
 		`
 
 		result, err := runtime.Execute(ctx, slowCode, execContext)
-		
+
 		// Should get an error due to timeout
 		assert.Error(t, err)
 		assert.Nil(t, result)
 		// Error should indicate cancellation or timeout
-		assert.True(t, 
+		assert.True(t,
 			err.Error() == "JavaScript execution cancelled: context deadline exceeded" ||
-			err.Error() == "execution error: Error: execution cancelled",
+				err.Error() == "execution error: Error: execution cancelled",
 			"Expected cancellation error, got: %v", err)
 	})
 }
@@ -135,7 +135,7 @@ func TestJavaScriptRuntime_Execute_NonBlockingSends(t *testing.T) {
 
 	t.Run("should not block when context is cancelled during panic recovery", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
-		
+
 		// Code that will cause a panic
 		panicCode := `throw new Error("intentional panic");`
 
