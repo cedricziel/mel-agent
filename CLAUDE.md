@@ -35,5 +35,21 @@ AI Agents SaaS platform with Go backend and React frontend. This is a monorepo t
 - Our goal is to create a well-tested project. Always be mindful of creating reasonably well-sized components and testing them. Create e2e tests with Cypress where applicable
 - Remember to keep components at a reasonable size and add new tests for new components and functionality
 
+## API Endpoints
+
+### Node Types API
+- **Get all node types**: `GET /api/node-types`
+- **Filter by kind**: `GET /api/node-types?kind=model,memory,action,tool,trigger`
+- **Single kind**: `GET /api/node-types?kind=model`
+
+#### Node Kinds
+- `action` - Can execute as workflow steps (default for all nodes)
+- `model` - Provides AI model interaction capabilities
+- `memory` - Offers memory storage and retrieval
+- `tool` - Enables tool execution capabilities  
+- `trigger` - Can initiate workflow execution
+
+Nodes can implement multiple kinds (e.g., OpenAI model has kinds: `["action", "model"]`).
+
 ## Development Guidelines
 - When committing code via git, never mention claude

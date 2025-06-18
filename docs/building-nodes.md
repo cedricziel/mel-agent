@@ -6,13 +6,14 @@ This guide explains how to create custom node types for the MEL Agent platform. 
 
 1. [Quick Start](#quick-start)
 2. [Node Architecture](#node-architecture)
-3. [Creating a Node](#creating-a-node)
-4. [Parameter Definitions](#parameter-definitions)
-5. [Envelope-Based Execution](#envelope-based-execution)
-6. [Platform Utilities (Mel Interface)](#platform-utilities-mel-interface)
-7. [Advanced Features](#advanced-features)
-8. [Testing Your Node](#testing-your-node)
-9. [Best Practices](#best-practices)
+3. [Node Kinds and Interfaces](#node-kinds-and-interfaces)
+4. [Creating a Node](#creating-a-node)
+5. [Parameter Definitions](#parameter-definitions)
+6. [Envelope-Based Execution](#envelope-based-execution)
+7. [Platform Utilities (Mel Interface)](#platform-utilities-mel-interface)
+8. [Advanced Features](#advanced-features)
+9. [Testing Your Node](#testing-your-node)
+10. [Best Practices](#best-practices)
 
 ## Quick Start
 
@@ -38,7 +39,7 @@ func (helloDefinition) Meta() api.NodeType {
     }
 }
 
-func (d helloDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+func (d helloDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[any]) (*api.Envelope[any], error) {
     name := "World"
     if n, ok := node.Data["name"].(string); ok && n != "" {
         name = n
@@ -46,7 +47,7 @@ func (d helloDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node
 
     result := envelope.Clone()
     result.Trace = envelope.Trace.Next(node.ID)
-    result.Data = map[string]interface{}{
+    result.Data = map[string]any{
         "message": "Hello, " + name + "!",
     }
     
@@ -81,6 +82,112 @@ Nodes are registered globally using `api.RegisterNodeDefinition()` in the `init(
 ### 3. Package Organization
 Each node type should live in its own package under `pkg/nodes/[type]/`.
 
+## Node Kinds and Interfaces
+
+MEL Agent uses a **kind-based system** where nodes can implement multiple capabilities through different interfaces. This allows for versatile nodes that can serve multiple purposes.
+
+### Available Node Kinds
+
+1. **`action`** - Can execute as workflow steps (all nodes implement this by default)
+2. **`model`** - Provides AI model interaction capabilities
+3. **`memory`** - Offers memory storage and retrieval
+4. **`tool`** - Enables tool execution capabilities
+5. **`trigger`** - Can initiate workflow execution
+
+### Node Kind Interfaces
+
+#### ActionNode (Default)
+All nodes are action nodes by default, implementing `NodeDefinition`:
+```go
+type ActionNode interface {
+    NodeDefinition
+    // ExecuteEnvelope is inherited from NodeDefinition
+}
+```
+
+#### ModelNode
+For AI model interaction capabilities:
+```go
+type ModelNode interface {
+    NodeDefinition
+    InteractWith(ctx ExecutionContext, node Node, input string, options map[string]any) (string, error)
+}
+```
+
+#### MemoryNode
+For memory storage and retrieval:
+```go
+type MemoryNode interface {
+    NodeDefinition
+    Store(ctx ExecutionContext, node Node, key string, data any) error
+    Retrieve(ctx ExecutionContext, node Node, key string) (any, error)
+    Search(ctx ExecutionContext, node Node, query string, limit int) ([]MemoryResult, error)
+}
+```
+
+#### ToolNode
+For tool execution capabilities:
+```go
+type ToolNode interface {
+    NodeDefinition
+    CallTool(ctx ExecutionContext, node Node, toolName string, parameters map[string]any) (any, error)
+    ListTools(ctx ExecutionContext, node Node) ([]ToolDefinition, error)
+}
+```
+
+#### TriggerNode
+For workflow initiation:
+```go
+type TriggerNode interface {
+    NodeDefinition
+    StartListening(ctx ExecutionContext, node Node) error
+    StopListening(ctx ExecutionContext, node Node) error
+}
+```
+
+### Multi-Kind Node Example
+
+A node can implement multiple interfaces to support different kinds:
+
+```go
+type OpenAIModelNode struct{}
+
+// Ensure it implements both interfaces
+var _ api.ActionNode = (*OpenAIModelNode)(nil)
+var _ api.ModelNode = (*OpenAIModelNode)(nil)
+
+// ActionNode implementation (ExecuteEnvelope from NodeDefinition)
+func (n *OpenAIModelNode) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[any]) (*api.Envelope[any], error) {
+    // Can be used as a workflow step
+    return envelope, nil
+}
+
+// ModelNode implementation
+func (n *OpenAIModelNode) InteractWith(ctx api.ExecutionContext, node api.Node, input string, options map[string]any) (string, error) {
+    // Can be used as a model provider
+    return "OpenAI response: " + input, nil
+}
+```
+
+This node will have `kinds: ["action", "model"]` and can be used both as a workflow step and as a model provider for agent configurations.
+
+### API Filtering by Kind
+
+The `/api/node-types` endpoint supports filtering by kind:
+
+```bash
+# Get all model nodes
+GET /api/node-types?kind=model
+
+# Get multiple kinds
+GET /api/node-types?kind=model,memory,tool
+
+# Get all nodes
+GET /api/node-types
+```
+
+Each node's metadata includes a `kinds` array indicating its capabilities.
+
 ## Creating a Node
 
 ### Step 1: Set up the package structure
@@ -111,13 +218,13 @@ func (yourNodeDefinition) Meta() api.NodeType {
     }
 }
 
-func (d yourNodeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+func (d yourNodeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[any]) (*api.Envelope[any], error) {
     // Your execution logic here
     result := envelope.Clone()
     result.Trace = envelope.Trace.Next(node.ID)
     
     // Process data and set result
-    result.Data = map[string]interface{}{
+    result.Data = map[string]any{
         "processed": true,
     }
     
@@ -219,7 +326,7 @@ api.NewEnumParameter("database", "Database", []string{}, true).
 Then implement the `DynamicOptionsProvider` interface:
 
 ```go
-func (d yourNodeDefinition) GetDynamicOptions(ctx api.ExecutionContext, parameterName string, dependencies map[string]interface{}) ([]api.OptionChoice, error) {
+func (d yourNodeDefinition) GetDynamicOptions(ctx api.ExecutionContext, parameterName string, dependencies map[string]any) ([]api.OptionChoice, error) {
     if parameterName == "database" {
         // Fetch databases from your connection
         return []api.OptionChoice{
@@ -245,7 +352,7 @@ type Envelope[T any] struct {
     DataType  string                `json:"dataType"`
     Data      T                     `json:"data"`
     Trace     Trace                 `json:"trace"`
-    Variables map[string]interface{} `json:"variables,omitempty"`
+    Variables map[string]any `json:"variables,omitempty"`
 }
 ```
 
@@ -258,7 +365,7 @@ type Envelope[T any] struct {
 ### Basic Envelope Processing
 
 ```go
-func (d yourNodeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+func (d yourNodeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[any]) (*api.Envelope[any], error) {
     // Always clone the input envelope
     result := envelope.Clone()
     
@@ -281,7 +388,7 @@ func (d yourNodeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.N
 Envelopes can carry variables that persist across the workflow:
 
 ```go
-func (d yourNodeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+func (d yourNodeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[any]) (*api.Envelope[any], error) {
     result := envelope.Clone()
     result.Trace = envelope.Trace.Next(node.ID)
     
@@ -292,7 +399,7 @@ func (d yourNodeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.N
     
     // Set variables for downstream nodes
     if result.Variables == nil {
-        result.Variables = make(map[string]interface{})
+        result.Variables = make(map[string]any)
     }
     result.Variables["processed_at"] = time.Now()
     
@@ -305,7 +412,7 @@ func (d yourNodeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.N
 Return descriptive errors for debugging:
 
 ```go
-func (d yourNodeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+func (d yourNodeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[any]) (*api.Envelope[any], error) {
     config, ok := node.Data["config"].(string)
     if !ok || config == "" {
         return nil, api.NewNodeError(node.ID, "your_node", "config parameter is required")
@@ -329,7 +436,7 @@ The `ctx.Mel` interface provides access to platform utilities:
 ### HTTP Requests
 
 ```go
-func (d yourNodeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
+func (d yourNodeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[any]) (*api.Envelope[any], error) {
     url := node.Data["url"].(string)
     
     httpReq := api.HTTPRequest{
@@ -349,7 +456,7 @@ func (d yourNodeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.N
     
     result := envelope.Clone()
     result.Trace = envelope.Trace.Next(node.ID)
-    result.Data = map[string]interface{}{
+    result.Data = map[string]any{
         "status": response.StatusCode,
         "body":   string(response.Body),
     }
@@ -364,7 +471,7 @@ func (d yourNodeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.N
 // Call another workflow
 req := api.WorkflowCallRequest{
     TargetWorkflowID: targetID,
-    CallData:         map[string]interface{}{"input": "data"},
+    CallData:         map[string]any{"input": "data"},
     CallMode:         "sync",
     TimeoutSeconds:   30,
     SourceContext:    ctx,
@@ -437,7 +544,7 @@ api.NewStringParameter("email", "Email Address", true).
     WithValidators(
         api.ValidatorSpec{
             Type: "regex",
-            Params: map[string]interface{}{
+            Params: map[string]any{
                 "pattern": `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`,
             },
         },
@@ -471,16 +578,16 @@ func TestYourNodeDefinition_ExecuteEnvelope(t *testing.T) {
     node := api.Node{
         ID:   "test-node",
         Type: "your_node",
-        Data: map[string]interface{}{
+        Data: map[string]any{
             "param1": "value1",
         },
     }
     
-    envelope := &api.Envelope[interface{}]{
+    envelope := &api.Envelope[any]{
         ID:       "test-envelope",
         IssuedAt: time.Now(),
         Version:  1,
-        Data:     map[string]interface{}{"input": "test"},
+        Data:     map[string]any{"input": "test"},
         Trace:    api.NewTrace(),
     }
     
@@ -492,7 +599,7 @@ func TestYourNodeDefinition_ExecuteEnvelope(t *testing.T) {
     assert.Equal(t, envelope.Version+1, result.Version)
     
     // Test your specific output
-    output, ok := result.Data.(map[string]interface{})
+    output, ok := result.Data.(map[string]any)
     require.True(t, ok)
     assert.Equal(t, "expected_value", output["key"])
 }
