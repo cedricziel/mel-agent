@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # Load balancer
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    volumes:
+      - ./nginx.scale.conf:/etc/nginx/nginx.conf:ro
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # API Server (can be scaled with --scale api=N)
+  api:
+    build: .
+    command: ./server api-server --port 8080
+    scale: 1  # Default: 1 API server instance
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/melagent?sslmode=disable
+      - PORT=8080
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Worker instances (can be scaled with --scale worker=N)
+  worker:
+    build: .
+    command: ./server worker --token ${WORKER_TOKEN:-worker-dev-token} --server http://nginx --concurrency 5
+    scale: 2  # Default: 2 worker instances
+    environment:
+      - MEL_WORKER_TOKEN=${WORKER_TOKEN:-worker-dev-token}
+      - MEL_SERVER_URL=http://nginx
+    depends_on:
+      nginx:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "server worker"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Shared database
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=melagent
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data_scale:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d melagent"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data_scale:
+
+networks:
+  default:
+    name: mel-agent-scale
