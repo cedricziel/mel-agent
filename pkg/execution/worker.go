@@ -434,11 +434,11 @@ func (w *Worker) loadWorkflowRun(runID uuid.UUID) (*WorkflowRun, error) {
 }
 
 func (w *Worker) loadWorkflowStep(stepID uuid.UUID) (*WorkflowStep, error) {
-	query := `SELECT id, run_id, node_id, node_type, status FROM workflow_steps WHERE id = $1`
+	query := `SELECT id, run_id, node_id, node_type, status, depends_on FROM workflow_steps WHERE id = $1`
 	row := w.db.QueryRowContext(w.ctx, query, stepID)
 
 	var step WorkflowStep
-	if err := row.Scan(&step.ID, &step.RunID, &step.NodeID, &step.NodeType, &step.Status); err != nil {
+	if err := row.Scan(&step.ID, &step.RunID, &step.NodeID, &step.NodeType, &step.Status, pq.Array(&step.DependsOn)); err != nil {
 		return nil, err
 	}
 	return &step, nil
