@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"time"
 
@@ -87,6 +88,35 @@ func getEnvOrDefault(key, defaultValue string) string {
 	return defaultValue
 }
 
+// createMergedAPIHandler creates a handler that combines main API and workflow engine routes
+// This solves the Chi routing issue where mounting multiple handlers on the same path fails
+func createMergedAPIHandler(mainAPIHandler, workflowHandler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Create a custom router that tries main API first, then workflow handler
+		// We'll create a response recorder to see if the main API handled the request
+		recorder := httptest.NewRecorder()
+
+		// Try the main API handler first
+		mainAPIHandler.ServeHTTP(recorder, r)
+
+		// If main API handled it (not 404), use that response
+		if recorder.Code != http.StatusNotFound {
+			// Copy the response from recorder to actual response writer
+			for key, values := range recorder.Header() {
+				for _, value := range values {
+					w.Header().Add(key, value)
+				}
+			}
+			w.WriteHeader(recorder.Code)
+			w.Write(recorder.Body.Bytes())
+			return
+		}
+
+		// If main API returned 404, try the workflow handler
+		workflowHandler.ServeHTTP(w, r)
+	})
+}
+
 func startServer(port string) {
 	// connect database (fatal on error)
 	db.Connect()
@@ -140,11 +170,9 @@ func startServer(port string) {
 	// webhook entrypoint for external events (e.g., GitHub, Stripe) – accept all HTTP methods
 	r.HandleFunc("/webhooks/{provider}/{triggerID}", httpApi.WebhookHandler)
 
-	// mount api routes under /api
-	r.Mount("/api", httpApi.Handler())
-
-	// mount workflow engine routes under /api (with dependency injection)
-	r.Mount("/api", workflowEngineFactory(workflowEngine))
+	// Create a merged API handler that includes both main API and workflow engine routes
+	apiHandler := createMergedAPIHandler(httpApi.Handler(), workflowEngineFactory(workflowEngine))
+	r.Mount("/api", apiHandler)
 
 	log.Printf("server listening on :%s", port)
 	if err := http.ListenAndServe(":"+port, r); err != nil {

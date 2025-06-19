@@ -86,4 +86,11 @@ Nodes can implement multiple kinds (e.g., OpenAI model has kinds: `["action", "m
 - We are using testcontainers to test database dependencies
 - Database tests rely on our migration system via `testutil.SetupPostgresWithMigrations()`
 - Integration tests cover worker registration, work claiming, lifecycle management
+- Router integration tests verify all API endpoints are accessible
 - Use existing testutil functions for database setup in tests
+
+## Router Architecture
+- Server uses a merged API handler approach to combine main API and workflow engine routes
+- Fixed Chi router conflict where multiple r.Mount("/api", ...) calls would override each other
+- `createMergedAPIHandler()` function implements fallback routing: tries main API first, then workflow engine
+- Comprehensive router integration tests ensure all endpoints remain accessible
