@@ -20,13 +20,13 @@ func TestWebhookTriggerPlugin_Meta(t *testing.T) {
 	assert.Equal(t, "webhook", meta.ID)
 	assert.Equal(t, "0.1.0", meta.Version)
 	assert.Contains(t, meta.Categories, "trigger")
-	
+
 	// Check that expected parameters exist
 	paramNames := make(map[string]bool)
 	for _, param := range meta.Params {
 		paramNames[param.Name] = true
 	}
-	
+
 	assert.True(t, paramNames["method"])
 	assert.True(t, paramNames["secret"])
 	assert.True(t, paramNames["mode"])
@@ -36,7 +36,7 @@ func TestWebhookTriggerPlugin_OnTrigger_Integration(t *testing.T) {
 	ctx := context.Background()
 	_, testDB, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
 	defer cleanup()
-	
+
 	oldDB := db.DB
 	db.DB = testDB
 	defer func() { db.DB = oldDB }()
@@ -124,7 +124,7 @@ func TestScheduleTriggerPlugin_Meta(t *testing.T) {
 	assert.Equal(t, "schedule", meta.ID)
 	assert.Equal(t, "0.1.0", meta.Version)
 	assert.Contains(t, meta.Categories, "trigger")
-	
+
 	// Check for cron parameter
 	found := false
 	for _, param := range meta.Params {
@@ -142,7 +142,7 @@ func TestScheduleTriggerPlugin_OnTrigger_Integration(t *testing.T) {
 	ctx := context.Background()
 	_, testDB, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
 	defer cleanup()
-	
+
 	oldDB := db.DB
 	db.DB = testDB
 	defer func() { db.DB = oldDB }()
@@ -222,7 +222,7 @@ func TestTriggerPlugins_ErrorHandling(t *testing.T) {
 	ctx := context.Background()
 	_, testDB, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
 	defer cleanup()
-	
+
 	oldDB := db.DB
 	db.DB = testDB
 	defer func() { db.DB = oldDB }()
@@ -230,7 +230,7 @@ func TestTriggerPlugins_ErrorHandling(t *testing.T) {
 	t.Run("webhook plugin handles invalid payload", func(t *testing.T) {
 		plugin := webhookTriggerPlugin{}
 		ctx := context.Background()
-		
+
 		_, err := plugin.OnTrigger(ctx, "invalid-payload")
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid payload")
@@ -239,7 +239,7 @@ func TestTriggerPlugins_ErrorHandling(t *testing.T) {
 	t.Run("schedule plugin handles invalid payload", func(t *testing.T) {
 		plugin := scheduleTriggerPlugin{}
 		ctx := context.Background()
-		
+
 		_, err := plugin.OnTrigger(ctx, "invalid-payload")
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid payload")
@@ -248,25 +248,25 @@ func TestTriggerPlugins_ErrorHandling(t *testing.T) {
 	t.Run("webhook plugin handles agent without version", func(t *testing.T) {
 		plugin := webhookTriggerPlugin{}
 		ctx := context.Background()
-		
+
 		userID := uuid.New()
 		triggerID := uuid.New()
 		agentID := uuid.New()
-		
+
 		// Insert test user first
 		_, err := testDB.Exec(`
 			INSERT INTO users (id, email, created_at) 
 			VALUES ($1, $2, NOW())
 		`, userID, "test3@example.com")
 		require.NoError(t, err)
-		
+
 		// Insert agent WITHOUT latest_version_id (NULL)
 		_, err = testDB.Exec(`
 			INSERT INTO agents (id, user_id, name) 
 			VALUES ($1, $2, $3)
 		`, agentID, userID, "Test Agent Without Version")
 		require.NoError(t, err)
-		
+
 		// Insert trigger with agent that has no version
 		triggerConfig := map[string]interface{}{"method": "POST"}
 		configJSON, _ := json.Marshal(triggerConfig)

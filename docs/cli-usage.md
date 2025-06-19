@@ -23,6 +23,21 @@ Start the API server with embedded local workers:
 ./server server -p 8080            # Short flag version
 ```
 
+### API Server Command
+
+Start the API server without embedded workers (for horizontal scaling):
+
+```bash
+./server api-server                # Start API server only (port 8080)
+./server api-server --port 9090    # Custom port
+./server api-server -p 8080        # Short flag version
+```
+
+This mode is ideal for:
+- **Horizontal scaling**: Run multiple API servers behind a load balancer
+- **Separation of concerns**: Dedicate machines to API serving vs. workflow processing
+- **Geographic distribution**: API servers in multiple regions with centralized workers
+
 ### Worker Command
 
 Start a remote worker process:
@@ -184,9 +199,10 @@ source /etc/bash_completion.d/mel-agent
 After installation, you can use tab completion:
 
 ```bash
-./server <TAB>          # Shows: server, worker, completion, help
-./server server --<TAB>  # Shows: --port, --help
-./server worker --<TAB>  # Shows: --token, --server, --id, --concurrency, --help
+./server <TAB>              # Shows: server, api-server, worker, completion, help
+./server server --<TAB>     # Shows: --port, --help
+./server api-server --<TAB> # Shows: --port, --help
+./server worker --<TAB>     # Shows: --token, --server, --id, --concurrency, --help
 ```
 
 ## Advanced Usage
@@ -264,6 +280,7 @@ If you're upgrading from the old manual CLI, here are the changes:
 |-------------|-------------|
 | `./server` | `./server server` |
 | `./server worker -token X` | `./server worker --token X` |
+| No equivalent | `./server api-server` |
 | No equivalent | `./server --help` |
 | No equivalent | `./server completion bash` |
 
