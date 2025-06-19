@@ -15,6 +15,7 @@ AI Agents SaaS platform with Go backend and React frontend. This is a monorepo t
 
 ### Backend (Go)
 - **Run server**: `go run ./cmd/server server` (includes local workers)
+- **Run API server only**: `go run ./cmd/server api-server` (no embedded workers)
 - **Run remote worker**: `go run ./cmd/server worker --token <token>`
 - **Run with Docker**: `docker compose up --build`
 - **Test**: `go test ./...` (includes testcontainer integration tests)

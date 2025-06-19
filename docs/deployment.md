@@ -84,7 +84,7 @@ version: '3.8'
 services:
   api:
     build: .
-    command: ./server server
+    command: ./server api-server  # Use api-server for horizontal scaling
     ports:
       - "8080:8080"
     environment:
@@ -98,6 +98,8 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    deploy:
+      replicas: 2  # Scale API servers independently
 
   worker:
     build: .
@@ -109,7 +111,7 @@ services:
       - api
     restart: unless-stopped
     deploy:
-      replicas: 3
+      replicas: 3  # Scale workers independently
 
   db:
     image: postgres:15-alpine
@@ -153,7 +155,7 @@ spec:
       containers:
       - name: api
         image: mel-agent:latest
-        command: ["./server", "server"]
+        command: ["./server", "api-server"]  # Use api-server for K8s scaling
         ports:
         - containerPort: 8080
         env:
@@ -265,9 +267,44 @@ worker:
 EOF
 ```
 
-## Scaling Workers
+## Horizontal Scaling
 
-### Horizontal Worker Scaling
+### API Server Scaling
+
+MEL Agent supports horizontal scaling by separating API servers from workers:
+
+```bash
+# Traditional: Single server with embedded workers
+./server server  # API + embedded workers on port 8080
+
+# Horizontal scaling: Separate API servers and workers
+./server api-server --port 8080  # API server only (no workers)
+./server api-server --port 8081  # Additional API server
+./server worker --token $TOKEN   # Dedicated worker process
+./server worker --token $TOKEN   # Additional worker process
+```
+
+#### Load Balancer Setup
+
+```nginx
+# nginx.conf
+upstream mel_api {
+    server api1.example.com:8080;
+    server api2.example.com:8080;
+    server api3.example.com:8080;
+}
+
+server {
+    listen 80;
+    location / {
+        proxy_pass http://mel_api;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+#### Worker Scaling
 
 ```bash
 # Start multiple workers on same machine

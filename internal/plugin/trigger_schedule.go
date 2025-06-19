@@ -38,12 +38,12 @@ func (scheduleTriggerPlugin) OnTrigger(ctx context.Context, payload interface{})
 	triggerID, _ := data["trigger_id"].(string)
 	agentID, _ := data["agent_id"].(string)
 	nodeID, _ := data["node_id"].(string)
-	
+
 	// Update last_checked timestamp
 	if _, err := db.DB.Exec(`UPDATE triggers SET last_checked = now() WHERE id = $1`, triggerID); err != nil {
 		log.Printf("schedule trigger update last_checked error: %v", err)
 	}
-	
+
 	// Fetch latest agent version
 	var versionID sql.NullString
 	if err := db.DB.QueryRow(`SELECT latest_version_id FROM agents WHERE id = $1`, agentID).Scan(&versionID); err != nil {
@@ -52,7 +52,7 @@ func (scheduleTriggerPlugin) OnTrigger(ctx context.Context, payload interface{})
 	if !versionID.Valid {
 		return nil, fmt.Errorf("schedule trigger: no version for agent %s", agentID)
 	}
-	
+
 	// Parse UUIDs
 	agentUUID, err := uuid.Parse(agentID)
 	if err != nil {
@@ -66,14 +66,14 @@ func (scheduleTriggerPlugin) OnTrigger(ctx context.Context, payload interface{})
 	if err != nil {
 		return nil, fmt.Errorf("invalid trigger_id: %w", err)
 	}
-	
+
 	// Build workflow input data
 	inputData := map[string]interface{}{
 		"triggerId":   triggerID,
 		"timestamp":   time.Now().UTC().Format(time.RFC3339),
 		"startNodeId": nodeID,
 	}
-	
+
 	// Create workflow run using durable execution system
 	runID := uuid.New()
 	workflowRun := &execution.WorkflowRun{
@@ -92,12 +92,12 @@ func (scheduleTriggerPlugin) OnTrigger(ctx context.Context, payload interface{})
 		},
 		TimeoutSeconds: 3600,
 	}
-	
+
 	// Insert workflow run
 	inputDataJSON, _ := json.Marshal(inputData)
 	variablesJSON, _ := json.Marshal(workflowRun.Variables)
 	retryPolicyJSON, _ := json.Marshal(workflowRun.RetryPolicy)
-	
+
 	query := `
 		INSERT INTO workflow_runs (
 			id, agent_id, version_id, trigger_id, status, input_data, 
@@ -105,13 +105,13 @@ func (scheduleTriggerPlugin) OnTrigger(ctx context.Context, payload interface{})
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9
 		)`
-	
+
 	if _, err := db.DB.ExecContext(ctx, query,
 		runID, agentUUID, versionUUID, triggerUUID, workflowRun.Status,
 		inputDataJSON, variablesJSON, workflowRun.TimeoutSeconds, retryPolicyJSON); err != nil {
 		return nil, fmt.Errorf("failed to create workflow run: %w", err)
 	}
-	
+
 	// Queue the run for execution
 	queueItemID := uuid.New()
 	queueQuery := `
@@ -120,13 +120,13 @@ func (scheduleTriggerPlugin) OnTrigger(ctx context.Context, payload interface{})
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7
 		)`
-	
+
 	payloadJSON, _ := json.Marshal(map[string]interface{}{})
 	if _, err := db.DB.ExecContext(ctx, queueQuery,
 		queueItemID, runID, "start_run", 5, time.Now(), 3, payloadJSON); err != nil {
 		return nil, fmt.Errorf("failed to queue workflow run: %w", err)
 	}
-	
+
 	return runID.String(), nil
 }
 

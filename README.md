@@ -201,6 +201,8 @@ pnpm format               # Format code
 ./server --help                                    # Show all commands and options
 ./server server --help                             # Show server-specific help
 ./server server --port 8080                        # Start API server with embedded workers
+./server api-server --help                         # Show api-server-specific help
+./server api-server --port 8080                    # Start API server only (no embedded workers)
 ./server worker --help                              # Show worker-specific help
 ./server worker --token <token>                     # Start remote worker (basic)
 ./server worker --token <token> \                   # Start remote worker (advanced)

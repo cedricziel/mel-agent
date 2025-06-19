@@ -62,6 +62,27 @@ The server will:
 	},
 }
 
+var apiServerCmd = &cobra.Command{
+	Use:   "api-server",
+	Short: "Start the API server only",
+	Long: `Start the API server without embedded workers.
+
+The api-server will:
+- Connect to PostgreSQL database and run migrations
+- Load and register node plugins
+- Start trigger scheduler
+- Serve API endpoints at /api/*
+- Handle webhooks at /webhooks/{provider}/{triggerID}
+- Provide health check at /health
+
+This mode is designed for horizontal scaling of API servers
+separate from worker processes.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		port := viper.GetString("server.port")
+		startAPIServer(port)
+	},
+}
+
 var workerCmd = &cobra.Command{
 	Use:   "worker",
 	Short: "Start a workflow worker",
@@ -89,11 +110,16 @@ The worker will:
 func init() {
 	// Add subcommands to root
 	rootCmd.AddCommand(serverCmd)
+	rootCmd.AddCommand(apiServerCmd)
 	rootCmd.AddCommand(workerCmd)
 
 	// Server command flags
 	serverCmd.Flags().StringP("port", "p", "8080", "Port to listen on")
 	viper.BindPFlag("server.port", serverCmd.Flags().Lookup("port"))
+
+	// API Server command flags (same as server)
+	apiServerCmd.Flags().StringP("port", "p", "8080", "Port to listen on")
+	viper.BindPFlag("server.port", apiServerCmd.Flags().Lookup("port"))
 
 	// Worker command flags
 	workerCmd.Flags().StringP("server", "s", "http://localhost:8080", "API server URL")
@@ -111,36 +137,34 @@ func init() {
 	workerCmd.MarkFlagRequired("token")
 }
 
-
-
 // initConfig initializes Viper configuration
 func initConfig() {
 	// Set config file name and paths
 	viper.SetConfigName("config")
 	viper.SetConfigType("yaml")
-	
+
 	// Add config file search paths
-	viper.AddConfigPath(".")                    // Current directory
-	viper.AddConfigPath("$HOME/.mel-agent")     // User home directory
-	viper.AddConfigPath("/etc/mel-agent")       // System-wide config
-	
+	viper.AddConfigPath(".")                // Current directory
+	viper.AddConfigPath("$HOME/.mel-agent") // User home directory
+	viper.AddConfigPath("/etc/mel-agent")   // System-wide config
+
 	// Environment variable configuration
-	viper.SetEnvPrefix("MEL")                   // Prefix for environment variables
-	viper.AutomaticEnv()                        // Automatically read env vars
-	
+	viper.SetEnvPrefix("MEL") // Prefix for environment variables
+	viper.AutomaticEnv()      // Automatically read env vars
+
 	// Support legacy environment variables for backward compatibility
 	viper.BindEnv("server.port", "PORT")
 	viper.BindEnv("worker.server", "MEL_SERVER_URL")
 	viper.BindEnv("worker.token", "MEL_WORKER_TOKEN")
 	viper.BindEnv("worker.id", "MEL_WORKER_ID")
 	viper.BindEnv("database.url", "DATABASE_URL")
-	
+
 	// Set defaults
 	viper.SetDefault("server.port", "8080")
 	viper.SetDefault("worker.server", "http://localhost:8080")
 	viper.SetDefault("worker.concurrency", 5)
 	viper.SetDefault("database.url", "postgres://postgres:postgres@localhost:5432/agentsaas?sslmode=disable")
-	
+
 	// Try to read config file (ignore if not found)
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
@@ -235,6 +259,78 @@ func startServer(port string) {
 	r.Mount("/api", apiHandler)
 
 	log.Printf("server listening on :%s", port)
+	if err := http.ListenAndServe(":"+port, r); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func startAPIServer(port string) {
+	// connect database (fatal on error)
+	db.Connect()
+
+	// load connection plugins from the database
+	plugin.RegisterConnectionPlugins()
+	// register node plugins via injector (core + builder)
+	for _, p := range injector.InitializeNodePlugins() {
+		plugin.Register(p)
+	}
+
+	// initialize MEL instance for durable workflow execution
+	mel := api.NewMel()
+
+	// create workflow engine factory function
+	workflowEngineFactory := httpApi.InitializeWorkflowEngine(db.DB, mel)
+
+	// create durable workflow execution engine
+	workflowEngine := execution.NewDurableExecutionEngine(db.DB, mel, "api-server")
+
+	// create cancellable context for clean shutdown
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// NOTE: No embedded workers started in api-server mode
+	log.Printf("Starting API server only (no embedded workers)")
+
+	// start trigger scheduler engine
+	scheduler := triggers.NewEngine()
+	scheduler.Start(ctx)
+
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
+
+	// health endpoint
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"ok"}`))
+	})
+
+	// webhook entrypoint for external events (e.g., GitHub, Stripe) – accept all HTTP methods
+	r.HandleFunc("/webhooks/{provider}/{triggerID}", httpApi.WebhookHandler)
+
+	// Create an efficient API handler that routes without response buffering
+	// Route based on path analysis since we know the exact route patterns
+	mainAPIHandler := httpApi.Handler()
+	workflowHandler := workflowEngineFactory(workflowEngine)
+
+	apiHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Chi Mount passes the full path including /api prefix
+		// Workflow engine only handles /api/workflow-runs* routes
+		// Everything else goes to main API - this is more efficient than buffering
+		if strings.HasPrefix(r.URL.Path, "/api/workflow-runs") {
+			// Strip /api prefix for workflow handler since it expects /workflow-runs
+			r.URL.Path = strings.TrimPrefix(r.URL.Path, "/api")
+			workflowHandler.ServeHTTP(w, r)
+		} else {
+			// Strip /api prefix for main API handler as well
+			r.URL.Path = strings.TrimPrefix(r.URL.Path, "/api")
+			mainAPIHandler.ServeHTTP(w, r)
+		}
+	})
+
+	r.Mount("/api", apiHandler)
+
+	log.Printf("API server listening on :%s (no embedded workers)", port)
 	if err := http.ListenAndServe(":"+port, r); err != nil {
 		log.Fatal(err)
 	}

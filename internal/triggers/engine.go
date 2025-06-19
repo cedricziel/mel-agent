@@ -175,7 +175,7 @@ func (e *Engine) fireTrigger(triggerID, agentID, nodeID string) {
 	if _, err := db.DB.Exec(`UPDATE triggers SET last_checked = now() WHERE id = $1`, triggerID); err != nil {
 		log.Printf("trigger engine update last_checked error: %v", err)
 	}
-	
+
 	// get latest version for agent
 	var versionID sql.NullString
 	if err := db.DB.QueryRow(`SELECT latest_version_id FROM agents WHERE id = $1`, agentID).Scan(&versionID); err != nil {
@@ -186,7 +186,7 @@ func (e *Engine) fireTrigger(triggerID, agentID, nodeID string) {
 		log.Printf("trigger engine no version for agent %s", agentID)
 		return
 	}
-	
+
 	// Parse UUIDs
 	agentUUID, err := uuid.Parse(agentID)
 	if err != nil {
@@ -203,14 +203,14 @@ func (e *Engine) fireTrigger(triggerID, agentID, nodeID string) {
 		log.Printf("trigger engine invalid trigger_id %s: %v", triggerID, err)
 		return
 	}
-	
+
 	// Build workflow input data
 	inputData := map[string]interface{}{
 		"triggerId":   triggerID,
 		"timestamp":   time.Now().UTC().Format(time.RFC3339),
 		"startNodeId": nodeID,
 	}
-	
+
 	// Create workflow run using durable execution system
 	runID := uuid.New()
 	workflowRun := &execution.WorkflowRun{
@@ -229,12 +229,12 @@ func (e *Engine) fireTrigger(triggerID, agentID, nodeID string) {
 		},
 		TimeoutSeconds: 3600,
 	}
-	
+
 	// Insert workflow run
 	inputDataJSON, _ := json.Marshal(inputData)
 	variablesJSON, _ := json.Marshal(workflowRun.Variables)
 	retryPolicyJSON, _ := json.Marshal(workflowRun.RetryPolicy)
-	
+
 	query := `
 		INSERT INTO workflow_runs (
 			id, agent_id, version_id, trigger_id, status, input_data, 
@@ -242,7 +242,7 @@ func (e *Engine) fireTrigger(triggerID, agentID, nodeID string) {
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9
 		)`
-	
+
 	ctx := context.Background()
 	if _, err := db.DB.ExecContext(ctx, query,
 		runID, agentUUID, versionUUID, triggerUUID, workflowRun.Status,
@@ -250,7 +250,7 @@ func (e *Engine) fireTrigger(triggerID, agentID, nodeID string) {
 		log.Printf("trigger engine failed to create workflow run: %v", err)
 		return
 	}
-	
+
 	// Queue the run for execution
 	queueItemID := uuid.New()
 	queueQuery := `
@@ -259,13 +259,13 @@ func (e *Engine) fireTrigger(triggerID, agentID, nodeID string) {
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7
 		)`
-	
+
 	payloadJSON, _ := json.Marshal(map[string]interface{}{})
 	if _, err := db.DB.ExecContext(ctx, queueQuery,
 		queueItemID, runID, "start_run", 5, time.Now(), 3, payloadJSON); err != nil {
 		log.Printf("trigger engine failed to queue workflow run: %v", err)
 		return
 	}
-	
+
 	log.Printf("trigger engine fired %s, created workflow run %s", triggerID, runID)
 }

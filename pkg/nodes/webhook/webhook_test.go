@@ -140,7 +140,7 @@ func TestWebhookDefinition_ExecuteEnvelope(t *testing.T) {
 		assert.NotSame(t, envelope, result)
 	})
 
-	// Note: Nil envelope handling test removed since current implementation 
+	// Note: Nil envelope handling test removed since current implementation
 	// doesn't handle nil envelopes gracefully (calls envelope.Clone() on nil)
 
 	t.Run("preserves envelope metadata", func(t *testing.T) {
@@ -249,7 +249,7 @@ func TestWebhookDefinition_ExecuteEnvelope(t *testing.T) {
 
 func TestWebhookDefinition_Initialize(t *testing.T) {
 	def := webhookDefinition{}
-	
+
 	// Create a mock Mel instance (since Initialize takes api.Mel interface)
 	// For now, we can pass nil since the implementation doesn't use it
 	err := def.Initialize(nil)
@@ -258,10 +258,10 @@ func TestWebhookDefinition_Initialize(t *testing.T) {
 
 func TestWebhookDefinition_Interfaces(t *testing.T) {
 	def := webhookDefinition{}
-	
+
 	// Test that it implements api.NodeDefinition
 	var _ api.NodeDefinition = def
-	
+
 	// This test ensures the type assertion in the file works
 	assert.NotNil(t, def)
 }
@@ -270,15 +270,15 @@ func TestWebhookDefinition_Registration(t *testing.T) {
 	// This test verifies that the webhook definition is properly registered
 	// We can't easily test the init() function directly, but we can verify
 	// that the definition has the expected properties for registration
-	
+
 	def := webhookDefinition{}
 	meta := def.Meta()
-	
+
 	// Verify it has the required properties for a trigger node
 	assert.Equal(t, "webhook", meta.Type)
 	assert.True(t, meta.EntryPoint)
 	assert.Equal(t, "Triggers", meta.Category)
-	
+
 	// Verify it can be executed (basic smoke test)
 	ctx := api.ExecutionContext{}
 	node := api.Node{ID: "test", Type: "webhook", Data: map[string]interface{}{}}
@@ -293,7 +293,7 @@ func TestWebhookDefinition_Registration(t *testing.T) {
 			Attempt: 1,
 		},
 	}
-	
+
 	result, err := def.ExecuteEnvelope(ctx, node, envelope)
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
