@@ -15,12 +15,24 @@ AI Agents SaaS platform with Go backend and React frontend. This is a monorepo t
 
 ### Backend (Go)
 - **Run server**: `go run ./cmd/server server` (includes local workers)
-- **Run remote worker**: `go run ./cmd/server worker -token <token>`
+- **Run remote worker**: `go run ./cmd/server worker --token <token>`
 - **Run with Docker**: `docker compose up --build`
 - **Test**: `go test ./...` (includes testcontainer integration tests)
 - **Build**: `go build ./cmd/server`
 - **Lint**: `go vet ./...`
-- **Run go fmt from time**: `go fmt ./...`
+- **Format**: `go fmt ./...`
+
+### CLI Help & Configuration
+- **Show help**: `go run ./cmd/server --help`
+- **Server help**: `go run ./cmd/server server --help`
+- **Worker help**: `go run ./cmd/server worker --help`
+- **Shell completion**: `go run ./cmd/server completion bash`
+
+### Advanced CLI Usage
+- **Custom port**: `go run ./cmd/server server --port 9090`
+- **Worker with options**: `go run ./cmd/server worker --token <token> --concurrency 10 --id worker-custom`
+- **Config file**: Create `config.yaml` (see config.yaml.example)
+- **Environment vars**: `PORT=8080 MEL_WORKER_TOKEN=abc123 go run ./cmd/server server`
 
 ### Frontend (React)
 - **Install dependencies**: `cd web && pnpm install`

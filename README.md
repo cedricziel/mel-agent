@@ -125,7 +125,7 @@ docker compose up --build
 ```bash
 # Backend (includes local workers)
 export DATABASE_URL="postgres://postgres:postgres@localhost:5432/melagent?sslmode=disable"
-go run ./cmd/server
+go run ./cmd/server server
 
 # Frontend
 cd web
@@ -133,7 +133,7 @@ pnpm install && pnpm dev
 
 # Optional: Remote Workers (for scaling)
 export MEL_WORKER_TOKEN="your-worker-token"
-go run ./cmd/server worker -server http://localhost:8080
+go run ./cmd/server worker --token your-worker-token --server http://localhost:8080
 ```
 
 ## 📖 Documentation
@@ -188,18 +188,29 @@ We welcome contributions! MEL Agent is built by the community, for the community
 go test ./...              # Run tests (includes testcontainers)
 go vet ./...              # Lint
 go build ./cmd/server     # Build
+go fmt ./...              # Format code
 
 # Frontend
 cd web
 pnpm lint                 # Lint
 pnpm build                # Build
 pnpm test                 # Test (coming soon)
+pnpm format               # Format code
 
-# Workers
-go run ./cmd/server server                    # Start API server with local workers
-go run ./cmd/server worker -token <token>     # Start remote worker
-go run ./cmd/server worker -id worker-1 \     # Start named remote worker
-  -token <token> -concurrency 10              # with custom concurrency
+# Server & Workers
+./server --help                                    # Show all commands and options
+./server server --help                             # Show server-specific help
+./server server --port 8080                        # Start API server with embedded workers
+./server worker --help                              # Show worker-specific help
+./server worker --token <token>                     # Start remote worker (basic)
+./server worker --token <token> \                   # Start remote worker (advanced)
+  --id worker-1 --concurrency 10 \
+  --server https://api.example.com
+
+# Configuration Examples
+PORT=8080 ./server server                           # Use environment variables
+./server server --port 9090                         # Override with flags
+./server completion bash > /etc/bash_completion.d/mel-agent  # Install shell completion
 ```
 
 ## 📜 License
