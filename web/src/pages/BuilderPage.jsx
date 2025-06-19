@@ -18,6 +18,7 @@ import CustomEdge from '../components/CustomEdge';
 
 function BuilderPage({ agentId }) {
   // Use the new workflow state hook with auto-persistence
+  const workflowState = useWorkflowState(agentId);
   const {
     nodes,
     edges,
@@ -39,7 +40,7 @@ function BuilderPage({ agentId }) {
     deployDraft,
     saveVersion,
     clearError,
-  } = useWorkflowState(agentId);
+  } = workflowState;
 
   // UI state
   const [modalOpen, setModalOpen] = useState(false);
@@ -135,7 +136,7 @@ function BuilderPage({ agentId }) {
     handleConnectNodes,
     handleGetWorkflow,
     handleModalAddNode,
-  } = useNodeManagement(broadcastNodeChange);
+  } = useNodeManagement(agentId, broadcastNodeChange, workflowState);
 
   // Open config selection dialog
   const openConfigDialog = useCallback((agentNodeId, configType, handleId) => {
@@ -395,7 +396,10 @@ function BuilderPage({ agentId }) {
     }
     setTesting(true);
     try {
-      await axios.post(`/api/agents/${agentId}/runs/test`);
+      await axios.post('/api/workflow-runs', {
+        agent_id: agentId,
+        input_data: {}
+      });
     } catch (err) {
       console.error('test run failed', err);
       alert('Test run failed');
@@ -619,7 +623,7 @@ function BuilderPage({ agentId }) {
         isOpen={modalOpen}
         categories={categories}
         onClose={() => setModalOpen(false)}
-        onAddNode={handleModalAddNode}
+        onAddNode={(nodeType) => handleModalAddNode(nodeType, nodeDefs)}
       />
 
       {/* Node editing modal */}

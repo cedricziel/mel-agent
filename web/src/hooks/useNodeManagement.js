@@ -1,11 +1,10 @@
 import { useCallback } from 'react';
-import { useWorkflowState } from './useWorkflowState';
 
 /**
  * Custom hook for managing node and edge operations in the workflow builder
  * Handles CRUD operations, agent configuration creation, and broadcasting changes
  */
-export function useNodeManagement(broadcastNodeChange) {
+export function useNodeManagement(agentId, broadcastNodeChange, workflowState) {
   const {
     nodes,
     edges,
@@ -14,7 +13,7 @@ export function useNodeManagement(broadcastNodeChange) {
     deleteNode,
     createEdge,
     deleteEdge,
-  } = useWorkflowState();
+  } = workflowState;
 
   // Handle node deletion with edge cleanup
   const handleNodeDelete = useCallback(

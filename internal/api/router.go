@@ -4,8 +4,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -13,9 +14,34 @@ import (
 	"github.com/cedricziel/mel-agent/internal/plugin"
 	"github.com/cedricziel/mel-agent/pkg/api"
 	_ "github.com/cedricziel/mel-agent/pkg/credentials" // Register credential definitions
+	"github.com/cedricziel/mel-agent/pkg/execution"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
+
+// InitializeWorkflowEngine returns a factory function that creates an http.Handler
+// with workflow engine dependency injection for better testability and isolation
+func InitializeWorkflowEngine(database *sql.DB, mel api.Mel) func(execution.ExecutionEngine) http.Handler {
+	return func(engine execution.ExecutionEngine) http.Handler {
+		handler := NewWorkflowRunsHandler(database, engine)
+		return createWorkflowRouter(handler)
+	}
+}
+
+// createWorkflowRouter creates a sub-router with workflow-specific routes
+func createWorkflowRouter(handler *WorkflowRunsHandler) http.Handler {
+	r := chi.NewRouter()
+
+	// Workflow Runs - Durable Execution System
+	r.Get("/workflow-runs", handler.listWorkflowRuns)
+	r.Post("/workflow-runs", handler.createWorkflowRun)
+	r.Get("/workflow-runs/{runID}", handler.getWorkflowRun)
+	r.Post("/workflow-runs/{runID}/control", handler.controlWorkflowRun)
+	r.Post("/workflow-runs/{runID}/steps/{stepID}/retry", handler.retryWorkflowStep)
+
+	return r
+}
 
 // Handler returns a router with API routes mounted.
 func Handler() http.Handler {
@@ -97,14 +123,19 @@ func Handler() http.Handler {
 	r.Get("/node-types/{type}/parameters/{parameter}/options", getDynamicOptionsHandler)
 	// WebSocket for collaborative updates
 	r.Get("/ws/agents/{agentID}", wsHandler)
-	// Create a run via trigger or API
-	r.Post("/agents/{agentID}/runs", createRunHandler)
-	// Test-run an agent workflow
-	r.Post("/agents/{agentID}/runs/test", testRunHandler)
-	// List past runs
-	r.Get("/agents/{agentID}/runs", listRunsHandler)
-	// Get specific run details
-	r.Get("/agents/{agentID}/runs/{runID}", getRunHandler)
+	// Note: Workflow runs endpoints are now handled via the factory pattern
+	// Use InitializeWorkflowEngine() to create the workflow handler and mount it
+
+	// Worker management endpoints for remote workers
+	r.Route("/workers", func(r chi.Router) {
+		r.Post("/", registerWorker)
+		r.Put("/{workerID}/heartbeat", updateWorkerHeartbeat)
+		r.Delete("/{workerID}", unregisterWorker)
+		r.Post("/{workerID}/claim-work", claimWork)
+		r.Post("/{workerID}/complete-work/{itemID}", completeWork)
+	})
+
+	// Legacy agent runs endpoints removed - use /api/workflow-runs instead
 	// Fetch latest version (graph) for an agent
 	r.Get("/agents/{agentID}/versions/latest", getLatestAgentVersionHandler)
 	// Execute a single node with provided input data (stub implementation)
@@ -731,7 +762,7 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Read raw body
-	rawBody, err := ioutil.ReadAll(r.Body)
+	rawBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 		return
@@ -886,165 +917,6 @@ func getLatestAgentVersionHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// createRunHandler starts a new run for an agent triggered by external event or scheduler.
-func createRunHandler(w http.ResponseWriter, r *http.Request) {
-	agentID := chi.URLParam(r, "agentID")
-	var in struct {
-		VersionID   string      `json:"versionId"`
-		StartNodeID string      `json:"startNodeId"`
-		Input       interface{} `json:"input"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
-		return
-	}
-	// Verify version belongs to agent
-	var exists bool
-	if err := db.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM agent_versions WHERE id = $1 AND agent_id = $2)`, in.VersionID, agentID).Scan(&exists); err != nil || !exists {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid versionId"})
-		return
-	}
-	// Prepare payload for run
-	payload := map[string]interface{}{
-		"versionId":   in.VersionID,
-		"startNodeId": in.StartNodeID,
-		"input":       in.Input,
-	}
-	raw, err := json.Marshal(payload)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-	runID := uuid.New().String()
-	if _, err := db.DB.Exec(`INSERT INTO agent_runs (id, agent_id, payload) VALUES ($1, $2, $3::jsonb)`, runID, agentID, string(raw)); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-	writeJSON(w, http.StatusCreated, map[string]string{"runId": runID})
-}
-
-// testRunHandler executes the entire agent workflow sequentially.
-func testRunHandler(w http.ResponseWriter, r *http.Request) {
-	agentID := chi.URLParam(r, "agentID")
-	// Fetch latest version ID
-	var versionID sql.NullString
-	if err := db.DB.QueryRow(`SELECT latest_version_id FROM agents WHERE id = $1`, agentID).Scan(&versionID); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-	if !versionID.Valid {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "no version available for agent"})
-		return
-	}
-	// Load graph and default params
-	var graphRaw, defaultRaw []byte
-	if err := db.DB.QueryRow(
-		`SELECT graph, default_params FROM agent_versions WHERE id = $1`, versionID.String,
-	).Scan(&graphRaw, &defaultRaw); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-	// Unmarshal full graph (nodes + edges) for rendering
-	var graphData interface{}
-	if err := json.Unmarshal(graphRaw, &graphData); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-	// Unmarshal nodes sequence for execution order
-	var graphStruct struct {
-		Nodes []api.Node `json:"nodes"`
-	}
-	if err := json.Unmarshal(graphRaw, &graphStruct); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-	// Unmarshal default params into initial data
-	var defaultParams map[string]interface{}
-	if len(defaultRaw) > 0 {
-		if err := json.Unmarshal(defaultRaw, &defaultParams); err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-			return
-		}
-	} else {
-		defaultParams = map[string]interface{}{}
-	}
-	// Define execution payload with full graph and trace
-	type Item struct {
-		ID   string      `json:"id"`
-		Data interface{} `json:"data"`
-	}
-	type Step struct {
-		NodeID string `json:"nodeId"`
-		Input  []Item `json:"input"`
-		Output []Item `json:"output"`
-	}
-	type Payload struct {
-		RunID   string                 `json:"runId"`
-		Graph   interface{}            `json:"graph"`
-		Context map[string]interface{} `json:"context"`
-		Meta    map[string]interface{} `json:"meta"`
-		Trace   []Step                 `json:"trace"`
-	}
-	runID := uuid.NewString()
-	// Prepare initial payload
-	initialItem := Item{ID: uuid.NewString(), Data: defaultParams}
-	payload := Payload{
-		RunID:   runID,
-		Graph:   graphData,
-		Context: map[string]interface{}{},
-		Meta: map[string]interface{}{
-			"startTime": time.Now().UTC().Format(time.RFC3339),
-		},
-		Trace: []Step{},
-	}
-	currentItems := []Item{initialItem}
-	// Execute nodes in order
-	// Execute nodes in order, recording trace
-	for _, node := range graphStruct.Nodes {
-		// Broadcast node execution start
-		hub := GetHub(agentID)
-		if startMsg, err := json.Marshal(map[string]string{"type": "nodeExecution", "nodeId": node.ID, "phase": "start"}); err == nil {
-			hub.broadcast(startMsg)
-		}
-		inputItems := currentItems
-		var nextItems []Item
-		for _, item := range inputItems {
-			output, err := executeNodeLocal(agentID, node, item.Data)
-			if err != nil {
-				nextItems = append(nextItems, Item{ID: item.ID, Data: map[string]interface{}{"error": err.Error()}})
-			} else if output != nil {
-				nextItems = append(nextItems, Item{ID: item.ID, Data: output})
-			}
-		}
-		// Broadcast node execution end
-		if endMsg, err := json.Marshal(map[string]string{"type": "nodeExecution", "nodeId": node.ID, "phase": "end"}); err == nil {
-			hub.broadcast(endMsg)
-		}
-		// Append step to trace
-		payload.Trace = append(payload.Trace, Step{
-			NodeID: node.ID,
-			Input:  inputItems,
-			Output: nextItems,
-		})
-		// Prepare for next iteration
-		currentItems = nextItems
-		payload.Meta["lastNode"] = node.ID
-	}
-	// Persist run record
-	// Embed final items under meta
-	payload.Meta["finalItems"] = currentItems
-	raw, err := json.Marshal(payload)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-	if _, err := db.DB.Exec(`INSERT INTO agent_runs (id, agent_id, payload) VALUES ($1, $2, $3::jsonb)`, payload.RunID, agentID, string(raw)); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-	writeJSON(w, http.StatusOK, payload)
-}
-
 // executeNodeLocal invokes the node logic via the node definitions.
 func executeNodeLocal(agentID string, node api.Node, input interface{}) (interface{}, error) {
 	if def := api.FindDefinition(node.Type); def != nil {
@@ -1079,75 +951,6 @@ func executeNodeLocal(agentID string, node api.Node, input interface{}) (interfa
 	}
 	// Fallback: return input unchanged
 	return input, nil
-}
-
-// listRunsHandler returns a list of past runs for an agent.
-func listRunsHandler(w http.ResponseWriter, r *http.Request) {
-	agentID := chi.URLParam(r, "agentID")
-	rows, err := db.DB.Query(
-		`SELECT id, created_at FROM agent_runs WHERE agent_id = $1 ORDER BY created_at DESC`, agentID,
-	)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-	defer rows.Close()
-	type runMeta struct {
-		ID        string `json:"id"`
-		CreatedAt string `json:"created_at"`
-	}
-	var runs []runMeta
-	for rows.Next() {
-		var rm runMeta
-		var t sql.NullTime
-		if err := rows.Scan(&rm.ID, &t); err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-			return
-		}
-		if t.Valid {
-			rm.CreatedAt = t.Time.UTC().Format(time.RFC3339)
-		}
-		runs = append(runs, rm)
-	}
-	writeJSON(w, http.StatusOK, runs)
-}
-
-// getRunHandler returns the payload of a specific run.
-func getRunHandler(w http.ResponseWriter, r *http.Request) {
-	agentID := chi.URLParam(r, "agentID")
-	runID := chi.URLParam(r, "runID")
-	var payloadRaw []byte
-	err := db.DB.QueryRow(
-		`SELECT payload FROM agent_runs WHERE agent_id = $1 AND id = $2`, agentID, runID,
-	).Scan(&payloadRaw)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			writeJSON(w, http.StatusNotFound, map[string]string{"error": "run not found"})
-		} else {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		}
-		return
-	}
-	// Decode payload into a map to allow enriching with graph when absent
-	var payloadMap map[string]interface{}
-	if err := json.Unmarshal(payloadRaw, &payloadMap); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-	// If graph structure is not embedded, attach it from the agent_versions table
-	if _, hasGraph := payloadMap["graph"]; !hasGraph {
-		if ver, ok := payloadMap["versionId"].(string); ok && ver != "" {
-			var graphRaw []byte
-			// fetch the stored graph JSON
-			if err := db.DB.QueryRow(`SELECT graph FROM agent_versions WHERE id = $1`, ver).Scan(&graphRaw); err == nil {
-				var graph interface{}
-				if err2 := json.Unmarshal(graphRaw, &graph); err2 == nil {
-					payloadMap["graph"] = graph
-				}
-			}
-		}
-	}
-	writeJSON(w, http.StatusOK, payloadMap)
 }
 
 // --- Workflow API handlers ---
@@ -1933,4 +1736,278 @@ func deleteConnection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// Worker management API handlers
+
+// registerWorker handles worker registration
+func registerWorker(w http.ResponseWriter, r *http.Request) {
+	var worker execution.WorkflowWorker
+	if err := json.NewDecoder(r.Body).Decode(&worker); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid worker data"})
+		return
+	}
+
+	// Insert or update worker in database
+	query := `
+		INSERT INTO workflow_workers (
+			id, hostname, process_id, version, capabilities, status,
+			last_heartbeat, started_at, max_concurrent_steps,
+			current_step_count, total_steps_executed, total_execution_time_ms
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		ON CONFLICT (id) DO UPDATE SET
+			hostname = EXCLUDED.hostname,
+			process_id = EXCLUDED.process_id,
+			version = EXCLUDED.version,
+			capabilities = EXCLUDED.capabilities,
+			status = EXCLUDED.status,
+			last_heartbeat = EXCLUDED.last_heartbeat,
+			started_at = EXCLUDED.started_at,
+			max_concurrent_steps = EXCLUDED.max_concurrent_steps
+	`
+
+	_, err := db.DB.Exec(query,
+		worker.ID, worker.Hostname, worker.ProcessID, worker.Version,
+		pq.Array(worker.Capabilities), worker.Status, worker.LastHeartbeat,
+		worker.StartedAt, worker.MaxConcurrentSteps, worker.CurrentStepCount,
+		worker.TotalStepsExecuted, worker.TotalExecutionTimeMS,
+	)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to register worker"})
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, map[string]string{"id": worker.ID})
+}
+
+// updateWorkerHeartbeat handles worker heartbeat updates
+func updateWorkerHeartbeat(w http.ResponseWriter, r *http.Request) {
+	workerID := chi.URLParam(r, "workerID")
+
+	query := `UPDATE workflow_workers SET last_heartbeat = NOW(), status = 'idle' WHERE id = $1`
+	result, err := db.DB.Exec(query, workerID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to update heartbeat"})
+		return
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to check update result"})
+		return
+	}
+
+	if rowsAffected == 0 {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "worker not found"})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// unregisterWorker handles worker unregistration
+func unregisterWorker(w http.ResponseWriter, r *http.Request) {
+	workerID := chi.URLParam(r, "workerID")
+
+	query := `DELETE FROM workflow_workers WHERE id = $1`
+	result, err := db.DB.Exec(query, workerID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to unregister worker"})
+		return
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to check delete result"})
+		return
+	}
+
+	if rowsAffected == 0 {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "worker not found"})
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// claimWork handles work claiming by workers
+func claimWork(w http.ResponseWriter, r *http.Request) {
+	workerID := chi.URLParam(r, "workerID")
+	maxItems := 5 // default
+
+	if maxItemsStr := r.URL.Query().Get("max_items"); maxItemsStr != "" {
+		if parsed, err := strconv.Atoi(maxItemsStr); err == nil && parsed > 0 {
+			maxItems = parsed
+		}
+	}
+
+	// Begin transaction to atomically claim work
+	tx, err := db.DB.Begin()
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to start transaction"})
+		return
+	}
+	defer tx.Rollback()
+
+	// Select available work items
+	query := `
+		SELECT id, run_id, step_id, queue_type, priority, available_at, 
+		       created_at, attempt_count, max_attempts, payload
+		FROM workflow_queue 
+		WHERE claimed_at IS NULL 
+		  AND claimed_by IS NULL 
+		  AND available_at <= NOW()
+		ORDER BY priority DESC, created_at ASC
+		LIMIT $1
+		FOR UPDATE SKIP LOCKED
+	`
+
+	rows, err := tx.Query(query, maxItems)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to query work items"})
+		return
+	}
+	defer rows.Close()
+
+	var workItems []*execution.QueueItem
+	var claimedIDs []uuid.UUID
+
+	for rows.Next() {
+		var item execution.QueueItem
+		var payloadBytes []byte
+
+		err := rows.Scan(
+			&item.ID, &item.RunID, &item.StepID, &item.QueueType,
+			&item.Priority, &item.AvailableAt, &item.CreatedAt,
+			&item.AttemptCount, &item.MaxAttempts, &payloadBytes,
+		)
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to scan work item"})
+			return
+		}
+
+		// Parse payload if present
+		if len(payloadBytes) > 0 {
+			if err := json.Unmarshal(payloadBytes, &item.Payload); err != nil {
+				// Log error but continue
+				item.Payload = nil
+			}
+		}
+
+		workItems = append(workItems, &item)
+		claimedIDs = append(claimedIDs, item.ID)
+	}
+
+	if err := rows.Err(); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to iterate work items"})
+		return
+	}
+
+	// Claim the work items
+	if len(claimedIDs) > 0 {
+		claimQuery := `
+			UPDATE workflow_queue 
+			SET claimed_at = NOW(), claimed_by = $1, attempt_count = attempt_count + 1
+			WHERE id = ANY($2)
+		`
+		_, err = tx.Exec(claimQuery, workerID, pq.Array(claimedIDs))
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to claim work items"})
+			return
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to commit transaction"})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, workItems)
+}
+
+// completeWork handles work completion reporting
+func completeWork(w http.ResponseWriter, r *http.Request) {
+	workerID := chi.URLParam(r, "workerID")
+	itemIDStr := chi.URLParam(r, "itemID")
+
+	itemID, err := uuid.Parse(itemIDStr)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid item ID"})
+		return
+	}
+
+	var result execution.WorkResult
+	if err := json.NewDecoder(r.Body).Decode(&result); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid result data"})
+		return
+	}
+
+	// Begin transaction to handle work completion
+	tx, err := db.DB.Begin()
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to start transaction"})
+		return
+	}
+	defer tx.Rollback()
+
+	// Remove the completed work item from the queue
+	deleteQuery := `DELETE FROM workflow_queue WHERE id = $1 AND claimed_by = $2`
+	deleteResult, err := tx.Exec(deleteQuery, itemID, workerID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to delete work item"})
+		return
+	}
+
+	rowsAffected, err := deleteResult.RowsAffected()
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to check delete result"})
+		return
+	}
+
+	if rowsAffected == 0 {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "work item not found or not claimed by this worker"})
+		return
+	}
+
+	// If there are next steps to schedule, add them to the queue
+	if result.Success && len(result.NextSteps) > 0 {
+		for _, stepID := range result.NextSteps {
+			insertQuery := `
+				INSERT INTO workflow_queue (
+					id, run_id, step_id, queue_type, priority, available_at, created_at, attempt_count, max_attempts
+				) VALUES ($1, $2, $3, $4, 0, NOW(), NOW(), 0, 3)
+			`
+			_, err = tx.Exec(insertQuery, uuid.New(), nil, stepID, execution.QueueTypeExecuteStep)
+			if err != nil {
+				writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to schedule next steps"})
+				return
+			}
+		}
+	}
+
+	// If the work should be retried, re-queue it
+	if !result.Success && result.ShouldRetry {
+		retryDelay := time.Minute // default 1 minute
+		if result.RetryDelay != nil {
+			retryDelay = *result.RetryDelay
+		}
+
+		retryQuery := `
+			INSERT INTO workflow_queue (
+				id, run_id, step_id, queue_type, priority, available_at, created_at, attempt_count, max_attempts
+			) VALUES ($1, $2, $3, $4, 0, NOW() + INTERVAL '%d seconds', NOW(), 0, 3)
+		`
+		_, err = tx.Exec(fmt.Sprintf(retryQuery, int(retryDelay.Seconds())), uuid.New(), nil, itemID, execution.QueueTypeRetryStep)
+		if err != nil {
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to schedule retry"})
+			return
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to commit transaction"})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

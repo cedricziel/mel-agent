@@ -153,7 +153,7 @@ describe('Workflow Builder - Realistic Tests', () => {
 
   it('should switch to executions view', () => {
     // Mock executions API
-    cy.intercept('GET', '/api/agents/test-agent-1/runs', {
+    cy.intercept('GET', '/api/workflow-runs?agent_id=test-agent-1', {
       statusCode: 200,
       body: []
     }).as('getRuns')
@@ -170,7 +170,7 @@ describe('Workflow Builder - Realistic Tests', () => {
   })
 
   it('should handle test run', () => {
-    cy.intercept('POST', '/api/agents/test-agent-1/runs/test', {
+    cy.intercept('POST', '/api/workflow-runs', {
       statusCode: 200,
       body: { success: true }
     }).as('testRun')

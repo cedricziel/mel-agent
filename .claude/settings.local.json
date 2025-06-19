@@ -21,7 +21,12 @@
       "Bash(npm run test:*)",
       "Bash(npx cypress run:*)",
       "Bash(pnpm test:*)",
-      "Bash(pnpm lint:*)"
+      "Bash(pnpm lint:*)",
+      "Bash(curl:*)",
+      "Bash(go get:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(gh project list:*)",
+      "Bash(gh project view:*)"
     ],
     "deny": []
   },

@@ -31,18 +31,23 @@ func NewEngine() *Engine {
 }
 
 // Start begins the scheduler and watches for trigger changes.
-func (e *Engine) Start() {
+func (e *Engine) Start(ctx context.Context) {
 	e.scheduler.Start()
-	go e.watch()
+	go e.watch(ctx)
 }
 
 // watch polls the triggers table periodically to sync jobs.
-func (e *Engine) watch() {
+func (e *Engine) watch(ctx context.Context) {
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
 	e.sync()
-	for range ticker.C {
-		e.sync()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			e.sync()
+		}
 	}
 }
 

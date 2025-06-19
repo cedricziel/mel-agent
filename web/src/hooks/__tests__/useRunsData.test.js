@@ -38,10 +38,10 @@ describe('useRunsData', () => {
       if (url === '/api/node-types') {
         return Promise.resolve({ data: mockNodeDefs });
       }
-      if (url === `/api/agents/${mockAgentId}/runs`) {
+      if (url === `/api/workflow-runs?agent_id=${mockAgentId}`) {
         return Promise.resolve({ data: mockRuns });
       }
-      if (url === `/api/agents/${mockAgentId}/runs/run-1`) {
+      if (url === `/api/workflow-runs/run-1`) {
         return Promise.resolve({ data: mockRunDetails });
       }
       return Promise.reject(new Error('Unknown URL'));
@@ -79,7 +79,7 @@ describe('useRunsData', () => {
 
     await waitFor(() => {
       expect(mockedAxios.get).toHaveBeenCalledWith(
-        `/api/agents/${mockAgentId}/runs`
+        `/api/workflow-runs?agent_id=${mockAgentId}`
       );
       expect(result.current.runs).toEqual(mockRuns);
     });
@@ -89,7 +89,7 @@ describe('useRunsData', () => {
     renderHook(() => useRunsData(null));
 
     expect(mockedAxios.get).not.toHaveBeenCalledWith(
-      expect.stringContaining('/runs')
+      expect.stringContaining('workflow-runs?agent_id=')
     );
   });
 
@@ -106,7 +106,7 @@ describe('useRunsData', () => {
 
     await waitFor(() => {
       expect(mockedAxios.get).toHaveBeenCalledWith(
-        `/api/agents/${mockAgentId}/runs/run-1`
+        `/api/workflow-runs/run-1`
       );
       expect(result.current.selectedRunID).toBe('run-1');
       expect(result.current.runDetails).toEqual(mockRunDetails);
@@ -174,13 +174,13 @@ describe('useRunsData', () => {
       if (url === '/api/node-types') {
         return Promise.resolve({ data: mockNodeDefs });
       }
-      if (url === `/api/agents/${mockAgentId}/runs`) {
+      if (url === `/api/workflow-runs?agent_id=${mockAgentId}`) {
         return Promise.resolve({ data: mockRuns });
       }
-      if (url === `/api/agents/${mockAgentId}/runs/run-1`) {
+      if (url === `/api/workflow-runs/run-1`) {
         return Promise.resolve({ data: mockRunDetails });
       }
-      if (url === `/api/agents/${mockAgentId}/runs/run-2`) {
+      if (url === `/api/workflow-runs/run-2`) {
         return Promise.resolve({ data: { ...mockRunDetails, id: 'run-2' } });
       }
       return Promise.reject(new Error('Unknown URL'));
@@ -261,10 +261,10 @@ describe('useRunsData', () => {
       if (url === '/api/node-types') {
         return Promise.resolve({ data: mockNodeDefs });
       }
-      if (url === `/api/agents/${mockAgentId}/runs`) {
+      if (url === `/api/workflow-runs?agent_id=${mockAgentId}`) {
         return Promise.resolve({ data: mockRuns });
       }
-      if (url === `/api/agents/${mockAgentId}/runs/run-1`) {
+      if (url === `/api/workflow-runs/run-1`) {
         return Promise.resolve({ data: null });
       }
       return Promise.reject(new Error('Unknown URL'));

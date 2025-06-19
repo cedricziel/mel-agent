@@ -27,7 +27,10 @@ export default function TriggerNode({
         return;
       }
 
-      const response = await axios.post(`/api/agents/${agentId}/runs/test`);
+      const response = await axios.post('/api/workflow-runs', {
+        agent_id: agentId,
+        input_data: {}
+      });
       console.log('Manual trigger executed:', response.data);
 
       // Show visual feedback

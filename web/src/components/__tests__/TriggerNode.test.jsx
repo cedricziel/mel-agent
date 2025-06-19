@@ -142,7 +142,11 @@ describe('TriggerNode', () => {
     fireEvent.click(triggerButton);
 
     expect(axios.post).toHaveBeenCalledWith(
-      '/api/agents/test-agent-123/runs/test'
+      '/api/workflow-runs',
+      {
+        agent_id: 'test-agent-123',
+        input_data: {}
+      }
     );
   });
 

@@ -1,5 +1,6 @@
 import { useMemo, useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
+import { nodeTypesApi } from '../api/nodeTypesApi';
 import DefaultNode from '../components/DefaultNode';
 import AgentNode from '../components/AgentNode';
 import ModelNode from '../components/ModelNode';
@@ -51,9 +52,10 @@ export function useNodeTypes(
 
   // Load node definitions
   useEffect(() => {
-    axios
-      .get('/api/node-types')
-      .then((res) => setNodeDefs(res.data))
+    // Use the new API client that handles filtering and fallbacks
+    nodeTypesApi
+      .getAllNodeTypes()
+      .then((allNodeDefs) => setNodeDefs(allNodeDefs))
       .catch((err) => console.error('fetch node-types failed:', err));
   }, []);
 

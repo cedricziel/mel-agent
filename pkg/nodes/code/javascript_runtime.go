@@ -87,7 +87,7 @@ func (js *JavaScriptRuntime) Execute(ctx context.Context, code string, execConte
 			}
 			return
 		}
-		
+
 		// Non-blocking send to prevent goroutine leak
 		select {
 		case resultChan <- result:
