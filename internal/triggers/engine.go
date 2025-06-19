@@ -179,12 +179,7 @@ func (e *Engine) fireTrigger(triggerID, agentID, nodeID string) {
 
 // fireTriggerWithTransaction handles the trigger firing with proper transaction management.
 func (e *Engine) fireTriggerWithTransaction(triggerID, agentID, nodeID string) error {
-	// update last_checked timestamp
-	if _, err := db.DB.Exec(`UPDATE triggers SET last_checked = now() WHERE id = $1`, triggerID); err != nil {
-		return fmt.Errorf("failed to update last_checked timestamp: %w", err)
-	}
-
-	// get latest version for agent
+	// get latest version for agent (read-only operation, can be done outside transaction)
 	var versionID sql.NullString
 	if err := db.DB.QueryRow(`SELECT latest_version_id FROM agents WHERE id = $1`, agentID).Scan(&versionID); err != nil {
 		return fmt.Errorf("failed to query latest_version_id for agent %s: %w", agentID, err)
@@ -193,7 +188,7 @@ func (e *Engine) fireTriggerWithTransaction(triggerID, agentID, nodeID string) e
 		return fmt.Errorf("no version found for agent %s", agentID)
 	}
 
-	// Parse UUIDs
+	// Parse UUIDs (validation can be done outside transaction)
 	agentUUID, err := uuid.Parse(agentID)
 	if err != nil {
 		return fmt.Errorf("invalid agent_id %s: %w", agentID, err)
@@ -247,13 +242,18 @@ func (e *Engine) fireTriggerWithTransaction(triggerID, agentID, nodeID string) e
 		return fmt.Errorf("failed to marshal retry policy: %w", err)
 	}
 
-	// Begin transaction for atomic workflow run creation and queueing
+	// Begin transaction for atomic trigger update, workflow run creation and queueing
 	ctx := context.Background()
 	tx, err := db.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer tx.Rollback() // Will be no-op if tx.Commit() succeeds
+
+	// Update last_checked timestamp within transaction
+	if _, err := tx.ExecContext(ctx, `UPDATE triggers SET last_checked = now() WHERE id = $1`, triggerID); err != nil {
+		return fmt.Errorf("failed to update last_checked timestamp: %w", err)
+	}
 
 	// Insert workflow run
 	query := `

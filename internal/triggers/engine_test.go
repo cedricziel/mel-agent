@@ -2,6 +2,7 @@ package triggers
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 
 	"github.com/google/uuid"
@@ -112,7 +113,7 @@ func TestEngine_fireTriggerWithTransaction(t *testing.T) {
 		invalidTriggerID := "invalid-uuid"
 		err := engine.fireTriggerWithTransaction(invalidTriggerID, agentID, nodeID)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to update last_checked timestamp")
+		assert.Contains(t, err.Error(), "invalid trigger_id")
 	})
 }
 
@@ -156,11 +157,15 @@ func TestEngine_fireTriggerWithTransaction_Atomicity(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("transaction rollback prevents orphaned workflow runs", func(t *testing.T) {
-		// Get initial counts
+		// Get initial counts and trigger state
 		var initialWorkflowRunCount, initialQueueItemCount int
+		var initialLastChecked sql.NullTime
+		
 		err = db.DB.QueryRow(`SELECT COUNT(*) FROM workflow_runs`).Scan(&initialWorkflowRunCount)
 		require.NoError(t, err)
 		err = db.DB.QueryRow(`SELECT COUNT(*) FROM workflow_queue`).Scan(&initialQueueItemCount)
+		require.NoError(t, err)
+		err = db.DB.QueryRow(`SELECT last_checked FROM triggers WHERE id = $1`, triggerID).Scan(&initialLastChecked)
 		require.NoError(t, err)
 
 		// Temporarily corrupt the queue table to force second insert to fail
@@ -177,15 +182,20 @@ func TestEngine_fireTriggerWithTransaction_Atomicity(t *testing.T) {
 		_, err = db.DB.Exec(`ALTER TABLE workflow_queue ADD COLUMN id UUID`)
 		require.NoError(t, err)
 
-		// Verify no workflow runs were created (transaction rolled back)
+		// Verify complete rollback - no changes to any table
 		var finalWorkflowRunCount, finalQueueItemCount int
+		var finalLastChecked sql.NullTime
+		
 		err = db.DB.QueryRow(`SELECT COUNT(*) FROM workflow_runs`).Scan(&finalWorkflowRunCount)
 		require.NoError(t, err)
 		err = db.DB.QueryRow(`SELECT COUNT(*) FROM workflow_queue`).Scan(&finalQueueItemCount)
 		require.NoError(t, err)
+		err = db.DB.QueryRow(`SELECT last_checked FROM triggers WHERE id = $1`, triggerID).Scan(&finalLastChecked)
+		require.NoError(t, err)
 
 		assert.Equal(t, initialWorkflowRunCount, finalWorkflowRunCount, "no workflow runs should be created due to rollback")
 		assert.Equal(t, initialQueueItemCount, finalQueueItemCount, "no queue items should be created due to rollback")
+		assert.Equal(t, initialLastChecked, finalLastChecked, "trigger last_checked should not be updated due to rollback")
 	})
 }
 
