@@ -9,7 +9,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -226,12 +228,11 @@ func startServer(port string) {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
-	// health endpoint
-	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"ok"}`))
-	})
+	// health endpoint for load balancers
+	r.Get("/health", healthCheckHandler)
+
+	// readiness endpoint for Kubernetes
+	r.Get("/ready", readinessCheckHandler)
 
 	// webhook entrypoint for external events (e.g., GitHub, Stripe) – accept all HTTP methods
 	r.HandleFunc("/webhooks/{provider}/{triggerID}", httpApi.WebhookHandler)
@@ -258,9 +259,40 @@ func startServer(port string) {
 
 	r.Mount("/api", apiHandler)
 
-	log.Printf("server listening on :%s", port)
-	if err := http.ListenAndServe(":"+port, r); err != nil {
-		log.Fatal(err)
+	// Create HTTP server with timeouts
+	server := &http.Server{
+		Addr:         ":" + port,
+		Handler:      r,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
+	// Start server in a goroutine
+	go func() {
+		log.Printf("server listening on :%s", port)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Server failed to start: %v", err)
+		}
+	}()
+
+	// Wait for interrupt signal to gracefully shutdown the server
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("Shutting down server...")
+
+	// Cancel context to stop workers and scheduler
+	cancel()
+
+	// Give the server a maximum of 30 seconds to finish ongoing requests
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer shutdownCancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		log.Printf("Server forced to shutdown: %v", err)
+	} else {
+		log.Println("Server exited gracefully")
 	}
 }
 
@@ -298,12 +330,11 @@ func startAPIServer(port string) {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
-	// health endpoint
-	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"ok"}`))
-	})
+	// health endpoint for load balancers
+	r.Get("/health", healthCheckHandler)
+
+	// readiness endpoint for Kubernetes
+	r.Get("/ready", readinessCheckHandler)
 
 	// webhook entrypoint for external events (e.g., GitHub, Stripe) – accept all HTTP methods
 	r.HandleFunc("/webhooks/{provider}/{triggerID}", httpApi.WebhookHandler)
@@ -330,9 +361,40 @@ func startAPIServer(port string) {
 
 	r.Mount("/api", apiHandler)
 
-	log.Printf("API server listening on :%s (no embedded workers)", port)
-	if err := http.ListenAndServe(":"+port, r); err != nil {
-		log.Fatal(err)
+	// Create HTTP server with timeouts
+	server := &http.Server{
+		Addr:         ":" + port,
+		Handler:      r,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
+	// Start server in a goroutine
+	go func() {
+		log.Printf("API server listening on :%s (no embedded workers)", port)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("API server failed to start: %v", err)
+		}
+	}()
+
+	// Wait for interrupt signal to gracefully shutdown the server
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("Shutting down API server...")
+
+	// Cancel context to stop scheduler
+	cancel()
+
+	// Give the server a maximum of 30 seconds to finish ongoing requests
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer shutdownCancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		log.Printf("API server forced to shutdown: %v", err)
+	} else {
+		log.Println("API server exited gracefully")
 	}
 }
 
@@ -368,4 +430,67 @@ func generateWorkerID() string {
 		return fmt.Sprintf("worker-%d", time.Now().Unix())
 	}
 	return fmt.Sprintf("worker-%s", hex.EncodeToString(bytes))
+}
+
+// healthCheckHandler provides a basic health check for load balancers
+func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status":"ok","timestamp":"` + time.Now().UTC().Format(time.RFC3339) + `"}`))
+}
+
+// readinessCheckHandler provides a comprehensive readiness check including database connectivity
+func readinessCheckHandler(w http.ResponseWriter, r *http.Request) {
+	type HealthStatus struct {
+		Status    string                 `json:"status"`
+		Timestamp string                 `json:"timestamp"`
+		Checks    map[string]interface{} `json:"checks"`
+	}
+
+	checks := make(map[string]interface{})
+	overallStatus := "ready"
+
+	// Check database connectivity
+	if db.DB != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := db.DB.PingContext(ctx); err != nil {
+			checks["database"] = map[string]interface{}{
+				"status": "unhealthy",
+				"error":  err.Error(),
+			}
+			overallStatus = "not_ready"
+		} else {
+			checks["database"] = map[string]interface{}{
+				"status": "healthy",
+			}
+		}
+	} else {
+		checks["database"] = map[string]interface{}{
+			"status": "not_initialized",
+		}
+		overallStatus = "not_ready"
+	}
+
+	response := HealthStatus{
+		Status:    overallStatus,
+		Timestamp: time.Now().UTC().Format(time.RFC3339),
+		Checks:    checks,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	if overallStatus == "ready" {
+		w.WriteHeader(http.StatusOK)
+	} else {
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}
+
+	// Simple JSON marshaling to avoid dependencies
+	dbStatus := checks["database"].(map[string]interface{})["status"].(string)
+	jsonResponse := fmt.Sprintf(`{"status":"%s","timestamp":"%s","checks":{"database":{"status":"%s"}}}`,
+		response.Status, response.Timestamp, dbStatus)
+
+	w.Write([]byte(jsonResponse))
 }

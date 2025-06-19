@@ -232,15 +232,15 @@ func TestServerCommandFlags(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			resetCobra()
 			// Don't call initConfig() to avoid environment variable conflicts
-			
+
 			// Parse flags manually to test flag parsing
 			cmd, _, err := rootCmd.Find(tt.args)
 			require.NoError(t, err)
-			
+
 			if len(tt.args) > 1 {
 				err = cmd.ParseFlags(tt.args[1:])
 				require.NoError(t, err)
-				
+
 				portFlag := cmd.Flag("port")
 				if portFlag != nil && portFlag.Changed {
 					assert.Equal(t, tt.expectedPort, portFlag.Value.String(), "Port should match expected value")
@@ -385,12 +385,12 @@ func TestEnvironmentVariableIntegration(t *testing.T) {
 			// Parse flags manually to avoid Viper conflicts
 			cmd, _, err := rootCmd.Find(tt.args)
 			require.NoError(t, err)
-			
+
 			if len(tt.args) > 1 {
 				err = cmd.ParseFlags(tt.args[1:])
 				require.NoError(t, err)
 			}
-			
+
 			// For flag override tests, verify the flag value directly
 			if strings.Contains(tt.name, "flag overrides") {
 				portFlag := cmd.Flag("port")
@@ -476,12 +476,12 @@ database:
 			// Parse flags manually to avoid Viper conflicts
 			cmd, _, err := rootCmd.Find(tt.args)
 			require.NoError(t, err)
-			
+
 			if len(tt.args) > 1 {
 				err = cmd.ParseFlags(tt.args[1:])
 				require.NoError(t, err)
 			}
-			
+
 			// For flag override tests, verify the flag value directly
 			if strings.Contains(tt.name, "flag overrides") {
 				portFlag := cmd.Flag("port")
@@ -537,10 +537,10 @@ server:
 	// Parse flags manually to test precedence
 	cmd, _, err := rootCmd.Find([]string{"server", "--port", "5555"})
 	require.NoError(t, err)
-	
+
 	err = cmd.ParseFlags([]string{"--port", "5555"})
 	require.NoError(t, err)
-	
+
 	portFlag := cmd.Flag("port")
 	require.NotNil(t, portFlag)
 	assert.True(t, portFlag.Changed, "Flag should be marked as changed")

@@ -28,9 +28,20 @@ func Connect() {
 	if err != nil {
 		log.Fatalf("db open: %v", err)
 	}
+
+	// Configure connection pool for horizontal scaling
+	// These settings are optimized for multiple API server instances
+	DB.SetMaxOpenConns(25)                 // Maximum number of open connections to the database
+	DB.SetMaxIdleConns(10)                 // Maximum number of connections in the idle connection pool
+	DB.SetConnMaxLifetime(5 * time.Minute) // Maximum amount of time a connection may be reused
+	DB.SetConnMaxIdleTime(2 * time.Minute) // Maximum amount of time a connection may be idle
+
 	if err := DB.Ping(); err != nil {
 		log.Fatalf("db ping: %v", err)
 	}
+
+	log.Printf("Database connected with pool: max_open=%d, max_idle=%d, max_lifetime=%v",
+		25, 10, 5*time.Minute)
 
 	if err := applyMigrations(); err != nil {
 		log.Fatalf("apply migrations: %v", err)

@@ -118,6 +118,24 @@ docker compose up --build
 - **Web UI**: <http://localhost:5173>
 - **Health Check**: <http://localhost:8080/health>
 
+### Option 1b: Horizontal Scaling
+
+Scale to multiple instances for production workloads:
+
+```bash
+# Start with load balancer and multiple instances
+docker-compose -f docker-compose.scale.yml up -d --scale api=3 --scale worker=2
+
+# Test scaling
+./test-scaling.sh
+```
+
+**🚀 Scaled deployment includes**:
+- **Load Balancer**: <http://localhost:8080> (Nginx)
+- **3 API Server Instances**: Stateless, auto-scaling
+- **2 Worker Instances**: Distributed processing
+- **Health Monitoring**: `/health` and `/ready` endpoints
+
 ### Option 2: Development Setup
 
 **Prerequisites**: Go 1.21+, Node.js 18+, PostgreSQL 15+
@@ -147,9 +165,10 @@ go run ./cmd/server worker --token your-worker-token --server http://localhost:8
 
 ### **Development** _(Contribution Opportunities)_
 
-- [🧩 Building Custom Nodes](docs/development/custom-nodes.md) _(opportunity to contribute documentation)_
-- [🔧 API Reference](docs/api/README.md) _(opportunity to generate from code)_
-- [🚀 Deployment Guide](docs/deployment/README.md) _(opportunity for K8s, cloud guides)_
+- [🧩 Building Custom Nodes](docs/building-nodes.md)
+- [🔧 CLI Usage Guide](docs/cli-usage.md)
+- [🚀 Deployment Guide](docs/deployment.md)
+- [📈 Horizontal Scaling Guide](docs/scaling.md)
 
 ### **Examples** _(Community Opportunities)_
 

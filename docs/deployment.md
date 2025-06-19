@@ -320,6 +320,78 @@ done
 ./server worker --token $TOKEN --id "worker-machine2" --server https://api.example.com
 ```
 
+## Advanced Horizontal Scaling
+
+### Docker Compose Scaling
+
+MEL Agent includes a pre-configured scaling setup with load balancer:
+
+```bash
+# Start with default setup (1 API server, 1 worker)
+docker-compose -f docker-compose.scale.yml up -d
+
+# Scale to multiple instances
+docker-compose -f docker-compose.scale.yml up -d --scale api=3 --scale worker=2
+
+# Scale during runtime
+docker-compose -f docker-compose.scale.yml up -d --scale api=5 --scale worker=4
+
+# Scale down
+docker-compose -f docker-compose.scale.yml up -d --scale api=2 --scale worker=1
+```
+
+The scaling setup includes:
+- **Nginx load balancer** on port 8080
+- **Multiple API server instances** using `api-server` command
+- **Multiple worker instances** connecting through the load balancer
+- **Shared PostgreSQL database** with optimized connection pooling
+- **Health checks** for all components
+
+### Scaling Considerations
+
+⚠️ **WebSocket Limitations**: The current implementation has limitations with WebSocket-based real-time collaboration across multiple API server instances. See [scaling.md](scaling.md) for details and workarounds.
+
+✅ **What Works**:
+- All REST API endpoints scale perfectly
+- Worker distribution across instances
+- Database operations with connection pooling
+- Health checks and graceful shutdown
+
+### Load Balancer Configuration
+
+The included Nginx configuration supports:
+
+```nginx
+upstream api_servers {
+    least_conn;  # Distribute load evenly
+    server api:8080 max_fails=3 fail_timeout=30s;
+}
+
+server {
+    location / {
+        proxy_pass http://api_servers;
+        # WebSocket support
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+```
+
+### Testing Scaling
+
+Use the included test script:
+
+```bash
+# Test the scaled deployment
+./test-scaling.sh
+
+# Manual testing
+curl http://localhost:8080/health
+curl http://localhost:8080/ready  
+curl http://localhost:8080/api/node-types
+```
+
 ### Auto-scaling with Docker Swarm
 
 ```yaml
