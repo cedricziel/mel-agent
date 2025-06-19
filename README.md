@@ -57,7 +57,7 @@ Unlike traditional automation platforms retrofitted for AI, MEL Agent is built f
 
 ## 🏗️ Architecture
 
-MEL Agent follows modern cloud-native patterns:
+MEL Agent follows modern cloud-native patterns with distributed workflow execution:
 
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
@@ -67,12 +67,39 @@ MEL Agent follows modern cloud-native patterns:
 │ • Real-time UI  │    │ • WebSocket      │    │ • Encrypted     │
 │ • Debug Tools   │    │ • Node Engine    │    │ • JSONB Storage │
 └─────────────────┘    └──────────────────┘    └─────────────────┘
+                                │
+                                ▼
+                    ┌─────────────────────────┐
+                    │    Worker Architecture   │
+                    ├─────────────────────────┤
+                    │  📦 Local Workers       │
+                    │  • Embedded in server   │
+                    │  • Zero configuration   │
+                    │  • Instant processing   │
+                    ├─────────────────────────┤
+                    │  🌐 Remote Workers      │
+                    │  • Standalone processes │
+                    │  • Horizontal scaling   │
+                    │  • Geographic distribution │
+                    │  • Load balancing       │
+                    │  • Auto-registration    │
+                    └─────────────────────────┘
 ```
+
+### **Dual Worker Model**
+
+MEL Agent supports both **embedded** and **distributed** execution:
+
+- **🏠 Local Workers**: Built-in workers that start with the API server for immediate processing
+- **🌍 Remote Workers**: Standalone worker processes that connect via secure API for scalable execution
+- **🔄 Queue-based Coordination**: Unified work queue system ensures reliable task distribution
+- **💪 Fault Tolerance**: Automatic retry, heartbeat monitoring, and worker health tracking
 
 **Technology Stack:**
 
-- **Backend**: Go with Chi router, PostgreSQL, WebSockets
+- **Backend**: Go with Chi router, PostgreSQL, WebSockets, Testcontainers
 - **Frontend**: React, Vite, Tailwind CSS, ReactFlow
+- **Workers**: Local embedded + distributed remote workers with queue-based coordination
 - **Infrastructure**: Docker, Docker Compose, Kubernetes-ready
 
 ## 🏃‍♂️ Quick Start
@@ -96,13 +123,17 @@ docker compose up --build
 **Prerequisites**: Go 1.21+, Node.js 18+, PostgreSQL 15+
 
 ```bash
-# Backend
+# Backend (includes local workers)
 export DATABASE_URL="postgres://postgres:postgres@localhost:5432/melagent?sslmode=disable"
 go run ./cmd/server
 
 # Frontend
 cd web
 pnpm install && pnpm dev
+
+# Optional: Remote Workers (for scaling)
+export MEL_WORKER_TOKEN="your-worker-token"
+go run ./cmd/server worker -server http://localhost:8080
 ```
 
 ## 📖 Documentation
@@ -154,7 +185,7 @@ We welcome contributions! MEL Agent is built by the community, for the community
 
 ```bash
 # Backend
-go test ./...              # Run tests
+go test ./...              # Run tests (includes testcontainers)
 go vet ./...              # Lint
 go build ./cmd/server     # Build
 
@@ -163,6 +194,12 @@ cd web
 pnpm lint                 # Lint
 pnpm build                # Build
 pnpm test                 # Test (coming soon)
+
+# Workers
+go run ./cmd/server server                    # Start API server with local workers
+go run ./cmd/server worker -token <token>     # Start remote worker
+go run ./cmd/server worker -id worker-1 \     # Start named remote worker
+  -token <token> -concurrency 10              # with custom concurrency
 ```
 
 ## 📜 License

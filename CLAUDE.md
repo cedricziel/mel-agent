@@ -4,17 +4,20 @@
 AI Agents SaaS platform with Go backend and React frontend. This is a monorepo that provides a visual workflow builder for AI agents with support for various node types, triggers, and integrations.
 
 ## Architecture
-- **Backend**: Go with Chi router, PostgreSQL database
+- **Backend**: Go with Chi router, PostgreSQL database, WebSockets
 - **Frontend**: React + Vite + Tailwind CSS
+- **Workers**: Dual worker model - local embedded workers + distributed remote workers
 - **Database**: PostgreSQL with migrations
+- **Testing**: Testcontainers for database integration tests
 - **Containerization**: Docker Compose for local development
 
 ## Development Commands
 
 ### Backend (Go)
-- **Run server**: `go run ./cmd/server`
+- **Run server**: `go run ./cmd/server server` (includes local workers)
+- **Run remote worker**: `go run ./cmd/server worker -token <token>`
 - **Run with Docker**: `docker compose up --build`
-- **Test**: `go test ./...`
+- **Test**: `go test ./...` (includes testcontainer integration tests)
 - **Build**: `go build ./cmd/server`
 - **Lint**: `go vet ./...`
 - **Run go fmt from time**: `go fmt ./...`
@@ -34,6 +37,7 @@ AI Agents SaaS platform with Go backend and React frontend. This is a monorepo t
 ## Development Principles
 - Our goal is to create a well-tested project. Always be mindful of creating reasonably well-sized components and testing them. Create e2e tests with Cypress where applicable
 - Remember to keep components at a reasonable size and add new tests for new components and functionality
+- Use and contribute to testutils we already have for db migrations etc
 
 ## API Endpoints
 
@@ -51,5 +55,35 @@ AI Agents SaaS platform with Go backend and React frontend. This is a monorepo t
 
 Nodes can implement multiple kinds (e.g., OpenAI model has kinds: `["action", "model"]`).
 
+## Worker System
+
+### Local Workers
+- Embedded within the API server process
+- Zero configuration required
+- Automatic startup with server
+
+### Remote Workers
+- Standalone processes that connect to API server
+- Require authentication token via `MEL_WORKER_TOKEN`
+- Support horizontal scaling and geographic distribution
+- Auto-registration with heartbeat monitoring
+
+### Worker Commands
+- `go run ./cmd/server worker -token <token>` - Start remote worker
+- `go run ./cmd/server worker -id <id> -token <token> -concurrency <n>` - Start with custom settings
+
+### Worker API Endpoints
+- `POST /api/workers` - Register worker
+- `PUT /api/workers/{id}/heartbeat` - Update worker heartbeat
+- `POST /api/workers/{id}/claim-work` - Claim work items
+- `POST /api/workers/{id}/complete-work/{itemID}` - Complete work
+- `DELETE /api/workers/{id}` - Unregister worker
+
 ## Development Guidelines
 - When committing code via git, never mention claude
+
+## Testing
+- We are using testcontainers to test database dependencies
+- Database tests rely on our migration system via `testutil.SetupPostgresWithMigrations()`
+- Integration tests cover worker registration, work claiming, lifecycle management
+- Use existing testutil functions for database setup in tests
