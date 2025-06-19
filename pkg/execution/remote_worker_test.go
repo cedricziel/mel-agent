@@ -375,15 +375,20 @@ func TestRemoteWorkerWorkProcessing(t *testing.T) {
 		t.Fatal("Worker did not stop within timeout")
 	}
 
-	// Verify work was completed (be more lenient since timing is tricky in tests)
-	completedWork := mockServer.GetCompletedWork()
+	// Wait for work to be processed with proper timeout
+	var completedWork []*WorkResult
+	for i := 0; i < 100; i++ { // Wait up to 1 second
+		completedWork = mockServer.GetCompletedWork()
+		if len(completedWork) >= 2 { // Both work items should be processed
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
 
-	// The worker may or may not have processed all work due to timing
-	// Just verify that if work was processed, it was successful
-	t.Logf("Completed work items: %d", len(completedWork))
-
+	assert.Len(t, completedWork, 2, "Both work items should be processed")
 	for _, result := range completedWork {
 		assert.True(t, result.Success, "Work should be completed successfully")
+		assert.NotNil(t, result.Result, "Work result should contain data")
 	}
 
 	t.Logf("✅ Remote worker work processing test passed - Processed %d work items", len(completedWork))
