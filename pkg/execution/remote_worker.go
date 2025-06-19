@@ -288,7 +288,10 @@ func (rw *RemoteWorker) processStartRun(ctx context.Context, item *QueueItem) *W
 	// Implementation would depend on how the payload is structured
 	// For now, return success
 	log.Printf("Started run for item %s", item.ID)
-	return &WorkResult{Success: true}
+	return &WorkResult{
+		Success:    true,
+		OutputData: map[string]any{"action": "start_run", "item_id": item.ID.String()},
+	}
 }
 
 // processExecuteStep handles executing a workflow step
@@ -296,21 +299,30 @@ func (rw *RemoteWorker) processExecuteStep(ctx context.Context, item *QueueItem)
 	// This would load the step details and execute the node
 	// For now, return success
 	log.Printf("Executed step for item %s", item.ID)
-	return &WorkResult{Success: true}
+	return &WorkResult{
+		Success:    true,
+		OutputData: map[string]any{"action": "execute_step", "item_id": item.ID.String()},
+	}
 }
 
 // processRetryStep handles retrying a failed workflow step
 func (rw *RemoteWorker) processRetryStep(ctx context.Context, item *QueueItem) *WorkResult {
 	// Implementation would retry the step
 	log.Printf("Retried step for item %s", item.ID)
-	return &WorkResult{Success: true}
+	return &WorkResult{
+		Success:    true,
+		OutputData: map[string]any{"action": "retry_step", "item_id": item.ID.String()},
+	}
 }
 
 // processCompleteRun handles completing a workflow run
 func (rw *RemoteWorker) processCompleteRun(ctx context.Context, item *QueueItem) *WorkResult {
 	// Implementation would finalize the run
 	log.Printf("Completed run for item %s", item.ID)
-	return &WorkResult{Success: true}
+	return &WorkResult{
+		Success:    true,
+		OutputData: map[string]any{"action": "complete_run", "item_id": item.ID.String()},
+	}
 }
 
 // completeWork reports the work result back to the API server

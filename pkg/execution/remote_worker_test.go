@@ -388,7 +388,7 @@ func TestRemoteWorkerWorkProcessing(t *testing.T) {
 	assert.Len(t, completedWork, 2, "Both work items should be processed")
 	for _, result := range completedWork {
 		assert.True(t, result.Success, "Work should be completed successfully")
-		assert.NotNil(t, result.Result, "Work result should contain data")
+		assert.NotNil(t, result.OutputData, "Work result should contain output data")
 	}
 
 	t.Logf("✅ Remote worker work processing test passed - Processed %d work items", len(completedWork))
