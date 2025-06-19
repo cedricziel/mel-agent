@@ -47,6 +47,26 @@ The server will:
 		},
 	}
 
+	apiServerCmd = &cobra.Command{
+		Use:   "api-server",
+		Short: "Start the API server only",
+		Long: `Start the API server without embedded workers.
+
+The api-server will:
+- Connect to PostgreSQL database and run migrations
+- Load and register node plugins
+- Start trigger scheduler
+- Serve API endpoints at /api/*
+- Handle webhooks at /webhooks/{provider}/{triggerID}
+- Provide health check at /health
+
+This mode is designed for horizontal scaling of API servers
+separate from worker processes.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			// Test implementation - don't actually start api server
+		},
+	}
+
 	workerCmd = &cobra.Command{
 		Use:   "worker",
 		Short: "Start a workflow worker",
@@ -64,11 +84,16 @@ The worker will:
 
 	// Re-initialize commands
 	rootCmd.AddCommand(serverCmd)
+	rootCmd.AddCommand(apiServerCmd)
 	rootCmd.AddCommand(workerCmd)
 
 	// Server command flags
 	serverCmd.Flags().StringP("port", "p", "8080", "Port to listen on")
 	viper.BindPFlag("server.port", serverCmd.Flags().Lookup("port"))
+
+	// API Server command flags
+	apiServerCmd.Flags().StringP("port", "p", "8080", "Port to listen on")
+	viper.BindPFlag("server.port", apiServerCmd.Flags().Lookup("port"))
 
 	// Worker command flags
 	workerCmd.Flags().StringP("server", "s", "http://localhost:8080", "API server URL")

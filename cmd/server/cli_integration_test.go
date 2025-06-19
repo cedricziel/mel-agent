@@ -232,6 +232,75 @@ func TestCLIVersionAndCompletion(t *testing.T) {
 	}
 }
 
+// TestAPIServerIntegration tests the api-server command integration
+func TestAPIServerIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping API server integration test in short mode")
+	}
+
+	// Build the binary for testing
+	tempDir := t.TempDir()
+	binaryPath := filepath.Join(tempDir, "mel-agent-test")
+
+	buildCmd := exec.Command("go", "build", "-o", binaryPath, ".")
+	buildCmd.Dir = "."
+	err := buildCmd.Run()
+	require.NoError(t, err, "Failed to build test binary")
+
+	t.Run("api-server help command", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		cmd := exec.CommandContext(ctx, binaryPath, "api-server", "--help")
+		cmd.Dir = tempDir
+
+		output, err := cmd.CombinedOutput()
+		require.NoError(t, err, "api-server --help should succeed")
+
+		outputStr := string(output)
+		assert.Contains(t, outputStr, "Start the API server without embedded workers", "Help should describe api-server purpose")
+		assert.Contains(t, outputStr, "horizontal scaling", "Help should mention horizontal scaling")
+		assert.Contains(t, outputStr, "--port", "Help should show port flag")
+		assert.Contains(t, outputStr, "-p", "Help should show port short flag")
+
+		t.Logf("✅ API server help test passed")
+	})
+
+	t.Run("api-server flag validation", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
+		// Test with custom port flag
+		cmd := exec.CommandContext(ctx, binaryPath, "api-server", "--port", "9999", "--help")
+		cmd.Dir = tempDir
+
+		output, err := cmd.CombinedOutput()
+		require.NoError(t, err, "api-server with port flag should succeed")
+
+		outputStr := string(output)
+		assert.Contains(t, outputStr, "api-server", "Output should confirm api-server command")
+
+		t.Logf("✅ API server flag validation test passed")
+	})
+
+	t.Run("api-server in root help", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		cmd := exec.CommandContext(ctx, binaryPath, "--help")
+		cmd.Dir = tempDir
+
+		output, err := cmd.CombinedOutput()
+		require.NoError(t, err, "Root help should succeed")
+
+		outputStr := string(output)
+		assert.Contains(t, outputStr, "api-server", "Root help should list api-server command")
+		assert.Contains(t, outputStr, "Start the API server only", "Root help should show api-server description")
+
+		t.Logf("✅ API server in root help test passed")
+	})
+}
+
 // TestCLIErrorHandling tests various error conditions
 func TestCLIErrorHandling(t *testing.T) {
 	if testing.Short() {
