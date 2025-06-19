@@ -73,10 +73,8 @@ type ToolDefinition struct {
 func GetNodeKinds(def NodeDefinition) []NodeKind {
 	var kinds []NodeKind
 
-	// Check for ActionNode (all nodes are actions by default via ExecuteEnvelope)
-	if _, ok := def.(ActionNode); ok || def != nil {
-		kinds = append(kinds, NodeKindAction)
-	}
+	// All nodes are actions by default since they implement ExecuteEnvelope
+	kinds = append(kinds, NodeKindAction)
 
 	// Check for ModelNode
 	if _, ok := def.(ModelNode); ok {

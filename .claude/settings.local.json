@@ -25,7 +25,8 @@
       "Bash(curl:*)",
       "Bash(go get:*)",
       "WebFetch(domain:github.com)",
-      "Bash(gh project list:*)"
+      "Bash(gh project list:*)",
+      "Bash(gh project view:*)"
     ],
     "deny": []
   },

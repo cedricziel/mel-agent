@@ -234,7 +234,7 @@ func (e *DurableExecutionEngine) CompleteWork(ctx context.Context, workerID stri
 
 		retryItem := &QueueItem{
 			ID:          uuid.New(),
-			RunID:       uuid.New(), // This should be populated from the original item
+			RunID:       originalRunID, // Use the original workflow run ID
 			QueueType:   QueueTypeRetryStep,
 			Priority:    8, // Higher priority for retries
 			AvailableAt: retryAt,
