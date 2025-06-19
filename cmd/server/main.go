@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/spf13/cobra"
 
 	httpApi "github.com/cedricziel/mel-agent/internal/api"
 	"github.com/cedricziel/mel-agent/internal/db"
@@ -26,60 +26,83 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		printUsage()
-		os.Exit(1)
-	}
-
-	switch os.Args[1] {
-	case "server":
-		runServer()
-	case "worker":
-		runWorker()
-	case "help", "-h", "--help":
-		printUsage()
-	default:
-		fmt.Printf("Unknown command: %s\n\n", os.Args[1])
-		printUsage()
+	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
 }
 
-func printUsage() {
-	fmt.Println("Usage: mel-agent <command> [options]")
-	fmt.Println("")
-	fmt.Println("Commands:")
-	fmt.Println("  server    Start the API server")
-	fmt.Println("  worker    Start a workflow worker")
-	fmt.Println("  help      Show this help message")
-	fmt.Println("")
-	fmt.Println("Use 'mel-agent <command> -h' for command-specific help")
+var rootCmd = &cobra.Command{
+	Use:   "mel-agent",
+	Short: "MEL Agent - AI Agents SaaS platform",
+	Long: `MEL Agent is a platform for building and running AI agent workflows.
+
+It provides a visual workflow builder with support for various node types,
+triggers, and integrations. You can run it as an API server or as a distributed
+worker for horizontal scaling.`,
 }
 
-func runServer() {
-	serverCmd := flag.NewFlagSet("server", flag.ExitOnError)
-	port := serverCmd.String("port", getEnvOrDefault("PORT", "8080"), "Port to listen on")
+var serverCmd = &cobra.Command{
+	Use:   "server",
+	Short: "Start the API server",
+	Long: `Start the API server with embedded workers.
 
-	serverCmd.Parse(os.Args[2:])
-
-	startServer(*port)
+The server will:
+- Connect to PostgreSQL database and run migrations
+- Load and register node plugins
+- Start embedded workflow workers
+- Start trigger scheduler
+- Serve API endpoints at /api/*
+- Handle webhooks at /webhooks/{provider}/{triggerID}
+- Provide health check at /health`,
+	Run: func(cmd *cobra.Command, args []string) {
+		port, _ := cmd.Flags().GetString("port")
+		startServer(port)
+	},
 }
 
-func runWorker() {
-	workerCmd := flag.NewFlagSet("worker", flag.ExitOnError)
-	serverURL := workerCmd.String("server", getEnvOrDefault("MEL_SERVER_URL", "http://localhost:8080"), "API server URL")
-	token := workerCmd.String("token", getEnvOrDefault("MEL_WORKER_TOKEN", ""), "Authentication token")
-	workerID := workerCmd.String("id", getEnvOrDefault("MEL_WORKER_ID", ""), "Worker ID (auto-generated if empty)")
-	concurrency := workerCmd.Int("concurrency", 5, "Number of concurrent workflow executions")
+var workerCmd = &cobra.Command{
+	Use:   "worker",
+	Short: "Start a workflow worker",
+	Long: `Start a remote worker process that connects to an API server.
 
-	workerCmd.Parse(os.Args[2:])
+The worker will:
+- Connect to the specified API server
+- Authenticate using the provided token
+- Process workflow tasks with specified concurrency
+- Auto-generate worker ID if not provided`,
+	Run: func(cmd *cobra.Command, args []string) {
+		serverURL, _ := cmd.Flags().GetString("server")
+		token, _ := cmd.Flags().GetString("token")
+		workerID, _ := cmd.Flags().GetString("id")
+		concurrency, _ := cmd.Flags().GetInt("concurrency")
 
-	if *token == "" {
-		log.Fatal("Worker token is required. Set MEL_WORKER_TOKEN environment variable or use -token flag")
-	}
+		if token == "" {
+			log.Fatal("Worker token is required. Set MEL_WORKER_TOKEN environment variable or use --token flag")
+		}
 
-	startWorker(*serverURL, *token, *workerID, *concurrency)
+		startWorker(serverURL, token, workerID, concurrency)
+	},
 }
+
+func init() {
+	// Add subcommands to root
+	rootCmd.AddCommand(serverCmd)
+	rootCmd.AddCommand(workerCmd)
+
+	// Server command flags
+	serverCmd.Flags().StringP("port", "p", getEnvOrDefault("PORT", "8080"), "Port to listen on")
+
+	// Worker command flags
+	workerCmd.Flags().StringP("server", "s", getEnvOrDefault("MEL_SERVER_URL", "http://localhost:8080"), "API server URL")
+	workerCmd.Flags().StringP("token", "t", getEnvOrDefault("MEL_WORKER_TOKEN", ""), "Authentication token (required)")
+	workerCmd.Flags().String("id", getEnvOrDefault("MEL_WORKER_ID", ""), "Worker ID (auto-generated if empty)")
+	workerCmd.Flags().IntP("concurrency", "c", 5, "Number of concurrent workflow executions")
+
+	// Mark required flags
+	workerCmd.MarkFlagRequired("token")
+}
+
+
 
 func getEnvOrDefault(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
