@@ -1,17 +1,81 @@
 # MEL Agent Configuration File
 # Copy this file to config.yaml and modify as needed
+#
+# Configuration Sources (in precedence order):
+# 1. Command-line flags (highest)
+# 2. Environment variables  
+# 3. This config file
+# 4. Built-in defaults (lowest)
+#
+# Supported formats: YAML, JSON, TOML
+# Search paths: ./config.yaml, ~/.mel-agent/config.yaml, /etc/mel-agent/config.yaml
 
-# Server configuration
+# =============================================================================
+# SERVER CONFIGURATION
+# =============================================================================
 server:
+  # Port for the API server to listen on
+  # Can be overridden with: --port flag or PORT environment variable
   port: "8080"
 
-# Worker configuration
+# =============================================================================
+# WORKER CONFIGURATION  
+# =============================================================================
 worker:
+  # API server URL for remote workers to connect to
+  # Can be overridden with: --server flag or MEL_SERVER_URL environment variable
   server: "http://localhost:8080"
-  token: "your-worker-token"
+  
+  # Authentication token (REQUIRED for workers)
+  # Can be overridden with: --token flag or MEL_WORKER_TOKEN environment variable
+  # SECURITY: Keep this secret! Use environment variables in production.
+  token: "your-worker-token-here"
+  
+  # Unique worker identifier (auto-generated if empty)
+  # Can be overridden with: --id flag or MEL_WORKER_ID environment variable
+  # Useful for identifying workers in logs and monitoring
   id: "worker-001"
-  concurrency: 10
+  
+  # Number of concurrent workflow executions
+  # Can be overridden with: --concurrency flag
+  # Adjust based on worker resources and workload
+  concurrency: 5
 
-# Database configuration
+# =============================================================================
+# DATABASE CONFIGURATION
+# =============================================================================
 database:
+  # PostgreSQL connection string
+  # Can be overridden with: DATABASE_URL environment variable
+  # Format: postgres://username:password@host:port/database?options
   url: "postgres://postgres:postgres@localhost:5432/agentsaas?sslmode=disable"
+
+# =============================================================================
+# EXAMPLE CONFIGURATIONS
+# =============================================================================
+
+# Development Configuration Example:
+# server:
+#   port: "3000"
+# worker:
+#   server: "http://localhost:3000"
+#   token: "dev-token-123"
+#   concurrency: 3
+# database:
+#   url: "postgres://dev:dev@localhost:5432/melagent_dev"
+
+# Production Configuration Example:
+# server:
+#   port: "8080"
+# worker:
+#   server: "https://api.production.example.com"
+#   token: "prod-secure-token"
+#   id: "worker-prod-region-1"
+#   concurrency: 20
+# database:
+#   url: "postgres://prod_user:secure_password@db.example.com:5432/melagent_prod?sslmode=require"
+
+# Multi-Worker Configuration Example:
+# Create separate config files for each worker:
+# config-worker-1.yaml, config-worker-2.yaml, etc.
+# Then run: ./server worker --config config-worker-1.yaml
