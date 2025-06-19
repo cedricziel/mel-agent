@@ -4,20 +4,24 @@ import axios from 'axios';
 import BuilderPage from '../../pages/BuilderPage';
 
 // Mock all the dependencies
-vi.mock('axios', () => ({
-  default: {
+vi.mock('axios', () => {
+  const mockAxiosInstance = {
     get: vi.fn(),
     post: vi.fn(),
     put: vi.fn(),
     delete: vi.fn(),
-    create: vi.fn(() => ({
+  };
+  
+  return {
+    default: {
       get: vi.fn(),
       post: vi.fn(),
       put: vi.fn(),
       delete: vi.fn(),
-    })),
-  },
-}));
+      create: vi.fn(() => mockAxiosInstance),
+    },
+  };
+});
 vi.mock('../../hooks/useWebSocket', () => ({
   useWebSocket: () => ({
     broadcastNodeChange: vi.fn(),
@@ -39,6 +43,63 @@ vi.mock('../../hooks/useAutoLayout', () => ({
 }));
 
 const mockedAxios = axios;
+
+// Helper function to handle all URL patterns
+const createMockAxiosImplementation = (customHandlers = {}) => {
+  return (url) => {
+    // Check for custom handlers first
+    for (const [pattern, handler] of Object.entries(customHandlers)) {
+      if (typeof pattern === 'string' && url.includes(pattern)) {
+        return handler(url);
+      } else if (pattern instanceof RegExp && pattern.test(url)) {
+        return handler(url);
+      }
+    }
+
+    // Default handlers
+    if (url === '/api/node-types') {
+      return Promise.resolve({
+        data: [
+          { type: 'agent', label: 'Agent', category: 'Core' },
+          // Backend will eventually include config nodes, but for now they come from fallback
+        ],
+      });
+    }
+    if (url === '/api/triggers') {
+      return Promise.resolve({ data: [] });
+    }
+    if (url.includes('/draft')) {
+      return Promise.reject({ response: { status: 404 } });
+    }
+    if (url.includes('/workflows/')) {
+      if (url.endsWith('/nodes')) {
+        return Promise.resolve({
+          data: [
+            {
+              id: 'config-node-1',
+              type: 'openai_model',
+              data: {
+                label: 'OpenAI Model',
+                nodeTypeLabel: 'OpenAI Model',
+                model: 'gpt-4',
+                temperature: 0.7,
+                maxTokens: 1000,
+              },
+              position: { x: 100, y: 100 },
+            },
+          ],
+        });
+      }
+      if (url.endsWith('/edges')) {
+        return Promise.resolve({ data: [] });
+      }
+      return Promise.resolve({
+        data: { id: 'test-agent', name: 'Test Agent' },
+      });
+    }
+    return Promise.reject(new Error('Unmocked URL: ' + url));
+  };
+};
 
 // Mock ReactFlow
 vi.mock('reactflow', () => ({
@@ -66,50 +127,16 @@ describe('Config Node Modal Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // Mock API responses
-    mockedAxios.get.mockImplementation((url) => {
-      if (url === '/api/node-types') {
-        return Promise.resolve({
-          data: [
-            { type: 'agent', label: 'Agent', category: 'Core' },
-            // Backend will eventually include config nodes, but for now they come from fallback
-          ],
-        });
-      }
-      if (url === '/api/triggers') {
-        return Promise.resolve({ data: [] });
-      }
-      if (url.includes('/draft')) {
-        return Promise.reject({ response: { status: 404 } });
-      }
-      if (url.includes('/workflows/')) {
-        if (url.endsWith('/nodes')) {
-          return Promise.resolve({
-            data: [
-              {
-                id: 'config-node-1',
-                type: 'openai_model',
-                data: {
-                  label: 'OpenAI Model',
-                  nodeTypeLabel: 'OpenAI Model',
-                  model: 'gpt-4',
-                  temperature: 0.7,
-                  maxTokens: 1000,
-                },
-                position: { x: 100, y: 100 },
-              },
-            ],
-          });
-        }
-        if (url.endsWith('/edges')) {
-          return Promise.resolve({ data: [] });
-        }
-        return Promise.resolve({
-          data: { id: 'test-agent', name: 'Test Agent' },
-        });
-      }
-      return Promise.reject(new Error('Unmocked URL: ' + url));
-    });
+    // Set up default mock implementation for both direct axios and axios.create() instance
+    const mockImplementation = createMockAxiosImplementation();
+    mockedAxios.get.mockImplementation(mockImplementation);
+    
+    // Also mock the axios instance created by axios.create()
+    const mockAxiosInstance = mockedAxios.create();
+    mockAxiosInstance.get.mockImplementation(mockImplementation);
+    mockAxiosInstance.post.mockImplementation(() => Promise.resolve({ data: {} }));
+    mockAxiosInstance.put.mockImplementation(() => Promise.resolve({ data: {} }));
+    mockAxiosInstance.delete.mockImplementation(() => Promise.resolve({ data: {} }));
   });
 
   it('should open modal when config node is clicked', async () => {
@@ -195,10 +222,10 @@ describe('Config Node Modal Integration', () => {
   });
 
   it('should handle different config node types', async () => {
-    // Mock different config node types
-    mockedAxios.get.mockImplementation((url) => {
-      if (url.includes('/nodes')) {
-        return Promise.resolve({
+    // Set up custom mock for this test with memory node
+    const customMockImplementation = createMockAxiosImplementation({
+      '/nodes': () =>
+        Promise.resolve({
           data: [
             {
               id: 'memory-node-1',
@@ -212,28 +239,14 @@ describe('Config Node Modal Integration', () => {
               position: { x: 200, y: 100 },
             },
           ],
-        });
-      }
-      // Other mocks same as before
-      if (url === '/api/node-types') {
-        return Promise.resolve({ data: [] });
-      }
-      if (url === '/api/triggers') {
-        return Promise.resolve({ data: [] });
-      }
-      if (url.includes('/draft')) {
-        return Promise.reject({ response: { status: 404 } });
-      }
-      if (url.includes('/edges')) {
-        return Promise.resolve({ data: [] });
-      }
-      if (url.includes('/workflows/')) {
-        return Promise.resolve({
-          data: { id: 'test-agent', name: 'Test Agent' },
-        });
-      }
-      return Promise.reject(new Error('Unmocked URL: ' + url));
+        }),
     });
+    
+    mockedAxios.get.mockImplementation(customMockImplementation);
+    
+    // Also update the axios instance created by axios.create()
+    const mockAxiosInstance = mockedAxios.create();
+    mockAxiosInstance.get.mockImplementation(customMockImplementation);
 
     render(<BuilderPage agentId="test-agent" />);
 
