@@ -38,8 +38,11 @@ func main() {
 	// initialize MEL instance for durable workflow execution
 	mel := api.NewMel()
 
-	// initialize durable workflow execution engine
-	httpApi.InitializeWorkflowEngine(db.DB, mel)
+	// create workflow engine factory function
+	workflowEngineFactory := httpApi.InitializeWorkflowEngine(db.DB, mel)
+
+	// create durable workflow execution engine
+	workflowEngine := execution.NewDurableExecutionEngine(db.DB, mel, "api-server")
 
 	// create cancellable context for clean shutdown
 	ctx, cancel := context.WithCancel(context.Background())
@@ -76,6 +79,9 @@ func main() {
 
 	// mount api routes under /api
 	r.Mount("/api", httpApi.Handler())
+
+	// mount workflow engine routes under /api (with dependency injection)
+	r.Mount("/api", workflowEngineFactory(workflowEngine))
 
 	log.Printf("server listening on :%s", port)
 	if err := http.ListenAndServe(":"+port, r); err != nil {

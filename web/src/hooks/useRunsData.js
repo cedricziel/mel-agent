@@ -21,7 +21,7 @@ export function useRunsData(agentId) {
     if (!agentId) return;
 
     axios
-      .get(`/api/agents/${agentId}/runs`)
+      .get(`/api/workflow-runs?agent_id=${agentId}`)
       .then((res) => setRuns(res.data))
       .catch((err) => console.error('fetch runs list failed', err));
   }, [agentId]);
@@ -30,7 +30,7 @@ export function useRunsData(agentId) {
   useEffect(() => {
     if (selectedRunID && agentId) {
       axios
-        .get(`/api/agents/${agentId}/runs/${selectedRunID}`)
+        .get(`/api/workflow-runs/${selectedRunID}`)
         .then((res) => setRunDetails(res.data))
         .catch((err) => console.error('fetch run details failed', err));
     }

@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -19,16 +18,27 @@ import (
 	"github.com/google/uuid"
 )
 
-// Global workflow execution engine instance
-var (
-	workflowEngine  execution.ExecutionEngine
-	workflowHandler *WorkflowRunsHandler
-)
+// InitializeWorkflowEngine returns a factory function that creates an http.Handler
+// with workflow engine dependency injection for better testability and isolation
+func InitializeWorkflowEngine(database *sql.DB, mel api.Mel) func(execution.ExecutionEngine) http.Handler {
+	return func(engine execution.ExecutionEngine) http.Handler {
+		handler := NewWorkflowRunsHandler(database, engine)
+		return createWorkflowRouter(handler)
+	}
+}
 
-// InitializeWorkflowEngine initializes the workflow execution engine
-func InitializeWorkflowEngine(database *sql.DB, mel api.Mel) {
-	workflowEngine = execution.NewDurableExecutionEngine(database, mel, "api-server")
-	workflowHandler = NewWorkflowRunsHandler(database, workflowEngine)
+// createWorkflowRouter creates a sub-router with workflow-specific routes
+func createWorkflowRouter(handler *WorkflowRunsHandler) http.Handler {
+	r := chi.NewRouter()
+
+	// Workflow Runs - Durable Execution System
+	r.Get("/workflow-runs", handler.listWorkflowRuns)
+	r.Post("/workflow-runs", handler.createWorkflowRun)
+	r.Get("/workflow-runs/{runID}", handler.getWorkflowRun)
+	r.Post("/workflow-runs/{runID}/control", handler.controlWorkflowRun)
+	r.Post("/workflow-runs/{runID}/steps/{stepID}/retry", handler.retryWorkflowStep)
+
+	return r
 }
 
 // Handler returns a router with API routes mounted.
@@ -111,18 +121,10 @@ func Handler() http.Handler {
 	r.Get("/node-types/{type}/parameters/{parameter}/options", getDynamicOptionsHandler)
 	// WebSocket for collaborative updates
 	r.Get("/ws/agents/{agentID}", wsHandler)
-	// Workflow Runs - Durable Execution System
-	r.Get("/workflow-runs", listWorkflowRunsHandler)
-	r.Post("/workflow-runs", createWorkflowRunHandler)
-	r.Get("/workflow-runs/{runID}", getWorkflowRunHandler)
-	r.Post("/workflow-runs/{runID}/control", controlWorkflowRunHandler) // pause/resume/cancel
-	r.Post("/workflow-runs/{runID}/steps/{stepID}/retry", retryWorkflowStepHandler)
+	// Note: Workflow runs endpoints are now handled via the factory pattern
+	// Use InitializeWorkflowEngine() to create the workflow handler and mount it
 
-	// Legacy agent runs compatibility (redirect to workflow runs)
-	r.Post("/agents/{agentID}/runs", createAgentRunHandler)
-	r.Post("/agents/{agentID}/runs/test", testAgentRunHandler)
-	r.Get("/agents/{agentID}/runs", listAgentRunsHandler)
-	r.Get("/agents/{agentID}/runs/{runID}", getAgentRunHandler)
+	// Legacy agent runs endpoints removed - use /api/workflow-runs instead
 	// Fetch latest version (graph) for an agent
 	r.Get("/agents/{agentID}/versions/latest", getLatestAgentVersionHandler)
 	// Execute a single node with provided input data (stub implementation)
@@ -141,96 +143,6 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(v)
-}
-
-// Workflow execution handler functions
-func listWorkflowRunsHandler(w http.ResponseWriter, r *http.Request) {
-	if workflowHandler == nil {
-		http.Error(w, "Workflow engine not initialized", http.StatusInternalServerError)
-		return
-	}
-	workflowHandler.listWorkflowRuns(w, r)
-}
-
-func createWorkflowRunHandler(w http.ResponseWriter, r *http.Request) {
-	if workflowHandler == nil {
-		http.Error(w, "Workflow engine not initialized", http.StatusInternalServerError)
-		return
-	}
-	workflowHandler.createWorkflowRun(w, r)
-}
-
-func getWorkflowRunHandler(w http.ResponseWriter, r *http.Request) {
-	if workflowHandler == nil {
-		http.Error(w, "Workflow engine not initialized", http.StatusInternalServerError)
-		return
-	}
-	workflowHandler.getWorkflowRun(w, r)
-}
-
-func controlWorkflowRunHandler(w http.ResponseWriter, r *http.Request) {
-	if workflowHandler == nil {
-		http.Error(w, "Workflow engine not initialized", http.StatusInternalServerError)
-		return
-	}
-	workflowHandler.controlWorkflowRun(w, r)
-}
-
-func retryWorkflowStepHandler(w http.ResponseWriter, r *http.Request) {
-	if workflowHandler == nil {
-		http.Error(w, "Workflow engine not initialized", http.StatusInternalServerError)
-		return
-	}
-	workflowHandler.retryWorkflowStep(w, r)
-}
-
-// Legacy agent runs handlers (redirecting to workflow runs)
-func createAgentRunHandler(w http.ResponseWriter, r *http.Request) {
-	// Extract agent ID from URL
-	agentIDStr := chi.URLParam(r, "agentID")
-	agentID, err := uuid.Parse(agentIDStr)
-	if err != nil {
-		http.Error(w, "Invalid agent ID", http.StatusBadRequest)
-		return
-	}
-
-	// Parse request body
-	var legacyReq map[string]interface{}
-	if err := json.NewDecoder(r.Body).Decode(&legacyReq); err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
-		return
-	}
-
-	// Convert to new workflow run format
-	req := CreateWorkflowRunRequest{
-		AgentID:   agentID,
-		InputData: legacyReq,
-	}
-
-	// Marshal and create new request
-	reqJSON, _ := json.Marshal(req)
-	r.Body = io.NopCloser(strings.NewReader(string(reqJSON)))
-
-	createWorkflowRunHandler(w, r)
-}
-
-func testAgentRunHandler(w http.ResponseWriter, r *http.Request) {
-	createAgentRunHandler(w, r) // Same as create for now
-}
-
-func listAgentRunsHandler(w http.ResponseWriter, r *http.Request) {
-	// Extract agent ID from URL and add as query parameter
-	agentIDStr := chi.URLParam(r, "agentID")
-	q := r.URL.Query()
-	q.Set("agent_id", agentIDStr)
-	r.URL.RawQuery = q.Encode()
-
-	listWorkflowRunsHandler(w, r)
-}
-
-func getAgentRunHandler(w http.ResponseWriter, r *http.Request) {
-	// runID is already in the URL path, just redirect
-	getWorkflowRunHandler(w, r)
 }
 
 // listExtensionsHandler returns the catalog of registered plugins (GoPlugins and MCP servers).
@@ -994,165 +906,6 @@ func getLatestAgentVersionHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// createRunHandler starts a new run for an agent triggered by external event or scheduler.
-func createRunHandler(w http.ResponseWriter, r *http.Request) {
-	agentID := chi.URLParam(r, "agentID")
-	var in struct {
-		VersionID   string      `json:"versionId"`
-		StartNodeID string      `json:"startNodeId"`
-		Input       interface{} `json:"input"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
-		return
-	}
-	// Verify version belongs to agent
-	var exists bool
-	if err := db.DB.QueryRow(`SELECT EXISTS(SELECT 1 FROM agent_versions WHERE id = $1 AND agent_id = $2)`, in.VersionID, agentID).Scan(&exists); err != nil || !exists {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid versionId"})
-		return
-	}
-	// Prepare payload for run
-	payload := map[string]interface{}{
-		"versionId":   in.VersionID,
-		"startNodeId": in.StartNodeID,
-		"input":       in.Input,
-	}
-	raw, err := json.Marshal(payload)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-	runID := uuid.New().String()
-	if _, err := db.DB.Exec(`INSERT INTO agent_runs (id, agent_id, payload) VALUES ($1, $2, $3::jsonb)`, runID, agentID, string(raw)); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-	writeJSON(w, http.StatusCreated, map[string]string{"runId": runID})
-}
-
-// testRunHandler executes the entire agent workflow sequentially.
-func testRunHandler(w http.ResponseWriter, r *http.Request) {
-	agentID := chi.URLParam(r, "agentID")
-	// Fetch latest version ID
-	var versionID sql.NullString
-	if err := db.DB.QueryRow(`SELECT latest_version_id FROM agents WHERE id = $1`, agentID).Scan(&versionID); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-	if !versionID.Valid {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "no version available for agent"})
-		return
-	}
-	// Load graph and default params
-	var graphRaw, defaultRaw []byte
-	if err := db.DB.QueryRow(
-		`SELECT graph, default_params FROM agent_versions WHERE id = $1`, versionID.String,
-	).Scan(&graphRaw, &defaultRaw); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-	// Unmarshal full graph (nodes + edges) for rendering
-	var graphData interface{}
-	if err := json.Unmarshal(graphRaw, &graphData); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-	// Unmarshal nodes sequence for execution order
-	var graphStruct struct {
-		Nodes []api.Node `json:"nodes"`
-	}
-	if err := json.Unmarshal(graphRaw, &graphStruct); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-	// Unmarshal default params into initial data
-	var defaultParams map[string]interface{}
-	if len(defaultRaw) > 0 {
-		if err := json.Unmarshal(defaultRaw, &defaultParams); err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-			return
-		}
-	} else {
-		defaultParams = map[string]interface{}{}
-	}
-	// Define execution payload with full graph and trace
-	type Item struct {
-		ID   string      `json:"id"`
-		Data interface{} `json:"data"`
-	}
-	type Step struct {
-		NodeID string `json:"nodeId"`
-		Input  []Item `json:"input"`
-		Output []Item `json:"output"`
-	}
-	type Payload struct {
-		RunID   string                 `json:"runId"`
-		Graph   interface{}            `json:"graph"`
-		Context map[string]interface{} `json:"context"`
-		Meta    map[string]interface{} `json:"meta"`
-		Trace   []Step                 `json:"trace"`
-	}
-	runID := uuid.NewString()
-	// Prepare initial payload
-	initialItem := Item{ID: uuid.NewString(), Data: defaultParams}
-	payload := Payload{
-		RunID:   runID,
-		Graph:   graphData,
-		Context: map[string]interface{}{},
-		Meta: map[string]interface{}{
-			"startTime": time.Now().UTC().Format(time.RFC3339),
-		},
-		Trace: []Step{},
-	}
-	currentItems := []Item{initialItem}
-	// Execute nodes in order
-	// Execute nodes in order, recording trace
-	for _, node := range graphStruct.Nodes {
-		// Broadcast node execution start
-		hub := GetHub(agentID)
-		if startMsg, err := json.Marshal(map[string]string{"type": "nodeExecution", "nodeId": node.ID, "phase": "start"}); err == nil {
-			hub.broadcast(startMsg)
-		}
-		inputItems := currentItems
-		var nextItems []Item
-		for _, item := range inputItems {
-			output, err := executeNodeLocal(agentID, node, item.Data)
-			if err != nil {
-				nextItems = append(nextItems, Item{ID: item.ID, Data: map[string]interface{}{"error": err.Error()}})
-			} else if output != nil {
-				nextItems = append(nextItems, Item{ID: item.ID, Data: output})
-			}
-		}
-		// Broadcast node execution end
-		if endMsg, err := json.Marshal(map[string]string{"type": "nodeExecution", "nodeId": node.ID, "phase": "end"}); err == nil {
-			hub.broadcast(endMsg)
-		}
-		// Append step to trace
-		payload.Trace = append(payload.Trace, Step{
-			NodeID: node.ID,
-			Input:  inputItems,
-			Output: nextItems,
-		})
-		// Prepare for next iteration
-		currentItems = nextItems
-		payload.Meta["lastNode"] = node.ID
-	}
-	// Persist run record
-	// Embed final items under meta
-	payload.Meta["finalItems"] = currentItems
-	raw, err := json.Marshal(payload)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-	if _, err := db.DB.Exec(`INSERT INTO agent_runs (id, agent_id, payload) VALUES ($1, $2, $3::jsonb)`, payload.RunID, agentID, string(raw)); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-	writeJSON(w, http.StatusOK, payload)
-}
-
 // executeNodeLocal invokes the node logic via the node definitions.
 func executeNodeLocal(agentID string, node api.Node, input interface{}) (interface{}, error) {
 	if def := api.FindDefinition(node.Type); def != nil {
@@ -1187,75 +940,6 @@ func executeNodeLocal(agentID string, node api.Node, input interface{}) (interfa
 	}
 	// Fallback: return input unchanged
 	return input, nil
-}
-
-// listRunsHandler returns a list of past runs for an agent.
-func listRunsHandler(w http.ResponseWriter, r *http.Request) {
-	agentID := chi.URLParam(r, "agentID")
-	rows, err := db.DB.Query(
-		`SELECT id, created_at FROM agent_runs WHERE agent_id = $1 ORDER BY created_at DESC`, agentID,
-	)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-	defer rows.Close()
-	type runMeta struct {
-		ID        string `json:"id"`
-		CreatedAt string `json:"created_at"`
-	}
-	var runs []runMeta
-	for rows.Next() {
-		var rm runMeta
-		var t sql.NullTime
-		if err := rows.Scan(&rm.ID, &t); err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-			return
-		}
-		if t.Valid {
-			rm.CreatedAt = t.Time.UTC().Format(time.RFC3339)
-		}
-		runs = append(runs, rm)
-	}
-	writeJSON(w, http.StatusOK, runs)
-}
-
-// getRunHandler returns the payload of a specific run.
-func getRunHandler(w http.ResponseWriter, r *http.Request) {
-	agentID := chi.URLParam(r, "agentID")
-	runID := chi.URLParam(r, "runID")
-	var payloadRaw []byte
-	err := db.DB.QueryRow(
-		`SELECT payload FROM agent_runs WHERE agent_id = $1 AND id = $2`, agentID, runID,
-	).Scan(&payloadRaw)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			writeJSON(w, http.StatusNotFound, map[string]string{"error": "run not found"})
-		} else {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		}
-		return
-	}
-	// Decode payload into a map to allow enriching with graph when absent
-	var payloadMap map[string]interface{}
-	if err := json.Unmarshal(payloadRaw, &payloadMap); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-	// If graph structure is not embedded, attach it from the agent_versions table
-	if _, hasGraph := payloadMap["graph"]; !hasGraph {
-		if ver, ok := payloadMap["versionId"].(string); ok && ver != "" {
-			var graphRaw []byte
-			// fetch the stored graph JSON
-			if err := db.DB.QueryRow(`SELECT graph FROM agent_versions WHERE id = $1`, ver).Scan(&graphRaw); err == nil {
-				var graph interface{}
-				if err2 := json.Unmarshal(graphRaw, &graph); err2 == nil {
-					payloadMap["graph"] = graph
-				}
-			}
-		}
-	}
-	writeJSON(w, http.StatusOK, payloadMap)
 }
 
 // --- Workflow API handlers ---

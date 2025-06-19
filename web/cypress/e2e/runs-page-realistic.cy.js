@@ -22,7 +22,7 @@ describe('Runs Page - Realistic Tests', () => {
     }).as('getNodeTypes')
 
     // Mock runs list
-    cy.intercept('GET', '/api/agents/test-agent-1/runs', {
+    cy.intercept('GET', '/api/workflow-runs?agent_id=test-agent-1', {
       statusCode: 200,
       body: [
         {
@@ -78,7 +78,7 @@ describe('Runs Page - Realistic Tests', () => {
 
   it('should select and load run details', () => {
     // Mock run details API
-    cy.intercept('GET', '/api/agents/test-agent-1/runs/run-1', {
+    cy.intercept('GET', '/api/workflow-runs/run-1', {
       statusCode: 200,
       body: {
         id: 'run-1',
@@ -127,7 +127,7 @@ describe('Runs Page - Realistic Tests', () => {
 
   it('should handle node selection in run graph', () => {
     // Setup run with details
-    cy.intercept('GET', '/api/agents/test-agent-1/runs/run-1', {
+    cy.intercept('GET', '/api/workflow-runs/run-1', {
       statusCode: 200,
       body: {
         id: 'run-1',
@@ -180,7 +180,7 @@ describe('Runs Page - Realistic Tests', () => {
 
   it('should handle empty runs list', () => {
     // Mock empty runs response
-    cy.intercept('GET', '/api/agents/empty-agent/runs', {
+    cy.intercept('GET', '/api/workflow-runs?agent_id=empty-agent', {
       statusCode: 200,
       body: []
     }).as('getEmptyRuns')
@@ -195,7 +195,7 @@ describe('Runs Page - Realistic Tests', () => {
 
   it('should handle API errors gracefully', () => {
     // Mock error response
-    cy.intercept('GET', '/api/agents/error-agent/runs', {
+    cy.intercept('GET', '/api/workflow-runs?agent_id=error-agent', {
       statusCode: 500,
       body: { error: 'Server error' }
     }).as('getRunsError')
@@ -209,7 +209,7 @@ describe('Runs Page - Realistic Tests', () => {
 
   it('should handle ReactFlow interactions', () => {
     // Setup run with graph
-    cy.intercept('GET', '/api/agents/test-agent-1/runs/run-1', {
+    cy.intercept('GET', '/api/workflow-runs/run-1', {
       statusCode: 200,
       body: {
         id: 'run-1',

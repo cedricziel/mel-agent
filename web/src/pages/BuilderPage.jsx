@@ -396,7 +396,10 @@ function BuilderPage({ agentId }) {
     }
     setTesting(true);
     try {
-      await axios.post(`/api/agents/${agentId}/runs/test`);
+      await axios.post('/api/workflow-runs', {
+        agent_id: agentId,
+        input_data: {}
+      });
     } catch (err) {
       console.error('test run failed', err);
       alert('Test run failed');
