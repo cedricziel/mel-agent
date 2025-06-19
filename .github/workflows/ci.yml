@@ -201,7 +201,7 @@ jobs:
 
       - name: Start backend server
         run: |
-          ./server &
+          ./server server &
           echo $! > server.pid
         env:
           PORT: 8080
