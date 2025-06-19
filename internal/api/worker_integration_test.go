@@ -3,18 +3,16 @@ package api
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"testing"
 	"time"
 
+	"github.com/cedricziel/mel-agent/internal/db"
 	"github.com/cedricziel/mel-agent/internal/testutil"
 	"github.com/cedricziel/mel-agent/pkg/execution"
-	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
@@ -24,10 +22,17 @@ import (
 // Test worker registration with real database
 func TestWorkerRegistrationIntegration(t *testing.T) {
 	ctx := context.Background()
-	_, db, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
+	_, testDB, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
 	defer cleanup()
 
-	router := createWorkerIntegrationTestRouter(db)
+	// Set the global database connection and ensure cleanup
+	originalDB := db.DB
+	db.DB = testDB
+	defer func() {
+		db.DB = originalDB
+	}()
+
+	router := Handler()
 
 	// Test data
 	processID := 12345
@@ -70,7 +75,7 @@ func TestWorkerRegistrationIntegration(t *testing.T) {
 		SELECT id, hostname, process_id, version, capabilities, status, max_concurrent_steps
 		FROM workflow_workers WHERE id = $1
 	`
-	row := db.QueryRow(query, "integration-test-worker-1")
+	row := testDB.QueryRow(query, "integration-test-worker-1")
 	err = row.Scan(
 		&storedWorker.ID, &storedWorker.Hostname, &storedWorker.ProcessID,
 		&storedWorker.Version, pq.Array(&storedWorker.Capabilities),
@@ -92,10 +97,17 @@ func TestWorkerRegistrationIntegration(t *testing.T) {
 // Test work claiming with real database and workflow
 func TestWorkClaimingIntegration(t *testing.T) {
 	ctx := context.Background()
-	_, db, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
+	_, testDB, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
 	defer cleanup()
 
-	router := createWorkerIntegrationTestRouter(db)
+	// Set the global database connection and ensure cleanup
+	originalDB := db.DB
+	db.DB = testDB
+	defer func() {
+		db.DB = originalDB
+	}()
+
+	router := Handler()
 
 	// Create a real workflow run using test agent
 	testAgentID := uuid.MustParse("11111111-1111-1111-1111-111111111111") // From testutil test data
@@ -107,7 +119,7 @@ func TestWorkClaimingIntegration(t *testing.T) {
 		INSERT INTO workflow_runs (id, agent_id, version_id, status, created_at, variables, timeout_seconds, retry_policy)
 		VALUES ($1, $2, $3, 'running', NOW(), '{}', 3600, '{"max_attempts": 3}')
 	`
-	_, err := db.Exec(runQuery, runID, testAgentID, versionID)
+	_, err := testDB.Exec(runQuery, runID, testAgentID, versionID)
 	require.NoError(t, err)
 
 	// Register a worker first
@@ -130,17 +142,12 @@ func TestWorkClaimingIntegration(t *testing.T) {
 			INSERT INTO workflow_queue (id, run_id, queue_type, priority, available_at, created_at, attempt_count, max_attempts)
 			VALUES ($1, $2, $3, $4, NOW(), NOW(), 0, 3)
 		`
-		_, err = db.Exec(queueQuery, item.id, runID, item.queueType, item.priority)
+		_, err = testDB.Exec(queueQuery, item.id, runID, item.queueType, item.priority)
 		require.NoError(t, err)
 	}
 
 	// Test work claiming
 	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/workers/%s/claim-work", workerID), nil)
-
-	// Add chi URL params
-	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("workerID", workerID)
-	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -161,7 +168,7 @@ func TestWorkClaimingIntegration(t *testing.T) {
 
 	// Verify items are claimed in database
 	var claimedCount int
-	err = db.QueryRow("SELECT COUNT(*) FROM workflow_queue WHERE claimed_by = $1", workerID).Scan(&claimedCount)
+	err = testDB.QueryRow("SELECT COUNT(*) FROM workflow_queue WHERE claimed_by = $1", workerID).Scan(&claimedCount)
 	require.NoError(t, err)
 	assert.Equal(t, 3, claimedCount)
 
@@ -171,10 +178,17 @@ func TestWorkClaimingIntegration(t *testing.T) {
 // Test complete worker lifecycle with real database
 func TestWorkerLifecycleIntegration(t *testing.T) {
 	ctx := context.Background()
-	_, db, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
+	_, testDB, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
 	defer cleanup()
 
-	router := createWorkerIntegrationTestRouter(db)
+	// Set the global database connection and ensure cleanup
+	originalDB := db.DB
+	db.DB = testDB
+	defer func() {
+		db.DB = originalDB
+	}()
+
+	router := Handler()
 	workerID := "lifecycle-test-worker"
 
 	// 1. Register worker
@@ -206,9 +220,6 @@ func TestWorkerLifecycleIntegration(t *testing.T) {
 
 	// 2. Send heartbeat
 	req = httptest.NewRequest(http.MethodPut, fmt.Sprintf("/workers/%s/heartbeat", workerID), nil)
-	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("workerID", workerID)
-	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 
 	w = httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -217,7 +228,7 @@ func TestWorkerLifecycleIntegration(t *testing.T) {
 	// Verify heartbeat was updated
 	var lastHeartbeat time.Time
 	var status string
-	err = db.QueryRow("SELECT last_heartbeat, status FROM workflow_workers WHERE id = $1", workerID).Scan(&lastHeartbeat, &status)
+	err = testDB.QueryRow("SELECT last_heartbeat, status FROM workflow_workers WHERE id = $1", workerID).Scan(&lastHeartbeat, &status)
 	require.NoError(t, err)
 	assert.Equal(t, "idle", status)
 	assert.WithinDuration(t, time.Now(), lastHeartbeat, 5*time.Second)
@@ -231,7 +242,7 @@ func TestWorkerLifecycleIntegration(t *testing.T) {
 		INSERT INTO workflow_runs (id, agent_id, version_id, status, created_at)
 		VALUES ($1, $2, $3, 'running', NOW())
 	`
-	_, err = db.Exec(runQuery, runID, testAgentID, versionID)
+	_, err = testDB.Exec(runQuery, runID, testAgentID, versionID)
 	require.NoError(t, err)
 
 	workItemID := uuid.New()
@@ -239,12 +250,11 @@ func TestWorkerLifecycleIntegration(t *testing.T) {
 		INSERT INTO workflow_queue (id, run_id, queue_type, priority, available_at, created_at)
 		VALUES ($1, $2, 'execute_step', 5, NOW(), NOW())
 	`
-	_, err = db.Exec(queueQuery, workItemID, runID)
+	_, err = testDB.Exec(queueQuery, workItemID, runID)
 	require.NoError(t, err)
 
 	// Claim work
 	req = httptest.NewRequest(http.MethodPost, fmt.Sprintf("/workers/%s/claim-work", workerID), nil)
-	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 
 	w = httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -262,22 +272,18 @@ func TestWorkerLifecycleIntegration(t *testing.T) {
 	req = httptest.NewRequest(http.MethodPost, fmt.Sprintf("/workers/%s/complete-work/%s", workerID, workItemID), bytes.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 
-	rctx.URLParams.Add("itemID", workItemID.String())
-	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
-
 	w = httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	// Verify work was completed (removed from queue)
 	var queueCount int
-	err = db.QueryRow("SELECT COUNT(*) FROM workflow_queue WHERE id = $1", workItemID).Scan(&queueCount)
+	err = testDB.QueryRow("SELECT COUNT(*) FROM workflow_queue WHERE id = $1", workItemID).Scan(&queueCount)
 	require.NoError(t, err)
 	assert.Equal(t, 0, queueCount)
 
 	// 5. Unregister worker
 	req = httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/workers/%s", workerID), nil)
-	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
 
 	w = httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -285,7 +291,7 @@ func TestWorkerLifecycleIntegration(t *testing.T) {
 
 	// Verify worker was removed
 	var workerCount int
-	err = db.QueryRow("SELECT COUNT(*) FROM workflow_workers WHERE id = $1", workerID).Scan(&workerCount)
+	err = testDB.QueryRow("SELECT COUNT(*) FROM workflow_workers WHERE id = $1", workerID).Scan(&workerCount)
 	require.NoError(t, err)
 	assert.Equal(t, 0, workerCount)
 
@@ -295,10 +301,17 @@ func TestWorkerLifecycleIntegration(t *testing.T) {
 // Test worker upsert behavior with migrations
 func TestWorkerUpsertIntegration(t *testing.T) {
 	ctx := context.Background()
-	_, db, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
+	_, testDB, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
 	defer cleanup()
 
-	router := createWorkerIntegrationTestRouter(db)
+	// Set the global database connection and ensure cleanup
+	originalDB := db.DB
+	db.DB = testDB
+	defer func() {
+		db.DB = originalDB
+	}()
+
+	router := Handler()
 	workerID := "upsert-test-worker"
 
 	// First registration
@@ -349,7 +362,7 @@ func TestWorkerUpsertIntegration(t *testing.T) {
 
 	// Verify only one worker exists with updated details
 	var count int
-	err = db.QueryRow("SELECT COUNT(*) FROM workflow_workers WHERE id = $1", workerID).Scan(&count)
+	err = testDB.QueryRow("SELECT COUNT(*) FROM workflow_workers WHERE id = $1", workerID).Scan(&count)
 	require.NoError(t, err)
 	assert.Equal(t, 1, count)
 
@@ -359,7 +372,7 @@ func TestWorkerUpsertIntegration(t *testing.T) {
 		SELECT id, hostname, process_id, version, capabilities, status, max_concurrent_steps
 		FROM workflow_workers WHERE id = $1
 	`
-	row := db.QueryRow(query, workerID)
+	row := testDB.QueryRow(query, workerID)
 	err = row.Scan(
 		&storedWorker.ID, &storedWorker.Hostname, &storedWorker.ProcessID,
 		&storedWorker.Version, pq.Array(&storedWorker.Capabilities),
@@ -375,266 +388,6 @@ func TestWorkerUpsertIntegration(t *testing.T) {
 	assert.Equal(t, 10, storedWorker.MaxConcurrentSteps)
 
 	t.Logf("✅ Worker upsert integration test passed - Worker %s updated successfully", workerID)
-}
-
-// createWorkerIntegrationTestRouter creates a router with actual worker handlers for integration testing
-func createWorkerIntegrationTestRouter(db *sql.DB) http.Handler {
-	r := chi.NewRouter()
-
-	// Use the actual worker handlers but override the database reference
-	// This simulates the real API but with our test database
-	r.Post("/workers", func(w http.ResponseWriter, r *http.Request) {
-		registerWorkerWithDB(w, r, db)
-	})
-
-	r.Put("/workers/{workerID}/heartbeat", func(w http.ResponseWriter, r *http.Request) {
-		updateWorkerHeartbeatWithDB(w, r, db)
-	})
-
-	r.Delete("/workers/{workerID}", func(w http.ResponseWriter, r *http.Request) {
-		unregisterWorkerWithDB(w, r, db)
-	})
-
-	r.Post("/workers/{workerID}/claim-work", func(w http.ResponseWriter, r *http.Request) {
-		claimWorkWithDB(w, r, db)
-	})
-
-	r.Post("/workers/{workerID}/complete-work/{itemID}", func(w http.ResponseWriter, r *http.Request) {
-		completeWorkWithDB(w, r, db)
-	})
-
-	return r
-}
-
-// Worker handler functions that accept a database parameter for testing
-func registerWorkerWithDB(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-	var worker execution.WorkflowWorker
-	if err := json.NewDecoder(r.Body).Decode(&worker); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid worker data"})
-		return
-	}
-
-	query := `
-		INSERT INTO workflow_workers (
-			id, hostname, process_id, version, capabilities, status,
-			last_heartbeat, started_at, max_concurrent_steps,
-			current_step_count, total_steps_executed, total_execution_time_ms
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-		ON CONFLICT (id) DO UPDATE SET
-			hostname = EXCLUDED.hostname,
-			process_id = EXCLUDED.process_id,
-			version = EXCLUDED.version,
-			capabilities = EXCLUDED.capabilities,
-			status = EXCLUDED.status,
-			last_heartbeat = EXCLUDED.last_heartbeat,
-			started_at = EXCLUDED.started_at,
-			max_concurrent_steps = EXCLUDED.max_concurrent_steps
-	`
-
-	_, err := db.Exec(query,
-		worker.ID, worker.Hostname, worker.ProcessID, worker.Version,
-		pq.Array(worker.Capabilities), worker.Status, worker.LastHeartbeat,
-		worker.StartedAt, worker.MaxConcurrentSteps, worker.CurrentStepCount,
-		worker.TotalStepsExecuted, worker.TotalExecutionTimeMS,
-	)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to register worker"})
-		return
-	}
-
-	writeJSON(w, http.StatusCreated, map[string]string{"id": worker.ID})
-}
-
-func updateWorkerHeartbeatWithDB(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-	workerID := chi.URLParam(r, "workerID")
-
-	query := `UPDATE workflow_workers SET last_heartbeat = NOW(), status = 'idle' WHERE id = $1`
-	result, err := db.Exec(query, workerID)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to update heartbeat"})
-		return
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to check update result"})
-		return
-	}
-
-	if rowsAffected == 0 {
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": "worker not found"})
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-}
-
-func unregisterWorkerWithDB(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-	workerID := chi.URLParam(r, "workerID")
-
-	query := `DELETE FROM workflow_workers WHERE id = $1`
-	result, err := db.Exec(query, workerID)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to unregister worker"})
-		return
-	}
-
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to check delete result"})
-		return
-	}
-
-	if rowsAffected == 0 {
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": "worker not found"})
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func claimWorkWithDB(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-	workerID := chi.URLParam(r, "workerID")
-	maxItems := 5 // default
-
-	if maxItemsStr := r.URL.Query().Get("max_items"); maxItemsStr != "" {
-		if parsed, err := strconv.Atoi(maxItemsStr); err == nil && parsed > 0 {
-			maxItems = parsed
-		}
-	}
-
-	// Begin transaction
-	tx, err := db.Begin()
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to start transaction"})
-		return
-	}
-	defer tx.Rollback()
-
-	// Select available work items
-	query := `
-		SELECT id, run_id, step_id, queue_type, priority, available_at, 
-		       created_at, attempt_count, max_attempts, payload
-		FROM workflow_queue 
-		WHERE claimed_at IS NULL 
-		  AND claimed_by IS NULL 
-		  AND available_at <= NOW()
-		ORDER BY priority DESC, created_at ASC
-		LIMIT $1
-		FOR UPDATE SKIP LOCKED
-	`
-
-	rows, err := tx.Query(query, maxItems)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to query work items"})
-		return
-	}
-	defer rows.Close()
-
-	var workItems []*execution.QueueItem
-	var claimedIDs []uuid.UUID
-
-	for rows.Next() {
-		var item execution.QueueItem
-		var payloadBytes []byte
-
-		err := rows.Scan(
-			&item.ID, &item.RunID, &item.StepID, &item.QueueType,
-			&item.Priority, &item.AvailableAt, &item.CreatedAt,
-			&item.AttemptCount, &item.MaxAttempts, &payloadBytes,
-		)
-		if err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to scan work item"})
-			return
-		}
-
-		// Parse payload if present
-		if len(payloadBytes) > 0 {
-			if err := json.Unmarshal(payloadBytes, &item.Payload); err != nil {
-				item.Payload = nil
-			}
-		}
-
-		workItems = append(workItems, &item)
-		claimedIDs = append(claimedIDs, item.ID)
-	}
-
-	if err := rows.Err(); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to iterate work items"})
-		return
-	}
-
-	// Claim the work items
-	if len(claimedIDs) > 0 {
-		claimQuery := `
-			UPDATE workflow_queue 
-			SET claimed_at = NOW(), claimed_by = $1, attempt_count = attempt_count + 1
-			WHERE id = ANY($2)
-		`
-		_, err = tx.Exec(claimQuery, workerID, pq.Array(claimedIDs))
-		if err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to claim work items"})
-			return
-		}
-	}
-
-	if err := tx.Commit(); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to commit transaction"})
-		return
-	}
-
-	writeJSON(w, http.StatusOK, workItems)
-}
-
-func completeWorkWithDB(w http.ResponseWriter, r *http.Request, db *sql.DB) {
-	workerID := chi.URLParam(r, "workerID")
-	itemIDStr := chi.URLParam(r, "itemID")
-
-	itemID, err := uuid.Parse(itemIDStr)
-	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid item ID"})
-		return
-	}
-
-	var result execution.WorkResult
-	if err := json.NewDecoder(r.Body).Decode(&result); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid result data"})
-		return
-	}
-
-	// Begin transaction
-	tx, err := db.Begin()
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to start transaction"})
-		return
-	}
-	defer tx.Rollback()
-
-	// Remove work item
-	deleteQuery := `DELETE FROM workflow_queue WHERE id = $1 AND claimed_by = $2`
-	deleteResult, err := tx.Exec(deleteQuery, itemID, workerID)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to delete work item"})
-		return
-	}
-
-	rowsAffected, err := deleteResult.RowsAffected()
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to check delete result"})
-		return
-	}
-
-	if rowsAffected == 0 {
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": "work item not found or not claimed by this worker"})
-		return
-	}
-
-	if err := tx.Commit(); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "failed to commit transaction"})
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
 }
 
 // Helper function to register a worker for tests

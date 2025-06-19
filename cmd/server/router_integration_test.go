@@ -52,7 +52,7 @@ func TestServerRouterIntegration(t *testing.T) {
 	// Route based on path analysis since we know the exact route patterns
 	mainAPIHandler := httpApi.Handler()
 	workflowHandler := workflowEngineFactory(workflowEngine)
-	
+
 	apiHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Chi Mount passes the full path including /api prefix
 		// Workflow engine only handles /api/workflow-runs* routes
@@ -67,7 +67,7 @@ func TestServerRouterIntegration(t *testing.T) {
 			mainAPIHandler.ServeHTTP(w, r)
 		}
 	})
-	
+
 	r.Mount("/api", apiHandler)
 
 	// Test critical endpoints that should be available
@@ -257,7 +257,7 @@ func TestWorkflowEngineRoutes(t *testing.T) {
 	}
 }
 
-// Test demonstrating the route conflict issue
+// Test demonstrating the route conflict issue is fixed
 func TestRouteConflictDemonstration(t *testing.T) {
 	ctx := context.Background()
 	_, testDB, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
@@ -277,25 +277,40 @@ func TestRouteConflictDemonstration(t *testing.T) {
 
 	r := chi.NewRouter()
 
-	// Test the FIXED setup - no more conflicts
-	apiRouter := chi.NewRouter()
-	apiRouter.Mount("/workflow-runs", workflowEngineFactory(workflowEngine))
-	apiRouter.Mount("/", httpApi.Handler())
-	r.Mount("/api", apiRouter)
+	// Use the SAME setup as the actual server - efficient path-based routing
+	mainAPIHandler := httpApi.Handler()
+	workflowHandler := workflowEngineFactory(workflowEngine)
+
+	apiHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Chi Mount passes the full path including /api prefix
+		// Workflow engine only handles /api/workflow-runs* routes
+		// Everything else goes to main API - this is more efficient than buffering
+		if strings.HasPrefix(r.URL.Path, "/api/workflow-runs") {
+			// Strip /api prefix for workflow handler since it expects /workflow-runs
+			r.URL.Path = strings.TrimPrefix(r.URL.Path, "/api")
+			workflowHandler.ServeHTTP(w, r)
+		} else {
+			// Strip /api prefix for main API handler as well
+			r.URL.Path = strings.TrimPrefix(r.URL.Path, "/api")
+			mainAPIHandler.ServeHTTP(w, r)
+		}
+	})
+
+	r.Mount("/api", apiHandler)
 
 	// Test that main API routes are now accessible
 	req := httptest.NewRequest(http.MethodGet, "/api/agents", nil)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	// This should demonstrate the issue
-	t.Logf("Testing /api/agents after route conflict...")
+	// This should demonstrate the issue is fixed
+	t.Logf("Testing /api/agents with efficient routing...")
 	t.Logf("Status code: %d", w.Code)
 	t.Logf("Response: %s", w.Body.String())
 
 	if w.Code == http.StatusNotFound {
 		t.Errorf("❌ STILL BROKEN: /api/agents is not accessible")
-		t.Logf("The merge handler approach didn't work")
+		t.Logf("The efficient routing approach didn't work")
 	} else {
 		t.Logf("✅ FIXED: /api/agents is now accessible (status: %d)", w.Code)
 	}
@@ -305,7 +320,7 @@ func TestRouteConflictDemonstration(t *testing.T) {
 	w2 := httptest.NewRecorder()
 	r.ServeHTTP(w2, req2)
 
-	t.Logf("Testing /api/workflow-runs after route conflict...")
+	t.Logf("Testing /api/workflow-runs with efficient routing...")
 	t.Logf("Status code: %d", w2.Code)
 	t.Logf("Response: %s", w2.Body.String())
 

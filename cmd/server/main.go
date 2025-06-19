@@ -88,7 +88,6 @@ func getEnvOrDefault(key, defaultValue string) string {
 	return defaultValue
 }
 
-
 func startServer(port string) {
 	// connect database (fatal on error)
 	db.Connect()
@@ -146,7 +145,7 @@ func startServer(port string) {
 	// Route based on path analysis since we know the exact route patterns
 	mainAPIHandler := httpApi.Handler()
 	workflowHandler := workflowEngineFactory(workflowEngine)
-	
+
 	apiHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Chi Mount passes the full path including /api prefix
 		// Workflow engine only handles /api/workflow-runs* routes
@@ -161,7 +160,7 @@ func startServer(port string) {
 			mainAPIHandler.ServeHTTP(w, r)
 		}
 	})
-	
+
 	r.Mount("/api", apiHandler)
 
 	log.Printf("server listening on :%s", port)

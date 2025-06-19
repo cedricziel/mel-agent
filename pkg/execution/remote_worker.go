@@ -3,6 +3,8 @@ package execution
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -42,6 +44,11 @@ func NewRemoteWorker(serverURL, token, workerID string, mel api.Mel, concurrency
 
 // Start begins the remote worker execution loop
 func (rw *RemoteWorker) Start(ctx context.Context) error {
+	// Generate worker ID if not provided
+	if rw.workerID == "" {
+		rw.workerID = generateWorkerID()
+	}
+
 	// Create worker info
 	hostname, _ := os.Hostname()
 	processID := os.Getpid()
@@ -172,6 +179,11 @@ func (rw *RemoteWorker) unregisterWorker(ctx context.Context) error {
 
 // workLoop is the main work processing loop
 func (rw *RemoteWorker) workLoop(ctx context.Context) error {
+	// Process work immediately when starting
+	if err := rw.processWork(ctx); err != nil {
+		log.Printf("Error processing initial work: %v", err)
+	}
+
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
@@ -342,4 +354,14 @@ func getVersion() *string {
 // stringPointer returns a pointer to a string
 func stringPointer(s string) *string {
 	return &s
+}
+
+// generateWorkerID generates a unique worker ID
+func generateWorkerID() string {
+	bytes := make([]byte, 4)
+	if _, err := rand.Read(bytes); err != nil {
+		// Fallback to timestamp-based ID
+		return fmt.Sprintf("worker-%d", time.Now().Unix())
+	}
+	return fmt.Sprintf("worker-%s", hex.EncodeToString(bytes))
 }

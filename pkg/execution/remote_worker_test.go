@@ -22,6 +22,7 @@ type MockAPIServer struct {
 	workQueue         []*QueueItem
 	completedWork     []*WorkResult
 	heartbeats        map[string]time.Time
+	validToken        string
 }
 
 func NewMockAPIServer() *MockAPIServer {
@@ -30,6 +31,17 @@ func NewMockAPIServer() *MockAPIServer {
 		workQueue:         make([]*QueueItem, 0),
 		completedWork:     make([]*WorkResult, 0),
 		heartbeats:        make(map[string]time.Time),
+		validToken:        "test-token", // Set a valid token for testing
+	}
+
+	// Helper function to validate token
+	validateToken := func(r *http.Request) bool {
+		auth := r.Header.Get("Authorization")
+		if !strings.HasPrefix(auth, "Bearer ") {
+			return false
+		}
+		token := strings.TrimPrefix(auth, "Bearer ")
+		return token == mock.validToken
 	}
 
 	mux := http.NewServeMux()
@@ -42,8 +54,7 @@ func NewMockAPIServer() *MockAPIServer {
 		}
 
 		// Check authorization
-		auth := r.Header.Get("Authorization")
-		if !strings.HasPrefix(auth, "Bearer ") {
+		if !validateToken(r) {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -69,8 +80,7 @@ func NewMockAPIServer() *MockAPIServer {
 			workerID := strings.TrimSuffix(path, "/heartbeat")
 
 			// Check authorization
-			auth := r.Header.Get("Authorization")
-			if !strings.HasPrefix(auth, "Bearer ") {
+			if !validateToken(r) {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
@@ -94,8 +104,7 @@ func NewMockAPIServer() *MockAPIServer {
 			workerID := parts[0]
 
 			// Check authorization
-			auth := r.Header.Get("Authorization")
-			if !strings.HasPrefix(auth, "Bearer ") {
+			if !validateToken(r) {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
@@ -131,8 +140,7 @@ func NewMockAPIServer() *MockAPIServer {
 			itemIDStr := parts[2]
 
 			// Check authorization
-			auth := r.Header.Get("Authorization")
-			if !strings.HasPrefix(auth, "Bearer ") {
+			if !validateToken(r) {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
@@ -178,8 +186,7 @@ func NewMockAPIServer() *MockAPIServer {
 			workerID := path
 
 			// Check authorization
-			auth := r.Header.Get("Authorization")
-			if !strings.HasPrefix(auth, "Bearer ") {
+			if !validateToken(r) {
 				w.WriteHeader(http.StatusUnauthorized)
 				return
 			}
