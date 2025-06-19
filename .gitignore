@@ -18,3 +18,9 @@ web/cypress/videos/
 .cache
 /server
 /mel-server
+
+# Configuration
+config.yaml
+config.yml
+config.json
+config.toml

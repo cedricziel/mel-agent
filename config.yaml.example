@@ -1,0 +1,17 @@
+# MEL Agent Configuration File
+# Copy this file to config.yaml and modify as needed
+
+# Server configuration
+server:
+  port: "8080"
+
+# Worker configuration
+worker:
+  server: "http://localhost:8080"
+  token: "your-worker-token"
+  id: "worker-001"
+  concurrency: 10
+
+# Database configuration
+database:
+  url: "postgres://postgres:postgres@localhost:5432/agentsaas?sslmode=disable"

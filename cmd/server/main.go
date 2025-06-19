@@ -15,6 +15,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	httpApi "github.com/cedricziel/mel-agent/internal/api"
 	"github.com/cedricziel/mel-agent/internal/db"
@@ -26,6 +27,7 @@ import (
 )
 
 func main() {
+	initConfig()
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
@@ -55,7 +57,7 @@ The server will:
 - Handle webhooks at /webhooks/{provider}/{triggerID}
 - Provide health check at /health`,
 	Run: func(cmd *cobra.Command, args []string) {
-		port, _ := cmd.Flags().GetString("port")
+		port := viper.GetString("server.port")
 		startServer(port)
 	},
 }
@@ -71,10 +73,10 @@ The worker will:
 - Process workflow tasks with specified concurrency
 - Auto-generate worker ID if not provided`,
 	Run: func(cmd *cobra.Command, args []string) {
-		serverURL, _ := cmd.Flags().GetString("server")
-		token, _ := cmd.Flags().GetString("token")
-		workerID, _ := cmd.Flags().GetString("id")
-		concurrency, _ := cmd.Flags().GetInt("concurrency")
+		serverURL := viper.GetString("worker.server")
+		token := viper.GetString("worker.token")
+		workerID := viper.GetString("worker.id")
+		concurrency := viper.GetInt("worker.concurrency")
 
 		if token == "" {
 			log.Fatal("Worker token is required. Set MEL_WORKER_TOKEN environment variable or use --token flag")
@@ -90,19 +92,65 @@ func init() {
 	rootCmd.AddCommand(workerCmd)
 
 	// Server command flags
-	serverCmd.Flags().StringP("port", "p", getEnvOrDefault("PORT", "8080"), "Port to listen on")
+	serverCmd.Flags().StringP("port", "p", "8080", "Port to listen on")
+	viper.BindPFlag("server.port", serverCmd.Flags().Lookup("port"))
 
 	// Worker command flags
-	workerCmd.Flags().StringP("server", "s", getEnvOrDefault("MEL_SERVER_URL", "http://localhost:8080"), "API server URL")
-	workerCmd.Flags().StringP("token", "t", getEnvOrDefault("MEL_WORKER_TOKEN", ""), "Authentication token (required)")
-	workerCmd.Flags().String("id", getEnvOrDefault("MEL_WORKER_ID", ""), "Worker ID (auto-generated if empty)")
+	workerCmd.Flags().StringP("server", "s", "http://localhost:8080", "API server URL")
+	workerCmd.Flags().StringP("token", "t", "", "Authentication token (required)")
+	workerCmd.Flags().String("id", "", "Worker ID (auto-generated if empty)")
 	workerCmd.Flags().IntP("concurrency", "c", 5, "Number of concurrent workflow executions")
+
+	// Bind worker flags to viper
+	viper.BindPFlag("worker.server", workerCmd.Flags().Lookup("server"))
+	viper.BindPFlag("worker.token", workerCmd.Flags().Lookup("token"))
+	viper.BindPFlag("worker.id", workerCmd.Flags().Lookup("id"))
+	viper.BindPFlag("worker.concurrency", workerCmd.Flags().Lookup("concurrency"))
 
 	// Mark required flags
 	workerCmd.MarkFlagRequired("token")
 }
 
 
+
+// initConfig initializes Viper configuration
+func initConfig() {
+	// Set config file name and paths
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+	
+	// Add config file search paths
+	viper.AddConfigPath(".")                    // Current directory
+	viper.AddConfigPath("$HOME/.mel-agent")     // User home directory
+	viper.AddConfigPath("/etc/mel-agent")       // System-wide config
+	
+	// Environment variable configuration
+	viper.SetEnvPrefix("MEL")                   // Prefix for environment variables
+	viper.AutomaticEnv()                        // Automatically read env vars
+	
+	// Support legacy environment variables for backward compatibility
+	viper.BindEnv("server.port", "PORT")
+	viper.BindEnv("worker.server", "MEL_SERVER_URL")
+	viper.BindEnv("worker.token", "MEL_WORKER_TOKEN")
+	viper.BindEnv("worker.id", "MEL_WORKER_ID")
+	viper.BindEnv("database.url", "DATABASE_URL")
+	
+	// Set defaults
+	viper.SetDefault("server.port", "8080")
+	viper.SetDefault("worker.server", "http://localhost:8080")
+	viper.SetDefault("worker.concurrency", 5)
+	viper.SetDefault("database.url", "postgres://postgres:postgres@localhost:5432/agentsaas?sslmode=disable")
+	
+	// Try to read config file (ignore if not found)
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			// Config file not found; ignore and use defaults/env vars
+		} else {
+			// Config file was found but another error was produced
+			log.Printf("Error reading config file: %v", err)
+		}
+	}
+}
 
 func getEnvOrDefault(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
