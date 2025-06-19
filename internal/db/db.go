@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"sort"
+	"strconv"
 	"time"
 
 	_ "github.com/lib/pq" // Postgres driver
@@ -31,17 +32,22 @@ func Connect() {
 
 	// Configure connection pool for horizontal scaling
 	// These settings are optimized for multiple API server instances
-	DB.SetMaxOpenConns(25)                 // Maximum number of open connections to the database
-	DB.SetMaxIdleConns(10)                 // Maximum number of connections in the idle connection pool
-	DB.SetConnMaxLifetime(5 * time.Minute) // Maximum amount of time a connection may be reused
-	DB.SetConnMaxIdleTime(2 * time.Minute) // Maximum amount of time a connection may be idle
+	maxOpenConns := getEnvInt("DB_MAX_OPEN_CONNS", 25)
+	maxIdleConns := getEnvInt("DB_MAX_IDLE_CONNS", 10)
+	connMaxLifetime := getEnvDuration("DB_CONN_MAX_LIFETIME", 5*time.Minute)
+	connMaxIdleTime := getEnvDuration("DB_CONN_MAX_IDLE_TIME", 2*time.Minute)
+
+	DB.SetMaxOpenConns(maxOpenConns)
+	DB.SetMaxIdleConns(maxIdleConns)
+	DB.SetConnMaxLifetime(connMaxLifetime)
+	DB.SetConnMaxIdleTime(connMaxIdleTime)
 
 	if err := DB.Ping(); err != nil {
 		log.Fatalf("db ping: %v", err)
 	}
 
 	log.Printf("Database connected with pool: max_open=%d, max_idle=%d, max_lifetime=%v",
-		25, 10, 5*time.Minute)
+		maxOpenConns, maxIdleConns, connMaxLifetime)
 
 	if err := applyMigrations(); err != nil {
 		log.Fatalf("apply migrations: %v", err)
@@ -112,4 +118,26 @@ func Tx(fn func(*sql.Tx) error) error {
 		return err
 	}
 	return tx.Commit()
+}
+
+// getEnvInt gets an integer environment variable with a default value
+func getEnvInt(key string, defaultValue int) int {
+	if value := os.Getenv(key); value != "" {
+		if intValue, err := strconv.Atoi(value); err == nil {
+			return intValue
+		}
+		log.Printf("Warning: Invalid integer value for %s: %s, using default: %d", key, value, defaultValue)
+	}
+	return defaultValue
+}
+
+// getEnvDuration gets a duration environment variable with a default value
+func getEnvDuration(key string, defaultValue time.Duration) time.Duration {
+	if value := os.Getenv(key); value != "" {
+		if duration, err := time.ParseDuration(value); err == nil {
+			return duration
+		}
+		log.Printf("Warning: Invalid duration value for %s: %s, using default: %v", key, value, defaultValue)
+	}
+	return defaultValue
 }

@@ -38,10 +38,10 @@ services:
   # Worker instances (can be scaled with --scale worker=N)
   worker:
     build: .
-    command: ./server worker --token worker-token-123 --server http://nginx --concurrency 5
+    command: ./server worker --token ${WORKER_TOKEN:-worker-dev-token} --server http://nginx --concurrency 5
     scale: 2  # Default: 2 worker instances
     environment:
-      - MEL_WORKER_TOKEN=worker-token-123
+      - MEL_WORKER_TOKEN=${WORKER_TOKEN:-worker-dev-token}
       - MEL_SERVER_URL=http://nginx
     depends_on:
       nginx:

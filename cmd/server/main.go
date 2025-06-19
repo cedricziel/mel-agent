@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -426,7 +427,7 @@ func startWorker(serverURL, token, workerID string, concurrency int) {
 func generateWorkerID() string {
 	bytes := make([]byte, 4)
 	if _, err := rand.Read(bytes); err != nil {
-		// Fallback to timestamp-based ID
+		log.Printf("Warning: Failed to generate random worker ID, using timestamp fallback: %v", err)
 		return fmt.Sprintf("worker-%d", time.Now().Unix())
 	}
 	return fmt.Sprintf("worker-%s", hex.EncodeToString(bytes))
@@ -487,10 +488,16 @@ func readinessCheckHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusServiceUnavailable)
 	}
 
-	// Simple JSON marshaling to avoid dependencies
-	dbStatus := checks["database"].(map[string]interface{})["status"].(string)
-	jsonResponse := fmt.Sprintf(`{"status":"%s","timestamp":"%s","checks":{"database":{"status":"%s"}}}`,
-		response.Status, response.Timestamp, dbStatus)
+	// Safe JSON marshaling with proper error handling
+	responseBytes, err := json.Marshal(response)
+	if err != nil {
+		// Fallback to simple response if marshaling fails
+		log.Printf("Warning: Failed to marshal readiness response: %v", err)
+		fallbackResponse := fmt.Sprintf(`{"status":"%s","timestamp":"%s","error":"marshaling_failed"}`,
+			overallStatus, time.Now().UTC().Format(time.RFC3339))
+		w.Write([]byte(fallbackResponse))
+		return
+	}
 
-	w.Write([]byte(jsonResponse))
+	w.Write(responseBytes)
 }
