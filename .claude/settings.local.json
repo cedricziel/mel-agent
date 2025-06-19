@@ -23,7 +23,8 @@
       "Bash(pnpm test:*)",
       "Bash(pnpm lint:*)",
       "Bash(curl:*)",
-      "Bash(go get:*)"
+      "Bash(go get:*)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": []
   },

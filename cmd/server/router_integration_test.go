@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	httpApi "github.com/cedricziel/mel-agent/internal/api"
@@ -47,8 +48,26 @@ func TestServerRouterIntegration(t *testing.T) {
 	// webhook entrypoint for external events
 	r.HandleFunc("/webhooks/{provider}/{triggerID}", httpApi.WebhookHandler)
 
-	// FIXED: Create a merged API handler that includes both main API and workflow engine routes
-	apiHandler := createMergedAPIHandler(httpApi.Handler(), workflowEngineFactory(workflowEngine))
+	// Create an efficient API handler that routes without response buffering
+	// Route based on path analysis since we know the exact route patterns
+	mainAPIHandler := httpApi.Handler()
+	workflowHandler := workflowEngineFactory(workflowEngine)
+	
+	apiHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Chi Mount passes the full path including /api prefix
+		// Workflow engine only handles /api/workflow-runs* routes
+		// Everything else goes to main API - this is more efficient than buffering
+		if strings.HasPrefix(r.URL.Path, "/api/workflow-runs") {
+			// Strip /api prefix for workflow handler since it expects /workflow-runs
+			r.URL.Path = strings.TrimPrefix(r.URL.Path, "/api")
+			workflowHandler.ServeHTTP(w, r)
+		} else {
+			// Strip /api prefix for main API handler as well
+			r.URL.Path = strings.TrimPrefix(r.URL.Path, "/api")
+			mainAPIHandler.ServeHTTP(w, r)
+		}
+	})
+	
 	r.Mount("/api", apiHandler)
 
 	// Test critical endpoints that should be available
@@ -148,8 +167,15 @@ func TestServerRouterIntegration(t *testing.T) {
 // Test the routes that should be available from the main API handler
 func TestMainAPIRoutes(t *testing.T) {
 	ctx := context.Background()
-	_, _, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
+	_, testDB, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
 	defer cleanup()
+
+	// Set the global database connection that the API handlers expect
+	originalDB := db.DB
+	db.DB = testDB
+	defer func() {
+		db.DB = originalDB // Restore after test
+	}()
 
 	// Test just the main API handler
 	handler := httpApi.Handler()
@@ -252,8 +278,10 @@ func TestRouteConflictDemonstration(t *testing.T) {
 	r := chi.NewRouter()
 
 	// Test the FIXED setup - no more conflicts
-	apiHandler := createMergedAPIHandler(httpApi.Handler(), workflowEngineFactory(workflowEngine))
-	r.Mount("/api", apiHandler)
+	apiRouter := chi.NewRouter()
+	apiRouter.Mount("/workflow-runs", workflowEngineFactory(workflowEngine))
+	apiRouter.Mount("/", httpApi.Handler())
+	r.Mount("/api", apiRouter)
 
 	// Test that main API routes are now accessible
 	req := httptest.NewRequest(http.MethodGet, "/api/agents", nil)
