@@ -50,9 +50,6 @@ func NewCombinedRouter(database *sql.DB, engine execution.ExecutionEngine) http.
 	r.Route("/api", func(r chi.Router) {
 		// WebSocket for collaborative updates (not REST, so not in OpenAPI)
 		r.Get("/ws/agents/{agentID}", wsHandler)
-
-		// Plugin extensions catalog (development utility)
-		r.Get("/extensions", listExtensionsHandler)
 	})
 
 	return r

@@ -139,6 +139,7 @@ func TestOpenAPIEndpointsAccessible(t *testing.T) {
 		{"GET", "/api/node-types", "list node types"},
 		{"GET", "/api/integrations", "list integrations"},
 		{"GET", "/api/credential-types", "list credential types"},
+		{"GET", "/api/extensions", "list extensions"},
 	}
 
 	for _, endpoint := range coreEndpoints {

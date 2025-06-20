@@ -379,6 +379,24 @@ type Error struct {
 	Message *string `json:"message,omitempty"`
 }
 
+// Extension defines model for Extension.
+type Extension struct {
+	// Categories Extension types provided (e.g. "node", "trigger")
+	Categories []string `json:"categories"`
+
+	// Id Unique plugin identifier
+	Id string `json:"id"`
+
+	// Params Parameter schema for configuration/UI
+	Params *[]ParamSpec `json:"params,omitempty"`
+
+	// UiComponent Optional path or URL to React bundle
+	UiComponent *string `json:"ui_component,omitempty"`
+
+	// Version Semver-compliant version string
+	Version string `json:"version"`
+}
+
 // FunctionCall defines model for FunctionCall.
 type FunctionCall struct {
 	// Arguments Function arguments as JSON string
@@ -462,6 +480,39 @@ type NodeType struct {
 // NodeTypeKinds defines model for NodeType.Kinds.
 type NodeTypeKinds string
 
+// ParamSpec defines model for ParamSpec.
+type ParamSpec struct {
+	// Default Default value
+	Default *interface{} `json:"default,omitempty"`
+
+	// Description Help text
+	Description *string `json:"description,omitempty"`
+
+	// Group UI grouping
+	Group *string `json:"group,omitempty"`
+
+	// Label User-facing label
+	Label *string `json:"label,omitempty"`
+
+	// Name Key name
+	Name string `json:"name"`
+
+	// Options Enum options
+	Options *[]string `json:"options,omitempty"`
+
+	// Required Must be provided
+	Required *bool `json:"required,omitempty"`
+
+	// Type Data type (e.g. "string", "number", "enum")
+	Type string `json:"type"`
+
+	// Validators Validation rules
+	Validators *[]ValidatorSpec `json:"validators,omitempty"`
+
+	// VisibilityCondition Conditional display expression
+	VisibilityCondition *string `json:"visibility_condition,omitempty"`
+}
+
 // RegisterWorkerRequest defines model for RegisterWorkerRequest.
 type RegisterWorkerRequest struct {
 	Concurrency *int    `json:"concurrency,omitempty"`
@@ -531,6 +582,15 @@ type UpdateWorkflowRequest struct {
 	Definition  *WorkflowDefinition `json:"definition,omitempty"`
 	Description *string             `json:"description,omitempty"`
 	Name        *string             `json:"name,omitempty"`
+}
+
+// ValidatorSpec defines model for ValidatorSpec.
+type ValidatorSpec struct {
+	// Params Parameters for the validator
+	Params *map[string]interface{} `json:"params,omitempty"`
+
+	// Type Validator type (e.g. "notEmpty", "regex")
+	Type string `json:"type"`
 }
 
 // WorkItem defines model for WorkItem.
@@ -871,6 +931,9 @@ type ServerInterface interface {
 	// List credentials for selection in nodes
 	// (GET /api/credentials)
 	ListCredentials(w http.ResponseWriter, r *http.Request, params ListCredentialsParams)
+	// List available extensions and plugins
+	// (GET /api/extensions)
+	ListExtensions(w http.ResponseWriter, r *http.Request)
 	// Health check endpoint
 	// (GET /api/health)
 	GetHealth(w http.ResponseWriter, r *http.Request)
@@ -1108,6 +1171,12 @@ func (_ Unimplemented) TestCredentials(w http.ResponseWriter, r *http.Request, p
 // List credentials for selection in nodes
 // (GET /api/credentials)
 func (_ Unimplemented) ListCredentials(w http.ResponseWriter, r *http.Request, params ListCredentialsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List available extensions and plugins
+// (GET /api/extensions)
+func (_ Unimplemented) ListExtensions(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -2027,6 +2096,28 @@ func (siw *ServerInterfaceWrapper) ListCredentials(w http.ResponseWriter, r *htt
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListCredentials(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListExtensions operation middleware
+func (siw *ServerInterfaceWrapper) ListExtensions(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListExtensions(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3364,6 +3455,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/api/credentials", wrapper.ListCredentials)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/extensions", wrapper.ListExtensions)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/api/health", wrapper.GetHealth)
 	})
 	r.Group(func(r chi.Router) {
@@ -4276,6 +4370,31 @@ func (response ListCredentials200JSONResponse) VisitListCredentialsResponse(w ht
 type ListCredentials500JSONResponse Error
 
 func (response ListCredentials500JSONResponse) VisitListCredentialsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListExtensionsRequestObject struct {
+}
+
+type ListExtensionsResponseObject interface {
+	VisitListExtensionsResponse(w http.ResponseWriter) error
+}
+
+type ListExtensions200JSONResponse []Extension
+
+func (response ListExtensions200JSONResponse) VisitListExtensionsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListExtensions500JSONResponse Error
+
+func (response ListExtensions500JSONResponse) VisitListExtensionsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(500)
 
@@ -5483,6 +5602,9 @@ type StrictServerInterface interface {
 	// List credentials for selection in nodes
 	// (GET /api/credentials)
 	ListCredentials(ctx context.Context, request ListCredentialsRequestObject) (ListCredentialsResponseObject, error)
+	// List available extensions and plugins
+	// (GET /api/extensions)
+	ListExtensions(ctx context.Context, request ListExtensionsRequestObject) (ListExtensionsResponseObject, error)
 	// Health check endpoint
 	// (GET /api/health)
 	GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error)
@@ -6252,6 +6374,30 @@ func (sh *strictHandler) ListCredentials(w http.ResponseWriter, r *http.Request,
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListCredentialsResponseObject); ok {
 		if err := validResponse.VisitListCredentialsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListExtensions operation middleware
+func (sh *strictHandler) ListExtensions(w http.ResponseWriter, r *http.Request) {
+	var request ListExtensionsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListExtensions(ctx, request.(ListExtensionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListExtensions")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListExtensionsResponseObject); ok {
+		if err := validResponse.VisitListExtensionsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

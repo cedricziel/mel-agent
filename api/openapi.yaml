@@ -1924,6 +1924,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /api/extensions:
+    get:
+      summary: List available extensions and plugins
+      operationId: listExtensions
+      tags:
+        - System
+      responses:
+        '200':
+          description: List of available extensions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Extension'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /api/agents/{agentId}/assistant/chat:
     post:
       summary: Chat with AI assistant for workflow building
@@ -2019,6 +2041,85 @@ components:
           description: Array of response choices
         usage:
           $ref: '#/components/schemas/ChatUsage'
+
+    Extension:
+      type: object
+      required:
+        - id
+        - version
+        - categories
+      properties:
+        id:
+          type: string
+          description: Unique plugin identifier
+        version:
+          type: string
+          description: Semver-compliant version string
+        categories:
+          type: array
+          items:
+            type: string
+          description: Extension types provided (e.g. "node", "trigger")
+        params:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParamSpec'
+          description: Parameter schema for configuration/UI
+        ui_component:
+          type: string
+          description: Optional path or URL to React bundle
+
+    ParamSpec:
+      type: object
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+          description: Key name
+        label:
+          type: string
+          description: User-facing label
+        type:
+          type: string
+          description: Data type (e.g. "string", "number", "enum")
+        required:
+          type: boolean
+          description: Must be provided
+        default:
+          description: Default value
+        group:
+          type: string
+          description: UI grouping
+        visibility_condition:
+          type: string
+          description: Conditional display expression
+        options:
+          type: array
+          items:
+            type: string
+          description: Enum options
+        validators:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidatorSpec'
+          description: Validation rules
+        description:
+          type: string
+          description: Help text
+
+    ValidatorSpec:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          description: Validator type (e.g. "notEmpty", "regex")
+        params:
+          type: object
+          description: Parameters for the validator
 
     ChatMessage:
       type: object
