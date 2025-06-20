@@ -8,7 +8,7 @@ generate-client: ## Generate client code from OpenAPI spec
 
 .PHONY: generate-server
 generate-server: ## Generate server code from OpenAPI spec
-	cd pkg/api && go generate
+	cd internal/api && go generate
 
 .PHONY: generate
 generate: generate-client generate-server

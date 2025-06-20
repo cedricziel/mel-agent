@@ -593,6 +593,52 @@ type ValidatorSpec struct {
 	Type string `json:"type"`
 }
 
+// WebhookPayload Any valid JSON payload for webhook
+type WebhookPayload struct {
+	union json.RawMessage
+}
+
+// WebhookPayload0 JSON object with any properties
+type WebhookPayload0 map[string]interface{}
+
+// WebhookPayload1 JSON array containing any valid JSON values
+type WebhookPayload1 = []WebhookPayload_1_Item
+
+// WebhookPayload10 defines model for .
+type WebhookPayload10 map[string]interface{}
+
+// WebhookPayload11 defines model for .
+type WebhookPayload11 = []interface{}
+
+// WebhookPayload12 defines model for .
+type WebhookPayload12 = string
+
+// WebhookPayload13 defines model for .
+type WebhookPayload13 = float32
+
+// WebhookPayload14 defines model for .
+type WebhookPayload14 = int
+
+// WebhookPayload15 defines model for .
+type WebhookPayload15 = bool
+
+// WebhookPayload_1_Item defines model for WebhookPayload.1.Item.
+type WebhookPayload_1_Item struct {
+	union json.RawMessage
+}
+
+// WebhookPayload2 JSON string value
+type WebhookPayload2 = string
+
+// WebhookPayload3 JSON number (including decimals)
+type WebhookPayload3 = float32
+
+// WebhookPayload4 JSON integer value
+type WebhookPayload4 = int
+
+// WebhookPayload5 JSON boolean (true/false)
+type WebhookPayload5 = bool
+
 // WorkItem defines model for WorkItem.
 type WorkItem struct {
 	CreatedAt *time.Time              `json:"created_at,omitempty"`
@@ -791,9 +837,6 @@ type ExecuteWorkflowJSONBody struct {
 	Input *map[string]interface{} `json:"input,omitempty"`
 }
 
-// HandleWebhookJSONBody defines parameters for HandleWebhook.
-type HandleWebhookJSONBody map[string]interface{}
-
 // CreateAgentJSONRequestBody defines body for CreateAgent for application/json ContentType.
 type CreateAgentJSONRequestBody = CreateAgentRequest
 
@@ -861,7 +904,339 @@ type CreateWorkflowNodeJSONRequestBody = CreateWorkflowNodeRequest
 type UpdateWorkflowNodeJSONRequestBody = UpdateWorkflowNodeRequest
 
 // HandleWebhookJSONRequestBody defines body for HandleWebhook for application/json ContentType.
-type HandleWebhookJSONRequestBody HandleWebhookJSONBody
+type HandleWebhookJSONRequestBody = WebhookPayload
+
+// AsWebhookPayload0 returns the union data inside the WebhookPayload as a WebhookPayload0
+func (t WebhookPayload) AsWebhookPayload0() (WebhookPayload0, error) {
+	var body WebhookPayload0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWebhookPayload0 overwrites any union data inside the WebhookPayload as the provided WebhookPayload0
+func (t *WebhookPayload) FromWebhookPayload0(v WebhookPayload0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWebhookPayload0 performs a merge with any union data inside the WebhookPayload, using the provided WebhookPayload0
+func (t *WebhookPayload) MergeWebhookPayload0(v WebhookPayload0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsWebhookPayload1 returns the union data inside the WebhookPayload as a WebhookPayload1
+func (t WebhookPayload) AsWebhookPayload1() (WebhookPayload1, error) {
+	var body WebhookPayload1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWebhookPayload1 overwrites any union data inside the WebhookPayload as the provided WebhookPayload1
+func (t *WebhookPayload) FromWebhookPayload1(v WebhookPayload1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWebhookPayload1 performs a merge with any union data inside the WebhookPayload, using the provided WebhookPayload1
+func (t *WebhookPayload) MergeWebhookPayload1(v WebhookPayload1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsWebhookPayload2 returns the union data inside the WebhookPayload as a WebhookPayload2
+func (t WebhookPayload) AsWebhookPayload2() (WebhookPayload2, error) {
+	var body WebhookPayload2
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWebhookPayload2 overwrites any union data inside the WebhookPayload as the provided WebhookPayload2
+func (t *WebhookPayload) FromWebhookPayload2(v WebhookPayload2) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWebhookPayload2 performs a merge with any union data inside the WebhookPayload, using the provided WebhookPayload2
+func (t *WebhookPayload) MergeWebhookPayload2(v WebhookPayload2) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsWebhookPayload3 returns the union data inside the WebhookPayload as a WebhookPayload3
+func (t WebhookPayload) AsWebhookPayload3() (WebhookPayload3, error) {
+	var body WebhookPayload3
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWebhookPayload3 overwrites any union data inside the WebhookPayload as the provided WebhookPayload3
+func (t *WebhookPayload) FromWebhookPayload3(v WebhookPayload3) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWebhookPayload3 performs a merge with any union data inside the WebhookPayload, using the provided WebhookPayload3
+func (t *WebhookPayload) MergeWebhookPayload3(v WebhookPayload3) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsWebhookPayload4 returns the union data inside the WebhookPayload as a WebhookPayload4
+func (t WebhookPayload) AsWebhookPayload4() (WebhookPayload4, error) {
+	var body WebhookPayload4
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWebhookPayload4 overwrites any union data inside the WebhookPayload as the provided WebhookPayload4
+func (t *WebhookPayload) FromWebhookPayload4(v WebhookPayload4) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWebhookPayload4 performs a merge with any union data inside the WebhookPayload, using the provided WebhookPayload4
+func (t *WebhookPayload) MergeWebhookPayload4(v WebhookPayload4) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsWebhookPayload5 returns the union data inside the WebhookPayload as a WebhookPayload5
+func (t WebhookPayload) AsWebhookPayload5() (WebhookPayload5, error) {
+	var body WebhookPayload5
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWebhookPayload5 overwrites any union data inside the WebhookPayload as the provided WebhookPayload5
+func (t *WebhookPayload) FromWebhookPayload5(v WebhookPayload5) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWebhookPayload5 performs a merge with any union data inside the WebhookPayload, using the provided WebhookPayload5
+func (t *WebhookPayload) MergeWebhookPayload5(v WebhookPayload5) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t WebhookPayload) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *WebhookPayload) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsWebhookPayload10 returns the union data inside the WebhookPayload_1_Item as a WebhookPayload10
+func (t WebhookPayload_1_Item) AsWebhookPayload10() (WebhookPayload10, error) {
+	var body WebhookPayload10
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWebhookPayload10 overwrites any union data inside the WebhookPayload_1_Item as the provided WebhookPayload10
+func (t *WebhookPayload_1_Item) FromWebhookPayload10(v WebhookPayload10) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWebhookPayload10 performs a merge with any union data inside the WebhookPayload_1_Item, using the provided WebhookPayload10
+func (t *WebhookPayload_1_Item) MergeWebhookPayload10(v WebhookPayload10) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsWebhookPayload11 returns the union data inside the WebhookPayload_1_Item as a WebhookPayload11
+func (t WebhookPayload_1_Item) AsWebhookPayload11() (WebhookPayload11, error) {
+	var body WebhookPayload11
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWebhookPayload11 overwrites any union data inside the WebhookPayload_1_Item as the provided WebhookPayload11
+func (t *WebhookPayload_1_Item) FromWebhookPayload11(v WebhookPayload11) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWebhookPayload11 performs a merge with any union data inside the WebhookPayload_1_Item, using the provided WebhookPayload11
+func (t *WebhookPayload_1_Item) MergeWebhookPayload11(v WebhookPayload11) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsWebhookPayload12 returns the union data inside the WebhookPayload_1_Item as a WebhookPayload12
+func (t WebhookPayload_1_Item) AsWebhookPayload12() (WebhookPayload12, error) {
+	var body WebhookPayload12
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWebhookPayload12 overwrites any union data inside the WebhookPayload_1_Item as the provided WebhookPayload12
+func (t *WebhookPayload_1_Item) FromWebhookPayload12(v WebhookPayload12) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWebhookPayload12 performs a merge with any union data inside the WebhookPayload_1_Item, using the provided WebhookPayload12
+func (t *WebhookPayload_1_Item) MergeWebhookPayload12(v WebhookPayload12) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsWebhookPayload13 returns the union data inside the WebhookPayload_1_Item as a WebhookPayload13
+func (t WebhookPayload_1_Item) AsWebhookPayload13() (WebhookPayload13, error) {
+	var body WebhookPayload13
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWebhookPayload13 overwrites any union data inside the WebhookPayload_1_Item as the provided WebhookPayload13
+func (t *WebhookPayload_1_Item) FromWebhookPayload13(v WebhookPayload13) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWebhookPayload13 performs a merge with any union data inside the WebhookPayload_1_Item, using the provided WebhookPayload13
+func (t *WebhookPayload_1_Item) MergeWebhookPayload13(v WebhookPayload13) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsWebhookPayload14 returns the union data inside the WebhookPayload_1_Item as a WebhookPayload14
+func (t WebhookPayload_1_Item) AsWebhookPayload14() (WebhookPayload14, error) {
+	var body WebhookPayload14
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWebhookPayload14 overwrites any union data inside the WebhookPayload_1_Item as the provided WebhookPayload14
+func (t *WebhookPayload_1_Item) FromWebhookPayload14(v WebhookPayload14) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWebhookPayload14 performs a merge with any union data inside the WebhookPayload_1_Item, using the provided WebhookPayload14
+func (t *WebhookPayload_1_Item) MergeWebhookPayload14(v WebhookPayload14) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsWebhookPayload15 returns the union data inside the WebhookPayload_1_Item as a WebhookPayload15
+func (t WebhookPayload_1_Item) AsWebhookPayload15() (WebhookPayload15, error) {
+	var body WebhookPayload15
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWebhookPayload15 overwrites any union data inside the WebhookPayload_1_Item as the provided WebhookPayload15
+func (t *WebhookPayload_1_Item) FromWebhookPayload15(v WebhookPayload15) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWebhookPayload15 performs a merge with any union data inside the WebhookPayload_1_Item, using the provided WebhookPayload15
+func (t *WebhookPayload_1_Item) MergeWebhookPayload15(v WebhookPayload15) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t WebhookPayload_1_Item) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *WebhookPayload_1_Item) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {

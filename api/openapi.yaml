@@ -1665,8 +1665,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: '#/components/schemas/WebhookPayload'
       responses:
         '200':
           description: Webhook processed
@@ -2003,6 +2002,33 @@ paths:
 
 components:
   schemas:
+    WebhookPayload:
+      description: Any valid JSON payload for webhook
+      anyOf:
+        - type: object
+          additionalProperties: true
+          description: JSON object with any properties
+        - type: array
+          items:
+            anyOf:
+              - type: object
+                additionalProperties: true
+              - type: array
+                items: {}
+              - type: string
+                nullable: true
+              - type: number
+              - type: integer
+              - type: boolean
+          description: JSON array containing any valid JSON values
+        - type: string
+          description: JSON string value
+        - type: number
+          description: JSON number (including decimals)
+        - type: integer
+          description: JSON integer value
+        - type: boolean
+          description: JSON boolean (true/false)
     Agent:
       type: object
       required:
