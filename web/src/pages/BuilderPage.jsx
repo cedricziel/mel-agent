@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import axios from 'axios';
+import { workflowRunsApi, nodeTypesApi, workflowsApi } from '../api/client';
 import ReactFlow, { Background, Controls, MiniMap } from 'reactflow';
 import ConfigSelectionDialog from '../components/ConfigSelectionDialog';
 import NodeModal from '../components/NodeModal';
@@ -253,8 +253,8 @@ function BuilderPage({ agentId }) {
   useEffect(() => {
     if (viewMode === 'executions') {
       setLoadingExecutions(true);
-      axios
-        .get(`/api/agents/${agentId}/runs`)
+      workflowRunsApi
+        .listWorkflowRuns({ workflow_id: agentId })
         .then((res) => {
           setExecutions(res.data);
           if (res.data.length > 0 && !selectedExecution) {
@@ -396,8 +396,8 @@ function BuilderPage({ agentId }) {
     }
     setTesting(true);
     try {
-      await axios.post('/api/workflow-runs', {
-        agent_id: agentId,
+      await workflowRunsApi.createWorkflowRun({
+        workflow_id: agentId,
         input_data: {},
       });
     } catch (err) {
@@ -593,12 +593,13 @@ function BuilderPage({ agentId }) {
                 throw new Error(result.error);
               }
             } else {
-              // Fall back to old API for production versions
-              const res = await axios.post(
-                `/api/agents/${agentId}/nodes/${selectedNodeId}/execute`,
-                inputData
+              // Use workflow draft node testing API
+              const res = await workflowsApi.testWorkflowDraftNode(
+                agentId,
+                selectedNodeId,
+                { testData: inputData }
               );
-              return res.data.output;
+              return res.data.output || res.data;
             }
           } catch (err) {
             console.error('Execution failed:', err);
@@ -646,12 +647,13 @@ function BuilderPage({ agentId }) {
         }}
         onExecute={async (inputData) => {
           try {
-            // Execute single node
-            const res = await axios.post(
-              `/api/agents/${agentId}/nodes/${selectedNodeId}/execute`,
-              inputData
+            // Execute single node using workflow draft testing
+            const res = await workflowsApi.testWorkflowDraftNode(
+              agentId,
+              selectedNodeId,
+              { testData: inputData }
             );
-            return res.data.output;
+            return res.data.output || res.data;
           } catch (err) {
             console.error('Execution failed:', err);
             throw err;

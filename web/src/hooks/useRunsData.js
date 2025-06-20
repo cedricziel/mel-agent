@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import axios from 'axios';
+import { nodeTypesApi, workflowRunsApi } from '../api/client';
 
 export function useRunsData(agentId) {
   const [runs, setRuns] = useState([]);
@@ -10,8 +10,8 @@ export function useRunsData(agentId) {
 
   // Fetch node definitions for renderer
   useEffect(() => {
-    axios
-      .get('/api/node-types')
+    nodeTypesApi
+      .listNodeTypes()
       .then((res) => setNodeDefs(res.data))
       .catch((err) => console.error('fetch node-types failed', err));
   }, []);
@@ -20,8 +20,8 @@ export function useRunsData(agentId) {
   useEffect(() => {
     if (!agentId) return;
 
-    axios
-      .get(`/api/workflow-runs?agent_id=${agentId}`)
+    workflowRunsApi
+      .listWorkflowRuns({ workflow_id: agentId })
       .then((res) => setRuns(res.data))
       .catch((err) => console.error('fetch runs list failed', err));
   }, [agentId]);
@@ -29,8 +29,8 @@ export function useRunsData(agentId) {
   // Fetch run details when selected
   useEffect(() => {
     if (selectedRunID && agentId) {
-      axios
-        .get(`/api/workflow-runs/${selectedRunID}`)
+      workflowRunsApi
+        .getWorkflowRun(selectedRunID)
         .then((res) => setRunDetails(res.data))
         .catch((err) => console.error('fetch run details failed', err));
     }
