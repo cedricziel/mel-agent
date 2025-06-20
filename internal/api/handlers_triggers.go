@@ -14,7 +14,7 @@ import (
 // ListTriggers retrieves all triggers
 func (h *OpenAPIHandlers) ListTriggers(ctx context.Context, request ListTriggersRequestObject) (ListTriggersResponseObject, error) {
 	rows, err := h.db.QueryContext(ctx,
-		"SELECT id, name, type, workflow_id, config, enabled, created_at, updated_at FROM triggers ORDER BY created_at DESC")
+		"SELECT id, name, type, agent_id, config, enabled, created_at, updated_at FROM triggers ORDER BY created_at DESC")
 	if err != nil {
 		errorMsg := "database error"
 		message := err.Error()
@@ -111,25 +111,31 @@ func (h *OpenAPIHandlers) CreateTrigger(ctx context.Context, request CreateTrigg
 		enabled = *request.Body.Enabled
 	}
 
-	// Marshal config to JSON
+	// Marshal config to JSON (use empty object if not provided since config is NOT NULL)
 	var configJson []byte
 	var err error
 	if request.Body.Config != nil {
 		configJson, err = json.Marshal(*request.Body.Config)
-		if err != nil {
-			errorMsg := "failed to marshal config"
-			message := err.Error()
-			return CreateTrigger500JSONResponse{
-				Error:   &errorMsg,
-				Message: &message,
-			}, nil
-		}
+	} else {
+		// Default empty JSON object since config column is NOT NULL
+		configJson = []byte("{}")
+	}
+	if err != nil {
+		errorMsg := "failed to marshal config"
+		message := err.Error()
+		return CreateTrigger500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
 	}
 
-	// Insert trigger into database
+	// For now, use a default user_id (in real implementation, this would come from auth context)
+	defaultUserID := uuid.MustParse("00000000-0000-0000-0000-000000000001")
+
+	// Insert trigger into database (provider is required by schema, using type as default)
 	_, err = h.db.ExecContext(ctx,
-		"INSERT INTO triggers (id, name, type, workflow_id, config, enabled, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
-		triggerID, request.Body.Name, string(request.Body.Type), request.Body.WorkflowId.String(), configJson, enabled, now, now)
+		"INSERT INTO triggers (id, user_id, provider, name, type, agent_id, config, enabled, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+		triggerID, defaultUserID, string(request.Body.Type), request.Body.Name, string(request.Body.Type), request.Body.WorkflowId.String(), configJson, enabled, now, now)
 	if err != nil {
 		errorMsg := "failed to create trigger"
 		message := err.Error()
@@ -163,7 +169,7 @@ func (h *OpenAPIHandlers) GetTrigger(ctx context.Context, request GetTriggerRequ
 	var createdAt, updatedAt time.Time
 
 	err := h.db.QueryRowContext(ctx,
-		"SELECT id, name, type, workflow_id, config, enabled, created_at, updated_at FROM triggers WHERE id = $1",
+		"SELECT id, name, type, agent_id, config, enabled, created_at, updated_at FROM triggers WHERE id = $1",
 		request.Id.String()).Scan(&id, &name, &triggerType, &workflowID, &configJson, &enabled, &createdAt, &updatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {

@@ -33,7 +33,8 @@
       "Bash(go generate:*)",
       "Bash(mv:*)",
       "Bash(sed:*)",
-      "Bash(make:*)"
+      "Bash(make:*)",
+      "Bash(cat:*)"
     ],
     "deny": []
   },
