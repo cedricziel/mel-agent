@@ -40,10 +40,10 @@ func (h *OpenAPIHandlers) ListWorkers(ctx context.Context, request ListWorkersRe
 		worker.Name = &hostname // Use hostname as name
 		worker.Status = func() *WorkerStatus {
 			if status == "idle" {
-				s := Inactive // Map "idle" to "inactive"
+				s := WorkerStatusInactive // Map "idle" to "inactive"
 				return &s
 			} else if status == "active" {
-				s := Active
+				s := WorkerStatusActive
 				return &s
 			}
 			return nil
@@ -85,7 +85,7 @@ func (h *OpenAPIHandlers) RegisterWorker(ctx context.Context, request RegisterWo
 		}, nil
 	}
 
-	status := Active
+	status := WorkerStatusActive
 	worker := Worker{
 		Id:            &request.Body.Id,
 		Name:          &hostname,

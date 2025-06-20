@@ -352,7 +352,7 @@ type LegacyConnection struct {
 	IsDefault     bool   `db:"is_default"    json:"is_default"`
 }
 
-type Integration struct {
+type LegacyIntegration struct {
 	ID             string `db:"id" json:"id"`
 	Name           string `db:"name" json:"name"`
 	AuthType       string `db:"auth_type" json:"auth_type"`
@@ -361,7 +361,7 @@ type Integration struct {
 
 func listIntegrations(w http.ResponseWriter, r *http.Request) {
 	// initialize slice to ensure JSON encodes as [] instead of null when empty
-	integrations := []Integration{}
+	integrations := []LegacyIntegration{}
 
 	// Check if credential_type column exists
 	var hasCredentialType bool
@@ -391,7 +391,7 @@ func listIntegrations(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 
 	for rows.Next() {
-		var i Integration
+		var i LegacyIntegration
 		if hasCredentialType {
 			if err := rows.Scan(&i.ID, &i.Name, &i.AuthType, &i.CredentialType); err != nil {
 				writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})

@@ -48,6 +48,12 @@ const (
 	CredentialStatusValid   CredentialStatus = "valid"
 )
 
+// Defines values for IntegrationStatus.
+const (
+	IntegrationStatusActive   IntegrationStatus = "active"
+	IntegrationStatusInactive IntegrationStatus = "inactive"
+)
+
 // Defines values for NodeTypeKinds.
 const (
 	NodeTypeKindsAction  NodeTypeKinds = "action"
@@ -72,8 +78,8 @@ const (
 
 // Defines values for WorkerStatus.
 const (
-	Active   WorkerStatus = "active"
-	Inactive WorkerStatus = "inactive"
+	WorkerStatusActive   WorkerStatus = "active"
+	WorkerStatusInactive WorkerStatus = "inactive"
 )
 
 // Defines values for WorkflowExecutionStatus.
@@ -253,6 +259,33 @@ type Credential struct {
 // CredentialStatus defines model for Credential.Status.
 type CredentialStatus string
 
+// CredentialTestResult defines model for CredentialTestResult.
+type CredentialTestResult struct {
+	Details *map[string]interface{} `json:"details,omitempty"`
+	Error   *string                 `json:"error,omitempty"`
+	Message *string                 `json:"message,omitempty"`
+	Success *bool                   `json:"success,omitempty"`
+}
+
+// CredentialType defines model for CredentialType.
+type CredentialType struct {
+	Description    *string                 `json:"description,omitempty"`
+	Id             *string                 `json:"id,omitempty"`
+	Name           *string                 `json:"name,omitempty"`
+	RequiredFields *[]string               `json:"required_fields,omitempty"`
+	Schema         *map[string]interface{} `json:"schema,omitempty"`
+	TestEndpoint   *string                 `json:"test_endpoint,omitempty"`
+}
+
+// CredentialTypeSchema defines model for CredentialTypeSchema.
+type CredentialTypeSchema struct {
+	Description *string                 `json:"description,omitempty"`
+	Properties  *map[string]interface{} `json:"properties,omitempty"`
+	Required    *[]string               `json:"required,omitempty"`
+	Title       *string                 `json:"title,omitempty"`
+	Type        *string                 `json:"type,omitempty"`
+}
+
 // DeployAgentVersionRequest defines model for DeployAgentVersionRequest.
 type DeployAgentVersionRequest struct {
 	VersionId openapi_types.UUID `json:"version_id"`
@@ -263,6 +296,32 @@ type Error struct {
 	Code    *int    `json:"code,omitempty"`
 	Error   *string `json:"error,omitempty"`
 	Message *string `json:"message,omitempty"`
+}
+
+// Integration defines model for Integration.
+type Integration struct {
+	Capabilities *[]string           `json:"capabilities,omitempty"`
+	CreatedAt    *time.Time          `json:"created_at,omitempty"`
+	Description  *string             `json:"description,omitempty"`
+	Id           *openapi_types.UUID `json:"id,omitempty"`
+	Name         *string             `json:"name,omitempty"`
+	Status       *IntegrationStatus  `json:"status,omitempty"`
+	Type         *string             `json:"type,omitempty"`
+	UpdatedAt    *time.Time          `json:"updated_at,omitempty"`
+}
+
+// IntegrationStatus defines model for Integration.Status.
+type IntegrationStatus string
+
+// NodeExecutionResult defines model for NodeExecutionResult.
+type NodeExecutionResult struct {
+	AgentId       *openapi_types.UUID     `json:"agent_id,omitempty"`
+	Error         *string                 `json:"error,omitempty"`
+	ExecutionTime *float32                `json:"execution_time,omitempty"`
+	Logs          *[]string               `json:"logs,omitempty"`
+	NodeId        *string                 `json:"node_id,omitempty"`
+	Output        *map[string]interface{} `json:"output,omitempty"`
+	Success       *bool                   `json:"success,omitempty"`
 }
 
 // NodeInput defines model for NodeInput.
@@ -278,6 +337,17 @@ type NodeOutput struct {
 	Description *string `json:"description,omitempty"`
 	Name        *string `json:"name,omitempty"`
 	Type        *string `json:"type,omitempty"`
+}
+
+// NodeParameterOptions defines model for NodeParameterOptions.
+type NodeParameterOptions struct {
+	ContextDependent *bool `json:"context_dependent,omitempty"`
+	Dynamic          *bool `json:"dynamic,omitempty"`
+	Options          *[]struct {
+		Description *string `json:"description,omitempty"`
+		Label       *string `json:"label,omitempty"`
+		Value       *string `json:"value,omitempty"`
+	} `json:"options,omitempty"`
 }
 
 // NodeTestResult defines model for NodeTestResult.
@@ -509,6 +579,17 @@ type TestDraftNodeJSONBody struct {
 	Input *map[string]interface{} `json:"input,omitempty"`
 }
 
+// ExecuteAgentNodeJSONBody defines parameters for ExecuteAgentNode.
+type ExecuteAgentNodeJSONBody struct {
+	Context *map[string]interface{} `json:"context,omitempty"`
+	Input   *map[string]interface{} `json:"input,omitempty"`
+}
+
+// TestCredentialsJSONBody defines parameters for TestCredentials.
+type TestCredentialsJSONBody struct {
+	Credentials *map[string]interface{} `json:"credentials,omitempty"`
+}
+
 // ListCredentialsParams defines parameters for ListCredentials.
 type ListCredentialsParams struct {
 	// CredentialType Filter by credential type
@@ -519,6 +600,12 @@ type ListCredentialsParams struct {
 type ListNodeTypesParams struct {
 	// Kind Filter by node kind (can be comma-separated)
 	Kind *string `form:"kind,omitempty" json:"kind,omitempty"`
+}
+
+// GetNodeParameterOptionsParams defines parameters for GetNodeParameterOptions.
+type GetNodeParameterOptionsParams struct {
+	// Context Context for dynamic option generation
+	Context *string `form:"context,omitempty" json:"context,omitempty"`
 }
 
 // ClaimWorkJSONBody defines parameters for ClaimWork.
@@ -569,6 +656,9 @@ type UpdateAgentDraftJSONRequestBody = UpdateAgentDraftRequest
 // TestDraftNodeJSONRequestBody defines body for TestDraftNode for application/json ContentType.
 type TestDraftNodeJSONRequestBody TestDraftNodeJSONBody
 
+// ExecuteAgentNodeJSONRequestBody defines body for ExecuteAgentNode for application/json ContentType.
+type ExecuteAgentNodeJSONRequestBody ExecuteAgentNodeJSONBody
+
 // CreateAgentVersionJSONRequestBody defines body for CreateAgentVersion for application/json ContentType.
 type CreateAgentVersionJSONRequestBody = CreateAgentVersionRequest
 
@@ -580,6 +670,9 @@ type CreateConnectionJSONRequestBody = CreateConnectionRequest
 
 // UpdateConnectionJSONRequestBody defines body for UpdateConnection for application/json ContentType.
 type UpdateConnectionJSONRequestBody = UpdateConnectionRequest
+
+// TestCredentialsJSONRequestBody defines body for TestCredentials for application/json ContentType.
+type TestCredentialsJSONRequestBody TestCredentialsJSONBody
 
 // CreateTriggerJSONRequestBody defines body for CreateTrigger for application/json ContentType.
 type CreateTriggerJSONRequestBody = CreateTriggerRequest
@@ -637,9 +730,15 @@ type ServerInterface interface {
 	// Test a single node in draft context
 	// (POST /api/agents/{agentId}/draft/nodes/{nodeId}/test)
 	TestDraftNode(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID, nodeId string)
+	// Execute a single node with provided input
+	// (POST /api/agents/{agentId}/nodes/{nodeId}/execute)
+	ExecuteAgentNode(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID, nodeId string)
 	// Create a new agent version
 	// (POST /api/agents/{agentId}/versions)
 	CreateAgentVersion(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID)
+	// Get latest agent version
+	// (GET /api/agents/{agentId}/versions/latest)
+	GetLatestAgentVersion(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID)
 	// Delete agent
 	// (DELETE /api/agents/{id})
 	DeleteAgent(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
@@ -664,15 +763,30 @@ type ServerInterface interface {
 	// Update connection
 	// (PUT /api/connections/{id})
 	UpdateConnection(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	// List credential type definitions
+	// (GET /api/credential-types)
+	ListCredentialTypes(w http.ResponseWriter, r *http.Request)
+	// Get JSON schema for credential type
+	// (GET /api/credential-types/schema/{type})
+	GetCredentialTypeSchema(w http.ResponseWriter, r *http.Request, pType string)
+	// Test credentials for a specific type
+	// (POST /api/credential-types/{type}/test)
+	TestCredentials(w http.ResponseWriter, r *http.Request, pType string)
 	// List credentials for selection in nodes
 	// (GET /api/credentials)
 	ListCredentials(w http.ResponseWriter, r *http.Request, params ListCredentialsParams)
 	// Health check endpoint
 	// (GET /api/health)
 	GetHealth(w http.ResponseWriter, r *http.Request)
+	// List available integrations
+	// (GET /api/integrations)
+	ListIntegrations(w http.ResponseWriter, r *http.Request)
 	// List available node types
 	// (GET /api/node-types)
 	ListNodeTypes(w http.ResponseWriter, r *http.Request, params ListNodeTypesParams)
+	// Get dynamic options for node parameters
+	// (GET /api/node-types/{type}/parameters/{parameter}/options)
+	GetNodeParameterOptions(w http.ResponseWriter, r *http.Request, pType string, parameter string, params GetNodeParameterOptionsParams)
 	// List triggers
 	// (GET /api/triggers)
 	ListTriggers(w http.ResponseWriter, r *http.Request)
@@ -805,9 +919,21 @@ func (_ Unimplemented) TestDraftNode(w http.ResponseWriter, r *http.Request, age
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// Execute a single node with provided input
+// (POST /api/agents/{agentId}/nodes/{nodeId}/execute)
+func (_ Unimplemented) ExecuteAgentNode(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID, nodeId string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // Create a new agent version
 // (POST /api/agents/{agentId}/versions)
 func (_ Unimplemented) CreateAgentVersion(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get latest agent version
+// (GET /api/agents/{agentId}/versions/latest)
+func (_ Unimplemented) GetLatestAgentVersion(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -859,6 +985,24 @@ func (_ Unimplemented) UpdateConnection(w http.ResponseWriter, r *http.Request, 
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// List credential type definitions
+// (GET /api/credential-types)
+func (_ Unimplemented) ListCredentialTypes(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get JSON schema for credential type
+// (GET /api/credential-types/schema/{type})
+func (_ Unimplemented) GetCredentialTypeSchema(w http.ResponseWriter, r *http.Request, pType string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Test credentials for a specific type
+// (POST /api/credential-types/{type}/test)
+func (_ Unimplemented) TestCredentials(w http.ResponseWriter, r *http.Request, pType string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // List credentials for selection in nodes
 // (GET /api/credentials)
 func (_ Unimplemented) ListCredentials(w http.ResponseWriter, r *http.Request, params ListCredentialsParams) {
@@ -871,9 +1015,21 @@ func (_ Unimplemented) GetHealth(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// List available integrations
+// (GET /api/integrations)
+func (_ Unimplemented) ListIntegrations(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // List available node types
 // (GET /api/node-types)
 func (_ Unimplemented) ListNodeTypes(w http.ResponseWriter, r *http.Request, params ListNodeTypesParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get dynamic options for node parameters
+// (GET /api/node-types/{type}/parameters/{parameter}/options)
+func (_ Unimplemented) GetNodeParameterOptions(w http.ResponseWriter, r *http.Request, pType string, parameter string, params GetNodeParameterOptionsParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1272,6 +1428,48 @@ func (siw *ServerInterfaceWrapper) TestDraftNode(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r)
 }
 
+// ExecuteAgentNode operation middleware
+func (siw *ServerInterfaceWrapper) ExecuteAgentNode(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "nodeId" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "nodeId", chi.URLParam(r, "nodeId"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "nodeId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ExecuteAgentNode(w, r, agentId, nodeId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // CreateAgentVersion operation middleware
 func (siw *ServerInterfaceWrapper) CreateAgentVersion(w http.ResponseWriter, r *http.Request) {
 
@@ -1296,6 +1494,39 @@ func (siw *ServerInterfaceWrapper) CreateAgentVersion(w http.ResponseWriter, r *
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateAgentVersion(w, r, agentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetLatestAgentVersion operation middleware
+func (siw *ServerInterfaceWrapper) GetLatestAgentVersion(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetLatestAgentVersion(w, r, agentId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1547,6 +1778,94 @@ func (siw *ServerInterfaceWrapper) UpdateConnection(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
+// ListCredentialTypes operation middleware
+func (siw *ServerInterfaceWrapper) ListCredentialTypes(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCredentialTypes(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetCredentialTypeSchema operation middleware
+func (siw *ServerInterfaceWrapper) GetCredentialTypeSchema(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "type" -------------
+	var pType string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "type", chi.URLParam(r, "type"), &pType, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "type", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetCredentialTypeSchema(w, r, pType)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// TestCredentials operation middleware
+func (siw *ServerInterfaceWrapper) TestCredentials(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "type" -------------
+	var pType string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "type", chi.URLParam(r, "type"), &pType, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "type", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.TestCredentials(w, r, pType)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListCredentials operation middleware
 func (siw *ServerInterfaceWrapper) ListCredentials(w http.ResponseWriter, r *http.Request) {
 
@@ -1604,6 +1923,28 @@ func (siw *ServerInterfaceWrapper) GetHealth(w http.ResponseWriter, r *http.Requ
 	handler.ServeHTTP(w, r)
 }
 
+// ListIntegrations operation middleware
+func (siw *ServerInterfaceWrapper) ListIntegrations(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListIntegrations(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListNodeTypes operation middleware
 func (siw *ServerInterfaceWrapper) ListNodeTypes(w http.ResponseWriter, r *http.Request) {
 
@@ -1630,6 +1971,59 @@ func (siw *ServerInterfaceWrapper) ListNodeTypes(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListNodeTypes(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetNodeParameterOptions operation middleware
+func (siw *ServerInterfaceWrapper) GetNodeParameterOptions(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "type" -------------
+	var pType string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "type", chi.URLParam(r, "type"), &pType, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "type", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "parameter" -------------
+	var parameter string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "parameter", chi.URLParam(r, "parameter"), &parameter, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "parameter", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetNodeParameterOptionsParams
+
+	// ------------- Optional query parameter "context" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "context", r.URL.Query(), &params.Context)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "context", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetNodeParameterOptions(w, r, pType, parameter, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2787,7 +3181,13 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/api/agents/{agentId}/draft/nodes/{nodeId}/test", wrapper.TestDraftNode)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/agents/{agentId}/nodes/{nodeId}/execute", wrapper.ExecuteAgentNode)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/api/agents/{agentId}/versions", wrapper.CreateAgentVersion)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/agents/{agentId}/versions/latest", wrapper.GetLatestAgentVersion)
 	})
 	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/api/agents/{id}", wrapper.DeleteAgent)
@@ -2814,13 +3214,28 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Put(options.BaseURL+"/api/connections/{id}", wrapper.UpdateConnection)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/credential-types", wrapper.ListCredentialTypes)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/credential-types/schema/{type}", wrapper.GetCredentialTypeSchema)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/credential-types/{type}/test", wrapper.TestCredentials)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/api/credentials", wrapper.ListCredentials)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/api/health", wrapper.GetHealth)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/integrations", wrapper.ListIntegrations)
+	})
+	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/api/node-types", wrapper.ListNodeTypes)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/node-types/{type}/parameters/{parameter}/options", wrapper.GetNodeParameterOptions)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/api/triggers", wrapper.ListTriggers)
@@ -3148,6 +3563,52 @@ func (response TestDraftNode500JSONResponse) VisitTestDraftNodeResponse(w http.R
 	return json.NewEncoder(w).Encode(response)
 }
 
+type ExecuteAgentNodeRequestObject struct {
+	AgentId openapi_types.UUID `json:"agentId"`
+	NodeId  string             `json:"nodeId"`
+	Body    *ExecuteAgentNodeJSONRequestBody
+}
+
+type ExecuteAgentNodeResponseObject interface {
+	VisitExecuteAgentNodeResponse(w http.ResponseWriter) error
+}
+
+type ExecuteAgentNode200JSONResponse NodeExecutionResult
+
+func (response ExecuteAgentNode200JSONResponse) VisitExecuteAgentNodeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ExecuteAgentNode400JSONResponse Error
+
+func (response ExecuteAgentNode400JSONResponse) VisitExecuteAgentNodeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ExecuteAgentNode404JSONResponse Error
+
+func (response ExecuteAgentNode404JSONResponse) VisitExecuteAgentNodeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ExecuteAgentNode500JSONResponse Error
+
+func (response ExecuteAgentNode500JSONResponse) VisitExecuteAgentNodeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type CreateAgentVersionRequestObject struct {
 	AgentId openapi_types.UUID `json:"agentId"`
 	Body    *CreateAgentVersionJSONRequestBody
@@ -3187,6 +3648,41 @@ func (response CreateAgentVersion404JSONResponse) VisitCreateAgentVersionRespons
 type CreateAgentVersion500JSONResponse Error
 
 func (response CreateAgentVersion500JSONResponse) VisitCreateAgentVersionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetLatestAgentVersionRequestObject struct {
+	AgentId openapi_types.UUID `json:"agentId"`
+}
+
+type GetLatestAgentVersionResponseObject interface {
+	VisitGetLatestAgentVersionResponse(w http.ResponseWriter) error
+}
+
+type GetLatestAgentVersion200JSONResponse AgentVersion
+
+func (response GetLatestAgentVersion200JSONResponse) VisitGetLatestAgentVersionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetLatestAgentVersion404JSONResponse Error
+
+func (response GetLatestAgentVersion404JSONResponse) VisitGetLatestAgentVersionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetLatestAgentVersion500JSONResponse Error
+
+func (response GetLatestAgentVersion500JSONResponse) VisitGetLatestAgentVersionResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(500)
 
@@ -3481,6 +3977,111 @@ func (response UpdateConnection500JSONResponse) VisitUpdateConnectionResponse(w 
 	return json.NewEncoder(w).Encode(response)
 }
 
+type ListCredentialTypesRequestObject struct {
+}
+
+type ListCredentialTypesResponseObject interface {
+	VisitListCredentialTypesResponse(w http.ResponseWriter) error
+}
+
+type ListCredentialTypes200JSONResponse []CredentialType
+
+func (response ListCredentialTypes200JSONResponse) VisitListCredentialTypesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListCredentialTypes500JSONResponse Error
+
+func (response ListCredentialTypes500JSONResponse) VisitListCredentialTypesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetCredentialTypeSchemaRequestObject struct {
+	Type string `json:"type"`
+}
+
+type GetCredentialTypeSchemaResponseObject interface {
+	VisitGetCredentialTypeSchemaResponse(w http.ResponseWriter) error
+}
+
+type GetCredentialTypeSchema200JSONResponse CredentialTypeSchema
+
+func (response GetCredentialTypeSchema200JSONResponse) VisitGetCredentialTypeSchemaResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetCredentialTypeSchema404JSONResponse Error
+
+func (response GetCredentialTypeSchema404JSONResponse) VisitGetCredentialTypeSchemaResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetCredentialTypeSchema500JSONResponse Error
+
+func (response GetCredentialTypeSchema500JSONResponse) VisitGetCredentialTypeSchemaResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type TestCredentialsRequestObject struct {
+	Type string `json:"type"`
+	Body *TestCredentialsJSONRequestBody
+}
+
+type TestCredentialsResponseObject interface {
+	VisitTestCredentialsResponse(w http.ResponseWriter) error
+}
+
+type TestCredentials200JSONResponse CredentialTestResult
+
+func (response TestCredentials200JSONResponse) VisitTestCredentialsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type TestCredentials400JSONResponse Error
+
+func (response TestCredentials400JSONResponse) VisitTestCredentialsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type TestCredentials404JSONResponse Error
+
+func (response TestCredentials404JSONResponse) VisitTestCredentialsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type TestCredentials500JSONResponse Error
+
+func (response TestCredentials500JSONResponse) VisitTestCredentialsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type ListCredentialsRequestObject struct {
 	Params ListCredentialsParams
 }
@@ -3525,6 +4126,31 @@ func (response GetHealth200JSONResponse) VisitGetHealthResponse(w http.ResponseW
 	return json.NewEncoder(w).Encode(response)
 }
 
+type ListIntegrationsRequestObject struct {
+}
+
+type ListIntegrationsResponseObject interface {
+	VisitListIntegrationsResponse(w http.ResponseWriter) error
+}
+
+type ListIntegrations200JSONResponse []Integration
+
+func (response ListIntegrations200JSONResponse) VisitListIntegrationsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListIntegrations500JSONResponse Error
+
+func (response ListIntegrations500JSONResponse) VisitListIntegrationsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type ListNodeTypesRequestObject struct {
 	Params ListNodeTypesParams
 }
@@ -3538,6 +4164,43 @@ type ListNodeTypes200JSONResponse []NodeType
 func (response ListNodeTypes200JSONResponse) VisitListNodeTypesResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetNodeParameterOptionsRequestObject struct {
+	Type      string `json:"type"`
+	Parameter string `json:"parameter"`
+	Params    GetNodeParameterOptionsParams
+}
+
+type GetNodeParameterOptionsResponseObject interface {
+	VisitGetNodeParameterOptionsResponse(w http.ResponseWriter) error
+}
+
+type GetNodeParameterOptions200JSONResponse NodeParameterOptions
+
+func (response GetNodeParameterOptions200JSONResponse) VisitGetNodeParameterOptionsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetNodeParameterOptions404JSONResponse Error
+
+func (response GetNodeParameterOptions404JSONResponse) VisitGetNodeParameterOptionsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetNodeParameterOptions500JSONResponse Error
+
+func (response GetNodeParameterOptions500JSONResponse) VisitGetNodeParameterOptionsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -4598,9 +5261,15 @@ type StrictServerInterface interface {
 	// Test a single node in draft context
 	// (POST /api/agents/{agentId}/draft/nodes/{nodeId}/test)
 	TestDraftNode(ctx context.Context, request TestDraftNodeRequestObject) (TestDraftNodeResponseObject, error)
+	// Execute a single node with provided input
+	// (POST /api/agents/{agentId}/nodes/{nodeId}/execute)
+	ExecuteAgentNode(ctx context.Context, request ExecuteAgentNodeRequestObject) (ExecuteAgentNodeResponseObject, error)
 	// Create a new agent version
 	// (POST /api/agents/{agentId}/versions)
 	CreateAgentVersion(ctx context.Context, request CreateAgentVersionRequestObject) (CreateAgentVersionResponseObject, error)
+	// Get latest agent version
+	// (GET /api/agents/{agentId}/versions/latest)
+	GetLatestAgentVersion(ctx context.Context, request GetLatestAgentVersionRequestObject) (GetLatestAgentVersionResponseObject, error)
 	// Delete agent
 	// (DELETE /api/agents/{id})
 	DeleteAgent(ctx context.Context, request DeleteAgentRequestObject) (DeleteAgentResponseObject, error)
@@ -4625,15 +5294,30 @@ type StrictServerInterface interface {
 	// Update connection
 	// (PUT /api/connections/{id})
 	UpdateConnection(ctx context.Context, request UpdateConnectionRequestObject) (UpdateConnectionResponseObject, error)
+	// List credential type definitions
+	// (GET /api/credential-types)
+	ListCredentialTypes(ctx context.Context, request ListCredentialTypesRequestObject) (ListCredentialTypesResponseObject, error)
+	// Get JSON schema for credential type
+	// (GET /api/credential-types/schema/{type})
+	GetCredentialTypeSchema(ctx context.Context, request GetCredentialTypeSchemaRequestObject) (GetCredentialTypeSchemaResponseObject, error)
+	// Test credentials for a specific type
+	// (POST /api/credential-types/{type}/test)
+	TestCredentials(ctx context.Context, request TestCredentialsRequestObject) (TestCredentialsResponseObject, error)
 	// List credentials for selection in nodes
 	// (GET /api/credentials)
 	ListCredentials(ctx context.Context, request ListCredentialsRequestObject) (ListCredentialsResponseObject, error)
 	// Health check endpoint
 	// (GET /api/health)
 	GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error)
+	// List available integrations
+	// (GET /api/integrations)
+	ListIntegrations(ctx context.Context, request ListIntegrationsRequestObject) (ListIntegrationsResponseObject, error)
 	// List available node types
 	// (GET /api/node-types)
 	ListNodeTypes(ctx context.Context, request ListNodeTypesRequestObject) (ListNodeTypesResponseObject, error)
+	// Get dynamic options for node parameters
+	// (GET /api/node-types/{type}/parameters/{parameter}/options)
+	GetNodeParameterOptions(ctx context.Context, request GetNodeParameterOptionsRequestObject) (GetNodeParameterOptionsResponseObject, error)
 	// List triggers
 	// (GET /api/triggers)
 	ListTriggers(ctx context.Context, request ListTriggersRequestObject) (ListTriggersResponseObject, error)
@@ -4938,6 +5622,40 @@ func (sh *strictHandler) TestDraftNode(w http.ResponseWriter, r *http.Request, a
 	}
 }
 
+// ExecuteAgentNode operation middleware
+func (sh *strictHandler) ExecuteAgentNode(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID, nodeId string) {
+	var request ExecuteAgentNodeRequestObject
+
+	request.AgentId = agentId
+	request.NodeId = nodeId
+
+	var body ExecuteAgentNodeJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ExecuteAgentNode(ctx, request.(ExecuteAgentNodeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ExecuteAgentNode")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ExecuteAgentNodeResponseObject); ok {
+		if err := validResponse.VisitExecuteAgentNodeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // CreateAgentVersion operation middleware
 func (sh *strictHandler) CreateAgentVersion(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID) {
 	var request CreateAgentVersionRequestObject
@@ -4964,6 +5682,32 @@ func (sh *strictHandler) CreateAgentVersion(w http.ResponseWriter, r *http.Reque
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CreateAgentVersionResponseObject); ok {
 		if err := validResponse.VisitCreateAgentVersionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetLatestAgentVersion operation middleware
+func (sh *strictHandler) GetLatestAgentVersion(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID) {
+	var request GetLatestAgentVersionRequestObject
+
+	request.AgentId = agentId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetLatestAgentVersion(ctx, request.(GetLatestAgentVersionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetLatestAgentVersion")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetLatestAgentVersionResponseObject); ok {
+		if err := validResponse.VisitGetLatestAgentVersionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -5196,6 +5940,89 @@ func (sh *strictHandler) UpdateConnection(w http.ResponseWriter, r *http.Request
 	}
 }
 
+// ListCredentialTypes operation middleware
+func (sh *strictHandler) ListCredentialTypes(w http.ResponseWriter, r *http.Request) {
+	var request ListCredentialTypesRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListCredentialTypes(ctx, request.(ListCredentialTypesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListCredentialTypes")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListCredentialTypesResponseObject); ok {
+		if err := validResponse.VisitListCredentialTypesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetCredentialTypeSchema operation middleware
+func (sh *strictHandler) GetCredentialTypeSchema(w http.ResponseWriter, r *http.Request, pType string) {
+	var request GetCredentialTypeSchemaRequestObject
+
+	request.Type = pType
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetCredentialTypeSchema(ctx, request.(GetCredentialTypeSchemaRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetCredentialTypeSchema")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetCredentialTypeSchemaResponseObject); ok {
+		if err := validResponse.VisitGetCredentialTypeSchemaResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// TestCredentials operation middleware
+func (sh *strictHandler) TestCredentials(w http.ResponseWriter, r *http.Request, pType string) {
+	var request TestCredentialsRequestObject
+
+	request.Type = pType
+
+	var body TestCredentialsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.TestCredentials(ctx, request.(TestCredentialsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "TestCredentials")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(TestCredentialsResponseObject); ok {
+		if err := validResponse.VisitTestCredentialsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListCredentials operation middleware
 func (sh *strictHandler) ListCredentials(w http.ResponseWriter, r *http.Request, params ListCredentialsParams) {
 	var request ListCredentialsRequestObject
@@ -5246,6 +6073,30 @@ func (sh *strictHandler) GetHealth(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// ListIntegrations operation middleware
+func (sh *strictHandler) ListIntegrations(w http.ResponseWriter, r *http.Request) {
+	var request ListIntegrationsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListIntegrations(ctx, request.(ListIntegrationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListIntegrations")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListIntegrationsResponseObject); ok {
+		if err := validResponse.VisitListIntegrationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListNodeTypes operation middleware
 func (sh *strictHandler) ListNodeTypes(w http.ResponseWriter, r *http.Request, params ListNodeTypesParams) {
 	var request ListNodeTypesRequestObject
@@ -5265,6 +6116,34 @@ func (sh *strictHandler) ListNodeTypes(w http.ResponseWriter, r *http.Request, p
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListNodeTypesResponseObject); ok {
 		if err := validResponse.VisitListNodeTypesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetNodeParameterOptions operation middleware
+func (sh *strictHandler) GetNodeParameterOptions(w http.ResponseWriter, r *http.Request, pType string, parameter string, params GetNodeParameterOptionsParams) {
+	var request GetNodeParameterOptionsRequestObject
+
+	request.Type = pType
+	request.Parameter = parameter
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetNodeParameterOptions(ctx, request.(GetNodeParameterOptionsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetNodeParameterOptions")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetNodeParameterOptionsResponseObject); ok {
+		if err := validResponse.VisitGetNodeParameterOptionsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

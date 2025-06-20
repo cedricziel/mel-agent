@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // ListAgents retrieves all agents with pagination
@@ -671,4 +672,144 @@ func (h *OpenAPIHandlers) DeployAgentVersion(ctx context.Context, request Deploy
 	}
 
 	return DeployAgentVersion200JSONResponse(deployment), nil
+}
+
+// GetLatestAgentVersion gets the latest version of an agent
+func (h *OpenAPIHandlers) GetLatestAgentVersion(ctx context.Context, request GetLatestAgentVersionRequestObject) (GetLatestAgentVersionResponseObject, error) {
+	// Check if agent exists
+	var agentExists bool
+	err := h.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM agents WHERE id = $1)", request.AgentId.String()).Scan(&agentExists)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return GetLatestAgentVersion500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	if !agentExists {
+		errorMsg := "not found"
+		message := "Agent not found"
+		return GetLatestAgentVersion404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Get latest version
+	var versionID, name string
+	var versionNumber int
+	var description sql.NullString
+	var createdAt time.Time
+	var isCurrent bool
+
+	err = h.db.QueryRowContext(ctx,
+		`SELECT id, version_number, name, description, created_at, is_current 
+		 FROM agent_versions 
+		 WHERE agent_id = $1 
+		 ORDER BY version_number DESC 
+		 LIMIT 1`,
+		request.AgentId.String()).Scan(&versionID, &versionNumber, &name, &description, &createdAt, &isCurrent)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			errorMsg := "not found"
+			message := "No versions found for this agent"
+			return GetLatestAgentVersion404JSONResponse{
+				Error:   &errorMsg,
+				Message: &message,
+			}, nil
+		}
+		errorMsg := "database error"
+		message := err.Error()
+		return GetLatestAgentVersion500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	versionUUID, err := uuid.Parse(versionID)
+	if err != nil {
+		errorMsg := "uuid parse error"
+		message := err.Error()
+		return GetLatestAgentVersion500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	version := AgentVersion{
+		Id:            &versionUUID,
+		AgentId:       &request.AgentId,
+		VersionNumber: &versionNumber,
+		Name:          &name,
+		CreatedAt:     &createdAt,
+		IsCurrent:     &isCurrent,
+	}
+
+	if description.Valid {
+		version.Description = &description.String
+	}
+
+	return GetLatestAgentVersion200JSONResponse(version), nil
+}
+
+// ExecuteAgentNode executes a single node with provided input
+func (h *OpenAPIHandlers) ExecuteAgentNode(ctx context.Context, request ExecuteAgentNodeRequestObject) (ExecuteAgentNodeResponseObject, error) {
+	// Check if agent exists
+	var agentExists bool
+	err := h.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM agents WHERE id = $1)", request.AgentId.String()).Scan(&agentExists)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return ExecuteAgentNode500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	if !agentExists {
+		errorMsg := "not found"
+		message := "Agent not found"
+		return ExecuteAgentNode404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// For now, return a mock execution result
+	// In a real implementation, this would:
+	// 1. Get the agent's current workflow definition
+	// 2. Find the specified node in the definition
+	// 3. Execute the node with the provided input and context
+	// 4. Return the execution result
+
+	result := NodeExecutionResult{
+		Success:       func() *bool { b := true; return &b }(),
+		NodeId:        &request.NodeId,
+		AgentId:       func() *openapi_types.UUID { return &request.AgentId }(),
+		ExecutionTime: func() *float32 { f := float32(0.456); return &f }(),
+		Logs:          &[]string{fmt.Sprintf("Executed node %s successfully", request.NodeId)},
+	}
+
+	if request.Body.Input != nil {
+		// Mock processing of the input
+		result.Output = &map[string]interface{}{
+			"message":        fmt.Sprintf("Node %s executed with provided input", request.NodeId),
+			"processed_at":   time.Now().Format(time.RFC3339),
+			"input_received": request.Body.Input,
+		}
+
+		if request.Body.Context != nil {
+			(*result.Output)["context_used"] = request.Body.Context
+		}
+	} else {
+		result.Output = &map[string]interface{}{
+			"message":      fmt.Sprintf("Node %s executed without input", request.NodeId),
+			"processed_at": time.Now().Format(time.RFC3339),
+		}
+	}
+
+	return ExecuteAgentNode200JSONResponse(result), nil
 }

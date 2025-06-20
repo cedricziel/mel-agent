@@ -46,7 +46,7 @@ func TestOpenAPIRegisterWorker(t *testing.T) {
 
 	assert.Equal(t, "worker-test-001", *response.Id)
 	assert.Equal(t, "Test Worker", *response.Name)
-	assert.Equal(t, Active, *response.Status)
+	assert.Equal(t, WorkerStatusActive, *response.Status)
 	assert.Equal(t, 10, *response.Concurrency)
 	assert.NotNil(t, response.LastHeartbeat)
 	assert.NotNil(t, response.RegisteredAt)
@@ -89,7 +89,7 @@ func TestOpenAPIRegisterWorkerMinimal(t *testing.T) {
 
 	assert.Equal(t, "worker-minimal-001", *response.Id)
 	assert.Equal(t, "worker-minimal-001", *response.Name) // Should default to ID
-	assert.Equal(t, Active, *response.Status)
+	assert.Equal(t, WorkerStatusActive, *response.Status)
 	assert.Equal(t, 5, *response.Concurrency) // Default concurrency
 }
 

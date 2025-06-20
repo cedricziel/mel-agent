@@ -1668,6 +1668,262 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /api/integrations:
+    get:
+      summary: List available integrations
+      operationId: listIntegrations
+      tags:
+        - Integrations
+      responses:
+        '200':
+          description: List of available integrations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Integration'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/credential-types:
+    get:
+      summary: List credential type definitions
+      operationId: listCredentialTypes
+      tags:
+        - CredentialTypes
+      responses:
+        '200':
+          description: List of credential types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CredentialType'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/credential-types/schema/{type}:
+    get:
+      summary: Get JSON schema for credential type
+      operationId: getCredentialTypeSchema
+      tags:
+        - CredentialTypes
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Credential type schema
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CredentialTypeSchema'
+        '404':
+          description: Credential type not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/credential-types/{type}/test:
+    post:
+      summary: Test credentials for a specific type
+      operationId: testCredentials
+      tags:
+        - CredentialTypes
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                credentials:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '200':
+          description: Credential test result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CredentialTestResult'
+        '400':
+          description: Invalid credentials or test failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Credential type not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/agents/{agentId}/versions/latest:
+    get:
+      summary: Get latest agent version
+      operationId: getLatestAgentVersion
+      tags:
+        - Agents
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Latest agent version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentVersion'
+        '404':
+          description: Agent not found or no versions exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/agents/{agentId}/nodes/{nodeId}/execute:
+    post:
+      summary: Execute a single node with provided input
+      operationId: executeAgentNode
+      tags:
+        - Agents
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: nodeId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                input:
+                  type: object
+                  additionalProperties: true
+                context:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '200':
+          description: Node execution result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeExecutionResult'
+        '400':
+          description: Invalid input or execution failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Agent or node not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/node-types/{type}/parameters/{parameter}/options:
+    get:
+      summary: Get dynamic options for node parameters
+      operationId: getNodeParameterOptions
+      tags:
+        - NodeTypes
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: parameter
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: context
+          in: query
+          description: Context for dynamic option generation
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Dynamic parameter options
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeParameterOptions'
+        '404':
+          description: Node type or parameter not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
 components:
   schemas:
     Agent:
@@ -2348,6 +2604,122 @@ components:
           type: string
           enum: [valid, invalid, expired]
 
+    Integration:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive]
+        capabilities:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CredentialType:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        schema:
+          type: object
+          additionalProperties: true
+        required_fields:
+          type: array
+          items:
+            type: string
+        test_endpoint:
+          type: string
+
+    CredentialTypeSchema:
+      type: object
+      properties:
+        type:
+          type: string
+        properties:
+          type: object
+          additionalProperties: true
+        required:
+          type: array
+          items:
+            type: string
+        title:
+          type: string
+        description:
+          type: string
+
+    CredentialTestResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        error:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+
+    NodeExecutionResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        output:
+          type: object
+          additionalProperties: true
+        error:
+          type: string
+        execution_time:
+          type: number
+        logs:
+          type: array
+          items:
+            type: string
+        node_id:
+          type: string
+        agent_id:
+          type: string
+          format: uuid
+
+    NodeParameterOptions:
+      type: object
+      properties:
+        options:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+              label:
+                type: string
+              description:
+                type: string
+        dynamic:
+          type: boolean
+        context_dependent:
+          type: boolean
+
     Error:
       type: object
       properties:
@@ -2394,3 +2766,7 @@ tags:
     description: External webhook handlers
   - name: Credentials
     description: Credential management for node connections
+  - name: Integrations
+    description: Available integration services
+  - name: CredentialTypes
+    description: Credential type definitions and schemas
