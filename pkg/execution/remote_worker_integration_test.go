@@ -227,10 +227,40 @@ func createDatabaseBackedMockServer(db *sql.DB) *httptest.Server {
 			return
 		}
 
-		var worker WorkflowWorker
-		if err := json.NewDecoder(r.Body).Decode(&worker); err != nil {
+		// Parse the RegisterWorkerRequest (new format)
+		var registerRequest struct {
+			ID          string  `json:"id"`
+			Name        *string `json:"name,omitempty"`
+			Concurrency *int    `json:"concurrency,omitempty"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&registerRequest); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
+		}
+
+		// Create a full WorkflowWorker from the registration request
+		hostname := "test-hostname"
+		if registerRequest.Name != nil {
+			hostname = *registerRequest.Name
+		}
+		concurrency := 5
+		if registerRequest.Concurrency != nil {
+			concurrency = *registerRequest.Concurrency
+		}
+
+		worker := WorkflowWorker{
+			ID:                   registerRequest.ID,
+			Hostname:             hostname,
+			ProcessID:            nil,
+			Version:              nil,
+			Capabilities:         []string{"workflow_execution", "node_execution"},
+			Status:               WorkerStatusIdle,
+			LastHeartbeat:        time.Now(),
+			StartedAt:            time.Now(),
+			MaxConcurrentSteps:   concurrency,
+			CurrentStepCount:     0,
+			TotalStepsExecuted:   0,
+			TotalExecutionTimeMS: 0,
 		}
 
 		// Store in real database
@@ -256,6 +286,7 @@ func createDatabaseBackedMockServer(db *sql.DB) *httptest.Server {
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(map[string]string{"id": worker.ID})
 	})
