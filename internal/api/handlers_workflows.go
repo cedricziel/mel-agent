@@ -431,3 +431,755 @@ func (h *OpenAPIHandlers) ExecuteWorkflow(ctx context.Context, request ExecuteWo
 
 	return ExecuteWorkflow200JSONResponse(execution), nil
 }
+
+// ListWorkflowNodes lists all nodes in a workflow
+func (h *OpenAPIHandlers) ListWorkflowNodes(ctx context.Context, request ListWorkflowNodesRequestObject) (ListWorkflowNodesResponseObject, error) {
+	// Check if workflow exists
+	var workflowExists bool
+	err := h.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM workflows WHERE id = $1)", request.WorkflowId.String()).Scan(&workflowExists)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return ListWorkflowNodes500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	if !workflowExists {
+		errorMsg := "not found"
+		message := "Workflow not found"
+		return ListWorkflowNodes404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Get workflow definition and extract nodes
+	var definitionJson sql.NullString
+	err = h.db.QueryRowContext(ctx, "SELECT definition FROM workflows WHERE id = $1", request.WorkflowId.String()).Scan(&definitionJson)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return ListWorkflowNodes500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	var nodes []WorkflowNode
+	if definitionJson.Valid && definitionJson.String != "" {
+		var definition WorkflowDefinition
+		err = json.Unmarshal([]byte(definitionJson.String), &definition)
+		if err != nil {
+			errorMsg := "definition parse error"
+			message := err.Error()
+			return ListWorkflowNodes500JSONResponse{
+				Error:   &errorMsg,
+				Message: &message,
+			}, nil
+		}
+
+		if definition.Nodes != nil {
+			nodes = *definition.Nodes
+		}
+	}
+
+	return ListWorkflowNodes200JSONResponse(nodes), nil
+}
+
+// CreateWorkflowNode creates a new node in workflow
+func (h *OpenAPIHandlers) CreateWorkflowNode(ctx context.Context, request CreateWorkflowNodeRequestObject) (CreateWorkflowNodeResponseObject, error) {
+	// Check if workflow exists
+	var workflowExists bool
+	err := h.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM workflows WHERE id = $1)", request.WorkflowId.String()).Scan(&workflowExists)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return CreateWorkflowNode500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	if !workflowExists {
+		errorMsg := "not found"
+		message := "Workflow not found"
+		return CreateWorkflowNode404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Get current workflow definition
+	var definitionJson sql.NullString
+	err = h.db.QueryRowContext(ctx, "SELECT definition FROM workflows WHERE id = $1", request.WorkflowId.String()).Scan(&definitionJson)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return CreateWorkflowNode500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	var definition WorkflowDefinition
+	if definitionJson.Valid && definitionJson.String != "" {
+		err = json.Unmarshal([]byte(definitionJson.String), &definition)
+		if err != nil {
+			errorMsg := "definition parse error"
+			message := err.Error()
+			return CreateWorkflowNode500JSONResponse{
+				Error:   &errorMsg,
+				Message: &message,
+			}, nil
+		}
+	}
+
+	// Create new node
+	newNode := WorkflowNode{
+		Id:     request.Body.Id,
+		Name:   request.Body.Name,
+		Type:   request.Body.Type,
+		Config: request.Body.Config,
+	}
+
+	// Add to nodes array
+	if definition.Nodes == nil {
+		definition.Nodes = &[]WorkflowNode{}
+	}
+	*definition.Nodes = append(*definition.Nodes, newNode)
+
+	// Update workflow definition in database
+	updatedDefinitionJson, err := json.Marshal(definition)
+	if err != nil {
+		errorMsg := "definition marshal error"
+		message := err.Error()
+		return CreateWorkflowNode500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	_, err = h.db.ExecContext(ctx,
+		"UPDATE workflows SET definition = $1, updated_at = $2 WHERE id = $3",
+		string(updatedDefinitionJson), time.Now(), request.WorkflowId.String())
+	if err != nil {
+		errorMsg := "failed to update workflow"
+		message := err.Error()
+		return CreateWorkflowNode500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	return CreateWorkflowNode201JSONResponse(newNode), nil
+}
+
+// GetWorkflowNode retrieves a specific workflow node
+func (h *OpenAPIHandlers) GetWorkflowNode(ctx context.Context, request GetWorkflowNodeRequestObject) (GetWorkflowNodeResponseObject, error) {
+	// Check if workflow exists
+	var workflowExists bool
+	err := h.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM workflows WHERE id = $1)", request.WorkflowId.String()).Scan(&workflowExists)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return GetWorkflowNode500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	if !workflowExists {
+		errorMsg := "not found"
+		message := "Workflow not found"
+		return GetWorkflowNode404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Get workflow definition
+	var definitionJson sql.NullString
+	err = h.db.QueryRowContext(ctx, "SELECT definition FROM workflows WHERE id = $1", request.WorkflowId.String()).Scan(&definitionJson)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return GetWorkflowNode500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	if !definitionJson.Valid || definitionJson.String == "" {
+		errorMsg := "not found"
+		message := "Node not found"
+		return GetWorkflowNode404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	var definition WorkflowDefinition
+	err = json.Unmarshal([]byte(definitionJson.String), &definition)
+	if err != nil {
+		errorMsg := "definition parse error"
+		message := err.Error()
+		return GetWorkflowNode500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Find the node
+	if definition.Nodes != nil {
+		for _, node := range *definition.Nodes {
+			if node.Id == request.NodeId {
+				return GetWorkflowNode200JSONResponse(node), nil
+			}
+		}
+	}
+
+	errorMsg := "not found"
+	message := "Node not found"
+	return GetWorkflowNode404JSONResponse{
+		Error:   &errorMsg,
+		Message: &message,
+	}, nil
+}
+
+// UpdateWorkflowNode updates a workflow node
+func (h *OpenAPIHandlers) UpdateWorkflowNode(ctx context.Context, request UpdateWorkflowNodeRequestObject) (UpdateWorkflowNodeResponseObject, error) {
+	// Check if workflow exists
+	var workflowExists bool
+	err := h.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM workflows WHERE id = $1)", request.WorkflowId.String()).Scan(&workflowExists)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return UpdateWorkflowNode500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	if !workflowExists {
+		errorMsg := "not found"
+		message := "Workflow not found"
+		return UpdateWorkflowNode404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Get current workflow definition
+	var definitionJson sql.NullString
+	err = h.db.QueryRowContext(ctx, "SELECT definition FROM workflows WHERE id = $1", request.WorkflowId.String()).Scan(&definitionJson)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return UpdateWorkflowNode500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	if !definitionJson.Valid || definitionJson.String == "" {
+		errorMsg := "not found"
+		message := "Node not found"
+		return UpdateWorkflowNode404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	var definition WorkflowDefinition
+	err = json.Unmarshal([]byte(definitionJson.String), &definition)
+	if err != nil {
+		errorMsg := "definition parse error"
+		message := err.Error()
+		return UpdateWorkflowNode500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Find and update the node
+	var updatedNode *WorkflowNode
+	if definition.Nodes != nil {
+		for i, node := range *definition.Nodes {
+			if node.Id == request.NodeId {
+				// Update fields if provided
+				if request.Body.Name != nil {
+					(*definition.Nodes)[i].Name = *request.Body.Name
+				}
+				if request.Body.Config != nil {
+					(*definition.Nodes)[i].Config = *request.Body.Config
+				}
+				updatedNode = &(*definition.Nodes)[i]
+				break
+			}
+		}
+	}
+
+	if updatedNode == nil {
+		errorMsg := "not found"
+		message := "Node not found"
+		return UpdateWorkflowNode404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Update workflow definition in database
+	updatedDefinitionJson, err := json.Marshal(definition)
+	if err != nil {
+		errorMsg := "definition marshal error"
+		message := err.Error()
+		return UpdateWorkflowNode500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	_, err = h.db.ExecContext(ctx,
+		"UPDATE workflows SET definition = $1, updated_at = $2 WHERE id = $3",
+		string(updatedDefinitionJson), time.Now(), request.WorkflowId.String())
+	if err != nil {
+		errorMsg := "failed to update workflow"
+		message := err.Error()
+		return UpdateWorkflowNode500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	return UpdateWorkflowNode200JSONResponse(*updatedNode), nil
+}
+
+// DeleteWorkflowNode deletes a workflow node
+func (h *OpenAPIHandlers) DeleteWorkflowNode(ctx context.Context, request DeleteWorkflowNodeRequestObject) (DeleteWorkflowNodeResponseObject, error) {
+	// Check if workflow exists
+	var workflowExists bool
+	err := h.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM workflows WHERE id = $1)", request.WorkflowId.String()).Scan(&workflowExists)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return DeleteWorkflowNode500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	if !workflowExists {
+		errorMsg := "not found"
+		message := "Workflow not found"
+		return DeleteWorkflowNode404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Get current workflow definition
+	var definitionJson sql.NullString
+	err = h.db.QueryRowContext(ctx, "SELECT definition FROM workflows WHERE id = $1", request.WorkflowId.String()).Scan(&definitionJson)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return DeleteWorkflowNode500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	if !definitionJson.Valid || definitionJson.String == "" {
+		errorMsg := "not found"
+		message := "Node not found"
+		return DeleteWorkflowNode404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	var definition WorkflowDefinition
+	err = json.Unmarshal([]byte(definitionJson.String), &definition)
+	if err != nil {
+		errorMsg := "definition parse error"
+		message := err.Error()
+		return DeleteWorkflowNode500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Find and remove the node
+	found := false
+	if definition.Nodes != nil {
+		for i, node := range *definition.Nodes {
+			if node.Id == request.NodeId {
+				// Remove node from slice
+				*definition.Nodes = append((*definition.Nodes)[:i], (*definition.Nodes)[i+1:]...)
+				found = true
+				break
+			}
+		}
+	}
+
+	if !found {
+		errorMsg := "not found"
+		message := "Node not found"
+		return DeleteWorkflowNode404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Update workflow definition in database
+	updatedDefinitionJson, err := json.Marshal(definition)
+	if err != nil {
+		errorMsg := "definition marshal error"
+		message := err.Error()
+		return DeleteWorkflowNode500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	_, err = h.db.ExecContext(ctx,
+		"UPDATE workflows SET definition = $1, updated_at = $2 WHERE id = $3",
+		string(updatedDefinitionJson), time.Now(), request.WorkflowId.String())
+	if err != nil {
+		errorMsg := "failed to update workflow"
+		message := err.Error()
+		return DeleteWorkflowNode500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	return DeleteWorkflowNode204Response{}, nil
+}
+
+// ListWorkflowEdges lists all edges in a workflow
+func (h *OpenAPIHandlers) ListWorkflowEdges(ctx context.Context, request ListWorkflowEdgesRequestObject) (ListWorkflowEdgesResponseObject, error) {
+	// Check if workflow exists
+	var workflowExists bool
+	err := h.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM workflows WHERE id = $1)", request.WorkflowId.String()).Scan(&workflowExists)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return ListWorkflowEdges500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	if !workflowExists {
+		errorMsg := "not found"
+		message := "Workflow not found"
+		return ListWorkflowEdges404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Get workflow definition and extract edges
+	var definitionJson sql.NullString
+	err = h.db.QueryRowContext(ctx, "SELECT definition FROM workflows WHERE id = $1", request.WorkflowId.String()).Scan(&definitionJson)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return ListWorkflowEdges500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	var edges []WorkflowEdge
+	if definitionJson.Valid && definitionJson.String != "" {
+		var definition WorkflowDefinition
+		err = json.Unmarshal([]byte(definitionJson.String), &definition)
+		if err != nil {
+			errorMsg := "definition parse error"
+			message := err.Error()
+			return ListWorkflowEdges500JSONResponse{
+				Error:   &errorMsg,
+				Message: &message,
+			}, nil
+		}
+
+		if definition.Edges != nil {
+			edges = *definition.Edges
+		}
+	}
+
+	return ListWorkflowEdges200JSONResponse(edges), nil
+}
+
+// CreateWorkflowEdge creates a new edge in workflow
+func (h *OpenAPIHandlers) CreateWorkflowEdge(ctx context.Context, request CreateWorkflowEdgeRequestObject) (CreateWorkflowEdgeResponseObject, error) {
+	// Check if workflow exists
+	var workflowExists bool
+	err := h.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM workflows WHERE id = $1)", request.WorkflowId.String()).Scan(&workflowExists)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return CreateWorkflowEdge500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	if !workflowExists {
+		errorMsg := "not found"
+		message := "Workflow not found"
+		return CreateWorkflowEdge404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Get current workflow definition
+	var definitionJson sql.NullString
+	err = h.db.QueryRowContext(ctx, "SELECT definition FROM workflows WHERE id = $1", request.WorkflowId.String()).Scan(&definitionJson)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return CreateWorkflowEdge500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	var definition WorkflowDefinition
+	if definitionJson.Valid && definitionJson.String != "" {
+		err = json.Unmarshal([]byte(definitionJson.String), &definition)
+		if err != nil {
+			errorMsg := "definition parse error"
+			message := err.Error()
+			return CreateWorkflowEdge500JSONResponse{
+				Error:   &errorMsg,
+				Message: &message,
+			}, nil
+		}
+	}
+
+	// Create new edge
+	newEdge := WorkflowEdge{
+		Id:     request.Body.Id,
+		Source: request.Body.Source,
+		Target: request.Body.Target,
+	}
+
+	if request.Body.SourceOutput != nil {
+		newEdge.SourceOutput = request.Body.SourceOutput
+	}
+
+	if request.Body.TargetInput != nil {
+		newEdge.TargetInput = request.Body.TargetInput
+	}
+
+	// Add to edges array
+	if definition.Edges == nil {
+		definition.Edges = &[]WorkflowEdge{}
+	}
+	*definition.Edges = append(*definition.Edges, newEdge)
+
+	// Update workflow definition in database
+	updatedDefinitionJson, err := json.Marshal(definition)
+	if err != nil {
+		errorMsg := "definition marshal error"
+		message := err.Error()
+		return CreateWorkflowEdge500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	_, err = h.db.ExecContext(ctx,
+		"UPDATE workflows SET definition = $1, updated_at = $2 WHERE id = $3",
+		string(updatedDefinitionJson), time.Now(), request.WorkflowId.String())
+	if err != nil {
+		errorMsg := "failed to update workflow"
+		message := err.Error()
+		return CreateWorkflowEdge500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	return CreateWorkflowEdge201JSONResponse(newEdge), nil
+}
+
+// DeleteWorkflowEdge deletes a workflow edge
+func (h *OpenAPIHandlers) DeleteWorkflowEdge(ctx context.Context, request DeleteWorkflowEdgeRequestObject) (DeleteWorkflowEdgeResponseObject, error) {
+	// Check if workflow exists
+	var workflowExists bool
+	err := h.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM workflows WHERE id = $1)", request.WorkflowId.String()).Scan(&workflowExists)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return DeleteWorkflowEdge500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	if !workflowExists {
+		errorMsg := "not found"
+		message := "Workflow not found"
+		return DeleteWorkflowEdge404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Get current workflow definition
+	var definitionJson sql.NullString
+	err = h.db.QueryRowContext(ctx, "SELECT definition FROM workflows WHERE id = $1", request.WorkflowId.String()).Scan(&definitionJson)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return DeleteWorkflowEdge500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	if !definitionJson.Valid || definitionJson.String == "" {
+		errorMsg := "not found"
+		message := "Edge not found"
+		return DeleteWorkflowEdge404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	var definition WorkflowDefinition
+	err = json.Unmarshal([]byte(definitionJson.String), &definition)
+	if err != nil {
+		errorMsg := "definition parse error"
+		message := err.Error()
+		return DeleteWorkflowEdge500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Find and remove the edge
+	found := false
+	if definition.Edges != nil {
+		for i, edge := range *definition.Edges {
+			if edge.Id == request.EdgeId {
+				// Remove edge from slice
+				*definition.Edges = append((*definition.Edges)[:i], (*definition.Edges)[i+1:]...)
+				found = true
+				break
+			}
+		}
+	}
+
+	if !found {
+		errorMsg := "not found"
+		message := "Edge not found"
+		return DeleteWorkflowEdge404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Update workflow definition in database
+	updatedDefinitionJson, err := json.Marshal(definition)
+	if err != nil {
+		errorMsg := "definition marshal error"
+		message := err.Error()
+		return DeleteWorkflowEdge500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	_, err = h.db.ExecContext(ctx,
+		"UPDATE workflows SET definition = $1, updated_at = $2 WHERE id = $3",
+		string(updatedDefinitionJson), time.Now(), request.WorkflowId.String())
+	if err != nil {
+		errorMsg := "failed to update workflow"
+		message := err.Error()
+		return DeleteWorkflowEdge500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	return DeleteWorkflowEdge204Response{}, nil
+}
+
+// AutoLayoutWorkflow auto-layouts workflow nodes
+func (h *OpenAPIHandlers) AutoLayoutWorkflow(ctx context.Context, request AutoLayoutWorkflowRequestObject) (AutoLayoutWorkflowResponseObject, error) {
+	// Check if workflow exists
+	var workflowExists bool
+	err := h.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM workflows WHERE id = $1)", request.WorkflowId.String()).Scan(&workflowExists)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return AutoLayoutWorkflow500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	if !workflowExists {
+		errorMsg := "not found"
+		message := "Workflow not found"
+		return AutoLayoutWorkflow404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// For now, return a simple mock layout
+	// In a real implementation, this would apply graph layout algorithms
+	nodes := []struct {
+		Id       *string `json:"id,omitempty"`
+		Position *struct {
+			X *float32 `json:"x,omitempty"`
+			Y *float32 `json:"y,omitempty"`
+		} `json:"position,omitempty"`
+	}{
+		{
+			Id: func() *string { s := "start"; return &s }(),
+			Position: &struct {
+				X *float32 `json:"x,omitempty"`
+				Y *float32 `json:"y,omitempty"`
+			}{
+				X: func() *float32 { f := float32(100); return &f }(),
+				Y: func() *float32 { f := float32(100); return &f }(),
+			},
+		},
+		{
+			Id: func() *string { s := "process"; return &s }(),
+			Position: &struct {
+				X *float32 `json:"x,omitempty"`
+				Y *float32 `json:"y,omitempty"`
+			}{
+				X: func() *float32 { f := float32(300); return &f }(),
+				Y: func() *float32 { f := float32(100); return &f }(),
+			},
+		},
+		{
+			Id: func() *string { s := "end"; return &s }(),
+			Position: &struct {
+				X *float32 `json:"x,omitempty"`
+				Y *float32 `json:"y,omitempty"`
+			}{
+				X: func() *float32 { f := float32(500); return &f }(),
+				Y: func() *float32 { f := float32(100); return &f }(),
+			},
+		},
+	}
+
+	result := WorkflowLayoutResult{
+		Nodes: &nodes,
+	}
+
+	return AutoLayoutWorkflow200JSONResponse(result), nil
+}

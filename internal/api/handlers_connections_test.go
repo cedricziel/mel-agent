@@ -284,7 +284,7 @@ func TestOpenAPIUpdateConnection(t *testing.T) {
 			"api_key": "updated-key",
 		},
 		UsageLimitMonth: testutil.IntPtr(1000),
-		Status:          func() *UpdateConnectionRequestStatus { s := UpdateConnectionRequestStatusInvalid; return &s }(),
+		Status:          func() *UpdateConnectionRequestStatus { s := Invalid; return &s }(),
 	}
 	reqBody, _ = json.Marshal(updateReq)
 

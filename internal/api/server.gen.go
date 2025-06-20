@@ -21,6 +21,13 @@ const (
 	BearerAuthScopes = "BearerAuth.Scopes"
 )
 
+// Defines values for AgentDeploymentStatus.
+const (
+	AgentDeploymentStatusDeployed  AgentDeploymentStatus = "deployed"
+	AgentDeploymentStatusDeploying AgentDeploymentStatus = "deploying"
+	AgentDeploymentStatusFailed    AgentDeploymentStatus = "failed"
+)
+
 // Defines values for ConnectionStatus.
 const (
 	ConnectionStatusExpired ConnectionStatus = "expired"
@@ -32,6 +39,13 @@ const (
 const (
 	CreateTriggerRequestTypeSchedule CreateTriggerRequestType = "schedule"
 	CreateTriggerRequestTypeWebhook  CreateTriggerRequestType = "webhook"
+)
+
+// Defines values for CredentialStatus.
+const (
+	CredentialStatusExpired CredentialStatus = "expired"
+	CredentialStatusInvalid CredentialStatus = "invalid"
+	CredentialStatusValid   CredentialStatus = "valid"
 )
 
 // Defines values for NodeTypeKinds.
@@ -51,9 +65,9 @@ const (
 
 // Defines values for UpdateConnectionRequestStatus.
 const (
-	UpdateConnectionRequestStatusExpired UpdateConnectionRequestStatus = "expired"
-	UpdateConnectionRequestStatusInvalid UpdateConnectionRequestStatus = "invalid"
-	UpdateConnectionRequestStatusValid   UpdateConnectionRequestStatus = "valid"
+	Expired UpdateConnectionRequestStatus = "expired"
+	Invalid UpdateConnectionRequestStatus = "invalid"
+	Valid   UpdateConnectionRequestStatus = "valid"
 )
 
 // Defines values for WorkerStatus.
@@ -89,10 +103,10 @@ const (
 
 // Defines values for ListWorkflowRunsParamsStatus.
 const (
-	ListWorkflowRunsParamsStatusCompleted ListWorkflowRunsParamsStatus = "completed"
-	ListWorkflowRunsParamsStatusFailed    ListWorkflowRunsParamsStatus = "failed"
-	ListWorkflowRunsParamsStatusPending   ListWorkflowRunsParamsStatus = "pending"
-	ListWorkflowRunsParamsStatusRunning   ListWorkflowRunsParamsStatus = "running"
+	Completed ListWorkflowRunsParamsStatus = "completed"
+	Failed    ListWorkflowRunsParamsStatus = "failed"
+	Pending   ListWorkflowRunsParamsStatus = "pending"
+	Running   ListWorkflowRunsParamsStatus = "running"
 )
 
 // Agent defines model for Agent.
@@ -104,12 +118,43 @@ type Agent struct {
 	Name        string              `json:"name"`
 }
 
+// AgentDeployment defines model for AgentDeployment.
+type AgentDeployment struct {
+	AgentId    *openapi_types.UUID    `json:"agent_id,omitempty"`
+	DeployedAt *time.Time             `json:"deployed_at,omitempty"`
+	Status     *AgentDeploymentStatus `json:"status,omitempty"`
+	VersionId  *openapi_types.UUID    `json:"version_id,omitempty"`
+}
+
+// AgentDeploymentStatus defines model for AgentDeployment.Status.
+type AgentDeploymentStatus string
+
+// AgentDraft defines model for AgentDraft.
+type AgentDraft struct {
+	AgentId    *openapi_types.UUID `json:"agent_id,omitempty"`
+	Definition *WorkflowDefinition `json:"definition,omitempty"`
+	Id         *openapi_types.UUID `json:"id,omitempty"`
+	UpdatedAt  *time.Time          `json:"updated_at,omitempty"`
+}
+
 // AgentList defines model for AgentList.
 type AgentList struct {
 	Agents *[]Agent `json:"agents,omitempty"`
 	Limit  *int     `json:"limit,omitempty"`
 	Page   *int     `json:"page,omitempty"`
 	Total  *int     `json:"total,omitempty"`
+}
+
+// AgentVersion defines model for AgentVersion.
+type AgentVersion struct {
+	AgentId       *openapi_types.UUID `json:"agent_id,omitempty"`
+	CreatedAt     *time.Time          `json:"created_at,omitempty"`
+	Definition    *WorkflowDefinition `json:"definition,omitempty"`
+	Description   *string             `json:"description,omitempty"`
+	Id            *openapi_types.UUID `json:"id,omitempty"`
+	IsCurrent     *bool               `json:"is_current,omitempty"`
+	Name          *string             `json:"name,omitempty"`
+	VersionNumber *int                `json:"version_number,omitempty"`
 }
 
 // Connection defines model for Connection.
@@ -137,6 +182,13 @@ type CreateAgentRequest struct {
 	Name        string              `json:"name"`
 }
 
+// CreateAgentVersionRequest defines model for CreateAgentVersionRequest.
+type CreateAgentVersionRequest struct {
+	Definition  *WorkflowDefinition `json:"definition,omitempty"`
+	Description *string             `json:"description,omitempty"`
+	Name        string              `json:"name"`
+}
+
 // CreateConnectionRequest defines model for CreateConnectionRequest.
 type CreateConnectionRequest struct {
 	Config          *map[string]interface{} `json:"config,omitempty"`
@@ -159,11 +211,51 @@ type CreateTriggerRequest struct {
 // CreateTriggerRequestType defines model for CreateTriggerRequest.Type.
 type CreateTriggerRequestType string
 
+// CreateWorkflowEdgeRequest defines model for CreateWorkflowEdgeRequest.
+type CreateWorkflowEdgeRequest struct {
+	Id           string  `json:"id"`
+	Source       string  `json:"source"`
+	SourceOutput *string `json:"sourceOutput,omitempty"`
+	Target       string  `json:"target"`
+	TargetInput  *string `json:"targetInput,omitempty"`
+}
+
+// CreateWorkflowNodeRequest defines model for CreateWorkflowNodeRequest.
+type CreateWorkflowNodeRequest struct {
+	Config   map[string]interface{} `json:"config"`
+	Id       string                 `json:"id"`
+	Name     string                 `json:"name"`
+	Position *struct {
+		X *float32 `json:"x,omitempty"`
+		Y *float32 `json:"y,omitempty"`
+	} `json:"position,omitempty"`
+	Type string `json:"type"`
+}
+
 // CreateWorkflowRequest defines model for CreateWorkflowRequest.
 type CreateWorkflowRequest struct {
 	Definition  *WorkflowDefinition `json:"definition,omitempty"`
 	Description *string             `json:"description,omitempty"`
 	Name        string              `json:"name"`
+}
+
+// Credential defines model for Credential.
+type Credential struct {
+	CreatedAt   *time.Time          `json:"created_at,omitempty"`
+	Description *string             `json:"description,omitempty"`
+	Id          *openapi_types.UUID `json:"id,omitempty"`
+	LastUsed    *time.Time          `json:"last_used,omitempty"`
+	Name        *string             `json:"name,omitempty"`
+	Status      *CredentialStatus   `json:"status,omitempty"`
+	Type        *string             `json:"type,omitempty"`
+}
+
+// CredentialStatus defines model for Credential.Status.
+type CredentialStatus string
+
+// DeployAgentVersionRequest defines model for DeployAgentVersionRequest.
+type DeployAgentVersionRequest struct {
+	VersionId openapi_types.UUID `json:"version_id"`
 }
 
 // Error defines model for Error.
@@ -186,6 +278,15 @@ type NodeOutput struct {
 	Description *string `json:"description,omitempty"`
 	Name        *string `json:"name,omitempty"`
 	Type        *string `json:"type,omitempty"`
+}
+
+// NodeTestResult defines model for NodeTestResult.
+type NodeTestResult struct {
+	Error         *string                 `json:"error,omitempty"`
+	ExecutionTime *float32                `json:"execution_time,omitempty"`
+	Logs          *[]string               `json:"logs,omitempty"`
+	Output        *map[string]interface{} `json:"output,omitempty"`
+	Success       *bool                   `json:"success,omitempty"`
 }
 
 // NodeType defines model for NodeType.
@@ -223,6 +324,11 @@ type Trigger struct {
 // TriggerType defines model for Trigger.Type.
 type TriggerType string
 
+// UpdateAgentDraftRequest defines model for UpdateAgentDraftRequest.
+type UpdateAgentDraftRequest struct {
+	Definition *WorkflowDefinition `json:"definition,omitempty"`
+}
+
 // UpdateAgentRequest defines model for UpdateAgentRequest.
 type UpdateAgentRequest struct {
 	Definition  *WorkflowDefinition `json:"definition,omitempty"`
@@ -248,6 +354,16 @@ type UpdateTriggerRequest struct {
 	Config  *map[string]interface{} `json:"config,omitempty"`
 	Enabled *bool                   `json:"enabled,omitempty"`
 	Name    *string                 `json:"name,omitempty"`
+}
+
+// UpdateWorkflowNodeRequest defines model for UpdateWorkflowNodeRequest.
+type UpdateWorkflowNodeRequest struct {
+	Config   *map[string]interface{} `json:"config,omitempty"`
+	Name     *string                 `json:"name,omitempty"`
+	Position *struct {
+		X *float32 `json:"x,omitempty"`
+		Y *float32 `json:"y,omitempty"`
+	} `json:"position,omitempty"`
 }
 
 // UpdateWorkflowRequest defines model for UpdateWorkflowRequest.
@@ -317,6 +433,17 @@ type WorkflowExecution struct {
 // WorkflowExecutionStatus defines model for WorkflowExecution.Status.
 type WorkflowExecutionStatus string
 
+// WorkflowLayoutResult defines model for WorkflowLayoutResult.
+type WorkflowLayoutResult struct {
+	Nodes *[]struct {
+		Id       *string `json:"id,omitempty"`
+		Position *struct {
+			X *float32 `json:"x,omitempty"`
+			Y *float32 `json:"y,omitempty"`
+		} `json:"position,omitempty"`
+	} `json:"nodes,omitempty"`
+}
+
 // WorkflowList defines model for WorkflowList.
 type WorkflowList struct {
 	Limit     *int        `json:"limit,omitempty"`
@@ -377,6 +504,17 @@ type ListAgentsParams struct {
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// TestDraftNodeJSONBody defines parameters for TestDraftNode.
+type TestDraftNodeJSONBody struct {
+	Input *map[string]interface{} `json:"input,omitempty"`
+}
+
+// ListCredentialsParams defines parameters for ListCredentials.
+type ListCredentialsParams struct {
+	// CredentialType Filter by credential type
+	CredentialType *string `form:"credential_type,omitempty" json:"credential_type,omitempty"`
+}
+
 // ListNodeTypesParams defines parameters for ListNodeTypes.
 type ListNodeTypesParams struct {
 	// Kind Filter by node kind (can be comma-separated)
@@ -422,6 +560,18 @@ type HandleWebhookJSONBody map[string]interface{}
 // CreateAgentJSONRequestBody defines body for CreateAgent for application/json ContentType.
 type CreateAgentJSONRequestBody = CreateAgentRequest
 
+// DeployAgentVersionJSONRequestBody defines body for DeployAgentVersion for application/json ContentType.
+type DeployAgentVersionJSONRequestBody = DeployAgentVersionRequest
+
+// UpdateAgentDraftJSONRequestBody defines body for UpdateAgentDraft for application/json ContentType.
+type UpdateAgentDraftJSONRequestBody = UpdateAgentDraftRequest
+
+// TestDraftNodeJSONRequestBody defines body for TestDraftNode for application/json ContentType.
+type TestDraftNodeJSONRequestBody TestDraftNodeJSONBody
+
+// CreateAgentVersionJSONRequestBody defines body for CreateAgentVersion for application/json ContentType.
+type CreateAgentVersionJSONRequestBody = CreateAgentVersionRequest
+
 // UpdateAgentJSONRequestBody defines body for UpdateAgent for application/json ContentType.
 type UpdateAgentJSONRequestBody = UpdateAgentRequest
 
@@ -455,6 +605,15 @@ type UpdateWorkflowJSONRequestBody = UpdateWorkflowRequest
 // ExecuteWorkflowJSONRequestBody defines body for ExecuteWorkflow for application/json ContentType.
 type ExecuteWorkflowJSONRequestBody ExecuteWorkflowJSONBody
 
+// CreateWorkflowEdgeJSONRequestBody defines body for CreateWorkflowEdge for application/json ContentType.
+type CreateWorkflowEdgeJSONRequestBody = CreateWorkflowEdgeRequest
+
+// CreateWorkflowNodeJSONRequestBody defines body for CreateWorkflowNode for application/json ContentType.
+type CreateWorkflowNodeJSONRequestBody = CreateWorkflowNodeRequest
+
+// UpdateWorkflowNodeJSONRequestBody defines body for UpdateWorkflowNode for application/json ContentType.
+type UpdateWorkflowNodeJSONRequestBody = UpdateWorkflowNodeRequest
+
 // HandleWebhookJSONRequestBody defines body for HandleWebhook for application/json ContentType.
 type HandleWebhookJSONRequestBody HandleWebhookJSONBody
 
@@ -466,6 +625,21 @@ type ServerInterface interface {
 	// Create a new agent
 	// (POST /api/agents)
 	CreateAgent(w http.ResponseWriter, r *http.Request)
+	// Deploy a specific agent version
+	// (POST /api/agents/{agentId}/deploy)
+	DeployAgentVersion(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID)
+	// Get current draft for an agent
+	// (GET /api/agents/{agentId}/draft)
+	GetAgentDraft(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID)
+	// Update agent draft with auto-persistence
+	// (PUT /api/agents/{agentId}/draft)
+	UpdateAgentDraft(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID)
+	// Test a single node in draft context
+	// (POST /api/agents/{agentId}/draft/nodes/{nodeId}/test)
+	TestDraftNode(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID, nodeId string)
+	// Create a new agent version
+	// (POST /api/agents/{agentId}/versions)
+	CreateAgentVersion(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID)
 	// Delete agent
 	// (DELETE /api/agents/{id})
 	DeleteAgent(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
@@ -490,6 +664,9 @@ type ServerInterface interface {
 	// Update connection
 	// (PUT /api/connections/{id})
 	UpdateConnection(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	// List credentials for selection in nodes
+	// (GET /api/credentials)
+	ListCredentials(w http.ResponseWriter, r *http.Request, params ListCredentialsParams)
 	// Health check endpoint
 	// (GET /api/health)
 	GetHealth(w http.ResponseWriter, r *http.Request)
@@ -556,6 +733,33 @@ type ServerInterface interface {
 	// Execute a workflow
 	// (POST /api/workflows/{id}/execute)
 	ExecuteWorkflow(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	// List all edges in a workflow
+	// (GET /api/workflows/{workflowId}/edges)
+	ListWorkflowEdges(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID)
+	// Create a new edge in workflow
+	// (POST /api/workflows/{workflowId}/edges)
+	CreateWorkflowEdge(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID)
+	// Delete workflow edge
+	// (DELETE /api/workflows/{workflowId}/edges/{edgeId})
+	DeleteWorkflowEdge(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID, edgeId string)
+	// Auto-layout workflow nodes
+	// (POST /api/workflows/{workflowId}/layout)
+	AutoLayoutWorkflow(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID)
+	// List all nodes in a workflow
+	// (GET /api/workflows/{workflowId}/nodes)
+	ListWorkflowNodes(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID)
+	// Create a new node in workflow
+	// (POST /api/workflows/{workflowId}/nodes)
+	CreateWorkflowNode(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID)
+	// Delete workflow node
+	// (DELETE /api/workflows/{workflowId}/nodes/{nodeId})
+	DeleteWorkflowNode(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID, nodeId string)
+	// Get specific workflow node
+	// (GET /api/workflows/{workflowId}/nodes/{nodeId})
+	GetWorkflowNode(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID, nodeId string)
+	// Update workflow node
+	// (PUT /api/workflows/{workflowId}/nodes/{nodeId})
+	UpdateWorkflowNode(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID, nodeId string)
 	// Webhook endpoint
 	// (POST /webhooks/{token})
 	HandleWebhook(w http.ResponseWriter, r *http.Request, token string)
@@ -574,6 +778,36 @@ func (_ Unimplemented) ListAgents(w http.ResponseWriter, r *http.Request, params
 // Create a new agent
 // (POST /api/agents)
 func (_ Unimplemented) CreateAgent(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Deploy a specific agent version
+// (POST /api/agents/{agentId}/deploy)
+func (_ Unimplemented) DeployAgentVersion(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get current draft for an agent
+// (GET /api/agents/{agentId}/draft)
+func (_ Unimplemented) GetAgentDraft(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Update agent draft with auto-persistence
+// (PUT /api/agents/{agentId}/draft)
+func (_ Unimplemented) UpdateAgentDraft(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Test a single node in draft context
+// (POST /api/agents/{agentId}/draft/nodes/{nodeId}/test)
+func (_ Unimplemented) TestDraftNode(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID, nodeId string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Create a new agent version
+// (POST /api/agents/{agentId}/versions)
+func (_ Unimplemented) CreateAgentVersion(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -622,6 +856,12 @@ func (_ Unimplemented) GetConnection(w http.ResponseWriter, r *http.Request, id 
 // Update connection
 // (PUT /api/connections/{id})
 func (_ Unimplemented) UpdateConnection(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List credentials for selection in nodes
+// (GET /api/credentials)
+func (_ Unimplemented) ListCredentials(w http.ResponseWriter, r *http.Request, params ListCredentialsParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -757,6 +997,60 @@ func (_ Unimplemented) ExecuteWorkflow(w http.ResponseWriter, r *http.Request, i
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// List all edges in a workflow
+// (GET /api/workflows/{workflowId}/edges)
+func (_ Unimplemented) ListWorkflowEdges(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Create a new edge in workflow
+// (POST /api/workflows/{workflowId}/edges)
+func (_ Unimplemented) CreateWorkflowEdge(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Delete workflow edge
+// (DELETE /api/workflows/{workflowId}/edges/{edgeId})
+func (_ Unimplemented) DeleteWorkflowEdge(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID, edgeId string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Auto-layout workflow nodes
+// (POST /api/workflows/{workflowId}/layout)
+func (_ Unimplemented) AutoLayoutWorkflow(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List all nodes in a workflow
+// (GET /api/workflows/{workflowId}/nodes)
+func (_ Unimplemented) ListWorkflowNodes(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Create a new node in workflow
+// (POST /api/workflows/{workflowId}/nodes)
+func (_ Unimplemented) CreateWorkflowNode(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Delete workflow node
+// (DELETE /api/workflows/{workflowId}/nodes/{nodeId})
+func (_ Unimplemented) DeleteWorkflowNode(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID, nodeId string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get specific workflow node
+// (GET /api/workflows/{workflowId}/nodes/{nodeId})
+func (_ Unimplemented) GetWorkflowNode(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID, nodeId string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Update workflow node
+// (PUT /api/workflows/{workflowId}/nodes/{nodeId})
+func (_ Unimplemented) UpdateWorkflowNode(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID, nodeId string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // Webhook endpoint
 // (POST /webhooks/{token})
 func (_ Unimplemented) HandleWebhook(w http.ResponseWriter, r *http.Request, token string) {
@@ -828,6 +1122,180 @@ func (siw *ServerInterfaceWrapper) CreateAgent(w http.ResponseWriter, r *http.Re
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateAgent(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeployAgentVersion operation middleware
+func (siw *ServerInterfaceWrapper) DeployAgentVersion(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeployAgentVersion(w, r, agentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAgentDraft operation middleware
+func (siw *ServerInterfaceWrapper) GetAgentDraft(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAgentDraft(w, r, agentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateAgentDraft operation middleware
+func (siw *ServerInterfaceWrapper) UpdateAgentDraft(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateAgentDraft(w, r, agentId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// TestDraftNode operation middleware
+func (siw *ServerInterfaceWrapper) TestDraftNode(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "nodeId" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "nodeId", chi.URLParam(r, "nodeId"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "nodeId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.TestDraftNode(w, r, agentId, nodeId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateAgentVersion operation middleware
+func (siw *ServerInterfaceWrapper) CreateAgentVersion(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateAgentVersion(w, r, agentId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1070,6 +1538,41 @@ func (siw *ServerInterfaceWrapper) UpdateConnection(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateConnection(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListCredentials operation middleware
+func (siw *ServerInterfaceWrapper) ListCredentials(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListCredentialsParams
+
+	// ------------- Optional query parameter "credential_type" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "credential_type", r.URL.Query(), &params.CredentialType)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "credential_type", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCredentials(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1786,6 +2289,339 @@ func (siw *ServerInterfaceWrapper) ExecuteWorkflow(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
+// ListWorkflowEdges operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkflowEdges(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "workflowId" -------------
+	var workflowId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workflowId", chi.URLParam(r, "workflowId"), &workflowId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workflowId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkflowEdges(w, r, workflowId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateWorkflowEdge operation middleware
+func (siw *ServerInterfaceWrapper) CreateWorkflowEdge(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "workflowId" -------------
+	var workflowId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workflowId", chi.URLParam(r, "workflowId"), &workflowId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workflowId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateWorkflowEdge(w, r, workflowId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteWorkflowEdge operation middleware
+func (siw *ServerInterfaceWrapper) DeleteWorkflowEdge(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "workflowId" -------------
+	var workflowId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workflowId", chi.URLParam(r, "workflowId"), &workflowId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workflowId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "edgeId" -------------
+	var edgeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "edgeId", chi.URLParam(r, "edgeId"), &edgeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "edgeId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteWorkflowEdge(w, r, workflowId, edgeId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AutoLayoutWorkflow operation middleware
+func (siw *ServerInterfaceWrapper) AutoLayoutWorkflow(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "workflowId" -------------
+	var workflowId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workflowId", chi.URLParam(r, "workflowId"), &workflowId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workflowId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AutoLayoutWorkflow(w, r, workflowId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListWorkflowNodes operation middleware
+func (siw *ServerInterfaceWrapper) ListWorkflowNodes(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "workflowId" -------------
+	var workflowId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workflowId", chi.URLParam(r, "workflowId"), &workflowId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workflowId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListWorkflowNodes(w, r, workflowId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateWorkflowNode operation middleware
+func (siw *ServerInterfaceWrapper) CreateWorkflowNode(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "workflowId" -------------
+	var workflowId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workflowId", chi.URLParam(r, "workflowId"), &workflowId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workflowId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateWorkflowNode(w, r, workflowId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteWorkflowNode operation middleware
+func (siw *ServerInterfaceWrapper) DeleteWorkflowNode(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "workflowId" -------------
+	var workflowId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workflowId", chi.URLParam(r, "workflowId"), &workflowId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workflowId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "nodeId" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "nodeId", chi.URLParam(r, "nodeId"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "nodeId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteWorkflowNode(w, r, workflowId, nodeId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkflowNode operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkflowNode(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "workflowId" -------------
+	var workflowId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workflowId", chi.URLParam(r, "workflowId"), &workflowId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workflowId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "nodeId" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "nodeId", chi.URLParam(r, "nodeId"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "nodeId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkflowNode(w, r, workflowId, nodeId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateWorkflowNode operation middleware
+func (siw *ServerInterfaceWrapper) UpdateWorkflowNode(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "workflowId" -------------
+	var workflowId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "workflowId", chi.URLParam(r, "workflowId"), &workflowId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "workflowId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "nodeId" -------------
+	var nodeId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "nodeId", chi.URLParam(r, "nodeId"), &nodeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "nodeId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateWorkflowNode(w, r, workflowId, nodeId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // HandleWebhook operation middleware
 func (siw *ServerInterfaceWrapper) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 
@@ -1939,6 +2775,21 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/api/agents", wrapper.CreateAgent)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/agents/{agentId}/deploy", wrapper.DeployAgentVersion)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/agents/{agentId}/draft", wrapper.GetAgentDraft)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/api/agents/{agentId}/draft", wrapper.UpdateAgentDraft)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/agents/{agentId}/draft/nodes/{nodeId}/test", wrapper.TestDraftNode)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/agents/{agentId}/versions", wrapper.CreateAgentVersion)
+	})
+	r.Group(func(r chi.Router) {
 		r.Delete(options.BaseURL+"/api/agents/{id}", wrapper.DeleteAgent)
 	})
 	r.Group(func(r chi.Router) {
@@ -1961,6 +2812,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Put(options.BaseURL+"/api/connections/{id}", wrapper.UpdateConnection)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/credentials", wrapper.ListCredentials)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/api/health", wrapper.GetHealth)
@@ -2029,6 +2883,33 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/api/workflows/{id}/execute", wrapper.ExecuteWorkflow)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/workflows/{workflowId}/edges", wrapper.ListWorkflowEdges)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/workflows/{workflowId}/edges", wrapper.CreateWorkflowEdge)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/api/workflows/{workflowId}/edges/{edgeId}", wrapper.DeleteWorkflowEdge)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/workflows/{workflowId}/layout", wrapper.AutoLayoutWorkflow)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/workflows/{workflowId}/nodes", wrapper.ListWorkflowNodes)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/workflows/{workflowId}/nodes", wrapper.CreateWorkflowNode)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/api/workflows/{workflowId}/nodes/{nodeId}", wrapper.DeleteWorkflowNode)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/workflows/{workflowId}/nodes/{nodeId}", wrapper.GetWorkflowNode)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/api/workflows/{workflowId}/nodes/{nodeId}", wrapper.UpdateWorkflowNode)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/webhooks/{token}", wrapper.HandleWebhook)
 	})
 
@@ -2090,6 +2971,222 @@ func (response CreateAgent400JSONResponse) VisitCreateAgentResponse(w http.Respo
 type CreateAgent500JSONResponse Error
 
 func (response CreateAgent500JSONResponse) VisitCreateAgentResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeployAgentVersionRequestObject struct {
+	AgentId openapi_types.UUID `json:"agentId"`
+	Body    *DeployAgentVersionJSONRequestBody
+}
+
+type DeployAgentVersionResponseObject interface {
+	VisitDeployAgentVersionResponse(w http.ResponseWriter) error
+}
+
+type DeployAgentVersion200JSONResponse AgentDeployment
+
+func (response DeployAgentVersion200JSONResponse) VisitDeployAgentVersionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeployAgentVersion400JSONResponse Error
+
+func (response DeployAgentVersion400JSONResponse) VisitDeployAgentVersionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeployAgentVersion404JSONResponse Error
+
+func (response DeployAgentVersion404JSONResponse) VisitDeployAgentVersionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeployAgentVersion500JSONResponse Error
+
+func (response DeployAgentVersion500JSONResponse) VisitDeployAgentVersionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetAgentDraftRequestObject struct {
+	AgentId openapi_types.UUID `json:"agentId"`
+}
+
+type GetAgentDraftResponseObject interface {
+	VisitGetAgentDraftResponse(w http.ResponseWriter) error
+}
+
+type GetAgentDraft200JSONResponse AgentDraft
+
+func (response GetAgentDraft200JSONResponse) VisitGetAgentDraftResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetAgentDraft404JSONResponse Error
+
+func (response GetAgentDraft404JSONResponse) VisitGetAgentDraftResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetAgentDraft500JSONResponse Error
+
+func (response GetAgentDraft500JSONResponse) VisitGetAgentDraftResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateAgentDraftRequestObject struct {
+	AgentId openapi_types.UUID `json:"agentId"`
+	Body    *UpdateAgentDraftJSONRequestBody
+}
+
+type UpdateAgentDraftResponseObject interface {
+	VisitUpdateAgentDraftResponse(w http.ResponseWriter) error
+}
+
+type UpdateAgentDraft200JSONResponse AgentDraft
+
+func (response UpdateAgentDraft200JSONResponse) VisitUpdateAgentDraftResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateAgentDraft400JSONResponse Error
+
+func (response UpdateAgentDraft400JSONResponse) VisitUpdateAgentDraftResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateAgentDraft404JSONResponse Error
+
+func (response UpdateAgentDraft404JSONResponse) VisitUpdateAgentDraftResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateAgentDraft500JSONResponse Error
+
+func (response UpdateAgentDraft500JSONResponse) VisitUpdateAgentDraftResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type TestDraftNodeRequestObject struct {
+	AgentId openapi_types.UUID `json:"agentId"`
+	NodeId  string             `json:"nodeId"`
+	Body    *TestDraftNodeJSONRequestBody
+}
+
+type TestDraftNodeResponseObject interface {
+	VisitTestDraftNodeResponse(w http.ResponseWriter) error
+}
+
+type TestDraftNode200JSONResponse NodeTestResult
+
+func (response TestDraftNode200JSONResponse) VisitTestDraftNodeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type TestDraftNode400JSONResponse Error
+
+func (response TestDraftNode400JSONResponse) VisitTestDraftNodeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type TestDraftNode404JSONResponse Error
+
+func (response TestDraftNode404JSONResponse) VisitTestDraftNodeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type TestDraftNode500JSONResponse Error
+
+func (response TestDraftNode500JSONResponse) VisitTestDraftNodeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateAgentVersionRequestObject struct {
+	AgentId openapi_types.UUID `json:"agentId"`
+	Body    *CreateAgentVersionJSONRequestBody
+}
+
+type CreateAgentVersionResponseObject interface {
+	VisitCreateAgentVersionResponse(w http.ResponseWriter) error
+}
+
+type CreateAgentVersion201JSONResponse AgentVersion
+
+func (response CreateAgentVersion201JSONResponse) VisitCreateAgentVersionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateAgentVersion400JSONResponse Error
+
+func (response CreateAgentVersion400JSONResponse) VisitCreateAgentVersionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateAgentVersion404JSONResponse Error
+
+func (response CreateAgentVersion404JSONResponse) VisitCreateAgentVersionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateAgentVersion500JSONResponse Error
+
+func (response CreateAgentVersion500JSONResponse) VisitCreateAgentVersionResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(500)
 
@@ -2378,6 +3475,32 @@ func (response UpdateConnection404JSONResponse) VisitUpdateConnectionResponse(w 
 type UpdateConnection500JSONResponse Error
 
 func (response UpdateConnection500JSONResponse) VisitUpdateConnectionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListCredentialsRequestObject struct {
+	Params ListCredentialsParams
+}
+
+type ListCredentialsResponseObject interface {
+	VisitListCredentialsResponse(w http.ResponseWriter) error
+}
+
+type ListCredentials200JSONResponse []Credential
+
+func (response ListCredentials200JSONResponse) VisitListCredentialsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListCredentials500JSONResponse Error
+
+func (response ListCredentials500JSONResponse) VisitListCredentialsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(500)
 
@@ -3073,6 +4196,353 @@ func (response ExecuteWorkflow500JSONResponse) VisitExecuteWorkflowResponse(w ht
 	return json.NewEncoder(w).Encode(response)
 }
 
+type ListWorkflowEdgesRequestObject struct {
+	WorkflowId openapi_types.UUID `json:"workflowId"`
+}
+
+type ListWorkflowEdgesResponseObject interface {
+	VisitListWorkflowEdgesResponse(w http.ResponseWriter) error
+}
+
+type ListWorkflowEdges200JSONResponse []WorkflowEdge
+
+func (response ListWorkflowEdges200JSONResponse) VisitListWorkflowEdgesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListWorkflowEdges404JSONResponse Error
+
+func (response ListWorkflowEdges404JSONResponse) VisitListWorkflowEdgesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListWorkflowEdges500JSONResponse Error
+
+func (response ListWorkflowEdges500JSONResponse) VisitListWorkflowEdgesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateWorkflowEdgeRequestObject struct {
+	WorkflowId openapi_types.UUID `json:"workflowId"`
+	Body       *CreateWorkflowEdgeJSONRequestBody
+}
+
+type CreateWorkflowEdgeResponseObject interface {
+	VisitCreateWorkflowEdgeResponse(w http.ResponseWriter) error
+}
+
+type CreateWorkflowEdge201JSONResponse WorkflowEdge
+
+func (response CreateWorkflowEdge201JSONResponse) VisitCreateWorkflowEdgeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateWorkflowEdge400JSONResponse Error
+
+func (response CreateWorkflowEdge400JSONResponse) VisitCreateWorkflowEdgeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateWorkflowEdge404JSONResponse Error
+
+func (response CreateWorkflowEdge404JSONResponse) VisitCreateWorkflowEdgeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateWorkflowEdge500JSONResponse Error
+
+func (response CreateWorkflowEdge500JSONResponse) VisitCreateWorkflowEdgeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteWorkflowEdgeRequestObject struct {
+	WorkflowId openapi_types.UUID `json:"workflowId"`
+	EdgeId     string             `json:"edgeId"`
+}
+
+type DeleteWorkflowEdgeResponseObject interface {
+	VisitDeleteWorkflowEdgeResponse(w http.ResponseWriter) error
+}
+
+type DeleteWorkflowEdge204Response struct {
+}
+
+func (response DeleteWorkflowEdge204Response) VisitDeleteWorkflowEdgeResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteWorkflowEdge404JSONResponse Error
+
+func (response DeleteWorkflowEdge404JSONResponse) VisitDeleteWorkflowEdgeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteWorkflowEdge500JSONResponse Error
+
+func (response DeleteWorkflowEdge500JSONResponse) VisitDeleteWorkflowEdgeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AutoLayoutWorkflowRequestObject struct {
+	WorkflowId openapi_types.UUID `json:"workflowId"`
+}
+
+type AutoLayoutWorkflowResponseObject interface {
+	VisitAutoLayoutWorkflowResponse(w http.ResponseWriter) error
+}
+
+type AutoLayoutWorkflow200JSONResponse WorkflowLayoutResult
+
+func (response AutoLayoutWorkflow200JSONResponse) VisitAutoLayoutWorkflowResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AutoLayoutWorkflow404JSONResponse Error
+
+func (response AutoLayoutWorkflow404JSONResponse) VisitAutoLayoutWorkflowResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AutoLayoutWorkflow500JSONResponse Error
+
+func (response AutoLayoutWorkflow500JSONResponse) VisitAutoLayoutWorkflowResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListWorkflowNodesRequestObject struct {
+	WorkflowId openapi_types.UUID `json:"workflowId"`
+}
+
+type ListWorkflowNodesResponseObject interface {
+	VisitListWorkflowNodesResponse(w http.ResponseWriter) error
+}
+
+type ListWorkflowNodes200JSONResponse []WorkflowNode
+
+func (response ListWorkflowNodes200JSONResponse) VisitListWorkflowNodesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListWorkflowNodes404JSONResponse Error
+
+func (response ListWorkflowNodes404JSONResponse) VisitListWorkflowNodesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListWorkflowNodes500JSONResponse Error
+
+func (response ListWorkflowNodes500JSONResponse) VisitListWorkflowNodesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateWorkflowNodeRequestObject struct {
+	WorkflowId openapi_types.UUID `json:"workflowId"`
+	Body       *CreateWorkflowNodeJSONRequestBody
+}
+
+type CreateWorkflowNodeResponseObject interface {
+	VisitCreateWorkflowNodeResponse(w http.ResponseWriter) error
+}
+
+type CreateWorkflowNode201JSONResponse WorkflowNode
+
+func (response CreateWorkflowNode201JSONResponse) VisitCreateWorkflowNodeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateWorkflowNode400JSONResponse Error
+
+func (response CreateWorkflowNode400JSONResponse) VisitCreateWorkflowNodeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateWorkflowNode404JSONResponse Error
+
+func (response CreateWorkflowNode404JSONResponse) VisitCreateWorkflowNodeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateWorkflowNode500JSONResponse Error
+
+func (response CreateWorkflowNode500JSONResponse) VisitCreateWorkflowNodeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteWorkflowNodeRequestObject struct {
+	WorkflowId openapi_types.UUID `json:"workflowId"`
+	NodeId     string             `json:"nodeId"`
+}
+
+type DeleteWorkflowNodeResponseObject interface {
+	VisitDeleteWorkflowNodeResponse(w http.ResponseWriter) error
+}
+
+type DeleteWorkflowNode204Response struct {
+}
+
+func (response DeleteWorkflowNode204Response) VisitDeleteWorkflowNodeResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteWorkflowNode404JSONResponse Error
+
+func (response DeleteWorkflowNode404JSONResponse) VisitDeleteWorkflowNodeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteWorkflowNode500JSONResponse Error
+
+func (response DeleteWorkflowNode500JSONResponse) VisitDeleteWorkflowNodeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetWorkflowNodeRequestObject struct {
+	WorkflowId openapi_types.UUID `json:"workflowId"`
+	NodeId     string             `json:"nodeId"`
+}
+
+type GetWorkflowNodeResponseObject interface {
+	VisitGetWorkflowNodeResponse(w http.ResponseWriter) error
+}
+
+type GetWorkflowNode200JSONResponse WorkflowNode
+
+func (response GetWorkflowNode200JSONResponse) VisitGetWorkflowNodeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetWorkflowNode404JSONResponse Error
+
+func (response GetWorkflowNode404JSONResponse) VisitGetWorkflowNodeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetWorkflowNode500JSONResponse Error
+
+func (response GetWorkflowNode500JSONResponse) VisitGetWorkflowNodeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateWorkflowNodeRequestObject struct {
+	WorkflowId openapi_types.UUID `json:"workflowId"`
+	NodeId     string             `json:"nodeId"`
+	Body       *UpdateWorkflowNodeJSONRequestBody
+}
+
+type UpdateWorkflowNodeResponseObject interface {
+	VisitUpdateWorkflowNodeResponse(w http.ResponseWriter) error
+}
+
+type UpdateWorkflowNode200JSONResponse WorkflowNode
+
+func (response UpdateWorkflowNode200JSONResponse) VisitUpdateWorkflowNodeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateWorkflowNode400JSONResponse Error
+
+func (response UpdateWorkflowNode400JSONResponse) VisitUpdateWorkflowNodeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateWorkflowNode404JSONResponse Error
+
+func (response UpdateWorkflowNode404JSONResponse) VisitUpdateWorkflowNodeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateWorkflowNode500JSONResponse Error
+
+func (response UpdateWorkflowNode500JSONResponse) VisitUpdateWorkflowNodeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type HandleWebhookRequestObject struct {
 	Token string `json:"token"`
 	Body  *HandleWebhookJSONRequestBody
@@ -3116,6 +4586,21 @@ type StrictServerInterface interface {
 	// Create a new agent
 	// (POST /api/agents)
 	CreateAgent(ctx context.Context, request CreateAgentRequestObject) (CreateAgentResponseObject, error)
+	// Deploy a specific agent version
+	// (POST /api/agents/{agentId}/deploy)
+	DeployAgentVersion(ctx context.Context, request DeployAgentVersionRequestObject) (DeployAgentVersionResponseObject, error)
+	// Get current draft for an agent
+	// (GET /api/agents/{agentId}/draft)
+	GetAgentDraft(ctx context.Context, request GetAgentDraftRequestObject) (GetAgentDraftResponseObject, error)
+	// Update agent draft with auto-persistence
+	// (PUT /api/agents/{agentId}/draft)
+	UpdateAgentDraft(ctx context.Context, request UpdateAgentDraftRequestObject) (UpdateAgentDraftResponseObject, error)
+	// Test a single node in draft context
+	// (POST /api/agents/{agentId}/draft/nodes/{nodeId}/test)
+	TestDraftNode(ctx context.Context, request TestDraftNodeRequestObject) (TestDraftNodeResponseObject, error)
+	// Create a new agent version
+	// (POST /api/agents/{agentId}/versions)
+	CreateAgentVersion(ctx context.Context, request CreateAgentVersionRequestObject) (CreateAgentVersionResponseObject, error)
 	// Delete agent
 	// (DELETE /api/agents/{id})
 	DeleteAgent(ctx context.Context, request DeleteAgentRequestObject) (DeleteAgentResponseObject, error)
@@ -3140,6 +4625,9 @@ type StrictServerInterface interface {
 	// Update connection
 	// (PUT /api/connections/{id})
 	UpdateConnection(ctx context.Context, request UpdateConnectionRequestObject) (UpdateConnectionResponseObject, error)
+	// List credentials for selection in nodes
+	// (GET /api/credentials)
+	ListCredentials(ctx context.Context, request ListCredentialsRequestObject) (ListCredentialsResponseObject, error)
 	// Health check endpoint
 	// (GET /api/health)
 	GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error)
@@ -3206,6 +4694,33 @@ type StrictServerInterface interface {
 	// Execute a workflow
 	// (POST /api/workflows/{id}/execute)
 	ExecuteWorkflow(ctx context.Context, request ExecuteWorkflowRequestObject) (ExecuteWorkflowResponseObject, error)
+	// List all edges in a workflow
+	// (GET /api/workflows/{workflowId}/edges)
+	ListWorkflowEdges(ctx context.Context, request ListWorkflowEdgesRequestObject) (ListWorkflowEdgesResponseObject, error)
+	// Create a new edge in workflow
+	// (POST /api/workflows/{workflowId}/edges)
+	CreateWorkflowEdge(ctx context.Context, request CreateWorkflowEdgeRequestObject) (CreateWorkflowEdgeResponseObject, error)
+	// Delete workflow edge
+	// (DELETE /api/workflows/{workflowId}/edges/{edgeId})
+	DeleteWorkflowEdge(ctx context.Context, request DeleteWorkflowEdgeRequestObject) (DeleteWorkflowEdgeResponseObject, error)
+	// Auto-layout workflow nodes
+	// (POST /api/workflows/{workflowId}/layout)
+	AutoLayoutWorkflow(ctx context.Context, request AutoLayoutWorkflowRequestObject) (AutoLayoutWorkflowResponseObject, error)
+	// List all nodes in a workflow
+	// (GET /api/workflows/{workflowId}/nodes)
+	ListWorkflowNodes(ctx context.Context, request ListWorkflowNodesRequestObject) (ListWorkflowNodesResponseObject, error)
+	// Create a new node in workflow
+	// (POST /api/workflows/{workflowId}/nodes)
+	CreateWorkflowNode(ctx context.Context, request CreateWorkflowNodeRequestObject) (CreateWorkflowNodeResponseObject, error)
+	// Delete workflow node
+	// (DELETE /api/workflows/{workflowId}/nodes/{nodeId})
+	DeleteWorkflowNode(ctx context.Context, request DeleteWorkflowNodeRequestObject) (DeleteWorkflowNodeResponseObject, error)
+	// Get specific workflow node
+	// (GET /api/workflows/{workflowId}/nodes/{nodeId})
+	GetWorkflowNode(ctx context.Context, request GetWorkflowNodeRequestObject) (GetWorkflowNodeResponseObject, error)
+	// Update workflow node
+	// (PUT /api/workflows/{workflowId}/nodes/{nodeId})
+	UpdateWorkflowNode(ctx context.Context, request UpdateWorkflowNodeRequestObject) (UpdateWorkflowNodeResponseObject, error)
 	// Webhook endpoint
 	// (POST /webhooks/{token})
 	HandleWebhook(ctx context.Context, request HandleWebhookRequestObject) (HandleWebhookResponseObject, error)
@@ -3290,6 +4805,165 @@ func (sh *strictHandler) CreateAgent(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CreateAgentResponseObject); ok {
 		if err := validResponse.VisitCreateAgentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeployAgentVersion operation middleware
+func (sh *strictHandler) DeployAgentVersion(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID) {
+	var request DeployAgentVersionRequestObject
+
+	request.AgentId = agentId
+
+	var body DeployAgentVersionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeployAgentVersion(ctx, request.(DeployAgentVersionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeployAgentVersion")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeployAgentVersionResponseObject); ok {
+		if err := validResponse.VisitDeployAgentVersionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetAgentDraft operation middleware
+func (sh *strictHandler) GetAgentDraft(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID) {
+	var request GetAgentDraftRequestObject
+
+	request.AgentId = agentId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAgentDraft(ctx, request.(GetAgentDraftRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAgentDraft")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAgentDraftResponseObject); ok {
+		if err := validResponse.VisitGetAgentDraftResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateAgentDraft operation middleware
+func (sh *strictHandler) UpdateAgentDraft(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID) {
+	var request UpdateAgentDraftRequestObject
+
+	request.AgentId = agentId
+
+	var body UpdateAgentDraftJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateAgentDraft(ctx, request.(UpdateAgentDraftRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateAgentDraft")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateAgentDraftResponseObject); ok {
+		if err := validResponse.VisitUpdateAgentDraftResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// TestDraftNode operation middleware
+func (sh *strictHandler) TestDraftNode(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID, nodeId string) {
+	var request TestDraftNodeRequestObject
+
+	request.AgentId = agentId
+	request.NodeId = nodeId
+
+	var body TestDraftNodeJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.TestDraftNode(ctx, request.(TestDraftNodeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "TestDraftNode")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(TestDraftNodeResponseObject); ok {
+		if err := validResponse.VisitTestDraftNodeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateAgentVersion operation middleware
+func (sh *strictHandler) CreateAgentVersion(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID) {
+	var request CreateAgentVersionRequestObject
+
+	request.AgentId = agentId
+
+	var body CreateAgentVersionJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateAgentVersion(ctx, request.(CreateAgentVersionRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateAgentVersion")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateAgentVersionResponseObject); ok {
+		if err := validResponse.VisitCreateAgentVersionResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -3515,6 +5189,32 @@ func (sh *strictHandler) UpdateConnection(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateConnectionResponseObject); ok {
 		if err := validResponse.VisitUpdateConnectionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListCredentials operation middleware
+func (sh *strictHandler) ListCredentials(w http.ResponseWriter, r *http.Request, params ListCredentialsParams) {
+	var request ListCredentialsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListCredentials(ctx, request.(ListCredentialsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListCredentials")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListCredentialsResponseObject); ok {
+		if err := validResponse.VisitListCredentialsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -4132,6 +5832,265 @@ func (sh *strictHandler) ExecuteWorkflow(w http.ResponseWriter, r *http.Request,
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ExecuteWorkflowResponseObject); ok {
 		if err := validResponse.VisitExecuteWorkflowResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkflowEdges operation middleware
+func (sh *strictHandler) ListWorkflowEdges(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID) {
+	var request ListWorkflowEdgesRequestObject
+
+	request.WorkflowId = workflowId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkflowEdges(ctx, request.(ListWorkflowEdgesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkflowEdges")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkflowEdgesResponseObject); ok {
+		if err := validResponse.VisitListWorkflowEdgesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateWorkflowEdge operation middleware
+func (sh *strictHandler) CreateWorkflowEdge(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID) {
+	var request CreateWorkflowEdgeRequestObject
+
+	request.WorkflowId = workflowId
+
+	var body CreateWorkflowEdgeJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateWorkflowEdge(ctx, request.(CreateWorkflowEdgeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateWorkflowEdge")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateWorkflowEdgeResponseObject); ok {
+		if err := validResponse.VisitCreateWorkflowEdgeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteWorkflowEdge operation middleware
+func (sh *strictHandler) DeleteWorkflowEdge(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID, edgeId string) {
+	var request DeleteWorkflowEdgeRequestObject
+
+	request.WorkflowId = workflowId
+	request.EdgeId = edgeId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteWorkflowEdge(ctx, request.(DeleteWorkflowEdgeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteWorkflowEdge")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteWorkflowEdgeResponseObject); ok {
+		if err := validResponse.VisitDeleteWorkflowEdgeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AutoLayoutWorkflow operation middleware
+func (sh *strictHandler) AutoLayoutWorkflow(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID) {
+	var request AutoLayoutWorkflowRequestObject
+
+	request.WorkflowId = workflowId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AutoLayoutWorkflow(ctx, request.(AutoLayoutWorkflowRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AutoLayoutWorkflow")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AutoLayoutWorkflowResponseObject); ok {
+		if err := validResponse.VisitAutoLayoutWorkflowResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListWorkflowNodes operation middleware
+func (sh *strictHandler) ListWorkflowNodes(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID) {
+	var request ListWorkflowNodesRequestObject
+
+	request.WorkflowId = workflowId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListWorkflowNodes(ctx, request.(ListWorkflowNodesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListWorkflowNodes")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListWorkflowNodesResponseObject); ok {
+		if err := validResponse.VisitListWorkflowNodesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateWorkflowNode operation middleware
+func (sh *strictHandler) CreateWorkflowNode(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID) {
+	var request CreateWorkflowNodeRequestObject
+
+	request.WorkflowId = workflowId
+
+	var body CreateWorkflowNodeJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateWorkflowNode(ctx, request.(CreateWorkflowNodeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateWorkflowNode")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateWorkflowNodeResponseObject); ok {
+		if err := validResponse.VisitCreateWorkflowNodeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteWorkflowNode operation middleware
+func (sh *strictHandler) DeleteWorkflowNode(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID, nodeId string) {
+	var request DeleteWorkflowNodeRequestObject
+
+	request.WorkflowId = workflowId
+	request.NodeId = nodeId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteWorkflowNode(ctx, request.(DeleteWorkflowNodeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteWorkflowNode")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteWorkflowNodeResponseObject); ok {
+		if err := validResponse.VisitDeleteWorkflowNodeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkflowNode operation middleware
+func (sh *strictHandler) GetWorkflowNode(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID, nodeId string) {
+	var request GetWorkflowNodeRequestObject
+
+	request.WorkflowId = workflowId
+	request.NodeId = nodeId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkflowNode(ctx, request.(GetWorkflowNodeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkflowNode")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkflowNodeResponseObject); ok {
+		if err := validResponse.VisitGetWorkflowNodeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateWorkflowNode operation middleware
+func (sh *strictHandler) UpdateWorkflowNode(w http.ResponseWriter, r *http.Request, workflowId openapi_types.UUID, nodeId string) {
+	var request UpdateWorkflowNodeRequestObject
+
+	request.WorkflowId = workflowId
+	request.NodeId = nodeId
+
+	var body UpdateWorkflowNodeJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateWorkflowNode(ctx, request.(UpdateWorkflowNodeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateWorkflowNode")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateWorkflowNodeResponseObject); ok {
+		if err := validResponse.VisitUpdateWorkflowNodeResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
