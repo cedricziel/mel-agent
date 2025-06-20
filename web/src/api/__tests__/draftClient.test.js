@@ -43,13 +43,12 @@ describe('DraftAPI', () => {
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
-      workflowsApi.updateWorkflowDraft.mockResolvedValueOnce({
-        ok: false,
-        statusText: 'Not Found',
-      });
+      workflowsApi.getWorkflowDraft.mockRejectedValueOnce(
+        new Error('Not Found')
+      );
 
       await expect(DraftAPI.getDraft('workflow-123')).rejects.toThrow(
-        'Failed to get draft: Not Found'
+        'Not Found'
       );
 
       consoleSpy.mockRestore();
@@ -65,19 +64,14 @@ describe('DraftAPI', () => {
 
       const mockResponse = { success: true };
       workflowsApi.updateWorkflowDraft.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockResponse),
+        data: mockResponse,
       });
 
       const result = await DraftAPI.updateDraft('workflow-123', draftData);
 
       expect(workflowsApi.updateWorkflowDraft).toHaveBeenCalledWith(
-        '/api/workflows/workflow-123/draft',
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ definition: draftData }),
-        }
+        'workflow-123',
+        { definition: draftData }
       );
       expect(result).toEqual(mockResponse);
     });
@@ -87,14 +81,13 @@ describe('DraftAPI', () => {
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
-      workflowsApi.updateWorkflowDraft.mockResolvedValueOnce({
-        ok: false,
-        statusText: 'Internal Server Error',
-      });
+      workflowsApi.updateWorkflowDraft.mockRejectedValueOnce(
+        new Error('Internal Server Error')
+      );
 
       await expect(
         DraftAPI.updateDraft('workflow-123', { nodes: [], edges: [] })
-      ).rejects.toThrow('Failed to update draft: Internal Server Error');
+      ).rejects.toThrow('Internal Server Error');
 
       consoleSpy.mockRestore();
     });
@@ -108,25 +101,18 @@ describe('DraftAPI', () => {
         node_id: 'node-1',
       };
 
-      workflowsApi.updateWorkflowDraft.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockResult),
+      workflowsApi.testWorkflowDraftNode.mockResolvedValueOnce({
+        data: mockResult,
       });
 
       const result = await DraftAPI.testDraftNode('workflow-123', 'node-1', {
         input: 'test',
       });
 
-      expect(workflowsApi.updateWorkflowDraft).toHaveBeenCalledWith(
-        '/api/workflows/workflow-123/draft/nodes/node-1/test',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            node_id: 'node-1',
-            test_data: { input: 'test' },
-          }),
-        }
+      expect(workflowsApi.testWorkflowDraftNode).toHaveBeenCalledWith(
+        'workflow-123',
+        'node-1',
+        { input: { input: 'test' } }
       );
       expect(result).toEqual(mockResult);
     });
@@ -136,14 +122,13 @@ describe('DraftAPI', () => {
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
-      workflowsApi.updateWorkflowDraft.mockResolvedValueOnce({
-        ok: false,
-        statusText: 'Bad Request',
-      });
+      workflowsApi.testWorkflowDraftNode.mockRejectedValueOnce(
+        new Error('Bad Request')
+      );
 
       await expect(
         DraftAPI.testDraftNode('workflow-123', 'node-1', {})
-      ).rejects.toThrow('Failed to test node: Bad Request');
+      ).rejects.toThrow('Bad Request');
 
       consoleSpy.mockRestore();
     });
@@ -152,9 +137,8 @@ describe('DraftAPI', () => {
   describe('deployVersion', () => {
     it('should deploy version successfully', async () => {
       const mockResponse = { success: true };
-      workflowsApi.updateWorkflowDraft.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockResponse),
+      workflowsApi.deployWorkflowVersion.mockResolvedValueOnce({
+        data: mockResponse,
       });
 
       const result = await DraftAPI.deployVersion(
@@ -163,16 +147,9 @@ describe('DraftAPI', () => {
         'Deploy notes'
       );
 
-      expect(workflowsApi.updateWorkflowDraft).toHaveBeenCalledWith(
-        '/api/workflows/workflow-123/versions/1/deploy',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            version: 1,
-            notes: 'Deploy notes',
-          }),
-        }
+      expect(workflowsApi.deployWorkflowVersion).toHaveBeenCalledWith(
+        'workflow-123',
+        1
       );
       expect(result).toEqual(mockResponse);
     });
@@ -193,7 +170,7 @@ describe('AutoSaver', () => {
   });
 
   it('should initialize with correct properties', () => {
-    expect(autoSaver.agentId).toBe('workflow-123');
+    expect(autoSaver.workflowId).toBe('workflow-123');
     expect(autoSaver.saveDelay).toBe(1000);
     expect(autoSaver.isSaving).toBe(false);
     expect(autoSaver.pendingChanges).toBe(null);
@@ -204,10 +181,9 @@ describe('AutoSaver', () => {
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const draftData = { nodes: [], edges: [] };
 
-    // Mock fetch for the DraftAPI call
+    // Mock the workflowsApi for the DraftAPI call
     workflowsApi.updateWorkflowDraft.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({}),
+      data: {},
     });
 
     autoSaver.scheduleSave(draftData);
@@ -216,7 +192,7 @@ describe('AutoSaver', () => {
     expect(autoSaver.isSaving).toBe(false);
     expect(autoSaver.pendingChanges).toEqual(draftData);
 
-    // Reset fetch call count before advancing timers
+    // Reset workflowsApi call count before advancing timers
     workflowsApi.updateWorkflowDraft.mockClear();
 
     // Fast-forward past the delay
@@ -227,12 +203,8 @@ describe('AutoSaver', () => {
 
     expect(workflowsApi.updateWorkflowDraft).toHaveBeenCalledTimes(1);
     expect(workflowsApi.updateWorkflowDraft).toHaveBeenCalledWith(
-      '/api/workflows/workflow-123/draft',
-      {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ definition: draftData }),
-      }
+      'workflow-123',
+      { definition: draftData }
     );
 
     consoleSpy.mockRestore();
@@ -243,11 +215,10 @@ describe('AutoSaver', () => {
     const draftData = { nodes: [], edges: [] };
 
     workflowsApi.updateWorkflowDraft.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({}),
+      data: {},
     });
 
-    // Clear any previous fetch calls
+    // Clear any previous API calls
     workflowsApi.updateWorkflowDraft.mockClear();
 
     autoSaver.pendingChanges = draftData;
@@ -255,12 +226,8 @@ describe('AutoSaver', () => {
 
     expect(workflowsApi.updateWorkflowDraft).toHaveBeenCalledTimes(1);
     expect(workflowsApi.updateWorkflowDraft).toHaveBeenCalledWith(
-      '/api/workflows/workflow-123/draft',
-      {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ definition: draftData }),
-      }
+      'workflow-123',
+      { definition: draftData }
     );
 
     consoleSpy.mockRestore();
@@ -273,10 +240,9 @@ describe('AutoSaver', () => {
     const draftData = { nodes: [], edges: [] };
     const onErrorSpy = vi.fn();
 
-    workflowsApi.updateWorkflowDraft.mockResolvedValueOnce({
-      ok: false,
-      statusText: 'Save failed',
-    });
+    workflowsApi.updateWorkflowDraft.mockRejectedValueOnce(
+      new Error('Save failed')
+    );
 
     autoSaver = new AutoSaver('workflow-123', null, onErrorSpy);
     autoSaver.scheduleSave(draftData);
@@ -297,8 +263,7 @@ describe('AutoSaver', () => {
     const onSaveSpy = vi.fn();
 
     workflowsApi.updateWorkflowDraft.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({}),
+      data: {},
     });
 
     autoSaver = new AutoSaver('workflow-123', onSaveSpy);
@@ -349,8 +314,7 @@ describe('useAutoSaver', () => {
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
     workflowsApi.updateWorkflowDraft.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({}),
+      data: {},
     });
 
     const { result } = renderHook(() => useAutoSaver('workflow-123'));
