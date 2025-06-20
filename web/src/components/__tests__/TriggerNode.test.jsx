@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import TriggerNode from '../TriggerNode';
-import { workflowRunsApi } from '../api/client';
+import { workflowRunsApi } from '../../api/client';
 
 // Mock the API client
-vi.mock('../api/client', () => ({
+vi.mock('../../api/client', () => ({
   workflowRunsApi: {
     createWorkflowRun: vi.fn(),
   },
@@ -128,7 +128,9 @@ describe('TriggerNode', () => {
   });
 
   it('should call API when manual trigger button is clicked', async () => {
-    workflowRunsApi.createWorkflowRun.mockResolvedValue({ data: { success: true } });
+    workflowRunsApi.createWorkflowRun.mockResolvedValue({
+      data: { success: true },
+    });
 
     const manualTriggerProps = {
       ...defaultProps,
@@ -148,7 +150,9 @@ describe('TriggerNode', () => {
   });
 
   it('should show visual feedback on successful manual trigger', async () => {
-    workflowRunsApi.createWorkflowRun.mockResolvedValue({ data: { success: true } });
+    workflowRunsApi.createWorkflowRun.mockResolvedValue({
+      data: { success: true },
+    });
 
     const manualTriggerProps = {
       ...defaultProps,

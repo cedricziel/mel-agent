@@ -2,6 +2,18 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { DraftAPI, AutoSaver, useAutoSaver } from '../draftClient';
 
+// Mock the generated client
+vi.mock('../client', () => ({
+  workflowsApi: {
+    getWorkflowDraft: vi.fn(),
+    updateWorkflowDraft: vi.fn(),
+    testWorkflowDraftNode: vi.fn(),
+    deployWorkflowVersion: vi.fn(),
+  },
+}));
+
+import { workflowsApi } from '../client';
+
 describe('DraftAPI', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -14,15 +26,14 @@ describe('DraftAPI', () => {
         edges: [{ id: 'e1', source: '1', target: '2' }],
       };
 
-      global.fetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockDraft),
+      workflowsApi.getWorkflowDraft.mockResolvedValueOnce({
+        data: mockDraft,
       });
 
       const result = await DraftAPI.getDraft('workflow-123');
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        '/api/workflows/workflow-123/draft'
+      expect(workflowsApi.getWorkflowDraft).toHaveBeenCalledWith(
+        'workflow-123'
       );
       expect(result).toEqual(mockDraft);
     });
@@ -32,7 +43,7 @@ describe('DraftAPI', () => {
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
-      global.fetch.mockResolvedValueOnce({
+      workflowsApi.updateWorkflowDraft.mockResolvedValueOnce({
         ok: false,
         statusText: 'Not Found',
       });
@@ -53,14 +64,14 @@ describe('DraftAPI', () => {
       };
 
       const mockResponse = { success: true };
-      global.fetch.mockResolvedValueOnce({
+      workflowsApi.updateWorkflowDraft.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockResponse),
       });
 
       const result = await DraftAPI.updateDraft('workflow-123', draftData);
 
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(workflowsApi.updateWorkflowDraft).toHaveBeenCalledWith(
         '/api/workflows/workflow-123/draft',
         {
           method: 'PUT',
@@ -76,7 +87,7 @@ describe('DraftAPI', () => {
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
-      global.fetch.mockResolvedValueOnce({
+      workflowsApi.updateWorkflowDraft.mockResolvedValueOnce({
         ok: false,
         statusText: 'Internal Server Error',
       });
@@ -97,7 +108,7 @@ describe('DraftAPI', () => {
         node_id: 'node-1',
       };
 
-      global.fetch.mockResolvedValueOnce({
+      workflowsApi.updateWorkflowDraft.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockResult),
       });
@@ -106,7 +117,7 @@ describe('DraftAPI', () => {
         input: 'test',
       });
 
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(workflowsApi.updateWorkflowDraft).toHaveBeenCalledWith(
         '/api/workflows/workflow-123/draft/nodes/node-1/test',
         {
           method: 'POST',
@@ -125,7 +136,7 @@ describe('DraftAPI', () => {
         .spyOn(console, 'error')
         .mockImplementation(() => {});
 
-      global.fetch.mockResolvedValueOnce({
+      workflowsApi.updateWorkflowDraft.mockResolvedValueOnce({
         ok: false,
         statusText: 'Bad Request',
       });
@@ -141,7 +152,7 @@ describe('DraftAPI', () => {
   describe('deployVersion', () => {
     it('should deploy version successfully', async () => {
       const mockResponse = { success: true };
-      global.fetch.mockResolvedValueOnce({
+      workflowsApi.updateWorkflowDraft.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(mockResponse),
       });
@@ -152,7 +163,7 @@ describe('DraftAPI', () => {
         'Deploy notes'
       );
 
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(workflowsApi.updateWorkflowDraft).toHaveBeenCalledWith(
         '/api/workflows/workflow-123/versions/1/deploy',
         {
           method: 'POST',
@@ -194,7 +205,7 @@ describe('AutoSaver', () => {
     const draftData = { nodes: [], edges: [] };
 
     // Mock fetch for the DraftAPI call
-    global.fetch.mockResolvedValue({
+    workflowsApi.updateWorkflowDraft.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({}),
     });
@@ -206,7 +217,7 @@ describe('AutoSaver', () => {
     expect(autoSaver.pendingChanges).toEqual(draftData);
 
     // Reset fetch call count before advancing timers
-    global.fetch.mockClear();
+    workflowsApi.updateWorkflowDraft.mockClear();
 
     // Fast-forward past the delay
     await act(async () => {
@@ -214,8 +225,8 @@ describe('AutoSaver', () => {
       await vi.runAllTimersAsync();
     });
 
-    expect(global.fetch).toHaveBeenCalledTimes(1);
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(workflowsApi.updateWorkflowDraft).toHaveBeenCalledTimes(1);
+    expect(workflowsApi.updateWorkflowDraft).toHaveBeenCalledWith(
       '/api/workflows/workflow-123/draft',
       {
         method: 'PUT',
@@ -231,19 +242,19 @@ describe('AutoSaver', () => {
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const draftData = { nodes: [], edges: [] };
 
-    global.fetch.mockResolvedValue({
+    workflowsApi.updateWorkflowDraft.mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({}),
     });
 
     // Clear any previous fetch calls
-    global.fetch.mockClear();
+    workflowsApi.updateWorkflowDraft.mockClear();
 
     autoSaver.pendingChanges = draftData;
     await autoSaver.saveNow();
 
-    expect(global.fetch).toHaveBeenCalledTimes(1);
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(workflowsApi.updateWorkflowDraft).toHaveBeenCalledTimes(1);
+    expect(workflowsApi.updateWorkflowDraft).toHaveBeenCalledWith(
       '/api/workflows/workflow-123/draft',
       {
         method: 'PUT',
@@ -262,7 +273,7 @@ describe('AutoSaver', () => {
     const draftData = { nodes: [], edges: [] };
     const onErrorSpy = vi.fn();
 
-    global.fetch.mockResolvedValueOnce({
+    workflowsApi.updateWorkflowDraft.mockResolvedValueOnce({
       ok: false,
       statusText: 'Save failed',
     });
@@ -285,7 +296,7 @@ describe('AutoSaver', () => {
     const draftData = { nodes: [], edges: [] };
     const onSaveSpy = vi.fn();
 
-    global.fetch.mockResolvedValueOnce({
+    workflowsApi.updateWorkflowDraft.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({}),
     });
@@ -337,7 +348,7 @@ describe('useAutoSaver', () => {
   it('should update state when AutoSaver state changes', async () => {
     const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
-    global.fetch.mockResolvedValueOnce({
+    workflowsApi.updateWorkflowDraft.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({}),
     });
