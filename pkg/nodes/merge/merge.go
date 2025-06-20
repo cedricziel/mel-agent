@@ -1,6 +1,7 @@
 package merge
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"dario.cat/mergo"
@@ -74,8 +75,10 @@ func (d mergeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node
 			merged := make(map[string]interface{})
 			for _, item := range dataSlice {
 				if m, ok := item.(map[string]interface{}); ok {
-					// mergo.Merge performs deep merge with override
-					mergo.Merge(&merged, m, mergo.WithOverride, mergo.WithAppendSlice)
+					if err := mergo.Merge(&merged, m, mergo.WithOverride, mergo.WithAppendSlice); err != nil {
+						envelope.AddError(node.ID, "deep merge failed", err)
+						return envelope, err
+					}
 				}
 			}
 			resultData = merged
@@ -103,7 +106,7 @@ func (d mergeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node
 				if arr, ok := item.([]interface{}); ok {
 					for _, sub := range arr {
 						if strategy == "union" {
-							key := fmt.Sprintf("%v", sub)
+							key := dedupKey(sub)
 							if seen[key] {
 								continue
 							}
@@ -115,7 +118,7 @@ func (d mergeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node
 				}
 
 				if strategy == "union" {
-					key := fmt.Sprintf("%v", item)
+					key := dedupKey(item)
 					if seen[key] {
 						continue
 					}
@@ -175,6 +178,10 @@ func intersectMaps(items []interface{}) map[string]interface{} {
 	if len(items) == 0 {
 		return map[string]interface{}{}
 	}
+	if len(items) == 1 {
+		m, _ := items[0].(map[string]interface{})
+		return m
+	}
 
 	result := map[string]interface{}{}
 	first, ok := items[0].(map[string]interface{})
@@ -190,17 +197,28 @@ func intersectMaps(items []interface{}) map[string]interface{} {
 		if !ok {
 			return map[string]interface{}{}
 		}
-		for key := range result {
-			if val, ok := m[key]; ok {
-				if rv, ok2 := result[key].(map[string]interface{}); ok2 {
-					if mv, ok3 := val.(map[string]interface{}); ok3 {
-						result[key] = intersectMaps([]interface{}{rv, mv})
-						continue
-					}
-				}
-				result[key] = val
-			} else {
+		for key, existing := range result {
+			val, ok := m[key]
+			if !ok {
 				delete(result, key)
+				continue
+			}
+
+			switch ev := existing.(type) {
+			case map[string]interface{}:
+				if mv, ok := val.(map[string]interface{}); ok {
+					result[key] = intersectMaps([]interface{}{ev, mv})
+				} else {
+					result[key] = val
+				}
+			case []interface{}:
+				if mv, ok := val.([]interface{}); ok {
+					result[key] = intersectValues([]interface{}{ev, mv})
+				} else {
+					result[key] = val
+				}
+			default:
+				result[key] = val
 			}
 		}
 	}
@@ -212,6 +230,12 @@ func intersectMaps(items []interface{}) map[string]interface{} {
 func intersectValues(items []interface{}) []interface{} {
 	if len(items) == 0 {
 		return nil
+	}
+	if len(items) == 1 {
+		if arr, ok := items[0].([]interface{}); ok {
+			return arr
+		}
+		return []interface{}{items[0]}
 	}
 
 	counts := map[string]struct {
@@ -225,7 +249,7 @@ func intersectValues(items []interface{}) []interface{} {
 		seen := map[string]bool{}
 		if arr, ok := item.([]interface{}); ok {
 			for _, v := range arr {
-				key := fmt.Sprintf("%v", v)
+				key := dedupKey(v)
 				if !seen[key] {
 					seen[key] = true
 					c := counts[key]
@@ -237,7 +261,7 @@ func intersectValues(items []interface{}) []interface{} {
 				}
 			}
 		} else {
-			key := fmt.Sprintf("%v", item)
+			key := dedupKey(item)
 			if !seen[key] {
 				seen[key] = true
 				c := counts[key]
@@ -257,4 +281,12 @@ func intersectValues(items []interface{}) []interface{} {
 		}
 	}
 	return result
+}
+
+// dedupKey returns a stable string key for arbitrary values used in sets.
+func dedupKey(v interface{}) string {
+	if b, err := json.Marshal(v); err == nil {
+		return string(b)
+	}
+	return fmt.Sprintf("%T:%#v", v, v)
 }
