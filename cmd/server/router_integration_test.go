@@ -50,7 +50,7 @@ func TestServerRouterIntegration(t *testing.T) {
 
 	// Create an efficient API handler that routes without response buffering
 	// Route based on path analysis since we know the exact route patterns
-	mainAPIHandler := httpApi.Handler()
+	mainAPIHandler := httpApi.LegacyHandler()
 	workflowHandler := workflowEngineFactory(workflowEngine)
 
 	apiHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -178,7 +178,7 @@ func TestMainAPIRoutes(t *testing.T) {
 	}()
 
 	// Test just the main API handler
-	handler := httpApi.Handler()
+	handler := httpApi.LegacyHandler()
 
 	mainAPIRoutes := []struct {
 		method string
@@ -278,7 +278,7 @@ func TestRouteConflictDemonstration(t *testing.T) {
 	r := chi.NewRouter()
 
 	// Use the SAME setup as the actual server - efficient path-based routing
-	mainAPIHandler := httpApi.Handler()
+	mainAPIHandler := httpApi.LegacyHandler()
 	workflowHandler := workflowEngineFactory(workflowEngine)
 
 	apiHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -43,8 +43,8 @@ func createWorkflowRouter(handler *WorkflowRunsHandler) http.Handler {
 	return r
 }
 
-// Handler returns a router with API routes mounted.
-func Handler() http.Handler {
+// LegacyHandler returns a router with API routes mounted.
+func LegacyHandler() http.Handler {
 	r := chi.NewRouter()
 
 	// Agent endpoints.
@@ -164,7 +164,7 @@ func listExtensionsHandler(w http.ResponseWriter, r *http.Request) {
 
 // --- Agent handlers ---
 
-type Agent struct {
+type LegacyAgent struct {
 	ID          string  `db:"id" json:"id"`
 	UserID      string  `db:"user_id" json:"user_id"`
 	Name        string  `db:"name" json:"name"`
@@ -181,9 +181,9 @@ func listAgents(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 
 	// initialize slice to ensure JSON encodes as [] instead of null when empty
-	agents := []Agent{}
+	agents := []LegacyAgent{}
 	for rows.Next() {
-		var a Agent
+		var a LegacyAgent
 		var desc sql.NullString
 		if err := rows.Scan(&a.ID, &a.UserID, &a.Name, &desc, &a.IsActive); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -337,7 +337,7 @@ func createAgentVersion(w http.ResponseWriter, r *http.Request) {
 
 // --- Connection handlers ---
 
-type Connection struct {
+type LegacyConnection struct {
 	ID            string `db:"id"             json:"id"`
 	IntegrationID string `db:"integration_id" json:"integration_id"`
 	UserID        string `db:"user_id"        json:"user_id"`
@@ -424,9 +424,9 @@ func listConnections(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 
 	// initialize slice to ensure JSON encodes as [] instead of null when empty
-	conns := []Connection{}
+	conns := []LegacyConnection{}
 	for rows.Next() {
-		var c Connection
+		var c LegacyConnection
 		if err := rows.Scan(&c.ID, &c.IntegrationID, &c.UserID, &c.Name, &c.IsDefault); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 			return
@@ -580,8 +580,8 @@ func getConnection(w http.ResponseWriter, r *http.Request) {
 }
 
 // --- Trigger handlers ---
-// Trigger represents a user-configured event trigger for starting workflows.
-type Trigger struct {
+// LegacyTrigger represents a user-configured event trigger for starting workflows.
+type LegacyTrigger struct {
 	ID          string          `db:"id" json:"id"`
 	UserID      string          `db:"user_id" json:"user_id"`
 	Provider    string          `db:"provider" json:"provider"`
@@ -607,9 +607,9 @@ func listTriggers(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	triggers := []Trigger{}
+	triggers := []LegacyTrigger{}
 	for rows.Next() {
-		var t Trigger
+		var t LegacyTrigger
 		var configBytes []byte
 		var nt sql.NullTime
 		if err := rows.Scan(&t.ID, &t.UserID, &t.Provider, &configBytes, &t.Enabled, &t.NodeID, &t.AgentID, &nt, &t.CreatedAt, &t.UpdatedAt); err != nil {
@@ -628,7 +628,7 @@ func listTriggers(w http.ResponseWriter, r *http.Request) {
 // getTrigger fetches a single trigger by ID.
 func getTrigger(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "triggerID")
-	var t Trigger
+	var t LegacyTrigger
 	var configBytes []byte
 	var nt sql.NullTime
 	err := db.DB.QueryRow(
@@ -955,8 +955,8 @@ func executeNodeLocal(agentID string, node api.Node, input interface{}) (interfa
 
 // --- Workflow API handlers ---
 
-// WorkflowNode represents a node in a workflow
-type WorkflowNode struct {
+// LegacyWorkflowNode represents a node in a workflow
+type LegacyWorkflowNode struct {
 	ID        string                 `db:"id" json:"id"`
 	AgentID   string                 `db:"agent_id" json:"agent_id"`
 	NodeID    string                 `db:"node_id" json:"node_id"`
@@ -968,8 +968,8 @@ type WorkflowNode struct {
 	UpdatedAt time.Time              `db:"updated_at" json:"updated_at"`
 }
 
-// WorkflowEdge represents an edge between nodes
-type WorkflowEdge struct {
+// LegacyWorkflowEdge represents an edge between nodes
+type LegacyWorkflowEdge struct {
 	ID           string    `db:"id" json:"id"`
 	AgentID      string    `db:"agent_id" json:"agent_id"`
 	EdgeID       string    `db:"edge_id" json:"edge_id"`
@@ -982,7 +982,7 @@ type WorkflowEdge struct {
 
 func getWorkflow(w http.ResponseWriter, r *http.Request) {
 	workflowID := chi.URLParam(r, "workflowID")
-	var agent Agent
+	var agent LegacyAgent
 	var desc sql.NullString
 	err := db.DB.QueryRow(`SELECT id, user_id, name, description, is_active FROM agents WHERE id = $1`, workflowID).
 		Scan(&agent.ID, &agent.UserID, &agent.Name, &desc, &agent.IsActive)
@@ -1054,9 +1054,9 @@ func listWorkflowNodes(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	nodes := []WorkflowNode{}
+	nodes := []LegacyWorkflowNode{}
 	for rows.Next() {
-		var node WorkflowNode
+		var node LegacyWorkflowNode
 		var configBytes []byte
 		if err := rows.Scan(&node.ID, &node.AgentID, &node.NodeID, &node.NodeType, &node.PositionX, &node.PositionY, &configBytes, &node.CreatedAt, &node.UpdatedAt); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -1106,7 +1106,7 @@ func getWorkflowNode(w http.ResponseWriter, r *http.Request) {
 	workflowID := chi.URLParam(r, "workflowID")
 	nodeID := chi.URLParam(r, "nodeID")
 
-	var node WorkflowNode
+	var node LegacyWorkflowNode
 	var configBytes []byte
 	err := db.DB.QueryRow(`SELECT id, agent_id, node_id, node_type, position_x, position_y, config, created_at, updated_at FROM workflow_nodes WHERE agent_id = $1 AND node_id = $2`, workflowID, nodeID).
 		Scan(&node.ID, &node.AgentID, &node.NodeID, &node.NodeType, &node.PositionX, &node.PositionY, &configBytes, &node.CreatedAt, &node.UpdatedAt)
@@ -1195,9 +1195,9 @@ func listWorkflowEdges(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	edges := []WorkflowEdge{}
+	edges := []LegacyWorkflowEdge{}
 	for rows.Next() {
-		var edge WorkflowEdge
+		var edge LegacyWorkflowEdge
 		var sourceHandle, targetHandle sql.NullString
 		if err := rows.Scan(&edge.ID, &edge.AgentID, &edge.EdgeID, &edge.SourceNodeID, &edge.TargetNodeID, &sourceHandle, &targetHandle, &edge.CreatedAt); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})

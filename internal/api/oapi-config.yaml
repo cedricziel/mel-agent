@@ -1,0 +1,10 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/oapi-codegen/oapi-codegen/HEAD/configuration-schema.json
+package: api
+generate:
+  chi-server: true
+  strict-server: true
+  models: true
+output: server.gen.go
+import-mapping:
+  github.com/google/uuid:UUID: github.com/google/uuid:UUID

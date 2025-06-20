@@ -107,3 +107,6 @@ Nodes can implement multiple kinds (e.g., OpenAI model has kinds: `["action", "m
 - Fixed Chi router conflict where multiple r.Mount("/api", ...) calls would override each other
 - `createMergedAPIHandler()` function implements fallback routing: tries main API first, then workflow engine
 - Comprehensive router integration tests ensure all endpoints remain accessible
+
+## Development Workflow
+- use make generate to regenerate models and server from openapi spec

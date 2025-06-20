@@ -32,7 +32,7 @@ func TestWorkerRegistrationIntegration(t *testing.T) {
 		db.DB = originalDB
 	}()
 
-	router := Handler()
+	router := LegacyHandler()
 
 	// Test data
 	processID := 12345
@@ -107,7 +107,7 @@ func TestWorkClaimingIntegration(t *testing.T) {
 		db.DB = originalDB
 	}()
 
-	router := Handler()
+	router := LegacyHandler()
 
 	// Create a real workflow run using test agent
 	testAgentID := uuid.MustParse("11111111-1111-1111-1111-111111111111") // From testutil test data
@@ -188,7 +188,7 @@ func TestWorkerLifecycleIntegration(t *testing.T) {
 		db.DB = originalDB
 	}()
 
-	router := Handler()
+	router := LegacyHandler()
 	workerID := "lifecycle-test-worker"
 
 	// 1. Register worker
@@ -311,7 +311,7 @@ func TestWorkerUpsertIntegration(t *testing.T) {
 		db.DB = originalDB
 	}()
 
-	router := Handler()
+	router := LegacyHandler()
 	workerID := "upsert-test-worker"
 
 	// First registration

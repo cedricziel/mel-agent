@@ -29,7 +29,11 @@
       "Bash(gh project view:*)",
       "Bash(gh project item-add:*)",
       "Bash(go mod:*)",
-      "Bash(gh pr view:*)"
+      "Bash(gh pr view:*)",
+      "Bash(go generate:*)",
+      "Bash(mv:*)",
+      "Bash(sed:*)",
+      "Bash(make:*)"
     ],
     "deny": []
   },

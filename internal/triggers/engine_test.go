@@ -160,7 +160,7 @@ func TestEngine_fireTriggerWithTransaction_Atomicity(t *testing.T) {
 		// Get initial counts and trigger state
 		var initialWorkflowRunCount, initialQueueItemCount int
 		var initialLastChecked sql.NullTime
-		
+
 		err = db.DB.QueryRow(`SELECT COUNT(*) FROM workflow_runs`).Scan(&initialWorkflowRunCount)
 		require.NoError(t, err)
 		err = db.DB.QueryRow(`SELECT COUNT(*) FROM workflow_queue`).Scan(&initialQueueItemCount)
@@ -185,7 +185,7 @@ func TestEngine_fireTriggerWithTransaction_Atomicity(t *testing.T) {
 		// Verify complete rollback - no changes to any table
 		var finalWorkflowRunCount, finalQueueItemCount int
 		var finalLastChecked sql.NullTime
-		
+
 		err = db.DB.QueryRow(`SELECT COUNT(*) FROM workflow_runs`).Scan(&finalWorkflowRunCount)
 		require.NoError(t, err)
 		err = db.DB.QueryRow(`SELECT COUNT(*) FROM workflow_queue`).Scan(&finalQueueItemCount)

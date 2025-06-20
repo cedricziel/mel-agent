@@ -15,7 +15,7 @@ import (
 
 // TestListExtensions verifies the /extensions endpoint.
 func TestListExtensions(t *testing.T) {
-	handler := api.Handler()
+	handler := api.LegacyHandler()
 	req := httptest.NewRequest(http.MethodGet, "/extensions", nil)
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
@@ -42,7 +42,7 @@ func TestListExtensions(t *testing.T) {
 
 // TestListNodeTypes verifies the /node-types endpoint.
 func TestListNodeTypes(t *testing.T) {
-	handler := api.Handler()
+	handler := api.LegacyHandler()
 	req := httptest.NewRequest(http.MethodGet, "/node-types", nil)
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)

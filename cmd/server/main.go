@@ -240,7 +240,7 @@ func startServer(port string) {
 
 	// Create an efficient API handler that routes without response buffering
 	// Route based on path analysis since we know the exact route patterns
-	mainAPIHandler := httpApi.Handler()
+	mainAPIHandler := httpApi.LegacyHandler()
 	workflowHandler := workflowEngineFactory(workflowEngine)
 
 	apiHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -342,7 +342,7 @@ func startAPIServer(port string) {
 
 	// Create an efficient API handler that routes without response buffering
 	// Route based on path analysis since we know the exact route patterns
-	mainAPIHandler := httpApi.Handler()
+	mainAPIHandler := httpApi.LegacyHandler()
 	workflowHandler := workflowEngineFactory(workflowEngine)
 
 	apiHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
