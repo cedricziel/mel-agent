@@ -231,8 +231,7 @@ func startServer(port string) {
 	// readiness endpoint for Kubernetes
 	r.Get("/ready", readinessCheckHandler)
 
-	// webhook entrypoint for external events (e.g., GitHub, Stripe) – accept all HTTP methods
-	r.HandleFunc("/webhooks/{provider}/{triggerID}", httpApi.WebhookHandler)
+	// webhook entrypoint is now handled by OpenAPI at /api/webhooks/{token}
 
 	// Use combined OpenAPI + Legacy router for gradual migration
 	combinedAPIHandler := httpApi.NewCombinedRouter(db.DB, workflowEngine)
@@ -313,8 +312,7 @@ func startAPIServer(port string) {
 	// readiness endpoint for Kubernetes
 	r.Get("/ready", readinessCheckHandler)
 
-	// webhook entrypoint for external events (e.g., GitHub, Stripe) – accept all HTTP methods
-	r.HandleFunc("/webhooks/{provider}/{triggerID}", httpApi.WebhookHandler)
+	// webhook entrypoint is now handled by OpenAPI at /api/webhooks/{token}
 
 	// Use combined OpenAPI + Legacy router for gradual migration
 	combinedAPIHandler := httpApi.NewCombinedRouter(db.DB, workflowEngine)

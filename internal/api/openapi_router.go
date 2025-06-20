@@ -43,10 +43,8 @@ func NewCombinedRouter(database *sql.DB, engine execution.ExecutionEngine) http.
 	openAPIHandlers := NewOpenAPIHandlers(database, engine)
 	strictHandler := NewStrictHandler(openAPIHandlers, nil)
 
-	// Mount OpenAPI routes under /api
-	r.Route("/api", func(r chi.Router) {
-		HandlerFromMux(strictHandler, r)
-	})
+	// Mount all OpenAPI routes (which are prefixed with /api in the spec)
+	HandlerFromMux(strictHandler, r)
 
 	// Essential legacy endpoints that aren't covered by OpenAPI
 	r.Route("/api", func(r chi.Router) {
