@@ -242,6 +242,7 @@ describe('useRunsData', () => {
   it('should handle API errors gracefully', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     nodeTypesApi.listNodeTypes.mockRejectedValue(new Error('API Error'));
+    workflowRunsApi.listWorkflowRuns.mockRejectedValue(new Error('API Error'));
 
     renderHook(() => useRunsData(mockAgentId));
 
