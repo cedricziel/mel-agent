@@ -21,7 +21,7 @@ func TestDurableExecutionWithPostgreSQL(t *testing.T) {
 	ctx := context.Background()
 
 	// Setup PostgreSQL container with migrations applied
-	_, db, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
+	_, db, cleanup := testutil.SetupPostgresWithTestData(ctx, t)
 	defer cleanup()
 
 	// Create execution engine

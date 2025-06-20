@@ -1,6 +1,7 @@
 package api_test
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -10,13 +11,20 @@ import (
 
 	"github.com/cedricziel/mel-agent/internal/api"
 	"github.com/cedricziel/mel-agent/internal/plugin"
+	"github.com/cedricziel/mel-agent/internal/testutil"
 	pkgapi "github.com/cedricziel/mel-agent/pkg/api"
+	"github.com/cedricziel/mel-agent/pkg/execution"
 )
 
 // TestListExtensions verifies the /extensions endpoint.
 func TestListExtensions(t *testing.T) {
-	handler := api.Handler()
-	req := httptest.NewRequest(http.MethodGet, "/extensions", nil)
+	ctx := context.Background()
+	_, testDB, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
+	defer cleanup()
+	mel := pkgapi.NewMel()
+	workflowEngine := execution.NewDurableExecutionEngine(testDB, mel, "test-server")
+	handler := api.NewCombinedRouter(testDB, workflowEngine)
+	req := httptest.NewRequest(http.MethodGet, "/api/extensions", nil)
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 	resp := w.Result()
@@ -42,8 +50,13 @@ func TestListExtensions(t *testing.T) {
 
 // TestListNodeTypes verifies the /node-types endpoint.
 func TestListNodeTypes(t *testing.T) {
-	handler := api.Handler()
-	req := httptest.NewRequest(http.MethodGet, "/node-types", nil)
+	ctx := context.Background()
+	_, testDB, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
+	defer cleanup()
+	mel := pkgapi.NewMel()
+	workflowEngine := execution.NewDurableExecutionEngine(testDB, mel, "test-server")
+	handler := api.NewCombinedRouter(testDB, workflowEngine)
+	req := httptest.NewRequest(http.MethodGet, "/api/node-types", nil)
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
 	resp := w.Result()

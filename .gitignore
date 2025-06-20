@@ -24,3 +24,6 @@ config.yaml
 config.yml
 config.json
 config.toml
+
+# OpenAPI codegen config exception
+!internal/api/config.yaml

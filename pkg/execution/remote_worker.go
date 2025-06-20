@@ -1,19 +1,17 @@
 package execution
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/cedricziel/mel-agent/pkg/api"
+	"github.com/cedricziel/mel-agent/pkg/client"
 	"github.com/google/uuid"
 )
 
@@ -24,22 +22,26 @@ type RemoteWorker struct {
 	workerID    string
 	mel         api.Mel
 	concurrency int
-	httpClient  *http.Client
+	apiClient   client.ClientWithResponsesInterface
 	workerInfo  *WorkflowWorker
 }
 
 // NewRemoteWorker creates a new remote worker instance
-func NewRemoteWorker(serverURL, token, workerID string, mel api.Mel, concurrency int) *RemoteWorker {
+func NewRemoteWorker(serverURL, token, workerID string, mel api.Mel, concurrency int) (*RemoteWorker, error) {
+	// Create the API client
+	apiClient, err := client.NewClientWithResponses(serverURL, client.WithRequestEditorFn(client.WithBearerToken(token)))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create API client: %w", err)
+	}
+
 	return &RemoteWorker{
 		serverURL:   serverURL,
 		token:       token,
 		workerID:    workerID,
 		mel:         mel,
 		concurrency: concurrency,
-		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
-		},
-	}
+		apiClient:   apiClient,
+	}, nil
 }
 
 // Start begins the remote worker execution loop
@@ -84,30 +86,28 @@ func (rw *RemoteWorker) Start(ctx context.Context) error {
 
 // registerWorker registers this worker with the API server
 func (rw *RemoteWorker) registerWorker(ctx context.Context) error {
-	url := fmt.Sprintf("%s/api/workers", rw.serverURL)
-
-	payload, err := json.Marshal(rw.workerInfo)
-	if err != nil {
-		return fmt.Errorf("failed to marshal worker info: %w", err)
+	// Convert internal WorkflowWorker to client RegisterWorkerRequest
+	req := client.RegisterWorkerRequest{
+		Id:          rw.workerID,
+		Name:        &rw.workerInfo.Hostname,
+		Concurrency: &rw.concurrency,
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(payload))
+	resp, err := rw.apiClient.RegisterWorkerWithResponse(ctx, req)
 	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
+		return fmt.Errorf("failed to register worker: %w", err)
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+rw.token)
-
-	resp, err := rw.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to send request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("worker registration failed with status %d: %s", resp.StatusCode, string(body))
+	if resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusCreated {
+		var errMsg string
+		if resp.JSON400 != nil && resp.JSON400.Message != nil {
+			errMsg = *resp.JSON400.Message
+		} else if resp.JSON500 != nil && resp.JSON500.Message != nil {
+			errMsg = *resp.JSON500.Message
+		} else {
+			errMsg = string(resp.Body)
+		}
+		return fmt.Errorf("worker registration failed with status %d: %s", resp.StatusCode(), errMsg)
 	}
 
 	return nil
@@ -134,23 +134,21 @@ func (rw *RemoteWorker) heartbeatLoop(ctx context.Context) {
 
 // sendHeartbeat sends a heartbeat to the API server
 func (rw *RemoteWorker) sendHeartbeat(ctx context.Context) error {
-	url := fmt.Sprintf("%s/api/workers/%s/heartbeat", rw.serverURL, rw.workerID)
-
-	req, err := http.NewRequestWithContext(ctx, "PUT", url, nil)
-	if err != nil {
-		return fmt.Errorf("failed to create heartbeat request: %w", err)
-	}
-
-	req.Header.Set("Authorization", "Bearer "+rw.token)
-
-	resp, err := rw.httpClient.Do(req)
+	resp, err := rw.apiClient.UpdateWorkerHeartbeatWithResponse(ctx, rw.workerID)
 	if err != nil {
 		return fmt.Errorf("failed to send heartbeat: %w", err)
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("heartbeat failed with status %d", resp.StatusCode)
+	if resp.StatusCode() != http.StatusOK {
+		var errMsg string
+		if resp.JSON404 != nil && resp.JSON404.Message != nil {
+			errMsg = *resp.JSON404.Message
+		} else if resp.JSON500 != nil && resp.JSON500.Message != nil {
+			errMsg = *resp.JSON500.Message
+		} else {
+			errMsg = string(resp.Body)
+		}
+		return fmt.Errorf("heartbeat failed with status %d: %s", resp.StatusCode(), errMsg)
 	}
 
 	return nil
@@ -158,20 +156,22 @@ func (rw *RemoteWorker) sendHeartbeat(ctx context.Context) error {
 
 // unregisterWorker unregisters this worker from the API server
 func (rw *RemoteWorker) unregisterWorker(ctx context.Context) error {
-	url := fmt.Sprintf("%s/api/workers/%s", rw.serverURL, rw.workerID)
-
-	req, err := http.NewRequestWithContext(ctx, "DELETE", url, nil)
-	if err != nil {
-		return fmt.Errorf("failed to create unregister request: %w", err)
-	}
-
-	req.Header.Set("Authorization", "Bearer "+rw.token)
-
-	resp, err := rw.httpClient.Do(req)
+	resp, err := rw.apiClient.UnregisterWorkerWithResponse(ctx, rw.workerID)
 	if err != nil {
 		return fmt.Errorf("failed to unregister worker: %w", err)
 	}
-	defer resp.Body.Close()
+
+	if resp.StatusCode() != http.StatusOK && resp.StatusCode() != http.StatusNoContent {
+		var errMsg string
+		if resp.JSON404 != nil && resp.JSON404.Message != nil {
+			errMsg = *resp.JSON404.Message
+		} else if resp.JSON500 != nil && resp.JSON500.Message != nil {
+			errMsg = *resp.JSON500.Message
+		} else {
+			errMsg = string(resp.Body)
+		}
+		return fmt.Errorf("unregister failed with status %d: %s", resp.StatusCode(), errMsg)
+	}
 
 	log.Printf("Worker %s unregistered", rw.workerID)
 	return nil
@@ -230,28 +230,32 @@ func (rw *RemoteWorker) processWork(ctx context.Context) error {
 
 // claimWork claims work items from the API server
 func (rw *RemoteWorker) claimWork(ctx context.Context) ([]*QueueItem, error) {
-	url := fmt.Sprintf("%s/api/workers/%s/claim-work?max_items=%d", rw.serverURL, rw.workerID, rw.concurrency)
-
-	req, err := http.NewRequestWithContext(ctx, "POST", url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create claim work request: %w", err)
+	// Create the claim work request body
+	maxItems := rw.concurrency
+	reqBody := client.ClaimWorkJSONBody{
+		MaxItems: &maxItems,
 	}
 
-	req.Header.Set("Authorization", "Bearer "+rw.token)
-
-	resp, err := rw.httpClient.Do(req)
+	resp, err := rw.apiClient.ClaimWorkWithResponse(ctx, rw.workerID, client.ClaimWorkJSONRequestBody(reqBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to claim work: %w", err)
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("claim work failed with status %d", resp.StatusCode)
+	if resp.StatusCode() != http.StatusOK {
+		return nil, fmt.Errorf("claim work failed with status %d: %s", resp.StatusCode(), string(resp.Body))
 	}
 
+	// Convert client WorkItem to internal QueueItem
 	var workItems []*QueueItem
-	if err := json.NewDecoder(resp.Body).Decode(&workItems); err != nil {
-		return nil, fmt.Errorf("failed to decode work items: %w", err)
+	if resp.JSON200 != nil {
+		for _, item := range *resp.JSON200 {
+			// Convert from client.WorkItem to internal QueueItem
+			queueItem, err := convertWorkItemToQueueItem(&item)
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert work item: %w", err)
+			}
+			workItems = append(workItems, queueItem)
+		}
 	}
 
 	return workItems, nil
@@ -285,6 +289,7 @@ func (rw *RemoteWorker) processWorkItem(ctx context.Context, item *QueueItem) er
 
 // processStartRun handles starting a workflow run
 func (rw *RemoteWorker) processStartRun(ctx context.Context, item *QueueItem) *WorkResult {
+	_ = ctx
 	// Implementation would depend on how the payload is structured
 	// For now, return success
 	log.Printf("Started run for item %s", item.ID)
@@ -296,6 +301,7 @@ func (rw *RemoteWorker) processStartRun(ctx context.Context, item *QueueItem) *W
 
 // processExecuteStep handles executing a workflow step
 func (rw *RemoteWorker) processExecuteStep(ctx context.Context, item *QueueItem) *WorkResult {
+	_ = ctx
 	// This would load the step details and execute the node
 	// For now, return success
 	log.Printf("Executed step for item %s", item.ID)
@@ -307,6 +313,7 @@ func (rw *RemoteWorker) processExecuteStep(ctx context.Context, item *QueueItem)
 
 // processRetryStep handles retrying a failed workflow step
 func (rw *RemoteWorker) processRetryStep(ctx context.Context, item *QueueItem) *WorkResult {
+	_ = ctx
 	// Implementation would retry the step
 	log.Printf("Retried step for item %s", item.ID)
 	return &WorkResult{
@@ -317,6 +324,7 @@ func (rw *RemoteWorker) processRetryStep(ctx context.Context, item *QueueItem) *
 
 // processCompleteRun handles completing a workflow run
 func (rw *RemoteWorker) processCompleteRun(ctx context.Context, item *QueueItem) *WorkResult {
+	_ = ctx
 	// Implementation would finalize the run
 	log.Printf("Completed run for item %s", item.ID)
 	return &WorkResult{
@@ -327,30 +335,26 @@ func (rw *RemoteWorker) processCompleteRun(ctx context.Context, item *QueueItem)
 
 // completeWork reports the work result back to the API server
 func (rw *RemoteWorker) completeWork(ctx context.Context, itemID uuid.UUID, result *WorkResult) error {
-	url := fmt.Sprintf("%s/api/workers/%s/complete-work/%s", rw.serverURL, rw.workerID, itemID)
+	// Convert internal WorkResult to client CompleteWorkJSONBody
+	reqBody := client.CompleteWorkJSONBody{}
 
-	payload, err := json.Marshal(result)
-	if err != nil {
-		return fmt.Errorf("failed to marshal work result: %w", err)
+	if result.Success {
+		if result.OutputData != nil {
+			reqBody.Result = &result.OutputData
+		}
+	} else {
+		if result.Error != nil {
+			reqBody.Error = result.Error
+		}
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(payload))
-	if err != nil {
-		return fmt.Errorf("failed to create complete work request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+rw.token)
-
-	resp, err := rw.httpClient.Do(req)
+	resp, err := rw.apiClient.CompleteWorkWithResponse(ctx, rw.workerID, itemID.String(), client.CompleteWorkJSONRequestBody(reqBody))
 	if err != nil {
 		return fmt.Errorf("failed to complete work: %w", err)
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("complete work failed with status %d: %s", resp.StatusCode, string(body))
+	if resp.StatusCode() != http.StatusOK {
+		return fmt.Errorf("complete work failed with status %d: %s", resp.StatusCode(), string(resp.Body))
 	}
 
 	log.Printf("Completed work item %s", itemID)
@@ -376,4 +380,57 @@ func generateWorkerID() string {
 		return fmt.Sprintf("worker-%d", time.Now().Unix())
 	}
 	return fmt.Sprintf("worker-%s", hex.EncodeToString(bytes))
+}
+
+// convertWorkItemToQueueItem converts a client WorkItem to internal QueueItem
+func convertWorkItemToQueueItem(item *client.WorkItem) (*QueueItem, error) {
+	if item.Id == nil || item.Type == nil {
+		return nil, fmt.Errorf("invalid work item: missing required fields")
+	}
+
+	// Parse the ID
+	id, err := uuid.Parse(*item.Id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid work item ID: %w", err)
+	}
+
+	// Create the queue item
+	queueItem := &QueueItem{
+		ID:        id,
+		QueueType: QueueType(*item.Type),
+	}
+
+	// Extract additional fields from payload if available
+	if item.Payload != nil {
+		payload := *item.Payload
+
+		// Try to extract run_id
+		if runIDStr, ok := payload["run_id"].(string); ok {
+			if runID, err := uuid.Parse(runIDStr); err == nil {
+				queueItem.RunID = runID
+			}
+		}
+
+		// Try to extract step_id
+		if stepIDStr, ok := payload["step_id"].(string); ok {
+			if stepID, err := uuid.Parse(stepIDStr); err == nil {
+				queueItem.StepID = &stepID
+			}
+		}
+
+		// Try to extract priority
+		if priority, ok := payload["priority"].(float64); ok {
+			queueItem.Priority = int(priority)
+		}
+
+		// Store the entire payload
+		queueItem.Payload = payload
+	}
+
+	// Set created_at if available
+	if item.CreatedAt != nil {
+		queueItem.CreatedAt = *item.CreatedAt
+	}
+
+	return queueItem, nil
 }

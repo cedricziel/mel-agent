@@ -141,13 +141,10 @@ describe('TriggerNode', () => {
     const triggerButton = screen.getByText('▶️ Trigger');
     fireEvent.click(triggerButton);
 
-    expect(axios.post).toHaveBeenCalledWith(
-      '/api/workflow-runs',
-      {
-        agent_id: 'test-agent-123',
-        input_data: {}
-      }
-    );
+    expect(axios.post).toHaveBeenCalledWith('/api/workflow-runs', {
+      agent_id: 'test-agent-123',
+      input_data: {},
+    });
   });
 
   it('should show visual feedback on successful manual trigger', async () => {

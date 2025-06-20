@@ -16,10 +16,26 @@ describe('nodeTypesApi', () => {
       const allNodeTypes = [
         { type: 'agent', label: 'Agent', category: 'Core' },
         { type: 'http_request', label: 'HTTP Request', category: 'Actions' },
-        { type: 'openai_model', label: 'OpenAI Model', category: 'Configuration' },
-        { type: 'anthropic_model', label: 'Anthropic Model', category: 'Configuration' },
-        { type: 'local_memory', label: 'Local Memory', category: 'Configuration' },
-        { type: 'workflow_tools', label: 'Workflow Tools', category: 'Configuration' },
+        {
+          type: 'openai_model',
+          label: 'OpenAI Model',
+          category: 'Configuration',
+        },
+        {
+          type: 'anthropic_model',
+          label: 'Anthropic Model',
+          category: 'Configuration',
+        },
+        {
+          type: 'local_memory',
+          label: 'Local Memory',
+          category: 'Configuration',
+        },
+        {
+          type: 'workflow_tools',
+          label: 'Workflow Tools',
+          category: 'Configuration',
+        },
       ];
 
       mockedAxios.get.mockResolvedValueOnce({
@@ -48,7 +64,7 @@ describe('nodeTypesApi', () => {
     it('should call API with kind filter for single kind', async () => {
       const modelNodes = [
         { type: 'openai_model', category: 'Configuration' },
-        { type: 'anthropic_model', category: 'Configuration' }
+        { type: 'anthropic_model', category: 'Configuration' },
       ];
 
       mockedAxios.get.mockResolvedValueOnce({
@@ -84,7 +100,9 @@ describe('nodeTypesApi', () => {
     it('should throw error on API failure', async () => {
       mockedAxios.get.mockRejectedValueOnce(new Error('API Error'));
 
-      await expect(nodeTypesApi.getNodeTypes(['model'])).rejects.toThrow('API Error');
+      await expect(nodeTypesApi.getNodeTypes(['model'])).rejects.toThrow(
+        'API Error'
+      );
     });
   });
 
@@ -99,9 +117,9 @@ describe('nodeTypesApi', () => {
             { name: 'model', type: 'enum' },
             { name: 'temperature', type: 'number' },
             { name: 'maxTokens', type: 'integer' },
-            { name: 'credential', type: 'credential' }
-          ]
-        }
+            { name: 'credential', type: 'credential' },
+          ],
+        },
       ];
 
       mockedAxios.get.mockResolvedValueOnce({
@@ -134,9 +152,9 @@ describe('nodeTypesApi', () => {
             { name: 'storageType', type: 'string' },
             { name: 'namespace', type: 'string' },
             { name: 'maxEntries', type: 'integer' },
-            { name: 'persistent', type: 'boolean' }
-          ]
-        }
+            { name: 'persistent', type: 'boolean' },
+          ],
+        },
       ];
 
       mockedAxios.get.mockResolvedValueOnce({

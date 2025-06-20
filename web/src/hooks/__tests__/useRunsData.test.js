@@ -105,9 +105,7 @@ describe('useRunsData', () => {
     });
 
     await waitFor(() => {
-      expect(mockedAxios.get).toHaveBeenCalledWith(
-        `/api/workflow-runs/run-1`
-      );
+      expect(mockedAxios.get).toHaveBeenCalledWith(`/api/workflow-runs/run-1`);
       expect(result.current.selectedRunID).toBe('run-1');
       expect(result.current.runDetails).toEqual(mockRunDetails);
     });

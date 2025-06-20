@@ -21,7 +21,7 @@ import (
 // Test remote worker with real database backend
 func TestRemoteWorkerWithDatabase(t *testing.T) {
 	ctx := context.Background()
-	_, db, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
+	_, db, cleanup := testutil.SetupPostgresWithTestData(ctx, t)
 	defer cleanup()
 
 	// Create a mock API server that uses the real database
@@ -29,7 +29,8 @@ func TestRemoteWorkerWithDatabase(t *testing.T) {
 	defer mockServer.Close()
 
 	mel := api.NewMel()
-	worker := NewRemoteWorker(mockServer.URL, "valid-token", "db-test-worker", mel, 3)
+	worker, err := NewRemoteWorker(mockServer.URL, "valid-token", "db-test-worker", mel, 3)
+	require.NoError(t, err)
 
 	// Test worker registration and basic functionality
 	testCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -47,7 +48,7 @@ func TestRemoteWorkerWithDatabase(t *testing.T) {
 
 	// Verify worker was registered in database
 	var count int
-	err := db.QueryRow("SELECT COUNT(*) FROM workflow_workers WHERE id = $1", "db-test-worker").Scan(&count)
+	err = db.QueryRow("SELECT COUNT(*) FROM workflow_workers WHERE id = $1", "db-test-worker").Scan(&count)
 	require.NoError(t, err)
 	assert.Equal(t, 1, count, "Worker should be registered in database")
 
@@ -78,7 +79,7 @@ func TestRemoteWorkerWithDatabase(t *testing.T) {
 // Test remote worker work processing with real workflow data
 func TestRemoteWorkerWorkProcessingWithDatabase(t *testing.T) {
 	ctx := context.Background()
-	_, db, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
+	_, db, cleanup := testutil.SetupPostgresWithTestData(ctx, t)
 	defer cleanup()
 
 	// Create test workflow run using test agent
@@ -112,7 +113,8 @@ func TestRemoteWorkerWorkProcessingWithDatabase(t *testing.T) {
 	defer mockServer.Close()
 
 	mel := api.NewMel()
-	worker := NewRemoteWorker(mockServer.URL, "valid-token", "work-processor-test", mel, 2)
+	worker, err := NewRemoteWorker(mockServer.URL, "valid-token", "work-processor-test", mel, 2)
+	require.NoError(t, err)
 
 	// Start worker for a short time to process work
 	testCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
@@ -147,7 +149,7 @@ func TestRemoteWorkerWorkProcessingWithDatabase(t *testing.T) {
 // Test remote worker authentication with database
 func TestRemoteWorkerAuthenticationWithDatabase(t *testing.T) {
 	ctx := context.Background()
-	_, db, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
+	_, db, cleanup := testutil.SetupPostgresWithTestData(ctx, t)
 	defer cleanup()
 
 	// Create mock server that validates tokens
@@ -157,7 +159,8 @@ func TestRemoteWorkerAuthenticationWithDatabase(t *testing.T) {
 	mel := api.NewMel()
 
 	// Test with valid token
-	validWorker := NewRemoteWorker(mockServer.URL, "valid-token", "auth-test-valid", mel, 1)
+	validWorker, err := NewRemoteWorker(mockServer.URL, "valid-token", "auth-test-valid", mel, 1)
+	require.NoError(t, err)
 
 	testCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
@@ -172,7 +175,7 @@ func TestRemoteWorkerAuthenticationWithDatabase(t *testing.T) {
 
 	// Check if worker was registered with valid token
 	var validCount int
-	err := db.QueryRow("SELECT COUNT(*) FROM workflow_workers WHERE id = $1", "auth-test-valid").Scan(&validCount)
+	err = db.QueryRow("SELECT COUNT(*) FROM workflow_workers WHERE id = $1", "auth-test-valid").Scan(&validCount)
 	require.NoError(t, err)
 	assert.Equal(t, 1, validCount, "Worker with valid token should be registered")
 
@@ -185,7 +188,8 @@ func TestRemoteWorkerAuthenticationWithDatabase(t *testing.T) {
 	}
 
 	// Test with invalid token
-	invalidWorker := NewRemoteWorker(mockServer.URL, "invalid-token", "auth-test-invalid", mel, 1)
+	invalidWorker, err := NewRemoteWorker(mockServer.URL, "invalid-token", "auth-test-invalid", mel, 1)
+	require.NoError(t, err)
 
 	testCtx, cancel = context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
@@ -223,10 +227,40 @@ func createDatabaseBackedMockServer(db *sql.DB) *httptest.Server {
 			return
 		}
 
-		var worker WorkflowWorker
-		if err := json.NewDecoder(r.Body).Decode(&worker); err != nil {
+		// Parse the RegisterWorkerRequest (new format)
+		var registerRequest struct {
+			ID          string  `json:"id"`
+			Name        *string `json:"name,omitempty"`
+			Concurrency *int    `json:"concurrency,omitempty"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&registerRequest); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
+		}
+
+		// Create a full WorkflowWorker from the registration request
+		hostname := "test-hostname"
+		if registerRequest.Name != nil {
+			hostname = *registerRequest.Name
+		}
+		concurrency := 5
+		if registerRequest.Concurrency != nil {
+			concurrency = *registerRequest.Concurrency
+		}
+
+		worker := WorkflowWorker{
+			ID:                   registerRequest.ID,
+			Hostname:             hostname,
+			ProcessID:            nil,
+			Version:              nil,
+			Capabilities:         []string{"workflow_execution", "node_execution"},
+			Status:               WorkerStatusIdle,
+			LastHeartbeat:        time.Now(),
+			StartedAt:            time.Now(),
+			MaxConcurrentSteps:   concurrency,
+			CurrentStepCount:     0,
+			TotalStepsExecuted:   0,
+			TotalExecutionTimeMS: 0,
 		}
 
 		// Store in real database
@@ -252,6 +286,7 @@ func createDatabaseBackedMockServer(db *sql.DB) *httptest.Server {
 			return
 		}
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(map[string]string{"id": worker.ID})
 	})

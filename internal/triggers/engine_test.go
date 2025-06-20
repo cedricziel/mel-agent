@@ -47,8 +47,8 @@ func TestEngine_fireTriggerWithTransaction(t *testing.T) {
 
 	// Insert test trigger
 	_, err = db.DB.Exec(`
-		INSERT INTO triggers (id, user_id, agent_id, provider, config, last_checked) 
-		VALUES ($1, '00000000-0000-0000-0000-000000000001', $2, 'schedule', '{}', NOW())
+		INSERT INTO triggers (id, user_id, agent_id, provider, name, type, config, last_checked) 
+		VALUES ($1, '00000000-0000-0000-0000-000000000001', $2, 'schedule', 'Test Engine Trigger', 'schedule', '{}', NOW())
 	`, triggerID, agentID)
 	require.NoError(t, err)
 
@@ -151,8 +151,8 @@ func TestEngine_fireTriggerWithTransaction_Atomicity(t *testing.T) {
 
 	// Insert test trigger
 	_, err = db.DB.Exec(`
-		INSERT INTO triggers (id, user_id, agent_id, provider, config, last_checked) 
-		VALUES ($1, '00000000-0000-0000-0000-000000000001', $2, 'schedule', '{}', NOW())
+		INSERT INTO triggers (id, user_id, agent_id, provider, name, type, config, last_checked) 
+		VALUES ($1, '00000000-0000-0000-0000-000000000001', $2, 'schedule', 'Test Engine Trigger', 'schedule', '{}', NOW())
 	`, triggerID, agentID)
 	require.NoError(t, err)
 
@@ -160,7 +160,7 @@ func TestEngine_fireTriggerWithTransaction_Atomicity(t *testing.T) {
 		// Get initial counts and trigger state
 		var initialWorkflowRunCount, initialQueueItemCount int
 		var initialLastChecked sql.NullTime
-		
+
 		err = db.DB.QueryRow(`SELECT COUNT(*) FROM workflow_runs`).Scan(&initialWorkflowRunCount)
 		require.NoError(t, err)
 		err = db.DB.QueryRow(`SELECT COUNT(*) FROM workflow_queue`).Scan(&initialQueueItemCount)
@@ -185,7 +185,7 @@ func TestEngine_fireTriggerWithTransaction_Atomicity(t *testing.T) {
 		// Verify complete rollback - no changes to any table
 		var finalWorkflowRunCount, finalQueueItemCount int
 		var finalLastChecked sql.NullTime
-		
+
 		err = db.DB.QueryRow(`SELECT COUNT(*) FROM workflow_runs`).Scan(&finalWorkflowRunCount)
 		require.NoError(t, err)
 		err = db.DB.QueryRow(`SELECT COUNT(*) FROM workflow_queue`).Scan(&finalQueueItemCount)
@@ -261,8 +261,8 @@ func TestEngine_fireTriggerWithTransaction_JSONMarshaling(t *testing.T) {
 
 	// Insert test trigger
 	_, err = db.DB.Exec(`
-		INSERT INTO triggers (id, user_id, agent_id, provider, config, last_checked) 
-		VALUES ($1, '00000000-0000-0000-0000-000000000001', $2, 'schedule', '{}', NOW())
+		INSERT INTO triggers (id, user_id, agent_id, provider, name, type, config, last_checked) 
+		VALUES ($1, '00000000-0000-0000-0000-000000000001', $2, 'schedule', 'Test Engine Trigger', 'schedule', '{}', NOW())
 	`, triggerID, agentID)
 	require.NoError(t, err)
 

@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
@@ -200,9 +199,6 @@ func startServer(port string) {
 	// initialize MEL instance for durable workflow execution
 	mel := api.NewMel()
 
-	// create workflow engine factory function
-	workflowEngineFactory := httpApi.InitializeWorkflowEngine(db.DB, mel)
-
 	// create durable workflow execution engine
 	workflowEngine := execution.NewDurableExecutionEngine(db.DB, mel, "api-server")
 
@@ -235,30 +231,12 @@ func startServer(port string) {
 	// readiness endpoint for Kubernetes
 	r.Get("/ready", readinessCheckHandler)
 
-	// webhook entrypoint for external events (e.g., GitHub, Stripe) – accept all HTTP methods
-	r.HandleFunc("/webhooks/{provider}/{triggerID}", httpApi.WebhookHandler)
+	// webhook entrypoint is now handled by OpenAPI at /api/webhooks/{token}
 
-	// Create an efficient API handler that routes without response buffering
-	// Route based on path analysis since we know the exact route patterns
-	mainAPIHandler := httpApi.Handler()
-	workflowHandler := workflowEngineFactory(workflowEngine)
+	// Use combined OpenAPI + Legacy router for gradual migration
+	combinedAPIHandler := httpApi.NewCombinedRouter(db.DB, workflowEngine)
 
-	apiHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Chi Mount passes the full path including /api prefix
-		// Workflow engine only handles /api/workflow-runs* routes
-		// Everything else goes to main API - this is more efficient than buffering
-		if strings.HasPrefix(r.URL.Path, "/api/workflow-runs") {
-			// Strip /api prefix for workflow handler since it expects /workflow-runs
-			r.URL.Path = strings.TrimPrefix(r.URL.Path, "/api")
-			workflowHandler.ServeHTTP(w, r)
-		} else {
-			// Strip /api prefix for main API handler as well
-			r.URL.Path = strings.TrimPrefix(r.URL.Path, "/api")
-			mainAPIHandler.ServeHTTP(w, r)
-		}
-	})
-
-	r.Mount("/api", apiHandler)
+	r.Mount("/", combinedAPIHandler)
 
 	// Create HTTP server with timeouts
 	server := &http.Server{
@@ -311,9 +289,6 @@ func startAPIServer(port string) {
 	// initialize MEL instance for durable workflow execution
 	mel := api.NewMel()
 
-	// create workflow engine factory function
-	workflowEngineFactory := httpApi.InitializeWorkflowEngine(db.DB, mel)
-
 	// create durable workflow execution engine
 	workflowEngine := execution.NewDurableExecutionEngine(db.DB, mel, "api-server")
 
@@ -337,30 +312,12 @@ func startAPIServer(port string) {
 	// readiness endpoint for Kubernetes
 	r.Get("/ready", readinessCheckHandler)
 
-	// webhook entrypoint for external events (e.g., GitHub, Stripe) – accept all HTTP methods
-	r.HandleFunc("/webhooks/{provider}/{triggerID}", httpApi.WebhookHandler)
+	// webhook entrypoint is now handled by OpenAPI at /api/webhooks/{token}
 
-	// Create an efficient API handler that routes without response buffering
-	// Route based on path analysis since we know the exact route patterns
-	mainAPIHandler := httpApi.Handler()
-	workflowHandler := workflowEngineFactory(workflowEngine)
+	// Use combined OpenAPI + Legacy router for gradual migration
+	combinedAPIHandler := httpApi.NewCombinedRouter(db.DB, workflowEngine)
 
-	apiHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Chi Mount passes the full path including /api prefix
-		// Workflow engine only handles /api/workflow-runs* routes
-		// Everything else goes to main API - this is more efficient than buffering
-		if strings.HasPrefix(r.URL.Path, "/api/workflow-runs") {
-			// Strip /api prefix for workflow handler since it expects /workflow-runs
-			r.URL.Path = strings.TrimPrefix(r.URL.Path, "/api")
-			workflowHandler.ServeHTTP(w, r)
-		} else {
-			// Strip /api prefix for main API handler as well
-			r.URL.Path = strings.TrimPrefix(r.URL.Path, "/api")
-			mainAPIHandler.ServeHTTP(w, r)
-		}
-	})
-
-	r.Mount("/api", apiHandler)
+	r.Mount("/", combinedAPIHandler)
 
 	// Create HTTP server with timeouts
 	server := &http.Server{
@@ -411,7 +368,10 @@ func startWorker(serverURL, token, workerID string, concurrency int) {
 	mel := api.NewMel()
 
 	// Create a remote worker that connects to the API server
-	remoteWorker := execution.NewRemoteWorker(serverURL, token, workerID, mel, concurrency)
+	remoteWorker, err := execution.NewRemoteWorker(serverURL, token, workerID, mel, concurrency)
+	if err != nil {
+		log.Fatalf("Failed to create remote worker: %v", err)
+	}
 
 	// Create cancellable context for clean shutdown
 	ctx, cancel := context.WithCancel(context.Background())

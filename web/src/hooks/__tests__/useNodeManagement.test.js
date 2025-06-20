@@ -43,7 +43,11 @@ describe('useNodeManagement', () => {
 
   it('should handle node deletion with edge cleanup', async () => {
     const { result } = renderHook(() =>
-      useNodeManagement('test-agent', mockBroadcastNodeChange, mockWorkflowState)
+      useNodeManagement(
+        'test-agent',
+        mockBroadcastNodeChange,
+        mockWorkflowState
+      )
     );
 
     await act(async () => {
@@ -62,7 +66,11 @@ describe('useNodeManagement', () => {
 
   it('should handle edge deletion', async () => {
     const { result } = renderHook(() =>
-      useNodeManagement('test-agent', mockBroadcastNodeChange, mockWorkflowState)
+      useNodeManagement(
+        'test-agent',
+        mockBroadcastNodeChange,
+        mockWorkflowState
+      )
     );
 
     await act(async () => {
@@ -88,7 +96,11 @@ describe('useNodeManagement', () => {
     ];
 
     const { result } = renderHook(() =>
-      useNodeManagement('test-agent', mockBroadcastNodeChange, mockWorkflowState)
+      useNodeManagement(
+        'test-agent',
+        mockBroadcastNodeChange,
+        mockWorkflowState
+      )
     );
 
     const agentPosition = { x: 300, y: 300 };
@@ -114,7 +126,11 @@ describe('useNodeManagement', () => {
 
   it('should handle node creation with broadcasting', async () => {
     const { result } = renderHook(() =>
-      useNodeManagement('test-agent', mockBroadcastNodeChange, mockWorkflowState)
+      useNodeManagement(
+        'test-agent',
+        mockBroadcastNodeChange,
+        mockWorkflowState
+      )
     );
 
     const newNode = {
@@ -148,7 +164,11 @@ describe('useNodeManagement', () => {
 
   it('should handle edge creation with broadcasting', async () => {
     const { result } = renderHook(() =>
-      useNodeManagement('test-agent', mockBroadcastNodeChange, mockWorkflowState)
+      useNodeManagement(
+        'test-agent',
+        mockBroadcastNodeChange,
+        mockWorkflowState
+      )
     );
 
     await act(async () => {
@@ -171,7 +191,11 @@ describe('useNodeManagement', () => {
 
   it('should handle errors gracefully during node deletion', async () => {
     const { result } = renderHook(() =>
-      useNodeManagement('test-agent', mockBroadcastNodeChange, mockWorkflowState)
+      useNodeManagement(
+        'test-agent',
+        mockBroadcastNodeChange,
+        mockWorkflowState
+      )
     );
 
     mockWorkflowState.deleteNode.mockRejectedValueOnce(
@@ -193,7 +217,11 @@ describe('useNodeManagement', () => {
 
   it('should handle errors gracefully during edge deletion', async () => {
     const { result } = renderHook(() =>
-      useNodeManagement('test-agent', mockBroadcastNodeChange, mockWorkflowState)
+      useNodeManagement(
+        'test-agent',
+        mockBroadcastNodeChange,
+        mockWorkflowState
+      )
     );
 
     mockWorkflowState.deleteEdge.mockRejectedValueOnce(
@@ -215,7 +243,11 @@ describe('useNodeManagement', () => {
 
   it('should auto-create configuration nodes for agent nodes', async () => {
     const { result } = renderHook(() =>
-      useNodeManagement('test-agent', mockBroadcastNodeChange, mockWorkflowState)
+      useNodeManagement(
+        'test-agent',
+        mockBroadcastNodeChange,
+        mockWorkflowState
+      )
     );
 
     await act(async () => {
@@ -239,7 +271,11 @@ describe('useNodeManagement', () => {
 
   it('should provide workflow data for assistant', () => {
     const { result } = renderHook(() =>
-      useNodeManagement('test-agent', mockBroadcastNodeChange, mockWorkflowState)
+      useNodeManagement(
+        'test-agent',
+        mockBroadcastNodeChange,
+        mockWorkflowState
+      )
     );
 
     const workflow = result.current.handleGetWorkflow();
@@ -263,7 +299,11 @@ describe('useNodeManagement', () => {
     ];
 
     const { result } = renderHook(() =>
-      useNodeManagement('test-agent', mockBroadcastNodeChange, mockWorkflowState)
+      useNodeManagement(
+        'test-agent',
+        mockBroadcastNodeChange,
+        mockWorkflowState
+      )
     );
 
     // Mock timing to verify parallel execution
