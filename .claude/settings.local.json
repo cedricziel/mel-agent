@@ -34,7 +34,8 @@
       "Bash(mv:*)",
       "Bash(sed:*)",
       "Bash(make:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(pnpm generate:api:*)"
     ],
     "deny": []
   },

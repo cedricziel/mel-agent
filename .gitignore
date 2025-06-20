@@ -6,6 +6,7 @@ bin/
 # Node
 web/node_modules/
 web/dist/
+web/src/generated/
 
 # Cypress
 web/cypress/screenshots/
