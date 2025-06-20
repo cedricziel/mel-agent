@@ -123,7 +123,7 @@ func (h *OpenAPIHandlers) CreateWorkflow(ctx context.Context, request CreateWork
 		description = request.Body.Description
 	}
 
-	var definitionJson []byte
+	var definitionJson interface{}
 	var err error
 	if request.Body.Definition != nil {
 		definitionJson, err = json.Marshal(request.Body.Definition)
@@ -137,10 +137,13 @@ func (h *OpenAPIHandlers) CreateWorkflow(ctx context.Context, request CreateWork
 		}
 	}
 
+	// For now, use a default user_id (in real implementation, this would come from auth context)
+	defaultUserID := uuid.MustParse("00000000-0000-0000-0000-000000000001")
+
 	// Insert workflow into database
 	_, err = h.db.ExecContext(ctx,
-		"INSERT INTO workflows (id, name, description, definition, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)",
-		workflowID, request.Body.Name, description, definitionJson, now, now)
+		"INSERT INTO workflows (id, user_id, name, description, definition, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+		workflowID, defaultUserID, request.Body.Name, description, definitionJson, now, now)
 	if err != nil {
 		errorMsg := "failed to create workflow"
 		message := err.Error()
@@ -385,7 +388,7 @@ func (h *OpenAPIHandlers) ExecuteWorkflow(ctx context.Context, request ExecuteWo
 	executionID := uuid.New()
 	now := time.Now()
 
-	var inputJson []byte
+	var inputJson interface{}
 	if request.Body != nil && request.Body.Input != nil {
 		inputJson, err = json.Marshal(*request.Body.Input)
 		if err != nil {

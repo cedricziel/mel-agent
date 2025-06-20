@@ -60,8 +60,9 @@ func (h *OpenAPIHandlers) ListWorkflowRuns(ctx context.Context, request ListWork
 	}
 
 	// Get workflow runs with pagination
-	query := "SELECT id, workflow_id, status, started_at, completed_at, context, error FROM workflow_runs " +
-		whereClause + " ORDER BY started_at DESC LIMIT $" + fmt.Sprintf("%d", argIndex) + " OFFSET $" + fmt.Sprintf("%d", argIndex+1)
+	// Use COALESCE to handle both legacy (agent_id) and new (workflow_id) schemas
+	query := "SELECT id, COALESCE(workflow_id, agent_id) as workflow_id, status, COALESCE(started_at, created_at) as started_at, completed_at, COALESCE(context, variables) as context, COALESCE(error, error_data::text) as error FROM workflow_runs " +
+		whereClause + " ORDER BY COALESCE(started_at, created_at) DESC LIMIT $" + fmt.Sprintf("%d", argIndex) + " OFFSET $" + fmt.Sprintf("%d", argIndex+1)
 	args = append(args, limit, offset)
 
 	rows, err := h.db.QueryContext(ctx, query, args...)
@@ -179,7 +180,7 @@ func (h *OpenAPIHandlers) GetWorkflowRun(ctx context.Context, request GetWorkflo
 	var errorMsg sql.NullString
 
 	err := h.db.QueryRowContext(ctx,
-		"SELECT id, workflow_id, status, started_at, completed_at, context, error FROM workflow_runs WHERE id = $1",
+		"SELECT id, COALESCE(workflow_id, agent_id) as workflow_id, status, COALESCE(started_at, created_at) as started_at, completed_at, COALESCE(context, variables) as context, COALESCE(error, error_data::text) as error FROM workflow_runs WHERE id = $1",
 		request.Id.String()).Scan(&id, &workflowID, &status, &startedAt, &completedAt, &contextJson, &errorMsg)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -268,7 +269,7 @@ func (h *OpenAPIHandlers) GetWorkflowRun(ctx context.Context, request GetWorkflo
 // GetWorkflowRunSteps retrieves steps for a workflow run
 func (h *OpenAPIHandlers) GetWorkflowRunSteps(ctx context.Context, request GetWorkflowRunStepsRequestObject) (GetWorkflowRunStepsResponseObject, error) {
 	rows, err := h.db.QueryContext(ctx,
-		"SELECT id, run_id, node_id, status, started_at, completed_at, input, output, error FROM workflow_steps WHERE run_id = $1 ORDER BY started_at",
+		"SELECT id, run_id, node_id, status, COALESCE(started_at, created_at) as started_at, completed_at, COALESCE(input_envelope, '{}') as input, COALESCE(output_envelope, '{}') as output, COALESCE(error_details::text, '') as error FROM workflow_steps WHERE run_id = $1 ORDER BY COALESCE(started_at, created_at)",
 		request.Id.String())
 	if err != nil {
 		errorMsg := "database error"
