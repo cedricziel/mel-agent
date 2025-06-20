@@ -2,7 +2,6 @@
 bin/
 *.test
 *.out
-*.gen.go
 
 # Node
 web/node_modules/
