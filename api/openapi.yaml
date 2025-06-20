@@ -1924,6 +1924,46 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /api/agents/{agentId}/assistant/chat:
+    post:
+      summary: Chat with AI assistant for workflow building
+      operationId: assistantChat
+      tags:
+        - Assistant
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Agent ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssistantChatRequest'
+      responses:
+        '200':
+          description: Assistant response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantChatResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
 components:
   schemas:
     Agent:
@@ -1945,6 +1985,95 @@ components:
         created_at:
           type: string
           format: date-time
+
+    AssistantChatRequest:
+      type: object
+      required:
+        - messages
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatMessage'
+          description: Array of chat messages
+
+    AssistantChatResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Response ID
+        object:
+          type: string
+          description: Object type (e.g., "chat.completion")
+        created:
+          type: integer
+          description: Unix timestamp
+        model:
+          type: string
+          description: Model used
+        choices:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatChoice'
+          description: Array of response choices
+        usage:
+          $ref: '#/components/schemas/ChatUsage'
+
+    ChatMessage:
+      type: object
+      required:
+        - role
+        - content
+      properties:
+        role:
+          type: string
+          enum: [system, user, assistant, function]
+          description: Message role
+        content:
+          type: string
+          description: Message content
+        name:
+          type: string
+          description: Function name (for function role)
+        function_call:
+          $ref: '#/components/schemas/FunctionCall'
+
+    ChatChoice:
+      type: object
+      properties:
+        index:
+          type: integer
+          description: Choice index
+        message:
+          $ref: '#/components/schemas/ChatMessage'
+        finish_reason:
+          type: string
+          enum: [stop, length, function_call]
+          description: Reason for finishing
+
+    FunctionCall:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Function name
+        arguments:
+          type: string
+          description: Function arguments as JSON string
+
+    ChatUsage:
+      type: object
+      properties:
+        prompt_tokens:
+          type: integer
+          description: Tokens used in prompt
+        completion_tokens:
+          type: integer
+          description: Tokens used in completion
+        total_tokens:
+          type: integer
+          description: Total tokens used
 
     CreateAgentRequest:
       type: object

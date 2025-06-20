@@ -28,6 +28,21 @@ const (
 	AgentDeploymentStatusFailed    AgentDeploymentStatus = "failed"
 )
 
+// Defines values for ChatChoiceFinishReason.
+const (
+	ChatChoiceFinishReasonFunctionCall ChatChoiceFinishReason = "function_call"
+	ChatChoiceFinishReasonLength       ChatChoiceFinishReason = "length"
+	ChatChoiceFinishReasonStop         ChatChoiceFinishReason = "stop"
+)
+
+// Defines values for ChatMessageRole.
+const (
+	Assistant ChatMessageRole = "assistant"
+	Function  ChatMessageRole = "function"
+	System    ChatMessageRole = "system"
+	User      ChatMessageRole = "user"
+)
+
 // Defines values for ConnectionStatus.
 const (
 	ConnectionStatusExpired ConnectionStatus = "expired"
@@ -163,6 +178,72 @@ type AgentVersion struct {
 	VersionNumber *int                `json:"version_number,omitempty"`
 }
 
+// AssistantChatRequest defines model for AssistantChatRequest.
+type AssistantChatRequest struct {
+	// Messages Array of chat messages
+	Messages []ChatMessage `json:"messages"`
+}
+
+// AssistantChatResponse defines model for AssistantChatResponse.
+type AssistantChatResponse struct {
+	// Choices Array of response choices
+	Choices *[]ChatChoice `json:"choices,omitempty"`
+
+	// Created Unix timestamp
+	Created *int `json:"created,omitempty"`
+
+	// Id Response ID
+	Id *string `json:"id,omitempty"`
+
+	// Model Model used
+	Model *string `json:"model,omitempty"`
+
+	// Object Object type (e.g., "chat.completion")
+	Object *string    `json:"object,omitempty"`
+	Usage  *ChatUsage `json:"usage,omitempty"`
+}
+
+// ChatChoice defines model for ChatChoice.
+type ChatChoice struct {
+	// FinishReason Reason for finishing
+	FinishReason *ChatChoiceFinishReason `json:"finish_reason,omitempty"`
+
+	// Index Choice index
+	Index   *int         `json:"index,omitempty"`
+	Message *ChatMessage `json:"message,omitempty"`
+}
+
+// ChatChoiceFinishReason Reason for finishing
+type ChatChoiceFinishReason string
+
+// ChatMessage defines model for ChatMessage.
+type ChatMessage struct {
+	// Content Message content
+	Content      string        `json:"content"`
+	FunctionCall *FunctionCall `json:"function_call,omitempty"`
+
+	// Name Function name (for function role)
+	Name *string `json:"name,omitempty"`
+
+	// Role Message role
+	Role ChatMessageRole `json:"role"`
+}
+
+// ChatMessageRole Message role
+type ChatMessageRole string
+
+// ChatUsage defines model for ChatUsage.
+type ChatUsage struct {
+	// CompletionTokens Tokens used in completion
+	CompletionTokens *int `json:"completion_tokens,omitempty"`
+
+	// PromptTokens Tokens used in prompt
+	PromptTokens *int `json:"prompt_tokens,omitempty"`
+
+	// TotalTokens Total tokens used
+	TotalTokens *int `json:"total_tokens,omitempty"`
+}
+
 // Connection defines model for Connection.
 type Connection struct {
 	Config          *map[string]interface{} `json:"config,omitempty"`
@@ -296,6 +377,15 @@ type Error struct {
 	Code    *int    `json:"code,omitempty"`
 	Error   *string `json:"error,omitempty"`
 	Message *string `json:"message,omitempty"`
+}
+
+// FunctionCall defines model for FunctionCall.
+type FunctionCall struct {
+	// Arguments Function arguments as JSON string
+	Arguments *string `json:"arguments,omitempty"`
+
+	// Name Function name
+	Name *string `json:"name,omitempty"`
 }
 
 // Integration defines model for Integration.
@@ -647,6 +737,9 @@ type HandleWebhookJSONBody map[string]interface{}
 // CreateAgentJSONRequestBody defines body for CreateAgent for application/json ContentType.
 type CreateAgentJSONRequestBody = CreateAgentRequest
 
+// AssistantChatJSONRequestBody defines body for AssistantChat for application/json ContentType.
+type AssistantChatJSONRequestBody = AssistantChatRequest
+
 // DeployAgentVersionJSONRequestBody defines body for DeployAgentVersion for application/json ContentType.
 type DeployAgentVersionJSONRequestBody = DeployAgentVersionRequest
 
@@ -718,6 +811,9 @@ type ServerInterface interface {
 	// Create a new agent
 	// (POST /api/agents)
 	CreateAgent(w http.ResponseWriter, r *http.Request)
+	// Chat with AI assistant for workflow building
+	// (POST /api/agents/{agentId}/assistant/chat)
+	AssistantChat(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID)
 	// Deploy a specific agent version
 	// (POST /api/agents/{agentId}/deploy)
 	DeployAgentVersion(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID)
@@ -892,6 +988,12 @@ func (_ Unimplemented) ListAgents(w http.ResponseWriter, r *http.Request, params
 // Create a new agent
 // (POST /api/agents)
 func (_ Unimplemented) CreateAgent(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Chat with AI assistant for workflow building
+// (POST /api/agents/{agentId}/assistant/chat)
+func (_ Unimplemented) AssistantChat(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1278,6 +1380,39 @@ func (siw *ServerInterfaceWrapper) CreateAgent(w http.ResponseWriter, r *http.Re
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateAgent(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AssistantChat operation middleware
+func (siw *ServerInterfaceWrapper) AssistantChat(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "agentId" -------------
+	var agentId openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "agentId", chi.URLParam(r, "agentId"), &agentId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "agentId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	ctx = context.WithValue(ctx, ApiKeyAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AssistantChat(w, r, agentId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -3169,6 +3304,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/api/agents", wrapper.CreateAgent)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/agents/{agentId}/assistant/chat", wrapper.AssistantChat)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/api/agents/{agentId}/deploy", wrapper.DeployAgentVersion)
 	})
 	r.Group(func(r chi.Router) {
@@ -3386,6 +3524,42 @@ func (response CreateAgent400JSONResponse) VisitCreateAgentResponse(w http.Respo
 type CreateAgent500JSONResponse Error
 
 func (response CreateAgent500JSONResponse) VisitCreateAgentResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AssistantChatRequestObject struct {
+	AgentId openapi_types.UUID `json:"agentId"`
+	Body    *AssistantChatJSONRequestBody
+}
+
+type AssistantChatResponseObject interface {
+	VisitAssistantChatResponse(w http.ResponseWriter) error
+}
+
+type AssistantChat200JSONResponse AssistantChatResponse
+
+func (response AssistantChat200JSONResponse) VisitAssistantChatResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AssistantChat400JSONResponse Error
+
+func (response AssistantChat400JSONResponse) VisitAssistantChatResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AssistantChat500JSONResponse Error
+
+func (response AssistantChat500JSONResponse) VisitAssistantChatResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(500)
 
@@ -5249,6 +5423,9 @@ type StrictServerInterface interface {
 	// Create a new agent
 	// (POST /api/agents)
 	CreateAgent(ctx context.Context, request CreateAgentRequestObject) (CreateAgentResponseObject, error)
+	// Chat with AI assistant for workflow building
+	// (POST /api/agents/{agentId}/assistant/chat)
+	AssistantChat(ctx context.Context, request AssistantChatRequestObject) (AssistantChatResponseObject, error)
 	// Deploy a specific agent version
 	// (POST /api/agents/{agentId}/deploy)
 	DeployAgentVersion(ctx context.Context, request DeployAgentVersionRequestObject) (DeployAgentVersionResponseObject, error)
@@ -5489,6 +5666,39 @@ func (sh *strictHandler) CreateAgent(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CreateAgentResponseObject); ok {
 		if err := validResponse.VisitCreateAgentResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AssistantChat operation middleware
+func (sh *strictHandler) AssistantChat(w http.ResponseWriter, r *http.Request, agentId openapi_types.UUID) {
+	var request AssistantChatRequestObject
+
+	request.AgentId = agentId
+
+	var body AssistantChatJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AssistantChat(ctx, request.(AssistantChatRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AssistantChat")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AssistantChatResponseObject); ok {
+		if err := validResponse.VisitAssistantChatResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
