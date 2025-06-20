@@ -3,6 +3,7 @@ package code
 import (
 	"context"
 	"crypto/md5"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -176,13 +177,15 @@ func (js *JavaScriptRuntime) createUtilities(vm *goja.Runtime) *goja.Object {
 
 	// Base64 utilities
 	utils.Set("base64Encode", func(str string) string {
-		// TODO: Implement base64 encoding
-		return str
+		return base64.StdEncoding.EncodeToString([]byte(str))
 	})
 
 	utils.Set("base64Decode", func(str string) string {
-		// TODO: Implement base64 decoding
-		return str
+		decoded, err := base64.StdEncoding.DecodeString(str)
+		if err != nil {
+			return ""
+		}
+		return string(decoded)
 	})
 
 	return utils

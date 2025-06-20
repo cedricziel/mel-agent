@@ -218,6 +218,36 @@ func TestJavaScriptRuntime_Execute_UtilityFunctions(t *testing.T) {
 	assert.Equal(t, `{"test":true}`, resultMap["stringified"])
 }
 
+func TestJavaScriptRuntime_Execute_Base64Utilities(t *testing.T) {
+	runtime := NewJavaScriptRuntime()
+	require.NoError(t, runtime.Initialize())
+
+	execContext := CodeExecutionContext{
+		Data:      map[string]interface{}{},
+		Variables: map[string]interface{}{},
+		NodeData:  map[string]interface{}{},
+		NodeID:    "node-123",
+		AgentID:   "agent-456",
+	}
+
+	code := `
+        const encoded = utils.base64Encode("hello world");
+        const decoded = utils.base64Decode(encoded);
+        const invalid = utils.base64Decode("!invalid!");
+        return { encoded: encoded, decoded: decoded, invalid: invalid };
+    `
+
+	result, err := runtime.Execute(context.Background(), code, execContext)
+	require.NoError(t, err)
+
+	resultMap, ok := result.(map[string]interface{})
+	require.True(t, ok)
+
+	assert.Equal(t, "aGVsbG8gd29ybGQ=", resultMap["encoded"])
+	assert.Equal(t, "hello world", resultMap["decoded"])
+	assert.Equal(t, "", resultMap["invalid"])
+}
+
 func TestJavaScriptRuntime_Execute_Console(t *testing.T) {
 	runtime := NewJavaScriptRuntime()
 	require.NoError(t, runtime.Initialize())
