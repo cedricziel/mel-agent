@@ -22,7 +22,7 @@ describe('DraftAPI', () => {
       const result = await DraftAPI.getDraft('workflow-123');
 
       expect(global.fetch).toHaveBeenCalledWith(
-        '/api/agents/workflow-123/draft'
+        '/api/workflows/workflow-123/draft'
       );
       expect(result).toEqual(mockDraft);
     });
@@ -61,11 +61,11 @@ describe('DraftAPI', () => {
       const result = await DraftAPI.updateDraft('workflow-123', draftData);
 
       expect(global.fetch).toHaveBeenCalledWith(
-        '/api/agents/workflow-123/draft',
+        '/api/workflows/workflow-123/draft',
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(draftData),
+          body: JSON.stringify({ definition: draftData }),
         }
       );
       expect(result).toEqual(mockResponse);
@@ -107,7 +107,7 @@ describe('DraftAPI', () => {
       });
 
       expect(global.fetch).toHaveBeenCalledWith(
-        '/api/agents/workflow-123/draft/nodes/node-1/test',
+        '/api/workflows/workflow-123/draft/nodes/node-1/test',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -153,7 +153,7 @@ describe('DraftAPI', () => {
       );
 
       expect(global.fetch).toHaveBeenCalledWith(
-        '/api/agents/workflow-123/deploy',
+        '/api/workflows/workflow-123/versions/1/deploy',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -216,11 +216,11 @@ describe('AutoSaver', () => {
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
     expect(global.fetch).toHaveBeenCalledWith(
-      '/api/agents/workflow-123/draft',
+      '/api/workflows/workflow-123/draft',
       {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(draftData),
+        body: JSON.stringify({ definition: draftData }),
       }
     );
 
@@ -244,11 +244,11 @@ describe('AutoSaver', () => {
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
     expect(global.fetch).toHaveBeenCalledWith(
-      '/api/agents/workflow-123/draft',
+      '/api/workflows/workflow-123/draft',
       {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(draftData),
+        body: JSON.stringify({ definition: draftData }),
       }
     );
 
