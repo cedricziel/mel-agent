@@ -1,7 +1,7 @@
-describe('Agents Page - Realistic Tests', () => {
+describe('Workflows Page - Realistic Tests', () => {
   beforeEach(() => {
-    // Mock the agents API endpoint
-    cy.intercept('GET', '/api/agents', {
+    // Mock the workflows API endpoint
+    cy.intercept('GET', '/api/workflows', {
       statusCode: 200,
       body: [
         {
@@ -15,20 +15,20 @@ describe('Agents Page - Realistic Tests', () => {
           description: 'Processes incoming data'
         }
       ]
-    }).as('getAgents')
+    }).as('getWorkflows')
 
     cy.visit('/agents')
-    cy.wait('@getAgents')
+    cy.wait('@getWorkflows')
   })
 
-  it('should display the agents page header', () => {
-    cy.contains('h2', 'Agents').should('be.visible')
-    cy.contains('+ New Agent').should('be.visible')
+  it('should display the workflows page header', () => {
+    cy.contains('h2', 'Workflows').should('be.visible')
+    cy.contains('+ New Workflow').should('be.visible')
   })
 
   it('should show loading state initially', () => {
     // Visit page before API mock is ready
-    cy.intercept('GET', '/api/agents', { delay: 1000, statusCode: 200, body: [] }).as('slowAgents')
+    cy.intercept('GET', '/api/workflows', { delay: 1000, statusCode: 200, body: [] }).as('slowWorkflows')
     cy.visit('/agents')
     cy.contains('Loading…').should('be.visible')
   })
@@ -45,28 +45,28 @@ describe('Agents Page - Realistic Tests', () => {
     cy.contains('Data Processing').should('be.visible')
   })
 
-  it('should open create agent modal', () => {
-    cy.contains('+ New Agent').click()
+  it('should open create workflow modal', () => {
+    cy.contains('+ New Workflow').click()
     cy.get('.fixed').should('be.visible') // Modal overlay
-    cy.contains('Create Agent').should('be.visible')
+    cy.contains('Create Workflow').should('be.visible')
     cy.get('input[placeholder=""], input').first().should('be.visible')
     cy.get('textarea').should('be.visible')
   })
 
   it('should close modal on cancel', () => {
-    cy.contains('+ New Agent').click()
+    cy.contains('+ New Workflow').click()
     cy.contains('Cancel').click()
     cy.get('.fixed').should('not.exist')
   })
 
-  it('should create a new agent', () => {
-    cy.intercept('POST', '/api/agents', {
+  it('should create a new workflow', () => {
+    cy.intercept('POST', '/api/workflows', {
       statusCode: 201,
-      body: { id: 'new-agent', name: 'New Agent', description: 'New description' }
-    }).as('createAgent')
+      body: { id: 'new-workflow', name: 'New Workflow', description: 'New description' }
+    }).as('createWorkflow')
 
-    // Re-mock the GET request to include the new agent
-    cy.intercept('GET', '/api/agents', {
+    // Re-mock the GET request to include the new workflow
+    cy.intercept('GET', '/api/workflows', {
       statusCode: 200,
       body: [
         {
@@ -80,38 +80,38 @@ describe('Agents Page - Realistic Tests', () => {
           description: 'Processes incoming data'
         },
         {
-          id: 'new-agent',
-          name: 'New Agent',
+          id: 'new-workflow',
+          name: 'New Workflow',
           description: 'New description'
         }
       ]
-    }).as('getAgentsWithNew')
+    }).as('getWorkflowsWithNew')
 
-    cy.contains('+ New Agent').click()
+    cy.contains('+ New Workflow').click()
     
     // Be more specific about form fields
-    cy.get('input[value=""]').first().type('New Agent')
+    cy.get('input[value=""]').first().type('New Workflow')
     cy.get('textarea').type('New description')
     cy.contains('button', 'Create').click()
 
-    cy.wait('@createAgent')
-    cy.wait('@getAgentsWithNew')
+    cy.wait('@createWorkflow')
+    cy.wait('@getWorkflowsWithNew')
     cy.get('.fixed').should('not.exist') // Modal should close
   })
 
-  it('should navigate to agent builder on row click', () => {
+  it('should navigate to workflow builder on row click', () => {
     cy.get('tbody tr').first().click()
-    cy.url().should('include', '/agents/agent-1/edit')
+    cy.url().should('include', '/workflows/agent-1/edit')
   })
 
   it('should handle API errors gracefully', () => {
-    cy.intercept('GET', '/api/agents', {
+    cy.intercept('GET', '/api/workflows', {
       statusCode: 500,
       body: { error: 'Server error' }
-    }).as('getAgentsError')
+    }).as('getWorkflowsError')
 
     cy.visit('/agents')
-    cy.wait('@getAgentsError')
+    cy.wait('@getWorkflowsError')
     
     // Should not show loading anymore and should handle the error
     cy.contains('Loading…').should('not.exist')

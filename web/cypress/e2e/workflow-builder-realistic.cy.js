@@ -25,7 +25,7 @@ describe('Workflow Builder - Realistic Tests', () => {
     }).as('getTriggers')
 
     // Mock draft API (returns 404 - no draft exists)
-    cy.intercept('GET', '/api/agents/test-agent-1/draft', {
+    cy.intercept('GET', '/api/workflows/test-agent-1/draft', {
       statusCode: 404,
       body: { error: 'No draft found' }
     }).as('getDraft')
@@ -153,7 +153,7 @@ describe('Workflow Builder - Realistic Tests', () => {
 
   it('should switch to executions view', () => {
     // Mock executions API
-    cy.intercept('GET', '/api/workflow-runs?agent_id=test-agent-1', {
+    cy.intercept('GET', '/api/workflow-runs?workflow_id=test-agent-1', {
       statusCode: 200,
       body: []
     }).as('getRuns')
@@ -194,10 +194,16 @@ describe('Workflow Builder - Realistic Tests', () => {
 
   it('should handle loading and error states', () => {
     // Test loading state by intercepting with delay
-    cy.intercept('GET', '/api/agents/slow-agent/versions/latest', {
+    cy.intercept('GET', '/api/workflows/slow-agent/draft', {
+      delay: 100,
+      statusCode: 404,
+      body: { error: 'No draft found' }
+    }).as('slowDraft')
+    
+    cy.intercept('GET', '/api/workflows/slow-agent', {
       delay: 100,
       statusCode: 200,
-      body: { nodes: [], edges: [] }
+      body: { id: 'slow-agent', name: 'Slow Agent' }
     }).as('slowWorkflow')
 
     cy.visit('/agents/slow-agent/edit')

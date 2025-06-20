@@ -27,7 +27,7 @@ describe('Configuration Node Click Functionality', () => {
     }).as('getTriggers')
 
     // Mock draft API (returns 404 - no draft exists)
-    cy.intercept('GET', '/api/agents/test-agent-id/draft', {
+    cy.intercept('GET', '/api/workflows/test-agent-id/draft', {
       statusCode: 404,
       body: { error: 'No draft found' }
     }).as('getDraft')
