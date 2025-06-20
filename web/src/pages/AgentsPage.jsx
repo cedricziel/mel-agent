@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { agentsApi } from '../api/client';
 
 function AgentsPage() {
   const [agents, setAgents] = useState([]);
@@ -14,8 +14,8 @@ function AgentsPage() {
   async function fetchAgents() {
     setLoading(true);
     try {
-      const res = await axios.get('/api/agents');
-      setAgents(res.data);
+      const res = await agentsApi.listAgents();
+      setAgents(res.data.agents || res.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -26,7 +26,7 @@ function AgentsPage() {
   async function submit(e) {
     e.preventDefault();
     try {
-      await axios.post('/api/agents', form);
+      await agentsApi.createAgent(form);
       setForm({ name: '', description: '' });
       setModalOpen(false);
       fetchAgents();

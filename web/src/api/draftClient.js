@@ -1,17 +1,13 @@
 // Draft API client for auto-persistence workflow management
 
 import { useState, useEffect, useCallback } from 'react';
-
-const API_BASE = '/api';
+import { agentsApi } from './client';
 
 export class DraftAPI {
   static async getDraft(agentId) {
     try {
-      const response = await fetch(`${API_BASE}/agents/${agentId}/draft`);
-      if (!response.ok) {
-        throw new Error(`Failed to get draft: ${response.statusText}`);
-      }
-      return await response.json();
+      const response = await agentsApi.getAgentDraft(agentId);
+      return response.data;
     } catch (error) {
       console.error('Error getting draft:', error);
       throw error;
@@ -20,18 +16,8 @@ export class DraftAPI {
 
   static async updateDraft(agentId, draftData) {
     try {
-      const response = await fetch(`${API_BASE}/agents/${agentId}/draft`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(draftData),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to update draft: ${response.statusText}`);
-      }
-      return await response.json();
+      const response = await agentsApi.updateAgentDraft(agentId, draftData);
+      return response.data;
     } catch (error) {
       console.error('Error updating draft:', error);
       throw error;
@@ -40,47 +26,22 @@ export class DraftAPI {
 
   static async testDraftNode(agentId, nodeId, testData = {}) {
     try {
-      const response = await fetch(
-        `${API_BASE}/agents/${agentId}/draft/nodes/${nodeId}/test`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            node_id: nodeId,
-            test_data: testData,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to test node: ${response.statusText}`);
-      }
-      return await response.json();
+      const response = await agentsApi.testDraftNode(agentId, nodeId, {
+        input: testData,
+      });
+      return response.data;
     } catch (error) {
       console.error('Error testing draft node:', error);
       throw error;
     }
   }
 
-  static async deployVersion(agentId, version, notes = '') {
+  static async deployVersion(agentId, versionId) {
     try {
-      const response = await fetch(`${API_BASE}/agents/${agentId}/deploy`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          version: version,
-          notes: notes,
-        }),
+      const response = await agentsApi.deployAgentVersion(agentId, {
+        version_id: versionId,
       });
-
-      if (!response.ok) {
-        throw new Error(`Failed to deploy version: ${response.statusText}`);
-      }
-      return await response.json();
+      return response.data;
     } catch (error) {
       console.error('Error deploying version:', error);
       throw error;
@@ -176,7 +137,7 @@ export function useAutoSaver(agentId) {
 
     const saver = new AutoSaver(
       agentId,
-      (result) => {
+      () => {
         setIsSaving(false);
         setLastSaved(new Date());
         setSaveError(null);

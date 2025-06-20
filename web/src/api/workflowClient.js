@@ -1,80 +1,70 @@
-import axios from 'axios';
+import { workflowsApi, agentsApi } from './client';
 
 class WorkflowClient {
-  constructor(baseURL = '/api') {
-    this.baseURL = baseURL;
-    this.client = axios.create({ baseURL });
+  constructor() {
+    // Use generated API clients
+    this.workflowsApi = workflowsApi;
+    this.agentsApi = agentsApi;
   }
 
   // Workflow management
   async getWorkflow(workflowId) {
-    const response = await this.client.get(`/workflows/${workflowId}`);
+    const response = await this.workflowsApi.getWorkflow(workflowId);
     return response.data;
   }
 
   async updateWorkflow(workflowId, updates) {
-    const response = await this.client.put(`/workflows/${workflowId}`, updates);
+    const response = await this.workflowsApi.updateWorkflow(workflowId, updates);
     return response.data;
   }
 
   async deleteWorkflow(workflowId) {
-    await this.client.delete(`/workflows/${workflowId}`);
+    await this.workflowsApi.deleteWorkflow(workflowId);
   }
 
   // Node management
   async getNodes(workflowId) {
-    const response = await this.client.get(`/workflows/${workflowId}/nodes`);
+    const response = await this.workflowsApi.listWorkflowNodes(workflowId);
     return response.data;
   }
 
   async createNode(workflowId, nodeData) {
-    const response = await this.client.post(
-      `/workflows/${workflowId}/nodes`,
-      nodeData
-    );
+    const response = await this.workflowsApi.createWorkflowNode(workflowId, nodeData);
     return response.data;
   }
 
   async getNode(workflowId, nodeId) {
-    const response = await this.client.get(
-      `/workflows/${workflowId}/nodes/${nodeId}`
-    );
+    const response = await this.workflowsApi.getWorkflowNode(workflowId, nodeId);
     return response.data;
   }
 
   async updateNode(workflowId, nodeId, updates) {
-    const response = await this.client.put(
-      `/workflows/${workflowId}/nodes/${nodeId}`,
-      updates
-    );
+    const response = await this.workflowsApi.updateWorkflowNode(workflowId, nodeId, updates);
     return response.data;
   }
 
   async deleteNode(workflowId, nodeId) {
-    await this.client.delete(`/workflows/${workflowId}/nodes/${nodeId}`);
+    await this.workflowsApi.deleteWorkflowNode(workflowId, nodeId);
   }
 
   // Edge management
   async getEdges(workflowId) {
-    const response = await this.client.get(`/workflows/${workflowId}/edges`);
+    const response = await this.workflowsApi.listWorkflowEdges(workflowId);
     return response.data;
   }
 
   async createEdge(workflowId, edgeData) {
-    const response = await this.client.post(
-      `/workflows/${workflowId}/edges`,
-      edgeData
-    );
+    const response = await this.workflowsApi.createWorkflowEdge(workflowId, edgeData);
     return response.data;
   }
 
   async deleteEdge(workflowId, edgeId) {
-    await this.client.delete(`/workflows/${workflowId}/edges/${edgeId}`);
+    await this.workflowsApi.deleteWorkflowEdge(workflowId, edgeId);
   }
 
   // Layout management
   async autoLayout(workflowId) {
-    const response = await this.client.post(`/workflows/${workflowId}/layout`);
+    const response = await this.workflowsApi.autoLayoutWorkflow(workflowId);
     return response.data;
   }
 
@@ -147,19 +137,16 @@ class WorkflowClient {
   // Backward compatibility - save entire workflow as version
   async saveWorkflowVersion(workflowId, graph) {
     // For now, maintain compatibility with existing agent versions API
-    const response = await this.client.post(`/agents/${workflowId}/versions`, {
-      semantic_version: '1.0.0',
-      graph,
-      default_params: {},
+    const response = await this.agentsApi.createAgentVersion(workflowId, {
+      name: '1.0.0',
+      definition: { nodes: graph.nodes, edges: graph.edges },
     });
     return response.data;
   }
 
   // Backward compatibility - load latest version
   async getLatestWorkflowVersion(workflowId) {
-    const response = await this.client.get(
-      `/agents/${workflowId}/versions/latest`
-    );
+    const response = await this.agentsApi.getLatestAgentVersion(workflowId);
     return response.data;
   }
 }

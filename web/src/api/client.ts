@@ -1,4 +1,19 @@
-import { Configuration, AgentsApi, WorkflowsApi, NodeTypesApi, TriggersApi, WorkersApi, SystemApi } from '../generated/api';
+import { 
+  Configuration, 
+  AgentsApi, 
+  WorkflowsApi, 
+  NodeTypesApi, 
+  TriggersApi, 
+  WorkersApi, 
+  SystemApi,
+  CredentialsApi,
+  ConnectionsApi,
+  IntegrationsApi,
+  CredentialTypesApi,
+  WorkflowRunsApi,
+  AssistantApi,
+  WebhooksApi
+} from '../generated/api';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
@@ -12,6 +27,13 @@ export const nodeTypesApi = new NodeTypesApi(configuration);
 export const triggersApi = new TriggersApi(configuration);
 export const workersApi = new WorkersApi(configuration);
 export const systemApi = new SystemApi(configuration);
+export const credentialsApi = new CredentialsApi(configuration);
+export const connectionsApi = new ConnectionsApi(configuration);
+export const integrationsApi = new IntegrationsApi(configuration);
+export const credentialTypesApi = new CredentialTypesApi(configuration);
+export const workflowRunsApi = new WorkflowRunsApi(configuration);
+export const assistantApi = new AssistantApi(configuration);
+export const webhooksApi = new WebhooksApi(configuration);
 
 export * from '../generated/api/models';
 export * from '../generated/api/api';

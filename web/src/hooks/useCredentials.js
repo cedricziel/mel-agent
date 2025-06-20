@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { credentialsApi } from '../api/client';
 
 /**
  * Custom hook to manage credential loading for node parameters
@@ -29,12 +30,10 @@ export default function useCredentials(nodeDef) {
     // Load credentials for each credential parameter
     const promises = credentialParams.map(async (param) => {
       try {
-        const url = param.credentialType
-          ? `/api/credentials?credential_type=${param.credentialType}`
-          : '/api/credentials';
-        const response = await fetch(url);
-        const data = await response.json();
-        return { paramName: param.name, credentials: data };
+        const response = await credentialsApi.listCredentials({
+          credential_type: param.credentialType,
+        });
+        return { paramName: param.name, credentials: response.data };
       } catch (error) {
         console.error(`Failed to load credentials for ${param.name}:`, error);
         return { paramName: param.name, credentials: [] };

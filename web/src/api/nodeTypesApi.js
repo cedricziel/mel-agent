@@ -1,7 +1,8 @@
-import axios from 'axios';
+import { nodeTypesApi as generatedNodeTypesApi } from './client';
 
 /**
  * API client for node types with filtering support
+ * Uses the generated OpenAPI client
  */
 export const nodeTypesApi = {
   /**
@@ -10,15 +11,13 @@ export const nodeTypesApi = {
    * @returns {Promise<Array>} Node type definitions
    */
   async getNodeTypes(kinds = null) {
-    let url = '/api/node-types';
-
-    if (kinds) {
-      const kindFilter = Array.isArray(kinds) ? kinds.join(',') : kinds;
-      url += `?kind=${encodeURIComponent(kindFilter)}`;
-    }
-
     try {
-      const response = await axios.get(url);
+      let kindFilter = null;
+      if (kinds) {
+        kindFilter = Array.isArray(kinds) ? kinds.join(',') : kinds;
+      }
+      
+      const response = await generatedNodeTypesApi.listNodeTypes({ kind: kindFilter });
       return response.data;
     } catch (error) {
       throw new Error(`Failed to fetch node types: ${error.message}`);
@@ -30,7 +29,7 @@ export const nodeTypesApi = {
    */
   async getAllNodeTypes() {
     try {
-      const response = await axios.get('/api/node-types');
+      const response = await generatedNodeTypesApi.listNodeTypes();
       return response.data;
     } catch (error) {
       throw new Error(`Failed to fetch all node types: ${error.message}`);

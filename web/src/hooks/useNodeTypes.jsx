@@ -1,6 +1,6 @@
 import { useMemo, useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
 import { nodeTypesApi } from '../api/nodeTypesApi';
+import { triggersApi } from '../api/client';
 import DefaultNode from '../components/DefaultNode';
 import AgentNode from '../components/AgentNode';
 import ModelNode from '../components/ModelNode';
@@ -61,8 +61,8 @@ export function useNodeTypes(
 
   // Load triggers
   useEffect(() => {
-    axios
-      .get('/api/triggers')
+    triggersApi
+      .listTriggers()
       .then((res) => setTriggers(res.data))
       .catch((err) => console.error('fetch triggers failed:', err));
   }, []);
@@ -210,7 +210,7 @@ export function useNodeTypes(
   // Refresh triggers function
   const refreshTriggers = async () => {
     try {
-      const res = await axios.get('/api/triggers');
+      const res = await triggersApi.listTriggers();
       setTriggers(res.data);
     } catch (err) {
       console.error('refresh triggers failed:', err);
