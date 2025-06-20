@@ -14,7 +14,10 @@ class WorkflowClient {
   }
 
   async updateWorkflow(workflowId, updates) {
-    const response = await this.workflowsApi.updateWorkflow(workflowId, updates);
+    const response = await this.workflowsApi.updateWorkflow(
+      workflowId,
+      updates
+    );
     return response.data;
   }
 
@@ -29,17 +32,27 @@ class WorkflowClient {
   }
 
   async createNode(workflowId, nodeData) {
-    const response = await this.workflowsApi.createWorkflowNode(workflowId, nodeData);
+    const response = await this.workflowsApi.createWorkflowNode(
+      workflowId,
+      nodeData
+    );
     return response.data;
   }
 
   async getNode(workflowId, nodeId) {
-    const response = await this.workflowsApi.getWorkflowNode(workflowId, nodeId);
+    const response = await this.workflowsApi.getWorkflowNode(
+      workflowId,
+      nodeId
+    );
     return response.data;
   }
 
   async updateNode(workflowId, nodeId, updates) {
-    const response = await this.workflowsApi.updateWorkflowNode(workflowId, nodeId, updates);
+    const response = await this.workflowsApi.updateWorkflowNode(
+      workflowId,
+      nodeId,
+      updates
+    );
     return response.data;
   }
 
@@ -54,7 +67,10 @@ class WorkflowClient {
   }
 
   async createEdge(workflowId, edgeData) {
-    const response = await this.workflowsApi.createWorkflowEdge(workflowId, edgeData);
+    const response = await this.workflowsApi.createWorkflowEdge(
+      workflowId,
+      edgeData
+    );
     return response.data;
   }
 

@@ -16,8 +16,10 @@ export const nodeTypesApi = {
       if (kinds) {
         kindFilter = Array.isArray(kinds) ? kinds.join(',') : kinds;
       }
-      
-      const response = await generatedNodeTypesApi.listNodeTypes({ kind: kindFilter });
+
+      const response = await generatedNodeTypesApi.listNodeTypes({
+        kind: kindFilter,
+      });
       return response.data;
     } catch (error) {
       throw new Error(`Failed to fetch node types: ${error.message}`);

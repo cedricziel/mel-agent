@@ -10,6 +10,7 @@ AI Agents SaaS platform with Go backend and React frontend. This is a monorepo t
 - **Database**: PostgreSQL with migrations
 - **Testing**: Testcontainers for database integration tests
 - **Containerization**: Docker Compose for local development
+- **Frontend Language**: Typescript (All new frontend code)
 
 ## Development Commands
 

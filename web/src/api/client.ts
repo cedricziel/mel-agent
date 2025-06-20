@@ -1,10 +1,10 @@
-import { 
-  Configuration, 
-  AgentsApi, 
-  WorkflowsApi, 
-  NodeTypesApi, 
-  TriggersApi, 
-  WorkersApi, 
+import {
+  Configuration,
+  AgentsApi,
+  WorkflowsApi,
+  NodeTypesApi,
+  TriggersApi,
+  WorkersApi,
   SystemApi,
   CredentialsApi,
   ConnectionsApi,
@@ -12,7 +12,7 @@ import {
   CredentialTypesApi,
   WorkflowRunsApi,
   AssistantApi,
-  WebhooksApi
+  WebhooksApi,
 } from '../generated/api';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';

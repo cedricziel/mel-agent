@@ -12,6 +12,8 @@
     "preview": "vite preview",
     "generate:api": "openapi-generator-cli generate -c openapi-config.json",
     "generate:api:clean": "rm -rf src/generated && pnpm generate:api",
+    "typecheck": "tsc --noEmit",
+    "typecheck:watch": "tsc --noEmit --watch",
     "lint": "eslint src --ext .js,.jsx,.ts,.tsx --ignore-pattern 'src/generated/**'",
     "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --ignore-pattern 'src/generated/**' --fix",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css,md}\"",
@@ -41,6 +43,7 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^24.0.3",
     "@typescript-eslint/eslint-plugin": "^8.34.1",
     "@typescript-eslint/parser": "^8.34.1",
     "@vitejs/plugin-react": "^4.5.2",
@@ -56,6 +59,7 @@
     "postcss": "^8.5.6",
     "prettier": "^3.5.3",
     "tailwindcss": "^3.4.0",
+    "typescript": "^5.8.3",
     "vite": "^6.3.2",
     "vitest": "^3.2.4"
   }
