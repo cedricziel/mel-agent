@@ -31,7 +31,10 @@ jobs:
           exit 1
         fi
     
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
     - name: Validate OpenAPI spec
-      run: |
-        go install github.com/go-swagger/go-swagger/cmd/swagger@latest
-        swagger validate api/openapi.yaml
+      run: make openapi-validate

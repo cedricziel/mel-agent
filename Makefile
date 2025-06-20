@@ -44,17 +44,34 @@ docker-down: ## Stop Docker Compose services
 	docker compose down
 
 .PHONY: openapi-validate
-openapi-validate: ## Validate OpenAPI specification
-	@if command -v swagger 2>&1 >/dev/null; then \
-		swagger validate api/openapi.yaml; \
+openapi-validate: ## Validate OpenAPI 3.0 specification
+	@if command -v redocly 2>&1 >/dev/null; then \
+		redocly lint api/openapi.yaml; \
+	elif command -v npx 2>&1 >/dev/null; then \
+		npx @redocly/cli lint api/openapi.yaml; \
 	else \
-		echo "swagger CLI not found. Install with: go install github.com/go-swagger/go-swagger/cmd/swagger@latest"; \
+		echo "OpenAPI validator not found. Install with: npm install -g @redocly/cli"; \
+		echo "Or use npx: npx @redocly/cli lint api/openapi.yaml"; \
+	fi
+
+.PHONY: openapi-validate-strict
+openapi-validate-strict: ## Validate OpenAPI spec with strict rules (fail on warnings)
+	@if command -v redocly 2>&1 >/dev/null; then \
+		redocly lint --max-problems 0 api/openapi.yaml; \
+	elif command -v npx 2>&1 >/dev/null; then \
+		npx @redocly/cli lint --max-problems 0 api/openapi.yaml; \
+	else \
+		echo "OpenAPI validator not found. Install with: npm install -g @redocly/cli"; \
+		echo "Or use npx: npx @redocly/cli lint --max-problems 0 api/openapi.yaml"; \
 	fi
 
 .PHONY: openapi-docs
-openapi-docs: ## Serve OpenAPI documentation
-	@if command -v swagger 2>&1 >/dev/null; then \
-		swagger serve -F=swagger api/openapi.yaml; \
+openapi-docs: ## Serve OpenAPI 3.0 documentation
+	@if command -v redocly 2>&1 >/dev/null; then \
+		redocly preview-docs api/openapi.yaml; \
+	elif command -v npx 2>&1 >/dev/null; then \
+		npx @redocly/cli preview-docs api/openapi.yaml; \
 	else \
-		echo "swagger CLI not found. Install with: go install github.com/go-swagger/go-swagger/cmd/swagger@latest"; \
+		echo "OpenAPI docs server not found. Install with: npm install -g @redocly/cli"; \
+		echo "Or use npx: npx @redocly/cli preview-docs api/openapi.yaml"; \
 	fi
