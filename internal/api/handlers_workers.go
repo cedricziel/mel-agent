@@ -8,7 +8,7 @@ import (
 // ListWorkers retrieves all workers
 func (h *OpenAPIHandlers) ListWorkers(ctx context.Context, request ListWorkersRequestObject) (ListWorkersResponseObject, error) {
 	rows, err := h.db.QueryContext(ctx,
-		"SELECT id, name, status, last_heartbeat, concurrency, registered_at FROM workers ORDER BY registered_at DESC")
+		"SELECT id, hostname, status, last_heartbeat, max_concurrent_steps, started_at FROM workflow_workers ORDER BY started_at DESC")
 	if err != nil {
 		errorMsg := "database error"
 		message := err.Error()
@@ -22,11 +22,11 @@ func (h *OpenAPIHandlers) ListWorkers(ctx context.Context, request ListWorkersRe
 	var workers []Worker
 	for rows.Next() {
 		var worker Worker
-		var id, name, status string
-		var lastHeartbeat, registeredAt time.Time
-		var concurrency int
+		var id, hostname, status string
+		var lastHeartbeat, startedAt time.Time
+		var maxConcurrentSteps int
 
-		err := rows.Scan(&id, &name, &status, &lastHeartbeat, &concurrency, &registeredAt)
+		err := rows.Scan(&id, &hostname, &status, &lastHeartbeat, &maxConcurrentSteps, &startedAt)
 		if err != nil {
 			errorMsg := "scan error"
 			message := err.Error()
@@ -37,20 +37,20 @@ func (h *OpenAPIHandlers) ListWorkers(ctx context.Context, request ListWorkersRe
 		}
 
 		worker.Id = &id
-		worker.Name = &name
+		worker.Name = &hostname // Use hostname as name
 		worker.Status = func() *WorkerStatus {
-			if status == "active" {
-				s := Active
+			if status == "idle" {
+				s := Inactive // Map "idle" to "inactive"
 				return &s
-			} else if status == "inactive" {
-				s := Inactive
+			} else if status == "active" {
+				s := Active
 				return &s
 			}
 			return nil
 		}()
 		worker.LastHeartbeat = &lastHeartbeat
-		worker.Concurrency = &concurrency
-		worker.RegisteredAt = &registeredAt
+		worker.Concurrency = &maxConcurrentSteps
+		worker.RegisteredAt = &startedAt
 
 		workers = append(workers, worker)
 	}
@@ -62,9 +62,9 @@ func (h *OpenAPIHandlers) ListWorkers(ctx context.Context, request ListWorkersRe
 func (h *OpenAPIHandlers) RegisterWorker(ctx context.Context, request RegisterWorkerRequestObject) (RegisterWorkerResponseObject, error) {
 	now := time.Now()
 
-	name := request.Body.Id
+	hostname := request.Body.Id
 	if request.Body.Name != nil {
-		name = *request.Body.Name
+		hostname = *request.Body.Name
 	}
 
 	concurrency := 5
@@ -74,8 +74,8 @@ func (h *OpenAPIHandlers) RegisterWorker(ctx context.Context, request RegisterWo
 
 	// Insert worker into database
 	_, err := h.db.ExecContext(ctx,
-		"INSERT INTO workers (id, name, status, last_heartbeat, concurrency, registered_at) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (id) DO UPDATE SET name = $2, status = $3, last_heartbeat = $4, concurrency = $5",
-		request.Body.Id, name, "active", now, concurrency, now)
+		"INSERT INTO workflow_workers (id, hostname, status, last_heartbeat, max_concurrent_steps, started_at) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (id) DO UPDATE SET hostname = $2, status = $3, last_heartbeat = $4, max_concurrent_steps = $5",
+		request.Body.Id, hostname, "active", now, concurrency, now)
 	if err != nil {
 		errorMsg := "failed to register worker"
 		message := err.Error()
@@ -88,7 +88,7 @@ func (h *OpenAPIHandlers) RegisterWorker(ctx context.Context, request RegisterWo
 	status := Active
 	worker := Worker{
 		Id:            &request.Body.Id,
-		Name:          &name,
+		Name:          &hostname,
 		Status:        &status,
 		LastHeartbeat: &now,
 		Concurrency:   &concurrency,
@@ -100,7 +100,7 @@ func (h *OpenAPIHandlers) RegisterWorker(ctx context.Context, request RegisterWo
 
 // UnregisterWorker removes a worker
 func (h *OpenAPIHandlers) UnregisterWorker(ctx context.Context, request UnregisterWorkerRequestObject) (UnregisterWorkerResponseObject, error) {
-	result, err := h.db.ExecContext(ctx, "DELETE FROM workers WHERE id = $1", request.Id)
+	result, err := h.db.ExecContext(ctx, "DELETE FROM workflow_workers WHERE id = $1", request.Id)
 	if err != nil {
 		errorMsg := "failed to unregister worker"
 		message := err.Error()
@@ -137,7 +137,7 @@ func (h *OpenAPIHandlers) UpdateWorkerHeartbeat(ctx context.Context, request Upd
 	now := time.Now()
 
 	result, err := h.db.ExecContext(ctx,
-		"UPDATE workers SET last_heartbeat = $1, status = 'active' WHERE id = $2",
+		"UPDATE workflow_workers SET last_heartbeat = $1, status = 'active' WHERE id = $2",
 		now, request.Id)
 	if err != nil {
 		errorMsg := "failed to update heartbeat"
