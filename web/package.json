@@ -5,17 +5,13 @@
   "type": "module",
   "license": "AGPL-3.0",
   "scripts": {
-    "dev": "pnpm generate:api && vite",
-    "dev:skip-gen": "vite",
-    "build": "pnpm generate:api && vite build",
-    "build:dev": "vite build",
+    "dev": "vite",
+    "build": "vite build",
     "preview": "vite preview",
-    "generate:api": "openapi-generator-cli generate -c openapi-config.json",
-    "generate:api:clean": "rm -rf src/generated && pnpm generate:api",
     "typecheck": "tsc --noEmit",
     "typecheck:watch": "tsc --noEmit --watch",
-    "lint": "eslint src --ext .js,.jsx,.ts,.tsx --ignore-pattern 'src/generated/**'",
-    "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --ignore-pattern 'src/generated/**' --fix",
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css,md}\"",
     "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,css,md}\"",
     "test": "NODE_OPTIONS=--max-old-space-size=8192 vitest",
@@ -28,6 +24,7 @@
     "test:e2e:dev": "cypress open"
   },
   "dependencies": {
+    "@mel-agent/api-client": "workspace:*",
     "@monaco-editor/react": "^4.7.0",
     "axios": "^1.10.0",
     "react": "^19.1.0",
@@ -39,7 +36,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",
-    "@openapitools/openapi-generator-cli": "^2.20.2",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",

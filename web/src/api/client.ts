@@ -13,7 +13,7 @@ import {
   WorkflowRunsApi,
   AssistantApi,
   WebhooksApi,
-} from '../generated/api';
+} from '@mel-agent/api-client';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
@@ -35,5 +35,4 @@ export const workflowRunsApi = new WorkflowRunsApi(configuration);
 export const assistantApi = new AssistantApi(configuration);
 export const webhooksApi = new WebhooksApi(configuration);
 
-export * from '../generated/api/models';
-export * from '../generated/api/api';
+export * from '@mel-agent/api-client';

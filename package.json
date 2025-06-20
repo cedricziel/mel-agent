@@ -1,0 +1,5 @@
+{
+	"dependencies": {
+		"url-polyfill": "^1.1.13"
+	}
+}

@@ -18,7 +18,7 @@ export type {
   WorkflowNode,
   WorkflowEdge,
   WorkflowDefinition,
-} from '../generated/api';
+} from '@mel-agent/api-client';
 
 // Additional types for the application
 export interface APIResponse<T> {
