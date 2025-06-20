@@ -1082,7 +1082,6 @@ components:
         - id
         - name
         - created_at
-        - updated_at
       properties:
         id:
           type: string
@@ -1094,9 +1093,6 @@ components:
         definition:
           $ref: '#/components/schemas/WorkflowDefinition'
         created_at:
-          type: string
-          format: date-time
-        updated_at:
           type: string
           format: date-time
 
@@ -1386,43 +1382,74 @@ components:
         id:
           type: string
           format: uuid
+        user_id:
+          type: string
+          format: uuid
+        integration_id:
+          type: string
+          format: uuid
         name:
           type: string
-        type:
-          type: string
-        credentials:
+        secret:
           type: object
           additionalProperties: true
+        config:
+          type: object
+          additionalProperties: true
+        usage_limit_month:
+          type: integer
+        is_default:
+          type: boolean
         created_at:
           type: string
           format: date-time
-        updated_at:
+        last_validated:
           type: string
           format: date-time
+        status:
+          type: string
+          enum: [valid, invalid, expired]
 
     CreateConnectionRequest:
       type: object
       required:
         - name
-        - type
-        - credentials
+        - integration_id
       properties:
         name:
           type: string
-        type:
+        integration_id:
           type: string
-        credentials:
+          format: uuid
+        secret:
           type: object
           additionalProperties: true
+        config:
+          type: object
+          additionalProperties: true
+        usage_limit_month:
+          type: integer
+        is_default:
+          type: boolean
 
     UpdateConnectionRequest:
       type: object
       properties:
         name:
           type: string
-        credentials:
+        secret:
           type: object
           additionalProperties: true
+        config:
+          type: object
+          additionalProperties: true
+        usage_limit_month:
+          type: integer
+        is_default:
+          type: boolean
+        status:
+          type: string
+          enum: [valid, invalid, expired]
 
     Trigger:
       type: object

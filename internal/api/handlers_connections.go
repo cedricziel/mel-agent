@@ -14,7 +14,7 @@ import (
 // ListConnections retrieves all connections
 func (h *OpenAPIHandlers) ListConnections(ctx context.Context, request ListConnectionsRequestObject) (ListConnectionsResponseObject, error) {
 	rows, err := h.db.QueryContext(ctx,
-		"SELECT id, name, type, credentials, created_at, updated_at FROM connections ORDER BY created_at DESC")
+		"SELECT id, user_id, integration_id, name, secret, config, usage_limit_month, is_default, created_at, last_validated, status FROM connections ORDER BY created_at DESC")
 	if err != nil {
 		errorMsg := "database error"
 		message := err.Error()
@@ -28,11 +28,14 @@ func (h *OpenAPIHandlers) ListConnections(ctx context.Context, request ListConne
 	var connections []Connection
 	for rows.Next() {
 		var connection Connection
-		var id, name, connType string
-		var credentialsJson []byte
-		var createdAt, updatedAt time.Time
+		var id, userID, integrationID, name, status string
+		var secretJson, configJson []byte
+		var usageLimitMonth sql.NullInt32
+		var isDefault bool
+		var createdAt time.Time
+		var lastValidated sql.NullTime
 
-		err := rows.Scan(&id, &name, &connType, &credentialsJson, &createdAt, &updatedAt)
+		err := rows.Scan(&id, &userID, &integrationID, &name, &secretJson, &configJson, &usageLimitMonth, &isDefault, &createdAt, &lastValidated, &status)
 		if err != nil {
 			errorMsg := "scan error"
 			message := err.Error()
@@ -52,12 +55,46 @@ func (h *OpenAPIHandlers) ListConnections(ctx context.Context, request ListConne
 			}, nil
 		}
 
-		// Parse credentials JSON
-		var credentials map[string]interface{}
-		if len(credentialsJson) > 0 {
-			err = json.Unmarshal(credentialsJson, &credentials)
+		userUUID, err := uuid.Parse(userID)
+		if err != nil {
+			errorMsg := "user uuid parse error"
+			message := err.Error()
+			return ListConnections500JSONResponse{
+				Error:   &errorMsg,
+				Message: &message,
+			}, nil
+		}
+
+		integrationUUID, err := uuid.Parse(integrationID)
+		if err != nil {
+			errorMsg := "integration uuid parse error"
+			message := err.Error()
+			return ListConnections500JSONResponse{
+				Error:   &errorMsg,
+				Message: &message,
+			}, nil
+		}
+
+		// Parse secret JSON
+		var secret map[string]interface{}
+		if len(secretJson) > 0 {
+			err = json.Unmarshal(secretJson, &secret)
 			if err != nil {
-				errorMsg := "credentials parse error"
+				errorMsg := "secret parse error"
+				message := err.Error()
+				return ListConnections500JSONResponse{
+					Error:   &errorMsg,
+					Message: &message,
+				}, nil
+			}
+		}
+
+		// Parse config JSON
+		var config map[string]interface{}
+		if len(configJson) > 0 {
+			err = json.Unmarshal(configJson, &config)
+			if err != nil {
+				errorMsg := "config parse error"
 				message := err.Error()
 				return ListConnections500JSONResponse{
 					Error:   &errorMsg,
@@ -67,11 +104,22 @@ func (h *OpenAPIHandlers) ListConnections(ctx context.Context, request ListConne
 		}
 
 		connection.Id = &connectionUUID
+		connection.UserId = &userUUID
+		connection.IntegrationId = &integrationUUID
 		connection.Name = &name
-		connection.Type = &connType
-		connection.Credentials = &credentials
+		connection.Secret = &secret
+		connection.Config = &config
+		if usageLimitMonth.Valid {
+			usageLimit := int(usageLimitMonth.Int32)
+			connection.UsageLimitMonth = &usageLimit
+		}
+		connection.IsDefault = &isDefault
 		connection.CreatedAt = &createdAt
-		connection.UpdatedAt = &updatedAt
+		if lastValidated.Valid {
+			connection.LastValidated = &lastValidated.Time
+		}
+		connectionStatus := ConnectionStatus(status)
+		connection.Status = &connectionStatus
 
 		connections = append(connections, connection)
 	}
@@ -84,21 +132,53 @@ func (h *OpenAPIHandlers) CreateConnection(ctx context.Context, request CreateCo
 	connectionID := uuid.New()
 	now := time.Now()
 
-	// Marshal credentials to JSON
-	credentialsJson, err := json.Marshal(request.Body.Credentials)
-	if err != nil {
-		errorMsg := "failed to marshal credentials"
-		message := err.Error()
-		return CreateConnection500JSONResponse{
-			Error:   &errorMsg,
-			Message: &message,
-		}, nil
+	// For now, use a default user_id (in real implementation, this would come from auth context)
+	defaultUserID := uuid.MustParse("00000000-0000-0000-0000-000000000001")
+
+	// Marshal secret to JSON (use nil for database if not provided)
+	var secretJson interface{}
+	var err error
+	if request.Body.Secret != nil {
+		secretJson, err = json.Marshal(*request.Body.Secret)
+		if err != nil {
+			errorMsg := "failed to marshal secret"
+			message := err.Error()
+			return CreateConnection500JSONResponse{
+				Error:   &errorMsg,
+				Message: &message,
+			}, nil
+		}
+	}
+
+	// Marshal config to JSON (use nil for database if not provided)
+	var configJson interface{}
+	if request.Body.Config != nil {
+		configJson, err = json.Marshal(*request.Body.Config)
+		if err != nil {
+			errorMsg := "failed to marshal config"
+			message := err.Error()
+			return CreateConnection500JSONResponse{
+				Error:   &errorMsg,
+				Message: &message,
+			}, nil
+		}
+	}
+
+	// Set defaults
+	isDefault := false
+	if request.Body.IsDefault != nil {
+		isDefault = *request.Body.IsDefault
+	}
+
+	var usageLimitMonth *int
+	if request.Body.UsageLimitMonth != nil {
+		usageLimitMonth = request.Body.UsageLimitMonth
 	}
 
 	// Insert connection into database
 	_, err = h.db.ExecContext(ctx,
-		"INSERT INTO connections (id, name, type, credentials, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)",
-		connectionID, request.Body.Name, request.Body.Type, credentialsJson, now, now)
+		"INSERT INTO connections (id, user_id, integration_id, name, secret, config, usage_limit_month, is_default, created_at, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+		connectionID, defaultUserID, request.Body.IntegrationId, request.Body.Name, secretJson, configJson, usageLimitMonth, isDefault, now, string(ConnectionStatusValid))
 	if err != nil {
 		errorMsg := "failed to create connection"
 		message := err.Error()
@@ -108,13 +188,21 @@ func (h *OpenAPIHandlers) CreateConnection(ctx context.Context, request CreateCo
 		}, nil
 	}
 
+	status := ConnectionStatusValid
 	connection := Connection{
-		Id:          &connectionID,
-		Name:        &request.Body.Name,
-		Type:        &request.Body.Type,
-		Credentials: &request.Body.Credentials,
-		CreatedAt:   &now,
-		UpdatedAt:   &now,
+		Id:            &connectionID,
+		UserId:        &defaultUserID,
+		IntegrationId: &request.Body.IntegrationId,
+		Name:          &request.Body.Name,
+		Secret:        request.Body.Secret,
+		Config:        request.Body.Config,
+		IsDefault:     &isDefault,
+		CreatedAt:     &now,
+		Status:        &status,
+	}
+
+	if usageLimitMonth != nil {
+		connection.UsageLimitMonth = usageLimitMonth
 	}
 
 	return CreateConnection201JSONResponse(connection), nil
@@ -123,13 +211,16 @@ func (h *OpenAPIHandlers) CreateConnection(ctx context.Context, request CreateCo
 // GetConnection retrieves a single connection by ID
 func (h *OpenAPIHandlers) GetConnection(ctx context.Context, request GetConnectionRequestObject) (GetConnectionResponseObject, error) {
 	var connection Connection
-	var id, name, connType string
-	var credentialsJson []byte
-	var createdAt, updatedAt time.Time
+	var id, userID, integrationID, name, status string
+	var secretJson, configJson []byte
+	var usageLimitMonth sql.NullInt32
+	var isDefault bool
+	var createdAt time.Time
+	var lastValidated sql.NullTime
 
 	err := h.db.QueryRowContext(ctx,
-		"SELECT id, name, type, credentials, created_at, updated_at FROM connections WHERE id = $1",
-		request.Id.String()).Scan(&id, &name, &connType, &credentialsJson, &createdAt, &updatedAt)
+		"SELECT id, user_id, integration_id, name, secret, config, usage_limit_month, is_default, created_at, last_validated, status FROM connections WHERE id = $1",
+		request.Id.String()).Scan(&id, &userID, &integrationID, &name, &secretJson, &configJson, &usageLimitMonth, &isDefault, &createdAt, &lastValidated, &status)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			errorMsg := "not found"
@@ -157,12 +248,46 @@ func (h *OpenAPIHandlers) GetConnection(ctx context.Context, request GetConnecti
 		}, nil
 	}
 
-	// Parse credentials JSON
-	var credentials map[string]interface{}
-	if len(credentialsJson) > 0 {
-		err = json.Unmarshal(credentialsJson, &credentials)
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		errorMsg := "user uuid parse error"
+		message := err.Error()
+		return GetConnection500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	integrationUUID, err := uuid.Parse(integrationID)
+	if err != nil {
+		errorMsg := "integration uuid parse error"
+		message := err.Error()
+		return GetConnection500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Parse secret JSON
+	var secret map[string]interface{}
+	if len(secretJson) > 0 {
+		err = json.Unmarshal(secretJson, &secret)
 		if err != nil {
-			errorMsg := "credentials parse error"
+			errorMsg := "secret parse error"
+			message := err.Error()
+			return GetConnection500JSONResponse{
+				Error:   &errorMsg,
+				Message: &message,
+			}, nil
+		}
+	}
+
+	// Parse config JSON
+	var config map[string]interface{}
+	if len(configJson) > 0 {
+		err = json.Unmarshal(configJson, &config)
+		if err != nil {
+			errorMsg := "config parse error"
 			message := err.Error()
 			return GetConnection500JSONResponse{
 				Error:   &errorMsg,
@@ -172,23 +297,32 @@ func (h *OpenAPIHandlers) GetConnection(ctx context.Context, request GetConnecti
 	}
 
 	connection.Id = &connectionUUID
+	connection.UserId = &userUUID
+	connection.IntegrationId = &integrationUUID
 	connection.Name = &name
-	connection.Type = &connType
-	connection.Credentials = &credentials
+	connection.Secret = &secret
+	connection.Config = &config
+	if usageLimitMonth.Valid {
+		usageLimit := int(usageLimitMonth.Int32)
+		connection.UsageLimitMonth = &usageLimit
+	}
+	connection.IsDefault = &isDefault
 	connection.CreatedAt = &createdAt
-	connection.UpdatedAt = &updatedAt
+	if lastValidated.Valid {
+		connection.LastValidated = &lastValidated.Time
+	}
+	connectionStatus := ConnectionStatus(status)
+	connection.Status = &connectionStatus
 
 	return GetConnection200JSONResponse(connection), nil
 }
 
 // UpdateConnection updates an existing connection
 func (h *OpenAPIHandlers) UpdateConnection(ctx context.Context, request UpdateConnectionRequestObject) (UpdateConnectionResponseObject, error) {
-	now := time.Now()
-
 	// Start building the update query
-	setParts := []string{"updated_at = $1"}
-	args := []interface{}{now}
-	argIndex := 2
+	var setParts []string
+	var args []interface{}
+	argIndex := 1
 
 	if request.Body.Name != nil {
 		setParts = append(setParts, fmt.Sprintf("name = $%d", argIndex))
@@ -196,19 +330,79 @@ func (h *OpenAPIHandlers) UpdateConnection(ctx context.Context, request UpdateCo
 		argIndex++
 	}
 
-	if request.Body.Credentials != nil {
-		credentialsJson, err := json.Marshal(*request.Body.Credentials)
+	if request.Body.Secret != nil {
+		secretJson, err := json.Marshal(*request.Body.Secret)
 		if err != nil {
-			errorMsg := "failed to marshal credentials"
+			errorMsg := "failed to marshal secret"
 			message := err.Error()
 			return UpdateConnection500JSONResponse{
 				Error:   &errorMsg,
 				Message: &message,
 			}, nil
 		}
-		setParts = append(setParts, fmt.Sprintf("credentials = $%d", argIndex))
-		args = append(args, credentialsJson)
+		setParts = append(setParts, fmt.Sprintf("secret = $%d", argIndex))
+		args = append(args, secretJson)
 		argIndex++
+	}
+
+	if request.Body.Config != nil {
+		configJson, err := json.Marshal(*request.Body.Config)
+		if err != nil {
+			errorMsg := "failed to marshal config"
+			message := err.Error()
+			return UpdateConnection500JSONResponse{
+				Error:   &errorMsg,
+				Message: &message,
+			}, nil
+		}
+		setParts = append(setParts, fmt.Sprintf("config = $%d", argIndex))
+		args = append(args, configJson)
+		argIndex++
+	}
+
+	if request.Body.UsageLimitMonth != nil {
+		setParts = append(setParts, fmt.Sprintf("usage_limit_month = $%d", argIndex))
+		args = append(args, *request.Body.UsageLimitMonth)
+		argIndex++
+	}
+
+	if request.Body.IsDefault != nil {
+		setParts = append(setParts, fmt.Sprintf("is_default = $%d", argIndex))
+		args = append(args, *request.Body.IsDefault)
+		argIndex++
+	}
+
+	if request.Body.Status != nil {
+		setParts = append(setParts, fmt.Sprintf("status = $%d", argIndex))
+		args = append(args, string(*request.Body.Status))
+		argIndex++
+	}
+
+	// Check if we have anything to update
+	if len(setParts) == 0 {
+		// No fields to update, just return the existing connection
+		getRequest := GetConnectionRequestObject{Id: request.Id}
+		getResponse, err := h.GetConnection(ctx, getRequest)
+		if err != nil {
+			errorMsg := "failed to fetch connection"
+			message := err.Error()
+			return UpdateConnection500JSONResponse{
+				Error:   &errorMsg,
+				Message: &message,
+			}, nil
+		}
+
+		// Convert GetConnectionResponseObject to UpdateConnectionResponseObject
+		if connectionResponse, ok := getResponse.(GetConnection200JSONResponse); ok {
+			return UpdateConnection200JSONResponse(connectionResponse), nil
+		}
+
+		errorMsg := "unexpected response type"
+		message := "Failed to convert response"
+		return UpdateConnection500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
 	}
 
 	// Add the ID as the last parameter

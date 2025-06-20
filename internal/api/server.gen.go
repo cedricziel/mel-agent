@@ -21,6 +21,13 @@ const (
 	BearerAuthScopes = "BearerAuth.Scopes"
 )
 
+// Defines values for ConnectionStatus.
+const (
+	ConnectionStatusExpired ConnectionStatus = "expired"
+	ConnectionStatusInvalid ConnectionStatus = "invalid"
+	ConnectionStatusValid   ConnectionStatus = "valid"
+)
+
 // Defines values for CreateTriggerRequestType.
 const (
 	CreateTriggerRequestTypeSchedule CreateTriggerRequestType = "schedule"
@@ -40,6 +47,13 @@ const (
 const (
 	TriggerTypeSchedule TriggerType = "schedule"
 	TriggerTypeWebhook  TriggerType = "webhook"
+)
+
+// Defines values for UpdateConnectionRequestStatus.
+const (
+	UpdateConnectionRequestStatusExpired UpdateConnectionRequestStatus = "expired"
+	UpdateConnectionRequestStatusInvalid UpdateConnectionRequestStatus = "invalid"
+	UpdateConnectionRequestStatusValid   UpdateConnectionRequestStatus = "valid"
 )
 
 // Defines values for WorkerStatus.
@@ -88,7 +102,6 @@ type Agent struct {
 	Description *string             `json:"description,omitempty"`
 	Id          openapi_types.UUID  `json:"id"`
 	Name        string              `json:"name"`
-	UpdatedAt   time.Time           `json:"updated_at"`
 }
 
 // AgentList defines model for AgentList.
@@ -101,13 +114,21 @@ type AgentList struct {
 
 // Connection defines model for Connection.
 type Connection struct {
-	CreatedAt   *time.Time              `json:"created_at,omitempty"`
-	Credentials *map[string]interface{} `json:"credentials,omitempty"`
-	Id          *openapi_types.UUID     `json:"id,omitempty"`
-	Name        *string                 `json:"name,omitempty"`
-	Type        *string                 `json:"type,omitempty"`
-	UpdatedAt   *time.Time              `json:"updated_at,omitempty"`
+	Config          *map[string]interface{} `json:"config,omitempty"`
+	CreatedAt       *time.Time              `json:"created_at,omitempty"`
+	Id              *openapi_types.UUID     `json:"id,omitempty"`
+	IntegrationId   *openapi_types.UUID     `json:"integration_id,omitempty"`
+	IsDefault       *bool                   `json:"is_default,omitempty"`
+	LastValidated   *time.Time              `json:"last_validated,omitempty"`
+	Name            *string                 `json:"name,omitempty"`
+	Secret          *map[string]interface{} `json:"secret,omitempty"`
+	Status          *ConnectionStatus       `json:"status,omitempty"`
+	UsageLimitMonth *int                    `json:"usage_limit_month,omitempty"`
+	UserId          *openapi_types.UUID     `json:"user_id,omitempty"`
 }
+
+// ConnectionStatus defines model for Connection.Status.
+type ConnectionStatus string
 
 // CreateAgentRequest defines model for CreateAgentRequest.
 type CreateAgentRequest struct {
@@ -118,9 +139,12 @@ type CreateAgentRequest struct {
 
 // CreateConnectionRequest defines model for CreateConnectionRequest.
 type CreateConnectionRequest struct {
-	Credentials map[string]interface{} `json:"credentials"`
-	Name        string                 `json:"name"`
-	Type        string                 `json:"type"`
+	Config          *map[string]interface{} `json:"config,omitempty"`
+	IntegrationId   openapi_types.UUID      `json:"integration_id"`
+	IsDefault       *bool                   `json:"is_default,omitempty"`
+	Name            string                  `json:"name"`
+	Secret          *map[string]interface{} `json:"secret,omitempty"`
+	UsageLimitMonth *int                    `json:"usage_limit_month,omitempty"`
 }
 
 // CreateTriggerRequest defines model for CreateTriggerRequest.
@@ -208,9 +232,16 @@ type UpdateAgentRequest struct {
 
 // UpdateConnectionRequest defines model for UpdateConnectionRequest.
 type UpdateConnectionRequest struct {
-	Credentials *map[string]interface{} `json:"credentials,omitempty"`
-	Name        *string                 `json:"name,omitempty"`
+	Config          *map[string]interface{}        `json:"config,omitempty"`
+	IsDefault       *bool                          `json:"is_default,omitempty"`
+	Name            *string                        `json:"name,omitempty"`
+	Secret          *map[string]interface{}        `json:"secret,omitempty"`
+	Status          *UpdateConnectionRequestStatus `json:"status,omitempty"`
+	UsageLimitMonth *int                           `json:"usage_limit_month,omitempty"`
 }
+
+// UpdateConnectionRequestStatus defines model for UpdateConnectionRequest.Status.
+type UpdateConnectionRequestStatus string
 
 // UpdateTriggerRequest defines model for UpdateTriggerRequest.
 type UpdateTriggerRequest struct {

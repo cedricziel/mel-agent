@@ -38,7 +38,7 @@ func (h *OpenAPIHandlers) ListAgents(ctx context.Context, request ListAgentsRequ
 
 	// Get agents with pagination
 	rows, err := h.db.QueryContext(ctx,
-		"SELECT id, name, description, created_at, updated_at FROM agents ORDER BY created_at DESC LIMIT $1 OFFSET $2",
+		"SELECT id, name, description, created_at FROM agents ORDER BY created_at DESC LIMIT $1 OFFSET $2",
 		limit, offset)
 	if err != nil {
 		errorMsg := "database error"
@@ -55,9 +55,9 @@ func (h *OpenAPIHandlers) ListAgents(ctx context.Context, request ListAgentsRequ
 		var agent Agent
 		var description sql.NullString
 		var id, name string
-		var createdAt, updatedAt time.Time
+		var createdAt time.Time
 
-		err := rows.Scan(&id, &name, &description, &createdAt, &updatedAt)
+		err := rows.Scan(&id, &name, &description, &createdAt)
 		if err != nil {
 			errorMsg := "scan error"
 			message := err.Error()
@@ -83,7 +83,6 @@ func (h *OpenAPIHandlers) ListAgents(ctx context.Context, request ListAgentsRequ
 			agent.Description = &description.String
 		}
 		agent.CreatedAt = createdAt
-		agent.UpdatedAt = updatedAt
 
 		agents = append(agents, agent)
 	}
@@ -106,10 +105,13 @@ func (h *OpenAPIHandlers) CreateAgent(ctx context.Context, request CreateAgentRe
 		description = request.Body.Description
 	}
 
+	// For now, use a default user_id (in real implementation, this would come from auth context)
+	defaultUserID := uuid.MustParse("00000000-0000-0000-0000-000000000001")
+
 	// Insert agent into database
 	_, err := h.db.ExecContext(ctx,
-		"INSERT INTO agents (id, name, description, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)",
-		agentID, request.Body.Name, description, now, now)
+		"INSERT INTO agents (id, user_id, name, description, created_at) VALUES ($1, $2, $3, $4, $5)",
+		agentID, defaultUserID, request.Body.Name, description, now)
 	if err != nil {
 		errorMsg := "failed to create agent"
 		message := err.Error()
@@ -124,7 +126,6 @@ func (h *OpenAPIHandlers) CreateAgent(ctx context.Context, request CreateAgentRe
 		Name:        request.Body.Name,
 		Description: description,
 		CreatedAt:   now,
-		UpdatedAt:   now,
 	}
 
 	// Handle workflow definition if provided
@@ -140,11 +141,11 @@ func (h *OpenAPIHandlers) GetAgent(ctx context.Context, request GetAgentRequestO
 	var agent Agent
 	var description sql.NullString
 	var id, name string
-	var createdAt, updatedAt time.Time
+	var createdAt time.Time
 
 	err := h.db.QueryRowContext(ctx,
-		"SELECT id, name, description, created_at, updated_at FROM agents WHERE id = $1",
-		request.Id.String()).Scan(&id, &name, &description, &createdAt, &updatedAt)
+		"SELECT id, name, description, created_at FROM agents WHERE id = $1",
+		request.Id.String()).Scan(&id, &name, &description, &createdAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			errorMsg := "not found"
@@ -178,19 +179,16 @@ func (h *OpenAPIHandlers) GetAgent(ctx context.Context, request GetAgentRequestO
 		agent.Description = &description.String
 	}
 	agent.CreatedAt = createdAt
-	agent.UpdatedAt = updatedAt
 
 	return GetAgent200JSONResponse(agent), nil
 }
 
 // UpdateAgent updates an existing agent
 func (h *OpenAPIHandlers) UpdateAgent(ctx context.Context, request UpdateAgentRequestObject) (UpdateAgentResponseObject, error) {
-	now := time.Now()
-
 	// Start building the update query
-	setParts := []string{"updated_at = $1"}
-	args := []interface{}{now}
-	argIndex := 2
+	var setParts []string
+	var args []interface{}
+	argIndex := 1
 
 	if request.Body.Name != nil {
 		setParts = append(setParts, fmt.Sprintf("name = $%d", argIndex))
@@ -202,6 +200,33 @@ func (h *OpenAPIHandlers) UpdateAgent(ctx context.Context, request UpdateAgentRe
 		setParts = append(setParts, fmt.Sprintf("description = $%d", argIndex))
 		args = append(args, *request.Body.Description)
 		argIndex++
+	}
+
+	// Check if we have anything to update
+	if len(setParts) == 0 {
+		// No fields to update, just return the existing agent
+		getRequest := GetAgentRequestObject{Id: request.Id}
+		getResponse, err := h.GetAgent(ctx, getRequest)
+		if err != nil {
+			errorMsg := "failed to fetch agent"
+			message := err.Error()
+			return UpdateAgent500JSONResponse{
+				Error:   &errorMsg,
+				Message: &message,
+			}, nil
+		}
+
+		// Convert GetAgentResponseObject to UpdateAgentResponseObject
+		if agentResponse, ok := getResponse.(GetAgent200JSONResponse); ok {
+			return UpdateAgent200JSONResponse(agentResponse), nil
+		}
+
+		errorMsg := "unexpected response type"
+		message := "Failed to convert response"
+		return UpdateAgent500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
 	}
 
 	// Add the ID as the last parameter
