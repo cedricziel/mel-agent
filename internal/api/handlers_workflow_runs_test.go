@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/cedricziel/mel-agent/internal/testutil"
+	"github.com/cedricziel/mel-agent/pkg/execution"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,7 +18,8 @@ import (
 
 // TestOpenAPIListWorkflowRuns tests listing workflow runs with pagination and filtering
 func TestOpenAPIListWorkflowRuns(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -160,7 +162,8 @@ func TestOpenAPIListWorkflowRuns(t *testing.T) {
 
 // TestOpenAPIListWorkflowRunsWithFilters tests filtering by workflow_id and status
 func TestOpenAPIListWorkflowRunsWithFilters(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -245,7 +248,8 @@ func TestOpenAPIListWorkflowRunsWithFilters(t *testing.T) {
 
 // TestOpenAPIListWorkflowRunsWithPagination tests pagination
 func TestOpenAPIListWorkflowRunsWithPagination(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -310,7 +314,8 @@ func TestOpenAPIListWorkflowRunsWithPagination(t *testing.T) {
 
 // TestOpenAPIGetWorkflowRun tests retrieving a single workflow run
 func TestOpenAPIGetWorkflowRun(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -370,7 +375,8 @@ func TestOpenAPIGetWorkflowRun(t *testing.T) {
 
 // TestOpenAPIGetWorkflowRunNotFound tests retrieving a non-existent workflow run
 func TestOpenAPIGetWorkflowRunNotFound(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -391,7 +397,8 @@ func TestOpenAPIGetWorkflowRunNotFound(t *testing.T) {
 
 // TestOpenAPIGetWorkflowRunWithError tests retrieving a workflow run that has an error
 func TestOpenAPIGetWorkflowRunWithError(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -440,7 +447,8 @@ func TestOpenAPIGetWorkflowRunWithError(t *testing.T) {
 
 // TestOpenAPIGetWorkflowRunSteps tests retrieving steps for a workflow run
 func TestOpenAPIGetWorkflowRunSteps(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -574,7 +582,8 @@ func TestOpenAPIGetWorkflowRunSteps(t *testing.T) {
 
 // TestOpenAPIGetWorkflowRunStepsNotFound tests retrieving steps for a non-existent workflow run
 func TestOpenAPIGetWorkflowRunStepsNotFound(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -596,7 +605,8 @@ func TestOpenAPIGetWorkflowRunStepsNotFound(t *testing.T) {
 
 // TestOpenAPIWorkflowRunLegacyCompatibility tests that handlers work with legacy schema
 func TestOpenAPIWorkflowRunLegacyCompatibility(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)

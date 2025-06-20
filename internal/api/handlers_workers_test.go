@@ -9,13 +9,15 @@ import (
 	"testing"
 
 	"github.com/cedricziel/mel-agent/internal/testutil"
+	"github.com/cedricziel/mel-agent/pkg/execution"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 // TestOpenAPIRegisterWorker tests registering a new worker
 func TestOpenAPIRegisterWorker(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -60,7 +62,8 @@ func TestOpenAPIRegisterWorker(t *testing.T) {
 
 // TestOpenAPIRegisterWorkerMinimal tests registering a worker with minimal data
 func TestOpenAPIRegisterWorkerMinimal(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -95,7 +98,8 @@ func TestOpenAPIRegisterWorkerMinimal(t *testing.T) {
 
 // TestOpenAPIRegisterWorkerUpdate tests updating an existing worker via re-registration
 func TestOpenAPIRegisterWorkerUpdate(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -146,7 +150,8 @@ func TestOpenAPIRegisterWorkerUpdate(t *testing.T) {
 
 // TestOpenAPIListWorkers tests listing workers
 func TestOpenAPIListWorkers(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -194,7 +199,8 @@ func TestOpenAPIListWorkers(t *testing.T) {
 
 // TestOpenAPIUpdateWorkerHeartbeat tests updating a worker's heartbeat
 func TestOpenAPIUpdateWorkerHeartbeat(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -229,7 +235,8 @@ func TestOpenAPIUpdateWorkerHeartbeat(t *testing.T) {
 
 // TestOpenAPIUpdateWorkerHeartbeatNotFound tests updating heartbeat for non-existent worker
 func TestOpenAPIUpdateWorkerHeartbeatNotFound(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -248,7 +255,8 @@ func TestOpenAPIUpdateWorkerHeartbeatNotFound(t *testing.T) {
 
 // TestOpenAPIUnregisterWorker tests unregistering a worker
 func TestOpenAPIUnregisterWorker(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -283,7 +291,8 @@ func TestOpenAPIUnregisterWorker(t *testing.T) {
 
 // TestOpenAPIUnregisterWorkerNotFound tests unregistering a non-existent worker
 func TestOpenAPIUnregisterWorkerNotFound(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -302,7 +311,8 @@ func TestOpenAPIUnregisterWorkerNotFound(t *testing.T) {
 
 // TestOpenAPIClaimWork tests claiming work items
 func TestOpenAPIClaimWork(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -344,7 +354,8 @@ func TestOpenAPIClaimWork(t *testing.T) {
 
 // TestOpenAPICompleteWork tests completing work items
 func TestOpenAPICompleteWork(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)

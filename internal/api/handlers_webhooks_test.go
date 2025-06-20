@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/cedricziel/mel-agent/internal/testutil"
+	"github.com/cedricziel/mel-agent/pkg/execution"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,7 +17,8 @@ import (
 
 // TestOpenAPIHandleWebhook tests handling a valid webhook request
 func TestOpenAPIHandleWebhook(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -103,7 +105,8 @@ func TestOpenAPIHandleWebhook(t *testing.T) {
 
 // TestOpenAPIHandleWebhookNotFound tests webhook with invalid token
 func TestOpenAPIHandleWebhookNotFound(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -137,7 +140,8 @@ func TestOpenAPIHandleWebhookNotFound(t *testing.T) {
 
 // TestOpenAPIHandleWebhookDisabled tests webhook with disabled trigger
 func TestOpenAPIHandleWebhookDisabled(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -195,7 +199,8 @@ func TestOpenAPIHandleWebhookDisabled(t *testing.T) {
 
 // TestOpenAPIHandleWebhookMultipleFormats tests webhook with different payload formats
 func TestOpenAPIHandleWebhookMultipleFormats(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -302,7 +307,8 @@ func TestOpenAPIHandleWebhookMultipleFormats(t *testing.T) {
 
 // TestOpenAPIHandleWebhookGitHubFormat tests webhook with GitHub-style payload
 func TestOpenAPIHandleWebhookGitHubFormat(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -401,7 +407,8 @@ func TestOpenAPIHandleWebhookGitHubFormat(t *testing.T) {
 
 // TestOpenAPIHandleWebhookInvalidJSON tests webhook with malformed JSON
 func TestOpenAPIHandleWebhookInvalidJSON(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -451,7 +458,8 @@ func TestOpenAPIHandleWebhookInvalidJSON(t *testing.T) {
 
 // TestOpenAPIHandleWebhookConcurrency tests multiple concurrent webhook requests
 func TestOpenAPIHandleWebhookConcurrency(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)

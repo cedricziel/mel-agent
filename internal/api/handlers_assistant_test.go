@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/cedricziel/mel-agent/internal/testutil"
+	"github.com/cedricziel/mel-agent/pkg/execution"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -24,7 +25,8 @@ func TestOpenAPIAssistantChatNoAPIKey(t *testing.T) {
 		}
 	}()
 
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -59,7 +61,8 @@ func TestOpenAPIAssistantChatNoAPIKey(t *testing.T) {
 
 // TestOpenAPIAssistantChatAgentNotFound tests assistant chat with non-existent agent
 func TestOpenAPIAssistantChatAgentNotFound(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -92,7 +95,8 @@ func TestOpenAPIAssistantChatAgentNotFound(t *testing.T) {
 
 // TestOpenAPIAssistantChatInvalidJSON tests assistant chat with malformed JSON
 func TestOpenAPIAssistantChatInvalidJSON(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)

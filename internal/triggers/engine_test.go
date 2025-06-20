@@ -47,8 +47,8 @@ func TestEngine_fireTriggerWithTransaction(t *testing.T) {
 
 	// Insert test trigger
 	_, err = db.DB.Exec(`
-		INSERT INTO triggers (id, user_id, agent_id, provider, config, last_checked) 
-		VALUES ($1, '00000000-0000-0000-0000-000000000001', $2, 'schedule', '{}', NOW())
+		INSERT INTO triggers (id, user_id, agent_id, provider, name, type, config, last_checked) 
+		VALUES ($1, '00000000-0000-0000-0000-000000000001', $2, 'schedule', 'Test Engine Trigger', 'schedule', '{}', NOW())
 	`, triggerID, agentID)
 	require.NoError(t, err)
 
@@ -151,8 +151,8 @@ func TestEngine_fireTriggerWithTransaction_Atomicity(t *testing.T) {
 
 	// Insert test trigger
 	_, err = db.DB.Exec(`
-		INSERT INTO triggers (id, user_id, agent_id, provider, config, last_checked) 
-		VALUES ($1, '00000000-0000-0000-0000-000000000001', $2, 'schedule', '{}', NOW())
+		INSERT INTO triggers (id, user_id, agent_id, provider, name, type, config, last_checked) 
+		VALUES ($1, '00000000-0000-0000-0000-000000000001', $2, 'schedule', 'Test Engine Trigger', 'schedule', '{}', NOW())
 	`, triggerID, agentID)
 	require.NoError(t, err)
 
@@ -261,8 +261,8 @@ func TestEngine_fireTriggerWithTransaction_JSONMarshaling(t *testing.T) {
 
 	// Insert test trigger
 	_, err = db.DB.Exec(`
-		INSERT INTO triggers (id, user_id, agent_id, provider, config, last_checked) 
-		VALUES ($1, '00000000-0000-0000-0000-000000000001', $2, 'schedule', '{}', NOW())
+		INSERT INTO triggers (id, user_id, agent_id, provider, name, type, config, last_checked) 
+		VALUES ($1, '00000000-0000-0000-0000-000000000001', $2, 'schedule', 'Test Engine Trigger', 'schedule', '{}', NOW())
 	`, triggerID, agentID)
 	require.NoError(t, err)
 

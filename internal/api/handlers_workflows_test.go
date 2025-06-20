@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/cedricziel/mel-agent/internal/testutil"
+	"github.com/cedricziel/mel-agent/pkg/execution"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,7 +17,8 @@ import (
 
 // TestOpenAPICreateWorkflow tests creating a new workflow
 func TestOpenAPICreateWorkflow(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -92,7 +94,8 @@ func TestOpenAPICreateWorkflow(t *testing.T) {
 
 // TestOpenAPICreateWorkflowMinimal tests creating a workflow with minimal data
 func TestOpenAPICreateWorkflowMinimal(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -126,7 +129,8 @@ func TestOpenAPICreateWorkflowMinimal(t *testing.T) {
 
 // TestOpenAPIListWorkflows tests listing workflows with pagination
 func TestOpenAPIListWorkflows(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -177,7 +181,8 @@ func TestOpenAPIListWorkflows(t *testing.T) {
 
 // TestOpenAPIListWorkflowsWithPagination tests listing workflows with custom pagination
 func TestOpenAPIListWorkflowsWithPagination(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -232,7 +237,8 @@ func TestOpenAPIListWorkflowsWithPagination(t *testing.T) {
 
 // TestOpenAPIGetWorkflow tests retrieving a single workflow
 func TestOpenAPIGetWorkflow(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -289,7 +295,8 @@ func TestOpenAPIGetWorkflow(t *testing.T) {
 
 // TestOpenAPIGetWorkflowNotFound tests retrieving a non-existent workflow
 func TestOpenAPIGetWorkflowNotFound(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -310,7 +317,8 @@ func TestOpenAPIGetWorkflowNotFound(t *testing.T) {
 
 // TestOpenAPIUpdateWorkflow tests updating a workflow
 func TestOpenAPIUpdateWorkflow(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -374,7 +382,8 @@ func TestOpenAPIUpdateWorkflow(t *testing.T) {
 
 // TestOpenAPIUpdateWorkflowNotFound tests updating a non-existent workflow
 func TestOpenAPIUpdateWorkflowNotFound(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -400,7 +409,8 @@ func TestOpenAPIUpdateWorkflowNotFound(t *testing.T) {
 
 // TestOpenAPIDeleteWorkflow tests deleting a workflow
 func TestOpenAPIDeleteWorkflow(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -436,7 +446,8 @@ func TestOpenAPIDeleteWorkflow(t *testing.T) {
 
 // TestOpenAPIDeleteWorkflowNotFound tests deleting a non-existent workflow
 func TestOpenAPIDeleteWorkflowNotFound(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -457,7 +468,8 @@ func TestOpenAPIDeleteWorkflowNotFound(t *testing.T) {
 
 // TestOpenAPIExecuteWorkflow tests executing a workflow
 func TestOpenAPIExecuteWorkflow(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -515,7 +527,8 @@ func TestOpenAPIExecuteWorkflow(t *testing.T) {
 
 // TestOpenAPIExecuteWorkflowNotFound tests executing a non-existent workflow
 func TestOpenAPIExecuteWorkflowNotFound(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)

@@ -72,9 +72,9 @@ func TestWebhookTriggerPlugin_OnTrigger_Integration(t *testing.T) {
 		}
 		configJSON, _ := json.Marshal(triggerConfig)
 		_, err = testDB.Exec(`
-			INSERT INTO triggers (id, user_id, provider, agent_id, node_id, config, enabled) 
-			VALUES ($1, $2, $3, $4, $5, $6, $7)
-		`, triggerID, userID, "webhook", agentID, nodeID, configJSON, true)
+			INSERT INTO triggers (id, user_id, provider, name, type, agent_id, node_id, config, enabled) 
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		`, triggerID, userID, "webhook", "Test Webhook Trigger", "webhook", agentID, nodeID, configJSON, true)
 		require.NoError(t, err)
 
 		// Prepare trigger payload
@@ -177,9 +177,9 @@ func TestScheduleTriggerPlugin_OnTrigger_Integration(t *testing.T) {
 		}
 		configJSON, _ := json.Marshal(triggerConfig)
 		_, err = testDB.Exec(`
-			INSERT INTO triggers (id, user_id, provider, agent_id, node_id, config, enabled) 
-			VALUES ($1, $2, $3, $4, $5, $6, $7)
-		`, triggerID, userID, "schedule", agentID, nodeID, configJSON, true)
+			INSERT INTO triggers (id, user_id, provider, name, type, agent_id, node_id, config, enabled) 
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		`, triggerID, userID, "schedule", "Test Schedule Trigger", "schedule", agentID, nodeID, configJSON, true)
 		require.NoError(t, err)
 
 		// Prepare trigger payload
@@ -271,9 +271,9 @@ func TestTriggerPlugins_ErrorHandling(t *testing.T) {
 		triggerConfig := map[string]interface{}{"method": "POST"}
 		configJSON, _ := json.Marshal(triggerConfig)
 		_, err = testDB.Exec(`
-			INSERT INTO triggers (id, user_id, provider, agent_id, node_id, config, enabled) 
-			VALUES ($1, $2, $3, $4, $5, $6, $7)
-		`, triggerID, userID, "webhook", agentID, "node-1", configJSON, true)
+			INSERT INTO triggers (id, user_id, provider, name, type, agent_id, node_id, config, enabled) 
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		`, triggerID, userID, "webhook", "Test Error Trigger", "webhook", agentID, "node-1", configJSON, true)
 		require.NoError(t, err)
 
 		payload := map[string]interface{}{

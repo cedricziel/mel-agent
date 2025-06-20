@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/cedricziel/mel-agent/internal/testutil"
+	"github.com/cedricziel/mel-agent/pkg/execution"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -42,7 +43,8 @@ func getTestAgentID(t *testing.T, db any) uuid.UUID {
 
 // TestOpenAPICreateTrigger tests creating a new trigger
 func TestOpenAPICreateTrigger(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -100,7 +102,8 @@ func TestOpenAPICreateTrigger(t *testing.T) {
 
 // TestOpenAPICreateTriggerWebhook tests creating a webhook trigger
 func TestOpenAPICreateTriggerWebhook(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -146,7 +149,8 @@ func TestOpenAPICreateTriggerWebhook(t *testing.T) {
 
 // TestOpenAPICreateTriggerMinimal tests creating a trigger with minimal data
 func TestOpenAPICreateTriggerMinimal(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -188,7 +192,8 @@ func TestOpenAPICreateTriggerMinimal(t *testing.T) {
 
 // TestOpenAPIListTriggers tests listing triggers
 func TestOpenAPIListTriggers(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -247,7 +252,8 @@ func TestOpenAPIListTriggers(t *testing.T) {
 
 // TestOpenAPIGetTrigger tests retrieving a single trigger
 func TestOpenAPIGetTrigger(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -297,7 +303,8 @@ func TestOpenAPIGetTrigger(t *testing.T) {
 
 // TestOpenAPIGetTriggerNotFound tests retrieving a non-existent trigger
 func TestOpenAPIGetTriggerNotFound(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -318,7 +325,8 @@ func TestOpenAPIGetTriggerNotFound(t *testing.T) {
 
 // TestOpenAPIUpdateTrigger tests updating a trigger
 func TestOpenAPIUpdateTrigger(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -381,7 +389,8 @@ func TestOpenAPIUpdateTrigger(t *testing.T) {
 
 // TestOpenAPIUpdateTriggerNotFound tests updating a non-existent trigger
 func TestOpenAPIUpdateTriggerNotFound(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -407,7 +416,8 @@ func TestOpenAPIUpdateTriggerNotFound(t *testing.T) {
 
 // TestOpenAPIDeleteTrigger tests deleting a trigger
 func TestOpenAPIDeleteTrigger(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -448,7 +458,8 @@ func TestOpenAPIDeleteTrigger(t *testing.T) {
 
 // TestOpenAPIDeleteTriggerNotFound tests deleting a non-existent trigger
 func TestOpenAPIDeleteTriggerNotFound(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)

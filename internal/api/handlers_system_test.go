@@ -7,13 +7,15 @@ import (
 	"testing"
 
 	"github.com/cedricziel/mel-agent/internal/testutil"
+	"github.com/cedricziel/mel-agent/pkg/execution"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 // TestOpenAPIGetHealth tests the health check endpoint
 func TestOpenAPIGetHealth(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -34,7 +36,8 @@ func TestOpenAPIGetHealth(t *testing.T) {
 
 // TestOpenAPIListNodeTypes tests the node types endpoint
 func TestOpenAPIListNodeTypes(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -64,7 +67,8 @@ func TestOpenAPIListNodeTypes(t *testing.T) {
 
 // TestOpenAPIListNodeTypesWithFilter tests filtering node types by kind
 func TestOpenAPIListNodeTypesWithFilter(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)

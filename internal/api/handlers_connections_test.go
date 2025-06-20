@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/cedricziel/mel-agent/internal/testutil"
+	"github.com/cedricziel/mel-agent/pkg/execution"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,7 +32,8 @@ func getTestIntegrationID(t *testing.T, db any) uuid.UUID {
 
 // TestOpenAPICreateConnection tests creating a new connection
 func TestOpenAPICreateConnection(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -90,7 +92,8 @@ func TestOpenAPICreateConnection(t *testing.T) {
 
 // TestOpenAPICreateConnectionMinimal tests creating a connection with minimal data
 func TestOpenAPICreateConnectionMinimal(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -133,7 +136,8 @@ func TestOpenAPICreateConnectionMinimal(t *testing.T) {
 
 // TestOpenAPIListConnections tests listing connections
 func TestOpenAPIListConnections(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -183,7 +187,8 @@ func TestOpenAPIListConnections(t *testing.T) {
 
 // TestOpenAPIGetConnection tests retrieving a single connection
 func TestOpenAPIGetConnection(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -228,7 +233,8 @@ func TestOpenAPIGetConnection(t *testing.T) {
 
 // TestOpenAPIGetConnectionNotFound tests retrieving a non-existent connection
 func TestOpenAPIGetConnectionNotFound(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -249,7 +255,8 @@ func TestOpenAPIGetConnectionNotFound(t *testing.T) {
 
 // TestOpenAPIUpdateConnection tests updating a connection
 func TestOpenAPIUpdateConnection(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -308,7 +315,8 @@ func TestOpenAPIUpdateConnection(t *testing.T) {
 
 // TestOpenAPIUpdateConnectionNotFound tests updating a non-existent connection
 func TestOpenAPIUpdateConnectionNotFound(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -334,7 +342,8 @@ func TestOpenAPIUpdateConnectionNotFound(t *testing.T) {
 
 // TestOpenAPIDeleteConnection tests deleting a connection
 func TestOpenAPIDeleteConnection(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
@@ -374,7 +383,8 @@ func TestOpenAPIDeleteConnection(t *testing.T) {
 
 // TestOpenAPIDeleteConnectionNotFound tests deleting a non-existent connection
 func TestOpenAPIDeleteConnectionNotFound(t *testing.T) {
-	db, mockEngine, cleanup := testutil.SetupOpenAPITestDB(t)
+	db, cleanup := testutil.SetupOpenAPITestDB(t)
+	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
 	router := NewOpenAPIRouter(db, mockEngine)
