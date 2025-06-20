@@ -923,7 +923,7 @@ type ServerInterface interface {
 	// (GET /api/credential-types)
 	ListCredentialTypes(w http.ResponseWriter, r *http.Request)
 	// Get JSON schema for credential type
-	// (GET /api/credential-types/schema/{type})
+	// (GET /api/credential-types/{type}/schema)
 	GetCredentialTypeSchema(w http.ResponseWriter, r *http.Request, pType string)
 	// Test credentials for a specific type
 	// (POST /api/credential-types/{type}/test)
@@ -1157,7 +1157,7 @@ func (_ Unimplemented) ListCredentialTypes(w http.ResponseWriter, r *http.Reques
 }
 
 // Get JSON schema for credential type
-// (GET /api/credential-types/schema/{type})
+// (GET /api/credential-types/{type}/schema)
 func (_ Unimplemented) GetCredentialTypeSchema(w http.ResponseWriter, r *http.Request, pType string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
@@ -3446,7 +3446,7 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/api/credential-types", wrapper.ListCredentialTypes)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/api/credential-types/schema/{type}", wrapper.GetCredentialTypeSchema)
+		r.Get(options.BaseURL+"/api/credential-types/{type}/schema", wrapper.GetCredentialTypeSchema)
 	})
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/api/credential-types/{type}/test", wrapper.TestCredentials)
@@ -3576,6 +3576,15 @@ type ListAgents200JSONResponse AgentList
 func (response ListAgents200JSONResponse) VisitListAgentsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListAgents400JSONResponse Error
+
+func (response ListAgents400JSONResponse) VisitListAgentsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -4415,6 +4424,15 @@ type GetHealth200JSONResponse struct {
 func (response GetHealth200JSONResponse) VisitGetHealthResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetHealth503JSONResponse Error
+
+func (response GetHealth503JSONResponse) VisitGetHealthResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(503)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -5594,7 +5612,7 @@ type StrictServerInterface interface {
 	// (GET /api/credential-types)
 	ListCredentialTypes(ctx context.Context, request ListCredentialTypesRequestObject) (ListCredentialTypesResponseObject, error)
 	// Get JSON schema for credential type
-	// (GET /api/credential-types/schema/{type})
+	// (GET /api/credential-types/{type}/schema)
 	GetCredentialTypeSchema(ctx context.Context, request GetCredentialTypeSchemaRequestObject) (GetCredentialTypeSchemaResponseObject, error)
 	// Test credentials for a specific type
 	// (POST /api/credential-types/{type}/test)

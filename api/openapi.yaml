@@ -7,6 +7,9 @@ info:
   contact:
     name: MEL Agent Team
     url: https://github.com/cedricziel/mel-agent
+  license:
+    name: AGPL-3.0
+    url: https://www.gnu.org/licenses/agpl-3.0.html
 
 servers:
   - url: http://localhost:8080
@@ -32,6 +35,12 @@ paths:
                   status:
                     type: string
                     example: ok
+        '503':
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /api/agents:
     get:
@@ -57,6 +66,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AgentList'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '500':
           description: Internal server error
           content:
@@ -1712,7 +1727,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /api/credential-types/schema/{type}:
+  /api/credential-types/{type}/schema:
     get:
       summary: Get JSON schema for credential type
       operationId: getCredentialTypeSchema
