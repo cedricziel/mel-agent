@@ -22,7 +22,7 @@ import (
 // Test worker registration with real database
 func TestWorkerRegistrationIntegration(t *testing.T) {
 	ctx := context.Background()
-	_, testDB, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
+	_, testDB, cleanup := testutil.SetupPostgresWithTestData(ctx, t)
 	defer cleanup()
 
 	// Set the global database connection and ensure cleanup
@@ -97,7 +97,7 @@ func TestWorkerRegistrationIntegration(t *testing.T) {
 // Test work claiming with real database and workflow
 func TestWorkClaimingIntegration(t *testing.T) {
 	ctx := context.Background()
-	_, testDB, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
+	_, testDB, cleanup := testutil.SetupPostgresWithTestData(ctx, t)
 	defer cleanup()
 
 	// Set the global database connection and ensure cleanup
@@ -178,7 +178,7 @@ func TestWorkClaimingIntegration(t *testing.T) {
 // Test complete worker lifecycle with real database
 func TestWorkerLifecycleIntegration(t *testing.T) {
 	ctx := context.Background()
-	_, testDB, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
+	_, testDB, cleanup := testutil.SetupPostgresWithTestData(ctx, t)
 	defer cleanup()
 
 	// Set the global database connection and ensure cleanup
@@ -301,7 +301,7 @@ func TestWorkerLifecycleIntegration(t *testing.T) {
 // Test worker upsert behavior with migrations
 func TestWorkerUpsertIntegration(t *testing.T) {
 	ctx := context.Background()
-	_, testDB, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
+	_, testDB, cleanup := testutil.SetupPostgresWithTestData(ctx, t)
 	defer cleanup()
 
 	// Set the global database connection and ensure cleanup

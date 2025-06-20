@@ -76,8 +76,21 @@ func SetupPostgresContainer(ctx context.Context, t *testing.T) (*postgres.Postgr
 }
 
 // SetupPostgresWithMigrations creates a PostgreSQL container and applies all migrations.
-// This is a convenience function for tests that need a fully migrated database.
+// This is a convenience function for tests that need a fully migrated database without test data.
 func SetupPostgresWithMigrations(ctx context.Context, t *testing.T) (*postgres.PostgresContainer, *sql.DB, func()) {
+	t.Helper()
+
+	pgContainer, db, cleanup := SetupPostgresContainer(ctx, t)
+
+	// Apply all migrations without test data
+	ApplyMigrations(t, db)
+
+	return pgContainer, db, cleanup
+}
+
+// SetupPostgresWithTestData creates a PostgreSQL container, applies migrations, and loads test data.
+// This is for tests that depend on the standard test agents and fixtures.
+func SetupPostgresWithTestData(ctx context.Context, t *testing.T) (*postgres.PostgresContainer, *sql.DB, func()) {
 	t.Helper()
 
 	pgContainer, db, cleanup := SetupPostgresContainer(ctx, t)

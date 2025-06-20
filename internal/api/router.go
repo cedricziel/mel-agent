@@ -47,9 +47,8 @@ func createWorkflowRouter(handler *WorkflowRunsHandler) http.Handler {
 func LegacyHandler() http.Handler {
 	r := chi.NewRouter()
 
-	// Agent endpoints.
-	r.Get("/agents", listAgents)
-	r.Post("/agents", createAgent)
+	// Basic Agent CRUD moved to OpenAPI handlers
+	// Legacy routes removed: GET /agents, POST /agents
 	r.Post("/agents/{agentID}/versions", createAgentVersion)
 
 	// Draft workflow endpoints for auto-persistence
@@ -64,8 +63,8 @@ func LegacyHandler() http.Handler {
 
 	// Workflow management (agents are workflows)
 	r.Route("/workflows", func(r chi.Router) {
-		r.Get("/", listAgents)   // reuse existing handler
-		r.Post("/", createAgent) // reuse existing handler
+		r.Get("/", legacyListWorkflowsHandler)   // temporary compatibility handler
+		r.Post("/", legacyCreateWorkflowHandler) // temporary compatibility handler
 		r.Route("/{workflowID}", func(r chi.Router) {
 			r.Get("/", getWorkflow)
 			r.Put("/", updateWorkflow)
@@ -115,10 +114,8 @@ func LegacyHandler() http.Handler {
 	r.Get("/credential-types", listCredentialTypes)
 	r.Get("/credential-types/schema/{type}", getCredentialTypeSchemaHandler)
 	r.Post("/credential-types/{type}/test", testCredentialsHandler)
-	// Node type definitions for builder
-	r.Get("/node-types", listNodeTypes)
-	// JSON Schema for node types
-	r.Get("/node-types/schema/{type}", getNodeTypeSchemaHandler)
+	// Node type definitions moved to OpenAPI handlers
+	// Legacy routes removed: /node-types, /node-types/schema/{type}
 	// Dynamic options for node parameters
 	r.Get("/node-types/{type}/parameters/{parameter}/options", getDynamicOptionsHandler)
 	// WebSocket for collaborative updates
@@ -147,6 +144,16 @@ func LegacyHandler() http.Handler {
 	r.Get("/extensions", listExtensionsHandler)
 
 	return r
+}
+
+// legacyListWorkflowsHandler provides backward compatibility by routing to listAgents
+func legacyListWorkflowsHandler(w http.ResponseWriter, r *http.Request) {
+	listAgents(w, r)
+}
+
+// legacyCreateWorkflowHandler provides backward compatibility by routing to createAgent
+func legacyCreateWorkflowHandler(w http.ResponseWriter, r *http.Request) {
+	createAgent(w, r)
 }
 
 // Helper to write JSON responses.

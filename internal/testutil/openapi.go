@@ -69,6 +69,7 @@ func (m *MockExecutionEngine) RecoverFailedRuns(ctx context.Context) error {
 
 // SetupOpenAPITestDB sets up a test database and returns a mock execution engine.
 // The caller needs to create the router to avoid import cycles.
+// Uses clean database without pre-inserted test data for OpenAPI tests.
 func SetupOpenAPITestDB(t *testing.T) (*sql.DB, execution.ExecutionEngine, func()) {
 	ctx := context.Background()
 	_, db, cleanup := SetupPostgresWithMigrations(ctx, t)

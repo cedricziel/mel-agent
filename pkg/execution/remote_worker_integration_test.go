@@ -21,7 +21,7 @@ import (
 // Test remote worker with real database backend
 func TestRemoteWorkerWithDatabase(t *testing.T) {
 	ctx := context.Background()
-	_, db, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
+	_, db, cleanup := testutil.SetupPostgresWithTestData(ctx, t)
 	defer cleanup()
 
 	// Create a mock API server that uses the real database
@@ -78,7 +78,7 @@ func TestRemoteWorkerWithDatabase(t *testing.T) {
 // Test remote worker work processing with real workflow data
 func TestRemoteWorkerWorkProcessingWithDatabase(t *testing.T) {
 	ctx := context.Background()
-	_, db, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
+	_, db, cleanup := testutil.SetupPostgresWithTestData(ctx, t)
 	defer cleanup()
 
 	// Create test workflow run using test agent
@@ -147,7 +147,7 @@ func TestRemoteWorkerWorkProcessingWithDatabase(t *testing.T) {
 // Test remote worker authentication with database
 func TestRemoteWorkerAuthenticationWithDatabase(t *testing.T) {
 	ctx := context.Background()
-	_, db, cleanup := testutil.SetupPostgresWithMigrations(ctx, t)
+	_, db, cleanup := testutil.SetupPostgresWithTestData(ctx, t)
 	defer cleanup()
 
 	// Create mock server that validates tokens
