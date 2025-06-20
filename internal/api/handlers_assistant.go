@@ -9,25 +9,27 @@ import (
 
 // AssistantChat provides AI-powered assistance for workflow building
 func (h *OpenAPIHandlers) AssistantChat(ctx context.Context, request AssistantChatRequestObject) (AssistantChatResponseObject, error) {
-	// Check if agent exists
-	var agentExists bool
-	err := h.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM agents WHERE id = $1)", request.AgentId.String()).Scan(&agentExists)
-	if err != nil {
-		errorMsg := "database error"
-		message := err.Error()
-		return AssistantChat500JSONResponse{
-			Error:   &errorMsg,
-			Message: &message,
-		}, nil
-	}
+	// Optional workflow context - check if workflow exists if provided
+	if request.Body.WorkflowId != nil {
+		var workflowExists bool
+		err := h.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM workflows WHERE id = $1)", request.Body.WorkflowId.String()).Scan(&workflowExists)
+		if err != nil {
+			errorMsg := "database error"
+			message := err.Error()
+			return AssistantChat500JSONResponse{
+				Error:   &errorMsg,
+				Message: &message,
+			}, nil
+		}
 
-	if !agentExists {
-		errorMsg := "not found"
-		message := "Agent not found"
-		return AssistantChat400JSONResponse{
-			Error:   &errorMsg,
-			Message: &message,
-		}, nil
+		if !workflowExists {
+			errorMsg := "not found"
+			message := "Workflow not found"
+			return AssistantChat400JSONResponse{
+				Error:   &errorMsg,
+				Message: &message,
+			}, nil
+		}
 	}
 
 	// Check for OpenAI API key

@@ -2636,6 +2636,9 @@ components:
           type: array
           items:
             type: string
+        credential_type:
+          type: string
+          description: Type of credential required for this integration
         created_at:
           type: string
           format: date-time

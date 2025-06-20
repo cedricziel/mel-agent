@@ -26,6 +26,9 @@ import (
 	"github.com/cedricziel/mel-agent/pkg/api"
 	"github.com/cedricziel/mel-agent/pkg/execution"
 	"github.com/cedricziel/mel-agent/pkg/plugin"
+
+	// Import credential definitions to register them
+	_ "github.com/cedricziel/mel-agent/pkg/credentials"
 )
 
 func main() {
