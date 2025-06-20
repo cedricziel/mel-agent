@@ -37,28 +37,23 @@ func TestWorkerRegistrationIntegration(t *testing.T) {
 	workflowEngine := execution.NewDurableExecutionEngine(testDB, mel, "test-server")
 	router := NewCombinedRouter(testDB, workflowEngine)
 
-	// Test data
-	processID := 12345
-	worker := execution.WorkflowWorker{
-		ID:                   "integration-test-worker-1",
-		Hostname:             "test-host",
-		ProcessID:            &processID,
-		Version:              workerStringPtr("1.0.0"),
-		Capabilities:         []string{"workflow_execution", "node_execution"},
-		Status:               execution.WorkerStatusIdle,
-		LastHeartbeat:        time.Now(),
-		StartedAt:            time.Now(),
-		MaxConcurrentSteps:   5,
-		CurrentStepCount:     0,
-		TotalStepsExecuted:   0,
-		TotalExecutionTimeMS: 0,
+	// Test data - use the new RegisterWorkerRequest format
+	concurrency := 5
+	registerRequest := struct {
+		ID          string  `json:"id"`
+		Name        *string `json:"name,omitempty"`
+		Concurrency *int    `json:"concurrency,omitempty"`
+	}{
+		ID:          "integration-test-worker-1",
+		Name:        workerStringPtr("test-host"),
+		Concurrency: &concurrency,
 	}
 
-	reqBody, err := json.Marshal(worker)
+	reqBody, err := json.Marshal(registerRequest)
 	require.NoError(t, err)
 
 	// Make API request
-	req := httptest.NewRequest(http.MethodPost, "/workers", bytes.NewReader(reqBody))
+	req := httptest.NewRequest(http.MethodPost, "/api/workers", bytes.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -67,10 +62,11 @@ func TestWorkerRegistrationIntegration(t *testing.T) {
 	// Verify response
 	assert.Equal(t, http.StatusCreated, w.Code)
 
-	var response map[string]string
+	var response Worker
 	err = json.Unmarshal(w.Body.Bytes(), &response)
 	require.NoError(t, err)
-	assert.Equal(t, "integration-test-worker-1", response["id"])
+	assert.Equal(t, "integration-test-worker-1", *response.Id)
+	assert.Equal(t, "test-host", *response.Name)
 
 	// Verify it was stored in database using actual migration tables
 	var storedWorker execution.WorkflowWorker
@@ -88,13 +84,13 @@ func TestWorkerRegistrationIntegration(t *testing.T) {
 
 	assert.Equal(t, "integration-test-worker-1", storedWorker.ID)
 	assert.Equal(t, "test-host", storedWorker.Hostname)
-	assert.Equal(t, &processID, storedWorker.ProcessID)
-	assert.Equal(t, workerStringPtr("1.0.0"), storedWorker.Version)
-	assert.Equal(t, []string{"workflow_execution", "node_execution"}, storedWorker.Capabilities)
-	assert.Equal(t, execution.WorkerStatusIdle, storedWorker.Status)
+	assert.Nil(t, storedWorker.ProcessID) // ProcessID not sent in new format
+	assert.Nil(t, storedWorker.Version)   // Version not sent in new format
+	assert.Empty(t, storedWorker.Capabilities) // Capabilities not sent in new format
+	assert.Equal(t, execution.WorkerStatus("active"), storedWorker.Status) // Handler stores "active"
 	assert.Equal(t, 5, storedWorker.MaxConcurrentSteps)
 
-	t.Logf("✅ Worker registration integration test passed - Worker %s registered successfully", worker.ID)
+	t.Logf("✅ Worker registration integration test passed - Worker %s registered successfully", registerRequest.ID)
 }
 
 // Test work claiming with real database and workflow
