@@ -1,8 +1,7 @@
 package transform
 
 import (
-	"bytes"
-	"text/template"
+	"github.com/aymerick/raymond"
 
 	api "github.com/cedricziel/mel-agent/pkg/api"
 )
@@ -15,6 +14,7 @@ func (transformDefinition) Meta() api.NodeType {
 	return api.NodeType{
 		Type:     "transform",
 		Label:    "Transform",
+		Icon:     "🔄",
 		Category: "Utility",
 		Parameters: []api.ParameterDefinition{
 			api.NewStringParameter("expression", "Expression", true).WithGroup("Settings").WithDescription("Transform input via expression"),
@@ -29,7 +29,7 @@ func (d transformDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.
 		return envelope, api.NewNodeError(node.ID, node.Type, "expression parameter required")
 	}
 
-	tmpl, err := template.New("transform").Parse(expr)
+	tmpl, err := raymond.Parse(expr)
 	if err != nil {
 		envelope.AddError(node.ID, "template parse failed", err)
 		return envelope, err
@@ -40,15 +40,15 @@ func (d transformDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.
 		"vars":  ctx.Variables,
 	}
 
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, data); err != nil {
+	out, err := tmpl.Exec(data)
+	if err != nil {
 		envelope.AddError(node.ID, "template execute failed", err)
 		return envelope, err
 	}
 
 	result := envelope.Clone()
 	result.Trace = envelope.Trace.Next(node.ID)
-	result.Data = buf.String()
+	result.Data = out
 	result.DataType = "string"
 	return result, nil
 }

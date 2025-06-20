@@ -155,3 +155,18 @@ func TestMergeDefinition_IntersectionMaps(t *testing.T) {
 		t.Errorf("expected %v got %v", expected, got)
 	}
 }
+
+func TestMergeDefinition_InvalidStrategy(t *testing.T) {
+	def := mergeDefinition{}
+	ctx := api.ExecutionContext{AgentID: "a", RunID: "r"}
+	node := api.Node{ID: "merge", Type: "merge", Data: map[string]interface{}{"strategy": "bogus"}}
+
+	input := []interface{}{1, 2}
+	trace := api.Trace{AgentID: ctx.AgentID, RunID: ctx.RunID, NodeID: node.ID, Step: node.ID, Attempt: 1}
+	env := core.NewEnvelope(interface{}(input), trace)
+
+	_, err := def.ExecuteEnvelope(ctx, node, env)
+	if err == nil {
+		t.Fatal("expected error for invalid strategy")
+	}
+}

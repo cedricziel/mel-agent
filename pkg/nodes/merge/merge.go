@@ -16,6 +16,7 @@ func (mergeDefinition) Meta() api.NodeType {
 	return api.NodeType{
 		Type:     "merge",
 		Label:    "Merge",
+		Icon:     "🔀",
 		Category: "Control",
 		Parameters: []api.ParameterDefinition{
 			api.NewEnumParameter("strategy", "Strategy", []string{"concat", "union", "deep", "intersection"}, true).
@@ -39,6 +40,12 @@ func (d mergeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node
 	strategy, _ := node.Data["strategy"].(string)
 	if strategy == "" {
 		strategy = "concat"
+	}
+	valid := map[string]bool{"concat": true, "union": true, "deep": true, "intersection": true}
+	if !valid[strategy] {
+		err := fmt.Errorf("invalid merge strategy %q", strategy)
+		envelope.AddError(node.ID, "invalid strategy", err)
+		return envelope, err
 	}
 
 	dataSlice, ok := envelope.Data.([]interface{})

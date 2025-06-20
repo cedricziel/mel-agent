@@ -10,7 +10,7 @@ import (
 func TestTransformDefinition_Template(t *testing.T) {
 	def := transformDefinition{}
 	ctx := api.ExecutionContext{AgentID: "test-agent", RunID: "test-run"}
-	node := api.Node{ID: "transform", Type: "transform", Data: map[string]interface{}{"expression": "Hello, {{ .input.name }}!"}}
+	node := api.Node{ID: "transform", Type: "transform", Data: map[string]interface{}{"expression": "Hello, {{input.name}}!"}}
 
 	input := map[string]interface{}{"name": "Alice"}
 	trace := api.Trace{AgentID: ctx.AgentID, RunID: ctx.RunID, NodeID: node.ID, Step: node.ID, Attempt: 1}
@@ -28,7 +28,7 @@ func TestTransformDefinition_Template(t *testing.T) {
 func TestTransformDefinition_Variables(t *testing.T) {
 	def := transformDefinition{}
 	ctx := api.ExecutionContext{AgentID: "agent", RunID: "run", Variables: map[string]interface{}{"role": "admin"}}
-	node := api.Node{ID: "transform", Type: "transform", Data: map[string]interface{}{"expression": "{{ .vars.role }}-{{ .input }}"}}
+	node := api.Node{ID: "transform", Type: "transform", Data: map[string]interface{}{"expression": "{{vars.role}}-{{input}}"}}
 
 	trace := api.Trace{AgentID: ctx.AgentID, RunID: ctx.RunID, NodeID: node.ID, Step: node.ID, Attempt: 1}
 	env := core.NewEnvelope(interface{}("data"), trace)
@@ -39,5 +39,19 @@ func TestTransformDefinition_Variables(t *testing.T) {
 	}
 	if out.Data != "admin-data" {
 		t.Errorf("unexpected result: %v", out.Data)
+	}
+}
+
+func TestTransformDefinition_InvalidTemplate(t *testing.T) {
+	def := transformDefinition{}
+	ctx := api.ExecutionContext{AgentID: "agent", RunID: "run"}
+	node := api.Node{ID: "transform", Type: "transform", Data: map[string]interface{}{"expression": "{{ invalid"}}
+
+	trace := api.Trace{AgentID: ctx.AgentID, RunID: ctx.RunID, NodeID: node.ID, Step: node.ID, Attempt: 1}
+	env := core.NewEnvelope(interface{}("data"), trace)
+
+	_, err := def.ExecuteEnvelope(ctx, node, env)
+	if err == nil {
+		t.Fatal("expected error for malformed template")
 	}
 }
