@@ -1,10 +1,9 @@
-import { workflowsApi, agentsApi } from './client';
+import { workflowsApi } from './client';
 
 class WorkflowClient {
   constructor() {
     // Use generated API clients
     this.workflowsApi = workflowsApi;
-    this.agentsApi = agentsApi;
   }
 
   // Workflow management
@@ -150,19 +149,19 @@ class WorkflowClient {
     };
   }
 
-  // Backward compatibility - save entire workflow as version
+  // Save entire workflow as version
   async saveWorkflowVersion(workflowId, graph) {
-    // For now, maintain compatibility with existing agent versions API
-    const response = await this.agentsApi.createAgentVersion(workflowId, {
+    const response = await this.workflowsApi.createWorkflowVersion(workflowId, {
       name: '1.0.0',
       definition: { nodes: graph.nodes, edges: graph.edges },
     });
     return response.data;
   }
 
-  // Backward compatibility - load latest version
+  // Load latest version
   async getLatestWorkflowVersion(workflowId) {
-    const response = await this.agentsApi.getLatestAgentVersion(workflowId);
+    const response =
+      await this.workflowsApi.getLatestWorkflowVersion(workflowId);
     return response.data;
   }
 }

@@ -51,19 +51,7 @@ All URIs are relative to *http://localhost:8080*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
-*AgentsApi* | [**createAgent**](docs/AgentsApi.md#createagent) | **POST** /api/agents | Create a new agent
-*AgentsApi* | [**createAgentVersion**](docs/AgentsApi.md#createagentversion) | **POST** /api/agents/{agentId}/versions | Create a new agent version
-*AgentsApi* | [**deleteAgent**](docs/AgentsApi.md#deleteagent) | **DELETE** /api/agents/{id} | Delete agent
-*AgentsApi* | [**deployAgentVersion**](docs/AgentsApi.md#deployagentversion) | **POST** /api/agents/{agentId}/deploy | Deploy a specific agent version
-*AgentsApi* | [**executeAgentNode**](docs/AgentsApi.md#executeagentnode) | **POST** /api/agents/{agentId}/nodes/{nodeId}/execute | Execute a single node with provided input
-*AgentsApi* | [**getAgent**](docs/AgentsApi.md#getagent) | **GET** /api/agents/{id} | Get agent by ID
-*AgentsApi* | [**getAgentDraft**](docs/AgentsApi.md#getagentdraft) | **GET** /api/agents/{agentId}/draft | Get current draft for an agent
-*AgentsApi* | [**getLatestAgentVersion**](docs/AgentsApi.md#getlatestagentversion) | **GET** /api/agents/{agentId}/versions/latest | Get latest agent version
-*AgentsApi* | [**listAgents**](docs/AgentsApi.md#listagents) | **GET** /api/agents | List all agents
-*AgentsApi* | [**testDraftNode**](docs/AgentsApi.md#testdraftnode) | **POST** /api/agents/{agentId}/draft/nodes/{nodeId}/test | Test a single node in draft context
-*AgentsApi* | [**updateAgent**](docs/AgentsApi.md#updateagent) | **PUT** /api/agents/{id} | Update agent
-*AgentsApi* | [**updateAgentDraft**](docs/AgentsApi.md#updateagentdraft) | **PUT** /api/agents/{agentId}/draft | Update agent draft with auto-persistence
-*AssistantApi* | [**assistantChat**](docs/AssistantApi.md#assistantchat) | **POST** /api/agents/{agentId}/assistant/chat | Chat with AI assistant for workflow building
+*AssistantApi* | [**assistantChat**](docs/AssistantApi.md#assistantchat) | **POST** /api/assistant/chat | Chat with AI assistant
 *ConnectionsApi* | [**createConnection**](docs/ConnectionsApi.md#createconnection) | **POST** /api/connections | Create a connection
 *ConnectionsApi* | [**deleteConnection**](docs/ConnectionsApi.md#deleteconnection) | **DELETE** /api/connections/{id} | Delete connection
 *ConnectionsApi* | [**getConnection**](docs/ConnectionsApi.md#getconnection) | **GET** /api/connections/{id} | Get connection by ID
@@ -97,26 +85,28 @@ Class | Method | HTTP request | Description
 *WorkflowsApi* | [**createWorkflow**](docs/WorkflowsApi.md#createworkflow) | **POST** /api/workflows | Create a new workflow
 *WorkflowsApi* | [**createWorkflowEdge**](docs/WorkflowsApi.md#createworkflowedge) | **POST** /api/workflows/{workflowId}/edges | Create a new edge in workflow
 *WorkflowsApi* | [**createWorkflowNode**](docs/WorkflowsApi.md#createworkflownode) | **POST** /api/workflows/{workflowId}/nodes | Create a new node in workflow
+*WorkflowsApi* | [**createWorkflowVersion**](docs/WorkflowsApi.md#createworkflowversion) | **POST** /api/workflows/{workflowId}/versions | Create a new workflow version
 *WorkflowsApi* | [**deleteWorkflow**](docs/WorkflowsApi.md#deleteworkflow) | **DELETE** /api/workflows/{id} | Delete workflow
 *WorkflowsApi* | [**deleteWorkflowEdge**](docs/WorkflowsApi.md#deleteworkflowedge) | **DELETE** /api/workflows/{workflowId}/edges/{edgeId} | Delete workflow edge
 *WorkflowsApi* | [**deleteWorkflowNode**](docs/WorkflowsApi.md#deleteworkflownode) | **DELETE** /api/workflows/{workflowId}/nodes/{nodeId} | Delete workflow node
+*WorkflowsApi* | [**deployWorkflowVersion**](docs/WorkflowsApi.md#deployworkflowversion) | **POST** /api/workflows/{workflowId}/versions/{versionNumber}/deploy | Deploy a specific workflow version
 *WorkflowsApi* | [**executeWorkflow**](docs/WorkflowsApi.md#executeworkflow) | **POST** /api/workflows/{id}/execute | Execute a workflow
+*WorkflowsApi* | [**getLatestWorkflowVersion**](docs/WorkflowsApi.md#getlatestworkflowversion) | **GET** /api/workflows/{workflowId}/versions/latest | Get latest version of a workflow
 *WorkflowsApi* | [**getWorkflow**](docs/WorkflowsApi.md#getworkflow) | **GET** /api/workflows/{id} | Get workflow by ID
+*WorkflowsApi* | [**getWorkflowDraft**](docs/WorkflowsApi.md#getworkflowdraft) | **GET** /api/workflows/{workflowId}/draft | Get current draft for a workflow
 *WorkflowsApi* | [**getWorkflowNode**](docs/WorkflowsApi.md#getworkflownode) | **GET** /api/workflows/{workflowId}/nodes/{nodeId} | Get specific workflow node
 *WorkflowsApi* | [**listWorkflowEdges**](docs/WorkflowsApi.md#listworkflowedges) | **GET** /api/workflows/{workflowId}/edges | List all edges in a workflow
 *WorkflowsApi* | [**listWorkflowNodes**](docs/WorkflowsApi.md#listworkflownodes) | **GET** /api/workflows/{workflowId}/nodes | List all nodes in a workflow
+*WorkflowsApi* | [**listWorkflowVersions**](docs/WorkflowsApi.md#listworkflowversions) | **GET** /api/workflows/{workflowId}/versions | List all versions of a workflow
 *WorkflowsApi* | [**listWorkflows**](docs/WorkflowsApi.md#listworkflows) | **GET** /api/workflows | List all workflows
+*WorkflowsApi* | [**testWorkflowDraftNode**](docs/WorkflowsApi.md#testworkflowdraftnode) | **POST** /api/workflows/{workflowId}/draft/nodes/{nodeId}/test | Test a single node in draft context
 *WorkflowsApi* | [**updateWorkflow**](docs/WorkflowsApi.md#updateworkflow) | **PUT** /api/workflows/{id} | Update workflow
+*WorkflowsApi* | [**updateWorkflowDraft**](docs/WorkflowsApi.md#updateworkflowdraft) | **PUT** /api/workflows/{workflowId}/draft | Update workflow draft with auto-persistence
 *WorkflowsApi* | [**updateWorkflowNode**](docs/WorkflowsApi.md#updateworkflownode) | **PUT** /api/workflows/{workflowId}/nodes/{nodeId} | Update workflow node
 
 
 ### Documentation For Models
 
- - [Agent](docs/Agent.md)
- - [AgentDeployment](docs/AgentDeployment.md)
- - [AgentDraft](docs/AgentDraft.md)
- - [AgentList](docs/AgentList.md)
- - [AgentVersion](docs/AgentVersion.md)
  - [AssistantChatRequest](docs/AssistantChatRequest.md)
  - [AssistantChatResponse](docs/AssistantChatResponse.md)
  - [ChatChoice](docs/ChatChoice.md)
@@ -125,20 +115,17 @@ Class | Method | HTTP request | Description
  - [ClaimWorkRequest](docs/ClaimWorkRequest.md)
  - [CompleteWorkRequest](docs/CompleteWorkRequest.md)
  - [Connection](docs/Connection.md)
- - [CreateAgentRequest](docs/CreateAgentRequest.md)
- - [CreateAgentVersionRequest](docs/CreateAgentVersionRequest.md)
  - [CreateConnectionRequest](docs/CreateConnectionRequest.md)
  - [CreateTriggerRequest](docs/CreateTriggerRequest.md)
  - [CreateWorkflowEdgeRequest](docs/CreateWorkflowEdgeRequest.md)
  - [CreateWorkflowNodeRequest](docs/CreateWorkflowNodeRequest.md)
  - [CreateWorkflowNodeRequestPosition](docs/CreateWorkflowNodeRequestPosition.md)
  - [CreateWorkflowRequest](docs/CreateWorkflowRequest.md)
+ - [CreateWorkflowVersionRequest](docs/CreateWorkflowVersionRequest.md)
  - [Credential](docs/Credential.md)
  - [CredentialTestResult](docs/CredentialTestResult.md)
  - [CredentialType](docs/CredentialType.md)
  - [CredentialTypeSchema](docs/CredentialTypeSchema.md)
- - [DeployAgentVersionRequest](docs/DeployAgentVersionRequest.md)
- - [ExecuteAgentNodeRequest](docs/ExecuteAgentNodeRequest.md)
  - [ExecuteWorkflowRequest](docs/ExecuteWorkflowRequest.md)
  - [Extension](docs/Extension.md)
  - [FunctionCall](docs/FunctionCall.md)
@@ -156,10 +143,9 @@ Class | Method | HTTP request | Description
  - [RegisterWorkerRequest](docs/RegisterWorkerRequest.md)
  - [TestCredentialsRequest](docs/TestCredentialsRequest.md)
  - [Trigger](docs/Trigger.md)
- - [UpdateAgentDraftRequest](docs/UpdateAgentDraftRequest.md)
- - [UpdateAgentRequest](docs/UpdateAgentRequest.md)
  - [UpdateConnectionRequest](docs/UpdateConnectionRequest.md)
  - [UpdateTriggerRequest](docs/UpdateTriggerRequest.md)
+ - [UpdateWorkflowDraftRequest](docs/UpdateWorkflowDraftRequest.md)
  - [UpdateWorkflowNodeRequest](docs/UpdateWorkflowNodeRequest.md)
  - [UpdateWorkflowRequest](docs/UpdateWorkflowRequest.md)
  - [ValidatorSpec](docs/ValidatorSpec.md)
@@ -167,6 +153,7 @@ Class | Method | HTTP request | Description
  - [Worker](docs/Worker.md)
  - [Workflow](docs/Workflow.md)
  - [WorkflowDefinition](docs/WorkflowDefinition.md)
+ - [WorkflowDraft](docs/WorkflowDraft.md)
  - [WorkflowEdge](docs/WorkflowEdge.md)
  - [WorkflowExecution](docs/WorkflowExecution.md)
  - [WorkflowLayoutResult](docs/WorkflowLayoutResult.md)
@@ -176,6 +163,8 @@ Class | Method | HTTP request | Description
  - [WorkflowRun](docs/WorkflowRun.md)
  - [WorkflowRunList](docs/WorkflowRunList.md)
  - [WorkflowStep](docs/WorkflowStep.md)
+ - [WorkflowVersion](docs/WorkflowVersion.md)
+ - [WorkflowVersionList](docs/WorkflowVersionList.md)
 
 
 <a id="documentation-for-authorization"></a>

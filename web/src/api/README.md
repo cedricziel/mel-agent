@@ -5,20 +5,20 @@ This directory contains the generated TypeScript API client for MEL Agent.
 ## Usage
 
 ```typescript
-import { agentsApi, workflowsApi, Agent, CreateAgentRequest } from './client';
+import { workflowsApi, Workflow, CreateWorkflowRequest } from './client';
 
-// List all agents
-const agents = await agentsApi.listAgents({ page: 1, limit: 20 });
+// List all workflows
+const workflows = await workflowsApi.listWorkflows({ page: 1, limit: 20 });
 
-// Create a new agent
-const newAgent: CreateAgentRequest = {
-  name: 'My Agent',
-  description: 'Agent description',
+// Create a new workflow
+const newWorkflow: CreateWorkflowRequest = {
+  name: 'My Workflow',
+  description: 'Workflow description',
 };
-const agent = await agentsApi.createAgent(newAgent);
+const workflow = await workflowsApi.createWorkflow(newWorkflow);
 
-// Get a specific agent
-const agent = await agentsApi.getAgent('agent-id');
+// Get a specific workflow
+const workflow = await workflowsApi.getWorkflow('workflow-id');
 ```
 
 ## Generated Code

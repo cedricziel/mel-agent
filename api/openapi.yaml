@@ -42,178 +42,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /api/agents:
-    get:
-      summary: List all agents
-      operationId: listAgents
-      tags:
-        - Agents
-      parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
-            default: 1
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 20
-      responses:
-        '200':
-          description: List of agents
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AgentList'
-        '400':
-          description: Invalid query parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-    post:
-      summary: Create a new agent
-      operationId: createAgent
-      tags:
-        - Agents
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateAgentRequest'
-      responses:
-        '201':
-          description: Agent created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Agent'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /api/agents/{id}:
-    get:
-      summary: Get agent by ID
-      operationId: getAgent
-      tags:
-        - Agents
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Agent details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Agent'
-        '404':
-          description: Agent not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-    put:
-      summary: Update agent
-      operationId: updateAgent
-      tags:
-        - Agents
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateAgentRequest'
-      responses:
-        '200':
-          description: Agent updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Agent'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: Agent not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-    delete:
-      summary: Delete agent
-      operationId: deleteAgent
-      tags:
-        - Agents
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '204':
-          description: Agent deleted successfully
-        '404':
-          description: Agent not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
 
   /api/workflows:
     get:
@@ -1054,226 +882,9 @@ paths:
         '200':
           description: Work item completed
 
-  /api/agents/{agentId}/versions:
-    post:
-      summary: Create a new agent version
-      operationId: createAgentVersion
-      tags:
-        - Agents
-      parameters:
-        - name: agentId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateAgentVersionRequest'
-      responses:
-        '201':
-          description: Agent version created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AgentVersion'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: Agent not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
 
-  /api/agents/{agentId}/draft:
-    get:
-      summary: Get current draft for an agent
-      operationId: getAgentDraft
-      tags:
-        - Agents
-      parameters:
-        - name: agentId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Agent draft
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AgentDraft'
-        '404':
-          description: Agent not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
 
-    put:
-      summary: Update agent draft with auto-persistence
-      operationId: updateAgentDraft
-      tags:
-        - Agents
-      parameters:
-        - name: agentId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateAgentDraftRequest'
-      responses:
-        '200':
-          description: Draft updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AgentDraft'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: Agent not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
 
-  /api/agents/{agentId}/draft/nodes/{nodeId}/test:
-    post:
-      summary: Test a single node in draft context
-      operationId: testDraftNode
-      tags:
-        - Agents
-      parameters:
-        - name: agentId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: nodeId
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                input:
-                  type: object
-                  additionalProperties: true
-      responses:
-        '200':
-          description: Node test result
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NodeTestResult'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: Agent or node not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /api/agents/{agentId}/deploy:
-    post:
-      summary: Deploy a specific agent version
-      operationId: deployAgentVersion
-      tags:
-        - Agents
-      parameters:
-        - name: agentId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DeployAgentVersionRequest'
-      responses:
-        '200':
-          description: Agent version deployed successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AgentDeployment'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: Agent not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
 
   /api/workflows/{workflowId}/nodes:
     get:
@@ -1620,6 +1231,291 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /api/workflows/{workflowId}/draft:
+    get:
+      summary: Get current draft for a workflow
+      operationId: getWorkflowDraft
+      tags:
+        - Workflows
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workflow draft
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowDraft'
+        '404':
+          description: Workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    put:
+      summary: Update workflow draft with auto-persistence
+      operationId: updateWorkflowDraft
+      tags:
+        - Workflows
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWorkflowDraftRequest'
+      responses:
+        '200':
+          description: Draft updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowDraft'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/workflows/{workflowId}/draft/nodes/{nodeId}/test:
+    post:
+      summary: Test a single node in draft context
+      operationId: testWorkflowDraftNode
+      tags:
+        - Workflows
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: nodeId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecuteWorkflowRequest'
+      responses:
+        '200':
+          description: Node test result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeTestResult'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Workflow or node not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/workflows/{workflowId}/versions:
+    get:
+      summary: List all versions of a workflow
+      operationId: listWorkflowVersions
+      tags:
+        - Workflows
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: List of workflow versions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowVersionList'
+        '404':
+          description: Workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      summary: Create a new workflow version
+      operationId: createWorkflowVersion
+      tags:
+        - Workflows
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWorkflowVersionRequest'
+      responses:
+        '201':
+          description: Version created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowVersion'
+        '400':
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Workflow not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/workflows/{workflowId}/versions/latest:
+    get:
+      summary: Get latest version of a workflow
+      operationId: getLatestWorkflowVersion
+      tags:
+        - Workflows
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Latest workflow version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowVersion'
+        '404':
+          description: Workflow not found or no versions exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/workflows/{workflowId}/versions/{versionNumber}/deploy:
+    post:
+      summary: Deploy a specific workflow version
+      operationId: deployWorkflowVersion
+      tags:
+        - Workflows
+      parameters:
+        - name: workflowId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: versionNumber
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Version deployed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowVersion'
+        '404':
+          description: Workflow or version not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /api/credentials:
     get:
       summary: List credentials for selection in nodes
@@ -1806,95 +1702,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /api/agents/{agentId}/versions/latest:
-    get:
-      summary: Get latest agent version
-      operationId: getLatestAgentVersion
-      tags:
-        - Agents
-      parameters:
-        - name: agentId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Latest agent version
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AgentVersion'
-        '404':
-          description: Agent not found or no versions exist
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
 
-  /api/agents/{agentId}/nodes/{nodeId}/execute:
-    post:
-      summary: Execute a single node with provided input
-      operationId: executeAgentNode
-      tags:
-        - Agents
-      parameters:
-        - name: agentId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: nodeId
-          in: path
-          required: true
-          schema:
-            type: string
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                input:
-                  type: object
-                  additionalProperties: true
-                context:
-                  type: object
-                  additionalProperties: true
-      responses:
-        '200':
-          description: Node execution result
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NodeExecutionResult'
-        '400':
-          description: Invalid input or execution failed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          description: Agent or node not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
 
   /api/node-types/{type}/parameters/{parameter}/options:
     get:
@@ -1960,20 +1768,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /api/agents/{agentId}/assistant/chat:
+  /api/assistant/chat:
     post:
-      summary: Chat with AI assistant for workflow building
+      summary: Chat with AI assistant
       operationId: assistantChat
       tags:
         - Assistant
-      parameters:
-        - name: agentId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-          description: Agent ID
       requestBody:
         required: true
         content:
@@ -2029,25 +1829,6 @@ components:
           description: JSON integer value
         - type: boolean
           description: JSON boolean (true/false)
-    Agent:
-      type: object
-      required:
-        - id
-        - name
-        - created_at
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        description:
-          type: string
-        definition:
-          $ref: '#/components/schemas/WorkflowDefinition'
-        created_at:
-          type: string
-          format: date-time
 
     AssistantChatRequest:
       type: object
@@ -2059,6 +1840,10 @@ components:
           items:
             $ref: '#/components/schemas/ChatMessage'
           description: Array of chat messages
+        workflow_id:
+          type: string
+          format: uuid
+          description: Optional workflow ID for context-aware assistance
 
     AssistantChatResponse:
       type: object
@@ -2217,41 +2002,6 @@ components:
           type: integer
           description: Total tokens used
 
-    CreateAgentRequest:
-      type: object
-      required:
-        - name
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        definition:
-          $ref: '#/components/schemas/WorkflowDefinition'
-
-    UpdateAgentRequest:
-      type: object
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        definition:
-          $ref: '#/components/schemas/WorkflowDefinition'
-
-    AgentList:
-      type: object
-      properties:
-        agents:
-          type: array
-          items:
-            $ref: '#/components/schemas/Agent'
-        total:
-          type: integer
-        page:
-          type: integer
-        limit:
-          type: integer
 
     Workflow:
       type: object
@@ -2360,6 +2110,76 @@ components:
           type: string
         targetInput:
           type: string
+
+    WorkflowDraft:
+      type: object
+      properties:
+        workflow_id:
+          type: string
+          format: uuid
+        definition:
+          $ref: '#/components/schemas/WorkflowDefinition'
+        updated_at:
+          type: string
+          format: date-time
+
+    UpdateWorkflowDraftRequest:
+      type: object
+      properties:
+        definition:
+          $ref: '#/components/schemas/WorkflowDefinition'
+
+    WorkflowVersion:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        workflow_id:
+          type: string
+          format: uuid
+        version_number:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        definition:
+          $ref: '#/components/schemas/WorkflowDefinition'
+        is_current:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    CreateWorkflowVersionRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        definition:
+          $ref: '#/components/schemas/WorkflowDefinition'
+
+    WorkflowVersionList:
+      type: object
+      properties:
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowVersion'
+        total:
+          type: integer
+
+    ExecuteWorkflowRequest:
+      type: object
+      properties:
+        input:
+          type: object
+          additionalProperties: true
 
     WorkflowExecution:
       type: object
@@ -2678,61 +2498,7 @@ components:
           type: string
           format: date-time
 
-    AgentVersion:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        agent_id:
-          type: string
-          format: uuid
-        version_number:
-          type: integer
-        name:
-          type: string
-        description:
-          type: string
-        definition:
-          $ref: '#/components/schemas/WorkflowDefinition'
-        created_at:
-          type: string
-          format: date-time
-        is_current:
-          type: boolean
 
-    CreateAgentVersionRequest:
-      type: object
-      required:
-        - name
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        definition:
-          $ref: '#/components/schemas/WorkflowDefinition'
-
-    AgentDraft:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        agent_id:
-          type: string
-          format: uuid
-        definition:
-          $ref: '#/components/schemas/WorkflowDefinition'
-        updated_at:
-          type: string
-          format: date-time
-
-    UpdateAgentDraftRequest:
-      type: object
-      properties:
-        definition:
-          $ref: '#/components/schemas/WorkflowDefinition'
 
     NodeTestResult:
       type: object
@@ -2751,30 +2517,6 @@ components:
           items:
             type: string
 
-    DeployAgentVersionRequest:
-      type: object
-      required:
-        - version_id
-      properties:
-        version_id:
-          type: string
-          format: uuid
-
-    AgentDeployment:
-      type: object
-      properties:
-        agent_id:
-          type: string
-          format: uuid
-        version_id:
-          type: string
-          format: uuid
-        deployed_at:
-          type: string
-          format: date-time
-        status:
-          type: string
-          enum: [deploying, deployed, failed]
 
     CreateWorkflowNodeRequest:
       type: object
@@ -3019,8 +2761,6 @@ security:
 tags:
   - name: System
     description: System health and status endpoints
-  - name: Agents
-    description: Agent management endpoints
   - name: Workflows
     description: Workflow management endpoints
   - name: WorkflowRuns

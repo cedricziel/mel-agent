@@ -15,25 +15,31 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { ChatMessage } from './chat-message';
+import type { WorkflowDefinition } from './workflow-definition';
 
 /**
  * 
  * @export
- * @interface AssistantChatRequest
+ * @interface CreateWorkflowVersionRequest
  */
-export interface AssistantChatRequest {
+export interface CreateWorkflowVersionRequest {
     /**
-     * Array of chat messages
-     * @type {Array<ChatMessage>}
-     * @memberof AssistantChatRequest
-     */
-    'messages': Array<ChatMessage>;
-    /**
-     * Optional workflow ID for context-aware assistance
+     * 
      * @type {string}
-     * @memberof AssistantChatRequest
+     * @memberof CreateWorkflowVersionRequest
      */
-    'workflow_id'?: string;
+    'name': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CreateWorkflowVersionRequest
+     */
+    'description'?: string;
+    /**
+     * 
+     * @type {WorkflowDefinition}
+     * @memberof CreateWorkflowVersionRequest
+     */
+    'definition'?: WorkflowDefinition;
 }
 

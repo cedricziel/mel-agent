@@ -1,4 +1,7 @@
 {
+	"scripts": {
+		"generate:client": "cd packages/api-client && npx @openapitools/openapi-generator-cli generate -c openapi-config.json"
+	},
 	"dependencies": {
 		"url-polyfill": "^1.1.13"
 	}

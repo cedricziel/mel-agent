@@ -1,12 +1,12 @@
 // Draft API client for auto-persistence workflow management
 
 import { useState, useEffect, useCallback } from 'react';
-import { agentsApi } from './client';
+import { workflowsApi } from './client';
 
 export class DraftAPI {
-  static async getDraft(agentId) {
+  static async getDraft(workflowId) {
     try {
-      const response = await agentsApi.getAgentDraft(agentId);
+      const response = await workflowsApi.getWorkflowDraft(workflowId);
       return response.data;
     } catch (error) {
       console.error('Error getting draft:', error);
@@ -14,9 +14,11 @@ export class DraftAPI {
     }
   }
 
-  static async updateDraft(agentId, draftData) {
+  static async updateDraft(workflowId, draftData) {
     try {
-      const response = await agentsApi.updateAgentDraft(agentId, draftData);
+      const response = await workflowsApi.updateWorkflowDraft(workflowId, {
+        definition: draftData,
+      });
       return response.data;
     } catch (error) {
       console.error('Error updating draft:', error);
@@ -24,11 +26,15 @@ export class DraftAPI {
     }
   }
 
-  static async testDraftNode(agentId, nodeId, testData = {}) {
+  static async testDraftNode(workflowId, nodeId, testData = {}) {
     try {
-      const response = await agentsApi.testDraftNode(agentId, nodeId, {
-        input: testData,
-      });
+      const response = await workflowsApi.testWorkflowDraftNode(
+        workflowId,
+        nodeId,
+        {
+          input: testData,
+        }
+      );
       return response.data;
     } catch (error) {
       console.error('Error testing draft node:', error);
@@ -36,11 +42,12 @@ export class DraftAPI {
     }
   }
 
-  static async deployVersion(agentId, versionId) {
+  static async deployVersion(workflowId, versionNumber) {
     try {
-      const response = await agentsApi.deployAgentVersion(agentId, {
-        version_id: versionId,
-      });
+      const response = await workflowsApi.deployWorkflowVersion(
+        workflowId,
+        versionNumber
+      );
       return response.data;
     } catch (error) {
       console.error('Error deploying version:', error);
@@ -51,8 +58,8 @@ export class DraftAPI {
 
 // Auto-save utilities
 export class AutoSaver {
-  constructor(agentId, onSave = null, onError = null) {
-    this.agentId = agentId;
+  constructor(workflowId, onSave = null, onError = null) {
+    this.workflowId = workflowId;
     this.onSave = onSave;
     this.onError = onError;
     this.saveTimeout = null;
@@ -86,7 +93,7 @@ export class AutoSaver {
 
     try {
       const result = await DraftAPI.updateDraft(
-        this.agentId,
+        this.workflowId,
         this.pendingChanges
       );
       this.pendingChanges = null;
@@ -126,17 +133,17 @@ export class AutoSaver {
 }
 
 // Hook for React components
-export function useAutoSaver(agentId) {
+export function useAutoSaver(workflowId) {
   const [autoSaver, setAutoSaver] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
   const [saveError, setSaveError] = useState(null);
 
   useEffect(() => {
-    if (!agentId) return;
+    if (!workflowId) return;
 
     const saver = new AutoSaver(
-      agentId,
+      workflowId,
       () => {
         setIsSaving(false);
         setLastSaved(new Date());
@@ -153,7 +160,7 @@ export function useAutoSaver(agentId) {
     return () => {
       saver.destroy();
     };
-  }, [agentId]);
+  }, [workflowId]);
 
   const scheduleSave = useCallback(
     (draftData) => {

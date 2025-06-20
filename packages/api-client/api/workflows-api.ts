@@ -28,13 +28,21 @@ import type { CreateWorkflowNodeRequest } from '../models';
 // @ts-ignore
 import type { CreateWorkflowRequest } from '../models';
 // @ts-ignore
+import type { CreateWorkflowVersionRequest } from '../models';
+// @ts-ignore
 import type { ExecuteWorkflowRequest } from '../models';
+// @ts-ignore
+import type { NodeTestResult } from '../models';
+// @ts-ignore
+import type { UpdateWorkflowDraftRequest } from '../models';
 // @ts-ignore
 import type { UpdateWorkflowNodeRequest } from '../models';
 // @ts-ignore
 import type { UpdateWorkflowRequest } from '../models';
 // @ts-ignore
 import type { Workflow } from '../models';
+// @ts-ignore
+import type { WorkflowDraft } from '../models';
 // @ts-ignore
 import type { WorkflowEdge } from '../models';
 // @ts-ignore
@@ -45,6 +53,10 @@ import type { WorkflowLayoutResult } from '../models';
 import type { WorkflowList } from '../models';
 // @ts-ignore
 import type { WorkflowNode } from '../models';
+// @ts-ignore
+import type { WorkflowVersion } from '../models';
+// @ts-ignore
+import type { WorkflowVersionList } from '../models';
 /**
  * WorkflowsApi - axios parameter creator
  * @export
@@ -231,6 +243,53 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
         },
         /**
          * 
+         * @summary Create a new workflow version
+         * @param {string} workflowId 
+         * @param {CreateWorkflowVersionRequest} createWorkflowVersionRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createWorkflowVersion: async (workflowId: string, createWorkflowVersionRequest: CreateWorkflowVersionRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'workflowId' is not null or undefined
+            assertParamExists('createWorkflowVersion', 'workflowId', workflowId)
+            // verify required parameter 'createWorkflowVersionRequest' is not null or undefined
+            assertParamExists('createWorkflowVersion', 'createWorkflowVersionRequest', createWorkflowVersionRequest)
+            const localVarPath = `/api/workflows/{workflowId}/versions`
+                .replace(`{${"workflowId"}}`, encodeURIComponent(String(workflowId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(createWorkflowVersionRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary Delete workflow
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -362,6 +421,51 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
         },
         /**
          * 
+         * @summary Deploy a specific workflow version
+         * @param {string} workflowId 
+         * @param {number} versionNumber 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deployWorkflowVersion: async (workflowId: string, versionNumber: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'workflowId' is not null or undefined
+            assertParamExists('deployWorkflowVersion', 'workflowId', workflowId)
+            // verify required parameter 'versionNumber' is not null or undefined
+            assertParamExists('deployWorkflowVersion', 'versionNumber', versionNumber)
+            const localVarPath = `/api/workflows/{workflowId}/versions/{versionNumber}/deploy`
+                .replace(`{${"workflowId"}}`, encodeURIComponent(String(workflowId)))
+                .replace(`{${"versionNumber"}}`, encodeURIComponent(String(versionNumber)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary Execute a workflow
          * @param {string} id 
          * @param {ExecuteWorkflowRequest} [executeWorkflowRequest] 
@@ -407,6 +511,47 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
         },
         /**
          * 
+         * @summary Get latest version of a workflow
+         * @param {string} workflowId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getLatestWorkflowVersion: async (workflowId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'workflowId' is not null or undefined
+            assertParamExists('getLatestWorkflowVersion', 'workflowId', workflowId)
+            const localVarPath = `/api/workflows/{workflowId}/versions/latest`
+                .replace(`{${"workflowId"}}`, encodeURIComponent(String(workflowId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary Get workflow by ID
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -417,6 +562,47 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             assertParamExists('getWorkflow', 'id', id)
             const localVarPath = `/api/workflows/{id}`
                 .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Get current draft for a workflow
+         * @param {string} workflowId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getWorkflowDraft: async (workflowId: string, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'workflowId' is not null or undefined
+            assertParamExists('getWorkflowDraft', 'workflowId', workflowId)
+            const localVarPath = `/api/workflows/{workflowId}/draft`
+                .replace(`{${"workflowId"}}`, encodeURIComponent(String(workflowId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -575,6 +761,57 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
         },
         /**
          * 
+         * @summary List all versions of a workflow
+         * @param {string} workflowId 
+         * @param {number} [page] 
+         * @param {number} [limit] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        listWorkflowVersions: async (workflowId: string, page?: number, limit?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'workflowId' is not null or undefined
+            assertParamExists('listWorkflowVersions', 'workflowId', workflowId)
+            const localVarPath = `/api/workflows/{workflowId}/versions`
+                .replace(`{${"workflowId"}}`, encodeURIComponent(String(workflowId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+            if (page !== undefined) {
+                localVarQueryParameter['page'] = page;
+            }
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary List all workflows
          * @param {number} [page] 
          * @param {number} [limit] 
@@ -622,6 +859,57 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
         },
         /**
          * 
+         * @summary Test a single node in draft context
+         * @param {string} workflowId 
+         * @param {string} nodeId 
+         * @param {ExecuteWorkflowRequest} executeWorkflowRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        testWorkflowDraftNode: async (workflowId: string, nodeId: string, executeWorkflowRequest: ExecuteWorkflowRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'workflowId' is not null or undefined
+            assertParamExists('testWorkflowDraftNode', 'workflowId', workflowId)
+            // verify required parameter 'nodeId' is not null or undefined
+            assertParamExists('testWorkflowDraftNode', 'nodeId', nodeId)
+            // verify required parameter 'executeWorkflowRequest' is not null or undefined
+            assertParamExists('testWorkflowDraftNode', 'executeWorkflowRequest', executeWorkflowRequest)
+            const localVarPath = `/api/workflows/{workflowId}/draft/nodes/{nodeId}/test`
+                .replace(`{${"workflowId"}}`, encodeURIComponent(String(workflowId)))
+                .replace(`{${"nodeId"}}`, encodeURIComponent(String(nodeId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(executeWorkflowRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary Update workflow
          * @param {string} id 
          * @param {UpdateWorkflowRequest} updateWorkflowRequest 
@@ -661,6 +949,53 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(updateWorkflowRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Update workflow draft with auto-persistence
+         * @param {string} workflowId 
+         * @param {UpdateWorkflowDraftRequest} updateWorkflowDraftRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateWorkflowDraft: async (workflowId: string, updateWorkflowDraftRequest: UpdateWorkflowDraftRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'workflowId' is not null or undefined
+            assertParamExists('updateWorkflowDraft', 'workflowId', workflowId)
+            // verify required parameter 'updateWorkflowDraftRequest' is not null or undefined
+            assertParamExists('updateWorkflowDraft', 'updateWorkflowDraftRequest', updateWorkflowDraftRequest)
+            const localVarPath = `/api/workflows/{workflowId}/draft`
+                .replace(`{${"workflowId"}}`, encodeURIComponent(String(workflowId)));
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'PUT', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication ApiKeyAuth required
+            await setApiKeyToObject(localVarHeaderParameter, "X-API-Key", configuration)
+
+            // authentication BearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(updateWorkflowDraftRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -784,6 +1119,20 @@ export const WorkflowsApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary Create a new workflow version
+         * @param {string} workflowId 
+         * @param {CreateWorkflowVersionRequest} createWorkflowVersionRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async createWorkflowVersion(workflowId: string, createWorkflowVersionRequest: CreateWorkflowVersionRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkflowVersion>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.createWorkflowVersion(workflowId, createWorkflowVersionRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WorkflowsApi.createWorkflowVersion']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @summary Delete workflow
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -825,6 +1174,20 @@ export const WorkflowsApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary Deploy a specific workflow version
+         * @param {string} workflowId 
+         * @param {number} versionNumber 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async deployWorkflowVersion(workflowId: string, versionNumber: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkflowVersion>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.deployWorkflowVersion(workflowId, versionNumber, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WorkflowsApi.deployWorkflowVersion']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @summary Execute a workflow
          * @param {string} id 
          * @param {ExecuteWorkflowRequest} [executeWorkflowRequest] 
@@ -839,6 +1202,19 @@ export const WorkflowsApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary Get latest version of a workflow
+         * @param {string} workflowId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getLatestWorkflowVersion(workflowId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkflowVersion>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getLatestWorkflowVersion(workflowId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WorkflowsApi.getLatestWorkflowVersion']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @summary Get workflow by ID
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -848,6 +1224,19 @@ export const WorkflowsApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.getWorkflow(id, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['WorkflowsApi.getWorkflow']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Get current draft for a workflow
+         * @param {string} workflowId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async getWorkflowDraft(workflowId: string, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkflowDraft>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.getWorkflowDraft(workflowId, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WorkflowsApi.getWorkflowDraft']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -892,6 +1281,21 @@ export const WorkflowsApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary List all versions of a workflow
+         * @param {string} workflowId 
+         * @param {number} [page] 
+         * @param {number} [limit] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async listWorkflowVersions(workflowId: string, page?: number, limit?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkflowVersionList>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.listWorkflowVersions(workflowId, page, limit, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WorkflowsApi.listWorkflowVersions']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @summary List all workflows
          * @param {number} [page] 
          * @param {number} [limit] 
@@ -906,6 +1310,21 @@ export const WorkflowsApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary Test a single node in draft context
+         * @param {string} workflowId 
+         * @param {string} nodeId 
+         * @param {ExecuteWorkflowRequest} executeWorkflowRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async testWorkflowDraftNode(workflowId: string, nodeId: string, executeWorkflowRequest: ExecuteWorkflowRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<NodeTestResult>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.testWorkflowDraftNode(workflowId, nodeId, executeWorkflowRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WorkflowsApi.testWorkflowDraftNode']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
          * @summary Update workflow
          * @param {string} id 
          * @param {UpdateWorkflowRequest} updateWorkflowRequest 
@@ -916,6 +1335,20 @@ export const WorkflowsApiFp = function(configuration?: Configuration) {
             const localVarAxiosArgs = await localVarAxiosParamCreator.updateWorkflow(id, updateWorkflowRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['WorkflowsApi.updateWorkflow']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
+         * 
+         * @summary Update workflow draft with auto-persistence
+         * @param {string} workflowId 
+         * @param {UpdateWorkflowDraftRequest} updateWorkflowDraftRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async updateWorkflowDraft(workflowId: string, updateWorkflowDraftRequest: UpdateWorkflowDraftRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkflowDraft>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.updateWorkflowDraft(workflowId, updateWorkflowDraftRequest, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WorkflowsApi.updateWorkflowDraft']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
         /**
@@ -987,6 +1420,17 @@ export const WorkflowsApiFactory = function (configuration?: Configuration, base
         },
         /**
          * 
+         * @summary Create a new workflow version
+         * @param {string} workflowId 
+         * @param {CreateWorkflowVersionRequest} createWorkflowVersionRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        createWorkflowVersion(workflowId: string, createWorkflowVersionRequest: CreateWorkflowVersionRequest, options?: RawAxiosRequestConfig): AxiosPromise<WorkflowVersion> {
+            return localVarFp.createWorkflowVersion(workflowId, createWorkflowVersionRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary Delete workflow
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -1019,6 +1463,17 @@ export const WorkflowsApiFactory = function (configuration?: Configuration, base
         },
         /**
          * 
+         * @summary Deploy a specific workflow version
+         * @param {string} workflowId 
+         * @param {number} versionNumber 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        deployWorkflowVersion(workflowId: string, versionNumber: number, options?: RawAxiosRequestConfig): AxiosPromise<WorkflowVersion> {
+            return localVarFp.deployWorkflowVersion(workflowId, versionNumber, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary Execute a workflow
          * @param {string} id 
          * @param {ExecuteWorkflowRequest} [executeWorkflowRequest] 
@@ -1030,6 +1485,16 @@ export const WorkflowsApiFactory = function (configuration?: Configuration, base
         },
         /**
          * 
+         * @summary Get latest version of a workflow
+         * @param {string} workflowId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getLatestWorkflowVersion(workflowId: string, options?: RawAxiosRequestConfig): AxiosPromise<WorkflowVersion> {
+            return localVarFp.getLatestWorkflowVersion(workflowId, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary Get workflow by ID
          * @param {string} id 
          * @param {*} [options] Override http request option.
@@ -1037,6 +1502,16 @@ export const WorkflowsApiFactory = function (configuration?: Configuration, base
          */
         getWorkflow(id: string, options?: RawAxiosRequestConfig): AxiosPromise<Workflow> {
             return localVarFp.getWorkflow(id, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Get current draft for a workflow
+         * @param {string} workflowId 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        getWorkflowDraft(workflowId: string, options?: RawAxiosRequestConfig): AxiosPromise<WorkflowDraft> {
+            return localVarFp.getWorkflowDraft(workflowId, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -1071,6 +1546,18 @@ export const WorkflowsApiFactory = function (configuration?: Configuration, base
         },
         /**
          * 
+         * @summary List all versions of a workflow
+         * @param {string} workflowId 
+         * @param {number} [page] 
+         * @param {number} [limit] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        listWorkflowVersions(workflowId: string, page?: number, limit?: number, options?: RawAxiosRequestConfig): AxiosPromise<WorkflowVersionList> {
+            return localVarFp.listWorkflowVersions(workflowId, page, limit, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary List all workflows
          * @param {number} [page] 
          * @param {number} [limit] 
@@ -1082,6 +1569,18 @@ export const WorkflowsApiFactory = function (configuration?: Configuration, base
         },
         /**
          * 
+         * @summary Test a single node in draft context
+         * @param {string} workflowId 
+         * @param {string} nodeId 
+         * @param {ExecuteWorkflowRequest} executeWorkflowRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        testWorkflowDraftNode(workflowId: string, nodeId: string, executeWorkflowRequest: ExecuteWorkflowRequest, options?: RawAxiosRequestConfig): AxiosPromise<NodeTestResult> {
+            return localVarFp.testWorkflowDraftNode(workflowId, nodeId, executeWorkflowRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary Update workflow
          * @param {string} id 
          * @param {UpdateWorkflowRequest} updateWorkflowRequest 
@@ -1090,6 +1589,17 @@ export const WorkflowsApiFactory = function (configuration?: Configuration, base
          */
         updateWorkflow(id: string, updateWorkflowRequest: UpdateWorkflowRequest, options?: RawAxiosRequestConfig): AxiosPromise<Workflow> {
             return localVarFp.updateWorkflow(id, updateWorkflowRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Update workflow draft with auto-persistence
+         * @param {string} workflowId 
+         * @param {UpdateWorkflowDraftRequest} updateWorkflowDraftRequest 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        updateWorkflowDraft(workflowId: string, updateWorkflowDraftRequest: UpdateWorkflowDraftRequest, options?: RawAxiosRequestConfig): AxiosPromise<WorkflowDraft> {
+            return localVarFp.updateWorkflowDraft(workflowId, updateWorkflowDraftRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -1165,6 +1675,19 @@ export class WorkflowsApi extends BaseAPI {
 
     /**
      * 
+     * @summary Create a new workflow version
+     * @param {string} workflowId 
+     * @param {CreateWorkflowVersionRequest} createWorkflowVersionRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WorkflowsApi
+     */
+    public createWorkflowVersion(workflowId: string, createWorkflowVersionRequest: CreateWorkflowVersionRequest, options?: RawAxiosRequestConfig) {
+        return WorkflowsApiFp(this.configuration).createWorkflowVersion(workflowId, createWorkflowVersionRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @summary Delete workflow
      * @param {string} id 
      * @param {*} [options] Override http request option.
@@ -1203,6 +1726,19 @@ export class WorkflowsApi extends BaseAPI {
 
     /**
      * 
+     * @summary Deploy a specific workflow version
+     * @param {string} workflowId 
+     * @param {number} versionNumber 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WorkflowsApi
+     */
+    public deployWorkflowVersion(workflowId: string, versionNumber: number, options?: RawAxiosRequestConfig) {
+        return WorkflowsApiFp(this.configuration).deployWorkflowVersion(workflowId, versionNumber, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @summary Execute a workflow
      * @param {string} id 
      * @param {ExecuteWorkflowRequest} [executeWorkflowRequest] 
@@ -1216,6 +1752,18 @@ export class WorkflowsApi extends BaseAPI {
 
     /**
      * 
+     * @summary Get latest version of a workflow
+     * @param {string} workflowId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WorkflowsApi
+     */
+    public getLatestWorkflowVersion(workflowId: string, options?: RawAxiosRequestConfig) {
+        return WorkflowsApiFp(this.configuration).getLatestWorkflowVersion(workflowId, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @summary Get workflow by ID
      * @param {string} id 
      * @param {*} [options] Override http request option.
@@ -1224,6 +1772,18 @@ export class WorkflowsApi extends BaseAPI {
      */
     public getWorkflow(id: string, options?: RawAxiosRequestConfig) {
         return WorkflowsApiFp(this.configuration).getWorkflow(id, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Get current draft for a workflow
+     * @param {string} workflowId 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WorkflowsApi
+     */
+    public getWorkflowDraft(workflowId: string, options?: RawAxiosRequestConfig) {
+        return WorkflowsApiFp(this.configuration).getWorkflowDraft(workflowId, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -1265,6 +1825,20 @@ export class WorkflowsApi extends BaseAPI {
 
     /**
      * 
+     * @summary List all versions of a workflow
+     * @param {string} workflowId 
+     * @param {number} [page] 
+     * @param {number} [limit] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WorkflowsApi
+     */
+    public listWorkflowVersions(workflowId: string, page?: number, limit?: number, options?: RawAxiosRequestConfig) {
+        return WorkflowsApiFp(this.configuration).listWorkflowVersions(workflowId, page, limit, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @summary List all workflows
      * @param {number} [page] 
      * @param {number} [limit] 
@@ -1278,6 +1852,20 @@ export class WorkflowsApi extends BaseAPI {
 
     /**
      * 
+     * @summary Test a single node in draft context
+     * @param {string} workflowId 
+     * @param {string} nodeId 
+     * @param {ExecuteWorkflowRequest} executeWorkflowRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WorkflowsApi
+     */
+    public testWorkflowDraftNode(workflowId: string, nodeId: string, executeWorkflowRequest: ExecuteWorkflowRequest, options?: RawAxiosRequestConfig) {
+        return WorkflowsApiFp(this.configuration).testWorkflowDraftNode(workflowId, nodeId, executeWorkflowRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
      * @summary Update workflow
      * @param {string} id 
      * @param {UpdateWorkflowRequest} updateWorkflowRequest 
@@ -1287,6 +1875,19 @@ export class WorkflowsApi extends BaseAPI {
      */
     public updateWorkflow(id: string, updateWorkflowRequest: UpdateWorkflowRequest, options?: RawAxiosRequestConfig) {
         return WorkflowsApiFp(this.configuration).updateWorkflow(id, updateWorkflowRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Update workflow draft with auto-persistence
+     * @param {string} workflowId 
+     * @param {UpdateWorkflowDraftRequest} updateWorkflowDraftRequest 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WorkflowsApi
+     */
+    public updateWorkflowDraft(workflowId: string, updateWorkflowDraftRequest: UpdateWorkflowDraftRequest, options?: RawAxiosRequestConfig) {
+        return WorkflowsApiFp(this.configuration).updateWorkflowDraft(workflowId, updateWorkflowDraftRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

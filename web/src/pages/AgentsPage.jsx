@@ -1,21 +1,21 @@
 import { useEffect, useState } from 'react';
-import { agentsApi } from '../api/client';
+import { workflowsApi } from '../api/client';
 
 function AgentsPage() {
-  const [agents, setAgents] = useState([]);
+  const [workflows, setWorkflows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState({ name: '', description: '' });
 
   useEffect(() => {
-    fetchAgents();
+    fetchWorkflows();
   }, []);
 
-  async function fetchAgents() {
+  async function fetchWorkflows() {
     setLoading(true);
     try {
-      const res = await agentsApi.listAgents();
-      setAgents(res.data.agents || res.data);
+      const res = await workflowsApi.listWorkflows();
+      setWorkflows(res.data.workflows || res.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -26,25 +26,25 @@ function AgentsPage() {
   async function submit(e) {
     e.preventDefault();
     try {
-      await agentsApi.createAgent(form);
+      await workflowsApi.createWorkflow(form);
       setForm({ name: '', description: '' });
       setModalOpen(false);
-      fetchAgents();
+      fetchWorkflows();
     } catch (err) {
       console.error(err);
-      alert('Failed to create agent');
+      alert('Failed to create workflow');
     }
   }
 
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">Agents</h2>
+        <h2 className="text-2xl font-bold">Workflows</h2>
         <button
           onClick={() => setModalOpen(true)}
           className="bg-indigo-600 text-white py-1.5 px-3 rounded"
         >
-          + New Agent
+          + New Workflow
         </button>
       </div>
 
@@ -59,14 +59,16 @@ function AgentsPage() {
             </tr>
           </thead>
           <tbody>
-            {agents.map((a) => (
+            {workflows.map((w) => (
               <tr
-                key={a.id}
+                key={w.id}
                 className="border-t cursor-pointer hover:bg-gray-50"
-                onClick={() => (window.location.href = `/agents/${a.id}/edit`)}
+                onClick={() =>
+                  (window.location.href = `/workflows/${w.id}/edit`)
+                }
               >
-                <td className="px-4 py-2">{a.name}</td>
-                <td className="px-4 py-2 text-gray-600">{a.description}</td>
+                <td className="px-4 py-2">{w.name}</td>
+                <td className="px-4 py-2 text-gray-600">{w.description}</td>
               </tr>
             ))}
           </tbody>
@@ -76,7 +78,7 @@ function AgentsPage() {
       {modalOpen && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
           <form onSubmit={submit} className="bg-white p-6 rounded shadow w-96">
-            <h3 className="text-lg font-semibold mb-4">Create Agent</h3>
+            <h3 className="text-lg font-semibold mb-4">Create Workflow</h3>
             <label className="block mb-2 text-sm">Name</label>
             <input
               className="w-full border rounded px-2 py-1 mb-4"

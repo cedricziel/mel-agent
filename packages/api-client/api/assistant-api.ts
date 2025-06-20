@@ -33,19 +33,15 @@ export const AssistantApiAxiosParamCreator = function (configuration?: Configura
     return {
         /**
          * 
-         * @summary Chat with AI assistant for workflow building
-         * @param {string} agentId Agent ID
+         * @summary Chat with AI assistant
          * @param {AssistantChatRequest} assistantChatRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        assistantChat: async (agentId: string, assistantChatRequest: AssistantChatRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
-            // verify required parameter 'agentId' is not null or undefined
-            assertParamExists('assistantChat', 'agentId', agentId)
+        assistantChat: async (assistantChatRequest: AssistantChatRequest, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'assistantChatRequest' is not null or undefined
             assertParamExists('assistantChat', 'assistantChatRequest', assistantChatRequest)
-            const localVarPath = `/api/agents/{agentId}/assistant/chat`
-                .replace(`{${"agentId"}}`, encodeURIComponent(String(agentId)));
+            const localVarPath = `/api/assistant/chat`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -90,14 +86,13 @@ export const AssistantApiFp = function(configuration?: Configuration) {
     return {
         /**
          * 
-         * @summary Chat with AI assistant for workflow building
-         * @param {string} agentId Agent ID
+         * @summary Chat with AI assistant
          * @param {AssistantChatRequest} assistantChatRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async assistantChat(agentId: string, assistantChatRequest: AssistantChatRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<AssistantChatResponse>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.assistantChat(agentId, assistantChatRequest, options);
+        async assistantChat(assistantChatRequest: AssistantChatRequest, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<AssistantChatResponse>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.assistantChat(assistantChatRequest, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['AssistantApi.assistantChat']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
@@ -114,14 +109,13 @@ export const AssistantApiFactory = function (configuration?: Configuration, base
     return {
         /**
          * 
-         * @summary Chat with AI assistant for workflow building
-         * @param {string} agentId Agent ID
+         * @summary Chat with AI assistant
          * @param {AssistantChatRequest} assistantChatRequest 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        assistantChat(agentId: string, assistantChatRequest: AssistantChatRequest, options?: RawAxiosRequestConfig): AxiosPromise<AssistantChatResponse> {
-            return localVarFp.assistantChat(agentId, assistantChatRequest, options).then((request) => request(axios, basePath));
+        assistantChat(assistantChatRequest: AssistantChatRequest, options?: RawAxiosRequestConfig): AxiosPromise<AssistantChatResponse> {
+            return localVarFp.assistantChat(assistantChatRequest, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -135,15 +129,14 @@ export const AssistantApiFactory = function (configuration?: Configuration, base
 export class AssistantApi extends BaseAPI {
     /**
      * 
-     * @summary Chat with AI assistant for workflow building
-     * @param {string} agentId Agent ID
+     * @summary Chat with AI assistant
      * @param {AssistantChatRequest} assistantChatRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof AssistantApi
      */
-    public assistantChat(agentId: string, assistantChatRequest: AssistantChatRequest, options?: RawAxiosRequestConfig) {
-        return AssistantApiFp(this.configuration).assistantChat(agentId, assistantChatRequest, options).then((request) => request(this.axios, this.basePath));
+    public assistantChat(assistantChatRequest: AssistantChatRequest, options?: RawAxiosRequestConfig) {
+        return AssistantApiFp(this.configuration).assistantChat(assistantChatRequest, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

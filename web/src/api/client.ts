@@ -1,6 +1,5 @@
 import {
   Configuration,
-  AgentsApi,
   WorkflowsApi,
   NodeTypesApi,
   TriggersApi,
@@ -11,17 +10,16 @@ import {
   IntegrationsApi,
   CredentialTypesApi,
   WorkflowRunsApi,
-  AssistantApi,
   WebhooksApi,
+  AssistantApi,
 } from '@mel-agent/api-client';
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const baseURL = import.meta.env.VITE_API_BASE_URL || '';
 
 const configuration = new Configuration({
   basePath: baseURL,
 });
 
-export const agentsApi = new AgentsApi(configuration);
 export const workflowsApi = new WorkflowsApi(configuration);
 export const nodeTypesApi = new NodeTypesApi(configuration);
 export const triggersApi = new TriggersApi(configuration);

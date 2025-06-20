@@ -4,7 +4,7 @@ All URIs are relative to *http://localhost:8080*
 
 |Method | HTTP request | Description|
 |------------- | ------------- | -------------|
-|[**assistantChat**](#assistantchat) | **POST** /api/agents/{agentId}/assistant/chat | Chat with AI assistant for workflow building|
+|[**assistantChat**](#assistantchat) | **POST** /api/assistant/chat | Chat with AI assistant|
 
 # **assistantChat**
 > AssistantChatResponse assistantChat(assistantChatRequest)
@@ -22,11 +22,9 @@ import {
 const configuration = new Configuration();
 const apiInstance = new AssistantApi(configuration);
 
-let agentId: string; //Agent ID (default to undefined)
 let assistantChatRequest: AssistantChatRequest; //
 
 const { status, data } = await apiInstance.assistantChat(
-    agentId,
     assistantChatRequest
 );
 ```
@@ -36,7 +34,6 @@ const { status, data } = await apiInstance.assistantChat(
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
 | **assistantChatRequest** | **AssistantChatRequest**|  | |
-| **agentId** | [**string**] | Agent ID | defaults to undefined|
 
 
 ### Return type

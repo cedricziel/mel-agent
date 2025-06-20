@@ -6,6 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **messages** | [**Array&lt;ChatMessage&gt;**](ChatMessage.md) | Array of chat messages | [default to undefined]
+**workflow_id** | **string** | Optional workflow ID for context-aware assistance | [optional] [default to undefined]
 
 ## Example
 
@@ -14,6 +15,7 @@ import { AssistantChatRequest } from '@mel-agent/api-client';
 
 const instance: AssistantChatRequest = {
     messages,
+    workflow_id,
 };
 ```
 
