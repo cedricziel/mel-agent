@@ -29,7 +29,8 @@ func TestRemoteWorkerWithDatabase(t *testing.T) {
 	defer mockServer.Close()
 
 	mel := api.NewMel()
-	worker := NewRemoteWorker(mockServer.URL, "valid-token", "db-test-worker", mel, 3)
+	worker, err := NewRemoteWorker(mockServer.URL, "valid-token", "db-test-worker", mel, 3)
+	require.NoError(t, err)
 
 	// Test worker registration and basic functionality
 	testCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -47,7 +48,7 @@ func TestRemoteWorkerWithDatabase(t *testing.T) {
 
 	// Verify worker was registered in database
 	var count int
-	err := db.QueryRow("SELECT COUNT(*) FROM workflow_workers WHERE id = $1", "db-test-worker").Scan(&count)
+	err = db.QueryRow("SELECT COUNT(*) FROM workflow_workers WHERE id = $1", "db-test-worker").Scan(&count)
 	require.NoError(t, err)
 	assert.Equal(t, 1, count, "Worker should be registered in database")
 
@@ -112,7 +113,8 @@ func TestRemoteWorkerWorkProcessingWithDatabase(t *testing.T) {
 	defer mockServer.Close()
 
 	mel := api.NewMel()
-	worker := NewRemoteWorker(mockServer.URL, "valid-token", "work-processor-test", mel, 2)
+	worker, err := NewRemoteWorker(mockServer.URL, "valid-token", "work-processor-test", mel, 2)
+	require.NoError(t, err)
 
 	// Start worker for a short time to process work
 	testCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
@@ -157,7 +159,8 @@ func TestRemoteWorkerAuthenticationWithDatabase(t *testing.T) {
 	mel := api.NewMel()
 
 	// Test with valid token
-	validWorker := NewRemoteWorker(mockServer.URL, "valid-token", "auth-test-valid", mel, 1)
+	validWorker, err := NewRemoteWorker(mockServer.URL, "valid-token", "auth-test-valid", mel, 1)
+	require.NoError(t, err)
 
 	testCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
@@ -172,7 +175,7 @@ func TestRemoteWorkerAuthenticationWithDatabase(t *testing.T) {
 
 	// Check if worker was registered with valid token
 	var validCount int
-	err := db.QueryRow("SELECT COUNT(*) FROM workflow_workers WHERE id = $1", "auth-test-valid").Scan(&validCount)
+	err = db.QueryRow("SELECT COUNT(*) FROM workflow_workers WHERE id = $1", "auth-test-valid").Scan(&validCount)
 	require.NoError(t, err)
 	assert.Equal(t, 1, validCount, "Worker with valid token should be registered")
 
@@ -185,7 +188,8 @@ func TestRemoteWorkerAuthenticationWithDatabase(t *testing.T) {
 	}
 
 	// Test with invalid token
-	invalidWorker := NewRemoteWorker(mockServer.URL, "invalid-token", "auth-test-invalid", mel, 1)
+	invalidWorker, err := NewRemoteWorker(mockServer.URL, "invalid-token", "auth-test-invalid", mel, 1)
+	require.NoError(t, err)
 
 	testCtx, cancel = context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()

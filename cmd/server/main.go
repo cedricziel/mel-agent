@@ -368,7 +368,10 @@ func startWorker(serverURL, token, workerID string, concurrency int) {
 	mel := api.NewMel()
 
 	// Create a remote worker that connects to the API server
-	remoteWorker := execution.NewRemoteWorker(serverURL, token, workerID, mel, concurrency)
+	remoteWorker, err := execution.NewRemoteWorker(serverURL, token, workerID, mel, concurrency)
+	if err != nil {
+		log.Fatalf("Failed to create remote worker: %v", err)
+	}
 
 	// Create cancellable context for clean shutdown
 	ctx, cancel := context.WithCancel(context.Background())

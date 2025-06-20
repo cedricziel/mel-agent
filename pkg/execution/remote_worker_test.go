@@ -59,15 +59,46 @@ func NewMockAPIServer() *MockAPIServer {
 			return
 		}
 
-		var worker WorkflowWorker
-		if err := json.NewDecoder(r.Body).Decode(&worker); err != nil {
+		// Parse the RegisterWorkerRequest (new format)
+		var registerRequest struct {
+			ID          string  `json:"id"`
+			Name        *string `json:"name,omitempty"`
+			Concurrency *int    `json:"concurrency,omitempty"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&registerRequest); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
-		mock.registeredWorkers[worker.ID] = &worker
+		// Create a full WorkflowWorker from the registration request
+		hostname := "test-hostname"
+		if registerRequest.Name != nil {
+			hostname = *registerRequest.Name
+		}
+		concurrency := 5
+		if registerRequest.Concurrency != nil {
+			concurrency = *registerRequest.Concurrency
+		}
+
+		worker := &WorkflowWorker{
+			ID:                   registerRequest.ID,
+			Hostname:             hostname,
+			ProcessID:            nil,
+			Version:              nil,
+			Capabilities:         []string{"workflow_execution", "node_execution"},
+			Status:               WorkerStatusIdle,
+			LastHeartbeat:        time.Now(),
+			StartedAt:            time.Now(),
+			MaxConcurrentSteps:   concurrency,
+			CurrentStepCount:     0,
+			TotalStepsExecuted:   0,
+			TotalExecutionTimeMS: 0,
+		}
+
+		mock.registeredWorkers[worker.ID] = worker
 		mock.heartbeats[worker.ID] = time.Now()
 
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(map[string]string{"id": worker.ID})
 	})
@@ -114,17 +145,43 @@ func NewMockAPIServer() *MockAPIServer {
 				return
 			}
 
-			// Return available work items (for testing, return empty or predefined items)
-			availableWork := make([]*QueueItem, 0)
+			// Return available work items in WorkItem format (OpenAPI spec)
+			type WorkItem struct {
+				ID        *string                 `json:"id,omitempty"`
+				Type      *string                 `json:"type,omitempty"`
+				Payload   *map[string]interface{} `json:"payload,omitempty"`
+				CreatedAt *time.Time              `json:"created_at,omitempty"`
+			}
+
+			availableWork := make([]WorkItem, 0)
 			for _, item := range mock.workQueue {
 				if item.ClaimedBy == nil {
 					item.ClaimedBy = &workerID
 					item.ClaimedAt = &time.Time{}
 					*item.ClaimedAt = time.Now()
-					availableWork = append(availableWork, item)
+
+					// Convert QueueItem to WorkItem format
+					idStr := item.ID.String()
+					typeStr := string(item.QueueType)
+					payload := map[string]interface{}{
+						"run_id":   item.RunID.String(),
+						"priority": item.Priority,
+					}
+					if item.StepID != nil {
+						payload["step_id"] = item.StepID.String()
+					}
+
+					workItem := WorkItem{
+						ID:        &idStr,
+						Type:      &typeStr,
+						Payload:   &payload,
+						CreatedAt: &item.CreatedAt,
+					}
+					availableWork = append(availableWork, workItem)
 				}
 			}
 
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(availableWork)
 			return
@@ -156,10 +213,25 @@ func NewMockAPIServer() *MockAPIServer {
 				return
 			}
 
-			var result WorkResult
-			if err := json.NewDecoder(r.Body).Decode(&result); err != nil {
+			// Parse CompleteWorkJSONBody format (OpenAPI spec)
+			var completeRequest struct {
+				Error  *string                 `json:"error,omitempty"`
+				Result *map[string]interface{} `json:"result,omitempty"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&completeRequest); err != nil {
 				w.WriteHeader(http.StatusBadRequest)
 				return
+			}
+
+			// Convert to WorkResult for internal tracking
+			result := WorkResult{
+				Success: completeRequest.Error == nil,
+			}
+			if completeRequest.Error != nil {
+				result.Error = completeRequest.Error
+			}
+			if completeRequest.Result != nil {
+				result.OutputData = *completeRequest.Result
 			}
 
 			// Find and remove the work item
@@ -239,7 +311,8 @@ func TestRemoteWorkerRegistration(t *testing.T) {
 	defer mockServer.Close()
 
 	mel := api.NewMel()
-	worker := NewRemoteWorker(mockServer.URL(), "test-token", "test-worker-1", mel, 5)
+	worker, err := NewRemoteWorker(mockServer.URL(), "test-token", "test-worker-1", mel, 5)
+	require.NoError(t, err)
 
 	// Test successful registration
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -288,7 +361,8 @@ func TestRemoteWorkerHeartbeat(t *testing.T) {
 	defer mockServer.Close()
 
 	mel := api.NewMel()
-	worker := NewRemoteWorker(mockServer.URL(), "test-token", "test-worker-heartbeat", mel, 3)
+	worker, err := NewRemoteWorker(mockServer.URL(), "test-token", "test-worker-heartbeat", mel, 3)
+	require.NoError(t, err)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -349,7 +423,8 @@ func TestRemoteWorkerWorkProcessing(t *testing.T) {
 	mockServer.AddWorkItem(workItem2)
 
 	mel := api.NewMel()
-	worker := NewRemoteWorker(mockServer.URL(), "test-token", "test-worker-process", mel, 2)
+	worker, err := NewRemoteWorker(mockServer.URL(), "test-token", "test-worker-process", mel, 2)
+	require.NoError(t, err)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -361,9 +436,7 @@ func TestRemoteWorkerWorkProcessing(t *testing.T) {
 		workerErr <- err
 	}()
 
-	// Give worker more time to register and process work
-	// The worker polls every 5 seconds by default, so we need to wait longer
-	// or we can modify the test to be more lenient
+	// Give worker time to register and process work
 	time.Sleep(500 * time.Millisecond)
 
 	// Cancel to stop worker
@@ -400,13 +473,14 @@ func TestRemoteWorkerInvalidToken(t *testing.T) {
 	defer mockServer.Close()
 
 	mel := api.NewMel()
-	worker := NewRemoteWorker(mockServer.URL(), "invalid-token", "test-worker-auth", mel, 1)
+	worker, err := NewRemoteWorker(mockServer.URL(), "invalid-token", "test-worker-auth", mel, 1)
+	require.NoError(t, err)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
 	// Start worker - should fail to register due to invalid token
-	err := worker.Start(ctx)
+	err = worker.Start(ctx)
 	if err != nil {
 		assert.Contains(t, err.Error(), "failed to register worker", "Error should indicate registration failure")
 	} else {
@@ -426,7 +500,8 @@ func TestRemoteWorkerAutoGeneratedID(t *testing.T) {
 	mel := api.NewMel()
 
 	// Create worker with empty ID (should auto-generate)
-	worker := NewRemoteWorker(mockServer.URL(), "test-token", "", mel, 1)
+	worker, err := NewRemoteWorker(mockServer.URL(), "test-token", "", mel, 1)
+	require.NoError(t, err)
 
 	// The worker ID should be set during Start()
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
@@ -473,7 +548,8 @@ func TestRemoteWorkerGracefulShutdown(t *testing.T) {
 	defer mockServer.Close()
 
 	mel := api.NewMel()
-	worker := NewRemoteWorker(mockServer.URL(), "test-token", "test-worker-shutdown", mel, 1)
+	worker, err := NewRemoteWorker(mockServer.URL(), "test-token", "test-worker-shutdown", mel, 1)
+	require.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -534,7 +610,8 @@ func TestRemoteWorkerQueueTypes(t *testing.T) {
 	}
 
 	mel := api.NewMel()
-	worker := NewRemoteWorker(mockServer.URL(), "test-token", "test-worker-types", mel, 5)
+	worker, err := NewRemoteWorker(mockServer.URL(), "test-token", "test-worker-types", mel, 5)
+	require.NoError(t, err)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
@@ -581,7 +658,8 @@ func TestRemoteWorkerWorkResults(t *testing.T) {
 	mockServer.AddWorkItem(workItem)
 
 	mel := api.NewMel()
-	worker := NewRemoteWorker(mockServer.URL(), "test-token", "test-worker-results", mel, 1)
+	worker, err := NewRemoteWorker(mockServer.URL(), "test-token", "test-worker-results", mel, 1)
+	require.NoError(t, err)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()

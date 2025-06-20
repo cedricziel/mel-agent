@@ -11,7 +11,7 @@ vi.mock('axios', () => {
     put: vi.fn(),
     delete: vi.fn(),
   };
-  
+
   return {
     default: {
       get: vi.fn(),
@@ -184,13 +184,19 @@ describe('Config Node Modal Integration', () => {
     // Set up default mock implementation for both direct axios and axios.create() instance
     const mockImplementation = createMockAxiosImplementation();
     mockedAxios.get.mockImplementation(mockImplementation);
-    
+
     // Also mock the axios instance created by axios.create()
     const mockAxiosInstance = mockedAxios.create();
     mockAxiosInstance.get.mockImplementation(mockImplementation);
-    mockAxiosInstance.post.mockImplementation(() => Promise.resolve({ data: {} }));
-    mockAxiosInstance.put.mockImplementation(() => Promise.resolve({ data: {} }));
-    mockAxiosInstance.delete.mockImplementation(() => Promise.resolve({ data: {} }));
+    mockAxiosInstance.post.mockImplementation(() =>
+      Promise.resolve({ data: {} })
+    );
+    mockAxiosInstance.put.mockImplementation(() =>
+      Promise.resolve({ data: {} })
+    );
+    mockAxiosInstance.delete.mockImplementation(() =>
+      Promise.resolve({ data: {} })
+    );
   });
 
   it('should open modal when config node is clicked', async () => {
@@ -220,17 +226,19 @@ describe('Config Node Modal Integration', () => {
     // Check that modal content is visible
     const saveButtons = screen.getAllByRole('button', { name: 'Save' });
     expect(saveButtons).toHaveLength(2); // One on toolbar, one in modal
-    
+
     // Find the modal save button (blue background, not disabled)
-    const modalSaveButton = saveButtons.find(btn => 
-      btn.classList.contains('bg-blue-600') && !btn.disabled
+    const modalSaveButton = saveButtons.find(
+      (btn) => btn.classList.contains('bg-blue-600') && !btn.disabled
     );
     expect(modalSaveButton).toBeInTheDocument();
-    
+
     expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument();
-    
+
     // Check that we have the modal header with the node label
-    expect(screen.getByRole('heading', { name: 'OpenAI Model' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'OpenAI Model' })
+    ).toBeInTheDocument();
   });
 
   it('should display config node parameters in modal', async () => {
@@ -254,7 +262,7 @@ describe('Config Node Modal Integration', () => {
     // Should show parameter configuration options in the NodeConfigurationPanel
     // These should be visible as labels or field names
     expect(screen.getByText('Node Name')).toBeInTheDocument();
-    
+
     // The parameter inputs should be rendered, even if labels aren't visible
     const inputs = screen.getAllByRole('textbox');
     expect(inputs.length).toBeGreaterThan(0);
@@ -308,9 +316,9 @@ describe('Config Node Modal Integration', () => {
           ],
         }),
     });
-    
+
     mockedAxios.get.mockImplementation(customMockImplementation);
-    
+
     // Also update the axios instance created by axios.create()
     const mockAxiosInstance = mockedAxios.create();
     mockAxiosInstance.get.mockImplementation(customMockImplementation);
@@ -331,6 +339,8 @@ describe('Config Node Modal Integration', () => {
     });
 
     // Should show memory-specific configuration - check for the modal header
-    expect(screen.getByRole('heading', { name: 'Local Memory' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Local Memory' })
+    ).toBeInTheDocument();
   });
 });

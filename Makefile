@@ -2,9 +2,16 @@
 help: ## Display this help screen
 	@grep -h -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
+.PHONY: generate-client
+generate-client: ## Generate client code from OpenAPI spec
+	cd pkg/client && go generate
+
+.PHONY: generate-server
+generate-server: ## Generate server code from OpenAPI spec
+	cd pkg/api && go generate
+
 .PHONY: generate
-generate: ## Generate code from OpenAPI spec
-	cd internal/api && go generate
+generate: generate-client generate-server
 
 .PHONY: build
 build: ## Build the server binary
