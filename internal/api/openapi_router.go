@@ -30,21 +30,7 @@ func NewOpenAPIRouter(database *sql.DB, engine execution.ExecutionEngine) http.H
 	return r
 }
 
-// createMergedAPIHandler creates a handler that tries main API first, then falls back to workflow engine
-func createMergedAPIHandler(mainHandler http.Handler, workflowHandler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// For workflow-runs paths, use the workflow handler directly
-		if len(r.URL.Path) >= 14 && r.URL.Path[:14] == "/workflow-runs" {
-			workflowHandler.ServeHTTP(w, r)
-			return
-		}
-
-		// Try main handler first
-		mainHandler.ServeHTTP(w, r)
-	})
-}
-
-// NewCombinedRouter creates a router that combines legacy and OpenAPI handlers
+// NewCombinedRouter creates a router that combines OpenAPI handlers with essential legacy endpoints
 func NewCombinedRouter(database *sql.DB, engine execution.ExecutionEngine) http.Handler {
 	r := chi.NewRouter()
 
@@ -62,14 +48,14 @@ func NewCombinedRouter(database *sql.DB, engine execution.ExecutionEngine) http.
 		HandlerFromMux(strictHandler, r)
 	})
 
-	// Legacy workflow runs handler (for backward compatibility)
-	workflowFactory := InitializeWorkflowEngine(database, nil) // Mel not needed for this specific handler
-	workflowHandler := workflowFactory(engine)
-	r.Mount("/api", workflowHandler)
+	// Essential legacy endpoints that aren't covered by OpenAPI
+	r.Route("/api", func(r chi.Router) {
+		// WebSocket for collaborative updates (not REST, so not in OpenAPI)
+		r.Get("/ws/agents/{agentID}", wsHandler)
 
-	// Legacy handlers for non-OpenAPI endpoints
-	legacyHandler := LegacyHandler()
-	r.Mount("/api", createMergedAPIHandler(legacyHandler, workflowHandler))
+		// Plugin extensions catalog (development utility)
+		r.Get("/extensions", listExtensionsHandler)
+	})
 
 	return r
 }
