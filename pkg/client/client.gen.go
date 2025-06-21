@@ -28,12 +28,31 @@ const (
 	Inactive WorkerStatus = "inactive"
 )
 
+// ClaimWorkRequest defines model for ClaimWorkRequest.
+type ClaimWorkRequest struct {
+	// MaxItems Maximum number of work items to claim
+	MaxItems *int `json:"maxItems,omitempty"`
+}
+
+// CompleteWorkRequest defines model for CompleteWorkRequest.
+type CompleteWorkRequest struct {
+	// Error Error message if the work item failed
+	Error  *string                 `json:"error,omitempty"`
+	Result *map[string]interface{} `json:"result,omitempty"`
+}
+
 // Error defines model for Error.
 type Error struct {
 	Code    *int    `json:"code,omitempty"`
 	Error   *string `json:"error,omitempty"`
 	Message *string `json:"message,omitempty"`
 }
+
+// GenericPayload Generic payload object containing arbitrary data
+type GenericPayload map[string]interface{}
+
+// GenericResult Generic result object containing arbitrary result data
+type GenericResult map[string]interface{}
 
 // RegisterWorkerRequest defines model for RegisterWorkerRequest.
 type RegisterWorkerRequest struct {
@@ -44,44 +63,37 @@ type RegisterWorkerRequest struct {
 
 // WorkItem defines model for WorkItem.
 type WorkItem struct {
-	CreatedAt *time.Time              `json:"created_at,omitempty"`
-	Id        *string                 `json:"id,omitempty"`
-	Payload   *map[string]interface{} `json:"payload,omitempty"`
-	Type      *string                 `json:"type,omitempty"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+	Id        *string    `json:"id,omitempty"`
+
+	// Payload Generic payload object containing arbitrary data
+	Payload *GenericPayload `json:"payload,omitempty"`
+	Type    *string         `json:"type,omitempty"`
 }
 
 // Worker defines model for Worker.
 type Worker struct {
-	Concurrency   *int          `json:"concurrency,omitempty"`
-	Id            *string       `json:"id,omitempty"`
-	LastHeartbeat *time.Time    `json:"last_heartbeat,omitempty"`
-	Name          *string       `json:"name,omitempty"`
-	RegisteredAt  *time.Time    `json:"registered_at,omitempty"`
-	Status        *WorkerStatus `json:"status,omitempty"`
+	Concurrency   *int       `json:"concurrency,omitempty"`
+	Id            *string    `json:"id,omitempty"`
+	LastHeartbeat *time.Time `json:"last_heartbeat,omitempty"`
+	Name          *string    `json:"name,omitempty"`
+	RegisteredAt  *time.Time `json:"registered_at,omitempty"`
+
+	// Status Status of a worker
+	Status *WorkerStatus `json:"status,omitempty"`
 }
 
-// WorkerStatus defines model for Worker.Status.
+// WorkerStatus Status of a worker
 type WorkerStatus string
-
-// ClaimWorkJSONBody defines parameters for ClaimWork.
-type ClaimWorkJSONBody struct {
-	MaxItems *int `json:"maxItems,omitempty"`
-}
-
-// CompleteWorkJSONBody defines parameters for CompleteWork.
-type CompleteWorkJSONBody struct {
-	Error  *string                 `json:"error,omitempty"`
-	Result *map[string]interface{} `json:"result,omitempty"`
-}
 
 // RegisterWorkerJSONRequestBody defines body for RegisterWorker for application/json ContentType.
 type RegisterWorkerJSONRequestBody = RegisterWorkerRequest
 
 // ClaimWorkJSONRequestBody defines body for ClaimWork for application/json ContentType.
-type ClaimWorkJSONRequestBody ClaimWorkJSONBody
+type ClaimWorkJSONRequestBody = ClaimWorkRequest
 
 // CompleteWorkJSONRequestBody defines body for CompleteWork for application/json ContentType.
-type CompleteWorkJSONRequestBody CompleteWorkJSONBody
+type CompleteWorkJSONRequestBody = CompleteWorkRequest
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error

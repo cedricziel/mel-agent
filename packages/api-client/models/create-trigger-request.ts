@@ -13,6 +13,9 @@
  */
 
 
+// May contain unused imports in some cases
+// @ts-ignore
+import type { TriggerType } from './trigger-type';
 
 /**
  * 
@@ -28,10 +31,10 @@ export interface CreateTriggerRequest {
     'name': string;
     /**
      * 
-     * @type {string}
+     * @type {TriggerType}
      * @memberof CreateTriggerRequest
      */
-    'type': CreateTriggerRequestTypeEnum;
+    'type': TriggerType;
     /**
      * 
      * @type {string}
@@ -39,7 +42,7 @@ export interface CreateTriggerRequest {
      */
     'workflow_id': string;
     /**
-     * 
+     * Trigger configuration containing trigger-specific parameters and settings
      * @type {{ [key: string]: any; }}
      * @memberof CreateTriggerRequest
      */
@@ -52,11 +55,5 @@ export interface CreateTriggerRequest {
     'enabled'?: boolean;
 }
 
-export const CreateTriggerRequestTypeEnum = {
-    Schedule: 'schedule',
-    Webhook: 'webhook'
-} as const;
-
-export type CreateTriggerRequestTypeEnum = typeof CreateTriggerRequestTypeEnum[keyof typeof CreateTriggerRequestTypeEnum];
 
 

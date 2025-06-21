@@ -289,12 +289,7 @@ paths:
         - name: status
           in: query
           schema:
-            type: string
-            enum:
-              - pending
-              - running
-              - completed
-              - failed
+            $ref: '#/components/schemas/WorkflowRunStatus'
         - name: page
           in: query
           schema:
@@ -834,12 +829,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                maxItems:
-                  type: integer
-                  minimum: 1
-                  maximum: 100
+              $ref: '#/components/schemas/ClaimWorkRequest'
       responses:
         '200':
           description: Work items claimed
@@ -871,13 +861,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                result:
-                  type: object
-                  additionalProperties: true
-                error:
-                  type: string
+              $ref: '#/components/schemas/CompleteWorkRequest'
       responses:
         '200':
           description: Work item completed
@@ -1788,6 +1772,10 @@ components:
           type: string
         code:
           type: integer
+    NodeConfig:
+      type: object
+      additionalProperties: true
+      description: Node configuration containing node-specific parameters and settings
     WorkflowNode:
       type: object
       required:
@@ -1803,8 +1791,7 @@ components:
         type:
           type: string
         config:
-          type: object
-          additionalProperties: true
+          $ref: '#/components/schemas/NodeConfig'
     WorkflowEdge:
       type: object
       required:
@@ -1894,6 +1881,14 @@ components:
           type: string
         definition:
           $ref: '#/components/schemas/WorkflowDefinition'
+    WorkflowRunStatus:
+      type: string
+      enum:
+        - pending
+        - running
+        - completed
+        - failed
+      description: Status of a workflow run
     WorkflowExecution:
       type: object
       properties:
@@ -1904,12 +1899,7 @@ components:
           type: string
           format: uuid
         status:
-          type: string
-          enum:
-            - pending
-            - running
-            - completed
-            - failed
+          $ref: '#/components/schemas/WorkflowRunStatus'
         started_at:
           type: string
           format: date-time
@@ -1931,12 +1921,7 @@ components:
           type: string
           format: uuid
         status:
-          type: string
-          enum:
-            - pending
-            - running
-            - completed
-            - failed
+          $ref: '#/components/schemas/WorkflowRunStatus'
         started_at:
           type: string
           format: date-time
@@ -1966,6 +1951,23 @@ components:
           type: integer
         limit:
           type: integer
+    WorkflowStepStatus:
+      type: string
+      enum:
+        - pending
+        - running
+        - completed
+        - failed
+        - skipped
+      description: Status of a workflow step
+    GenericInput:
+      type: object
+      additionalProperties: true
+      description: Generic input object containing arbitrary input data
+    GenericOutput:
+      type: object
+      additionalProperties: true
+      description: Generic output object containing arbitrary output data
     WorkflowStep:
       type: object
       properties:
@@ -1978,13 +1980,7 @@ components:
         node_id:
           type: string
         status:
-          type: string
-          enum:
-            - pending
-            - running
-            - completed
-            - failed
-            - skipped
+          $ref: '#/components/schemas/WorkflowStepStatus'
         started_at:
           type: string
           format: date-time
@@ -1992,13 +1988,20 @@ components:
           type: string
           format: date-time
         input:
-          type: object
-          additionalProperties: true
+          $ref: '#/components/schemas/GenericInput'
         output:
-          type: object
-          additionalProperties: true
+          $ref: '#/components/schemas/GenericOutput'
         error:
           type: string
+    NodeKind:
+      type: string
+      enum:
+        - action
+        - model
+        - memory
+        - tool
+        - trigger
+      description: Kind of node functionality
     NodeInput:
       type: object
       properties:
@@ -2031,13 +2034,7 @@ components:
         kinds:
           type: array
           items:
-            type: string
-            enum:
-              - action
-              - model
-              - memory
-              - tool
-              - trigger
+            $ref: '#/components/schemas/NodeKind'
         inputs:
           type: array
           items:
@@ -2046,6 +2043,21 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/NodeOutput'
+    ConnectionSecret:
+      type: object
+      additionalProperties: true
+      description: Connection secret configuration containing authentication credentials
+    ConnectionConfig:
+      type: object
+      additionalProperties: true
+      description: Connection configuration containing non-sensitive connection parameters
+    ConnectionStatus:
+      type: string
+      enum:
+        - valid
+        - invalid
+        - expired
+      description: Status of a connection
     Connection:
       type: object
       properties:
@@ -2061,11 +2073,9 @@ components:
         name:
           type: string
         secret:
-          type: object
-          additionalProperties: true
+          $ref: '#/components/schemas/ConnectionSecret'
         config:
-          type: object
-          additionalProperties: true
+          $ref: '#/components/schemas/ConnectionConfig'
         usage_limit_month:
           type: integer
         is_default:
@@ -2077,11 +2087,7 @@ components:
           type: string
           format: date-time
         status:
-          type: string
-          enum:
-            - valid
-            - invalid
-            - expired
+          $ref: '#/components/schemas/ConnectionStatus'
     CreateConnectionRequest:
       type: object
       required:
@@ -2094,11 +2100,9 @@ components:
           type: string
           format: uuid
         secret:
-          type: object
-          additionalProperties: true
+          $ref: '#/components/schemas/ConnectionSecret'
         config:
-          type: object
-          additionalProperties: true
+          $ref: '#/components/schemas/ConnectionConfig'
         usage_limit_month:
           type: integer
         is_default:
@@ -2109,21 +2113,25 @@ components:
         name:
           type: string
         secret:
-          type: object
-          additionalProperties: true
+          $ref: '#/components/schemas/ConnectionSecret'
         config:
-          type: object
-          additionalProperties: true
+          $ref: '#/components/schemas/ConnectionConfig'
         usage_limit_month:
           type: integer
         is_default:
           type: boolean
         status:
-          type: string
-          enum:
-            - valid
-            - invalid
-            - expired
+          $ref: '#/components/schemas/ConnectionStatus'
+    TriggerType:
+      type: string
+      enum:
+        - schedule
+        - webhook
+      description: Type of trigger
+    TriggerConfig:
+      type: object
+      additionalProperties: true
+      description: Trigger configuration containing trigger-specific parameters and settings
     Trigger:
       type: object
       properties:
@@ -2133,16 +2141,12 @@ components:
         name:
           type: string
         type:
-          type: string
-          enum:
-            - schedule
-            - webhook
+          $ref: '#/components/schemas/TriggerType'
         workflow_id:
           type: string
           format: uuid
         config:
-          type: object
-          additionalProperties: true
+          $ref: '#/components/schemas/TriggerConfig'
         enabled:
           type: boolean
         created_at:
@@ -2161,16 +2165,12 @@ components:
         name:
           type: string
         type:
-          type: string
-          enum:
-            - schedule
-            - webhook
+          $ref: '#/components/schemas/TriggerType'
         workflow_id:
           type: string
           format: uuid
         config:
-          type: object
-          additionalProperties: true
+          $ref: '#/components/schemas/TriggerConfig'
         enabled:
           type: boolean
           default: true
@@ -2180,10 +2180,15 @@ components:
         name:
           type: string
         config:
-          type: object
-          additionalProperties: true
+          $ref: '#/components/schemas/TriggerConfig'
         enabled:
           type: boolean
+    WorkerStatus:
+      type: string
+      enum:
+        - active
+        - inactive
+      description: Status of a worker
     Worker:
       type: object
       properties:
@@ -2192,10 +2197,7 @@ components:
         name:
           type: string
         status:
-          type: string
-          enum:
-            - active
-            - inactive
+          $ref: '#/components/schemas/WorkerStatus'
         last_heartbeat:
           type: string
           format: date-time
@@ -2217,6 +2219,19 @@ components:
           type: integer
           minimum: 1
           default: 5
+    ClaimWorkRequest:
+      type: object
+      properties:
+        maxItems:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 10
+          description: Maximum number of work items to claim
+    GenericPayload:
+      type: object
+      additionalProperties: true
+      description: Generic payload object containing arbitrary data
     WorkItem:
       type: object
       properties:
@@ -2225,11 +2240,34 @@ components:
         type:
           type: string
         payload:
-          type: object
-          additionalProperties: true
+          $ref: '#/components/schemas/GenericPayload'
         created_at:
           type: string
           format: date-time
+    GenericResult:
+      type: object
+      additionalProperties: true
+      description: Generic result object containing arbitrary result data
+    CompleteWorkRequest:
+      type: object
+      properties:
+        result:
+          allOf:
+            - $ref: '#/components/schemas/GenericResult'
+            - description: The result of the completed work item
+        error:
+          type: string
+          description: Error message if the work item failed
+    NodePosition:
+      type: object
+      properties:
+        x:
+          type: number
+          description: X coordinate position
+        'y':
+          type: number
+          description: Y coordinate position
+      description: Node position coordinates in the workflow canvas
     CreateWorkflowNodeRequest:
       type: object
       required:
@@ -2245,30 +2283,18 @@ components:
         type:
           type: string
         config:
-          type: object
-          additionalProperties: true
+          $ref: '#/components/schemas/NodeConfig'
         position:
-          type: object
-          properties:
-            x:
-              type: number
-            'y':
-              type: number
+          $ref: '#/components/schemas/NodePosition'
     UpdateWorkflowNodeRequest:
       type: object
       properties:
         name:
           type: string
         config:
-          type: object
-          additionalProperties: true
+          $ref: '#/components/schemas/NodeConfig'
         position:
-          type: object
-          properties:
-            x:
-              type: number
-            'y':
-              type: number
+          $ref: '#/components/schemas/NodePosition'
     CreateWorkflowEdgeRequest:
       type: object
       required:
@@ -2323,8 +2349,7 @@ components:
       type: object
       properties:
         input:
-          type: object
-          additionalProperties: true
+          $ref: '#/components/schemas/GenericInput'
     NodeTestResult:
       type: object
       properties:
@@ -2386,6 +2411,14 @@ components:
           type: string
         definition:
           $ref: '#/components/schemas/WorkflowDefinition'
+    CredentialStatus:
+      type: string
+      enum:
+        - valid
+        - invalid
+        - expired
+        - revoked
+      description: Status of a credential
     Credential:
       type: object
       properties:
@@ -2405,11 +2438,7 @@ components:
           type: string
           format: date-time
         status:
-          type: string
-          enum:
-            - valid
-            - invalid
-            - expired
+          $ref: '#/components/schemas/CredentialStatus'
     WebhookPayload:
       description: Any valid JSON payload for webhook
       anyOf:
@@ -2437,6 +2466,12 @@ components:
           description: JSON integer value
         - type: boolean
           description: JSON boolean (true/false)
+    IntegrationStatus:
+      type: string
+      enum:
+        - active
+        - inactive
+      description: Status of an integration
     Integration:
       type: object
       properties:
@@ -2450,10 +2485,7 @@ components:
         type:
           type: string
         status:
-          type: string
-          enum:
-            - active
-            - inactive
+          $ref: '#/components/schemas/IntegrationStatus'
         capabilities:
           type: array
           items:
@@ -2607,6 +2639,14 @@ components:
         ui_component:
           type: string
           description: Optional path or URL to React bundle
+    ChatMessageRole:
+      type: string
+      enum:
+        - system
+        - user
+        - assistant
+        - function
+      description: Role of a chat message
     FunctionCall:
       type: object
       properties:
@@ -2623,13 +2663,7 @@ components:
         - content
       properties:
         role:
-          type: string
-          enum:
-            - system
-            - user
-            - assistant
-            - function
-          description: Message role
+          $ref: '#/components/schemas/ChatMessageRole'
         content:
           type: string
           description: Message content
@@ -2652,6 +2686,13 @@ components:
           type: string
           format: uuid
           description: Optional workflow ID for context-aware assistance
+    ChatFinishReason:
+      type: string
+      enum:
+        - stop
+        - length
+        - function_call
+      description: Reason for finishing a chat completion
     ChatChoice:
       type: object
       properties:
@@ -2661,12 +2702,7 @@ components:
         message:
           $ref: '#/components/schemas/ChatMessage'
         finish_reason:
-          type: string
-          enum:
-            - stop
-            - length
-            - function_call
-          description: Reason for finishing
+          $ref: '#/components/schemas/ChatFinishReason'
     ChatUsage:
       type: object
       properties:

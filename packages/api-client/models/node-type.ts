@@ -18,6 +18,9 @@
 import type { NodeInput } from './node-input';
 // May contain unused imports in some cases
 // @ts-ignore
+import type { NodeKind } from './node-kind';
+// May contain unused imports in some cases
+// @ts-ignore
 import type { NodeOutput } from './node-output';
 
 /**
@@ -46,10 +49,10 @@ export interface NodeType {
     'description'?: string;
     /**
      * 
-     * @type {Array<string>}
+     * @type {Array<NodeKind>}
      * @memberof NodeType
      */
-    'kinds'?: Array<NodeTypeKindsEnum>;
+    'kinds'?: Array<NodeKind>;
     /**
      * 
      * @type {Array<NodeInput>}
@@ -63,15 +66,4 @@ export interface NodeType {
      */
     'outputs'?: Array<NodeOutput>;
 }
-
-export const NodeTypeKindsEnum = {
-    Action: 'action',
-    Model: 'model',
-    Memory: 'memory',
-    Tool: 'tool',
-    Trigger: 'trigger'
-} as const;
-
-export type NodeTypeKindsEnum = typeof NodeTypeKindsEnum[keyof typeof NodeTypeKindsEnum];
-
 

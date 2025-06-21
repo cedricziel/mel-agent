@@ -7,7 +7,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **id** | **string** |  | [optional] [default to undefined]
 **name** | **string** |  | [optional] [default to undefined]
-**status** | **string** |  | [optional] [default to undefined]
+**status** | [**WorkerStatus**](WorkerStatus.md) |  | [optional] [default to undefined]
 **last_heartbeat** | **string** |  | [optional] [default to undefined]
 **concurrency** | **number** |  | [optional] [default to undefined]
 **registered_at** | **string** |  | [optional] [default to undefined]

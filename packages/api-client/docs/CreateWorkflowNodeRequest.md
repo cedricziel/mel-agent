@@ -8,8 +8,8 @@ Name | Type | Description | Notes
 **id** | **string** |  | [default to undefined]
 **name** | **string** |  | [default to undefined]
 **type** | **string** |  | [default to undefined]
-**config** | **{ [key: string]: any; }** |  | [default to undefined]
-**position** | [**CreateWorkflowNodeRequestPosition**](CreateWorkflowNodeRequestPosition.md) |  | [optional] [default to undefined]
+**config** | **{ [key: string]: any; }** | Node configuration containing node-specific parameters and settings | [default to undefined]
+**position** | [**NodePosition**](NodePosition.md) |  | [optional] [default to undefined]
 
 ## Example
 

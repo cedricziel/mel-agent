@@ -12,5 +12,4 @@ properties:
   type:
     type: string
   config:
-    type: object
-    additionalProperties: true
+    $ref: ./NodeConfig.yaml

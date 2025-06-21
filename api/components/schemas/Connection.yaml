@@ -12,11 +12,9 @@ properties:
   name:
     type: string
   secret:
-    type: object
-    additionalProperties: true
+    $ref: ./ConnectionSecret.yaml
   config:
-    type: object
-    additionalProperties: true
+    $ref: ./ConnectionConfig.yaml
   usage_limit_month:
     type: integer
   is_default:
@@ -28,8 +26,4 @@ properties:
     type: string
     format: date-time
   status:
-    type: string
-    enum:
-      - valid
-      - invalid
-      - expired
+    $ref: ./ConnectionStatus.yaml

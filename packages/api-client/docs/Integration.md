@@ -9,7 +9,7 @@ Name | Type | Description | Notes
 **name** | **string** |  | [optional] [default to undefined]
 **description** | **string** |  | [optional] [default to undefined]
 **type** | **string** |  | [optional] [default to undefined]
-**status** | **string** |  | [optional] [default to undefined]
+**status** | [**IntegrationStatus**](IntegrationStatus.md) |  | [optional] [default to undefined]
 **capabilities** | **Array&lt;string&gt;** |  | [optional] [default to undefined]
 **credential_type** | **string** | Type of credential required for this integration | [optional] [default to undefined]
 **created_at** | **string** |  | [optional] [default to undefined]

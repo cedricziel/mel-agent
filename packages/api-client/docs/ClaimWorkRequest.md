@@ -5,7 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**maxItems** | **number** |  | [optional] [default to undefined]
+**maxItems** | **number** | Maximum number of work items to claim | [optional] [default to 10]
 
 ## Example
 

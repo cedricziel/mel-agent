@@ -9,13 +9,7 @@ properties:
   kinds:
     type: array
     items:
-      type: string
-      enum:
-        - action
-        - model
-        - memory
-        - tool
-        - trigger
+      $ref: ./NodeKind.yaml
   inputs:
     type: array
     items:

@@ -5,8 +5,8 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**result** | **{ [key: string]: any; }** |  | [optional] [default to undefined]
-**error** | **string** |  | [optional] [default to undefined]
+**result** | **{ [key: string]: any; }** | Generic result object containing arbitrary result data | [optional] [default to undefined]
+**error** | **string** | Error message if the work item failed | [optional] [default to undefined]
 
 ## Example
 

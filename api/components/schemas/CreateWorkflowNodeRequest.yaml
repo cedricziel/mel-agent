@@ -12,12 +12,6 @@ properties:
   type:
     type: string
   config:
-    type: object
-    additionalProperties: true
+    $ref: ./NodeConfig.yaml
   position:
-    type: object
-    properties:
-      x:
-        type: number
-      'y':
-        type: number
+    $ref: ./NodePosition.yaml

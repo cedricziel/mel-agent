@@ -15,6 +15,9 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
+import type { ChatFinishReason } from './chat-finish-reason';
+// May contain unused imports in some cases
+// @ts-ignore
 import type { ChatMessage } from './chat-message';
 
 /**
@@ -36,19 +39,12 @@ export interface ChatChoice {
      */
     'message'?: ChatMessage;
     /**
-     * Reason for finishing
-     * @type {string}
+     * 
+     * @type {ChatFinishReason}
      * @memberof ChatChoice
      */
-    'finish_reason'?: ChatChoiceFinishReasonEnum;
+    'finish_reason'?: ChatFinishReason;
 }
 
-export const ChatChoiceFinishReasonEnum = {
-    Stop: 'stop',
-    Length: 'length',
-    FunctionCall: 'function_call'
-} as const;
-
-export type ChatChoiceFinishReasonEnum = typeof ChatChoiceFinishReasonEnum[keyof typeof ChatChoiceFinishReasonEnum];
 
 

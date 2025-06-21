@@ -5,8 +5,7 @@ properties:
   type:
     type: string
   payload:
-    type: object
-    additionalProperties: true
+    $ref: ./GenericPayload.yaml
   created_at:
     type: string
     format: date-time

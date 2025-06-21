@@ -8,11 +8,11 @@ Name | Type | Description | Notes
 **id** | **string** |  | [optional] [default to undefined]
 **run_id** | **string** |  | [optional] [default to undefined]
 **node_id** | **string** |  | [optional] [default to undefined]
-**status** | **string** |  | [optional] [default to undefined]
+**status** | [**WorkflowStepStatus**](WorkflowStepStatus.md) |  | [optional] [default to undefined]
 **started_at** | **string** |  | [optional] [default to undefined]
 **completed_at** | **string** |  | [optional] [default to undefined]
-**input** | **{ [key: string]: any; }** |  | [optional] [default to undefined]
-**output** | **{ [key: string]: any; }** |  | [optional] [default to undefined]
+**input** | **{ [key: string]: any; }** | Generic input object containing arbitrary input data | [optional] [default to undefined]
+**output** | **{ [key: string]: any; }** | Generic output object containing arbitrary output data | [optional] [default to undefined]
 **error** | **string** |  | [optional] [default to undefined]
 
 ## Example

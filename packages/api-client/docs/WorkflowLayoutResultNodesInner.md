@@ -6,7 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **id** | **string** |  | [optional] [default to undefined]
-**position** | [**CreateWorkflowNodeRequestPosition**](CreateWorkflowNodeRequestPosition.md) |  | [optional] [default to undefined]
+**position** | [**WorkflowLayoutResultNodesInnerPosition**](WorkflowLayoutResultNodesInnerPosition.md) |  | [optional] [default to undefined]
 
 ## Example
 

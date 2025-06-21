@@ -9,13 +9,7 @@ properties:
   node_id:
     type: string
   status:
-    type: string
-    enum:
-      - pending
-      - running
-      - completed
-      - failed
-      - skipped
+    $ref: ./WorkflowStepStatus.yaml
   started_at:
     type: string
     format: date-time
@@ -23,10 +17,8 @@ properties:
     type: string
     format: date-time
   input:
-    type: object
-    additionalProperties: true
+    $ref: ./GenericInput.yaml
   output:
-    type: object
-    additionalProperties: true
+    $ref: ./GenericOutput.yaml
   error:
     type: string

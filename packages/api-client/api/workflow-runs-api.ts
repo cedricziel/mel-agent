@@ -26,6 +26,8 @@ import type { WorkflowRun } from '../models';
 // @ts-ignore
 import type { WorkflowRunList } from '../models';
 // @ts-ignore
+import type { WorkflowRunStatus } from '../models';
+// @ts-ignore
 import type { WorkflowStep } from '../models';
 /**
  * WorkflowRunsApi - axios parameter creator
@@ -119,13 +121,13 @@ export const WorkflowRunsApiAxiosParamCreator = function (configuration?: Config
          * 
          * @summary List workflow runs
          * @param {string} [workflowId] 
-         * @param {ListWorkflowRunsStatusEnum} [status] 
+         * @param {WorkflowRunStatus} [status] 
          * @param {number} [page] 
          * @param {number} [limit] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listWorkflowRuns: async (workflowId?: string, status?: ListWorkflowRunsStatusEnum, page?: number, limit?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+        listWorkflowRuns: async (workflowId?: string, status?: WorkflowRunStatus, page?: number, limit?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/workflow-runs`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -212,13 +214,13 @@ export const WorkflowRunsApiFp = function(configuration?: Configuration) {
          * 
          * @summary List workflow runs
          * @param {string} [workflowId] 
-         * @param {ListWorkflowRunsStatusEnum} [status] 
+         * @param {WorkflowRunStatus} [status] 
          * @param {number} [page] 
          * @param {number} [limit] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async listWorkflowRuns(workflowId?: string, status?: ListWorkflowRunsStatusEnum, page?: number, limit?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkflowRunList>> {
+        async listWorkflowRuns(workflowId?: string, status?: WorkflowRunStatus, page?: number, limit?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<WorkflowRunList>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.listWorkflowRuns(workflowId, status, page, limit, options);
             const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
             const localVarOperationServerBasePath = operationServerMap['WorkflowRunsApi.listWorkflowRuns']?.[localVarOperationServerIndex]?.url;
@@ -258,13 +260,13 @@ export const WorkflowRunsApiFactory = function (configuration?: Configuration, b
          * 
          * @summary List workflow runs
          * @param {string} [workflowId] 
-         * @param {ListWorkflowRunsStatusEnum} [status] 
+         * @param {WorkflowRunStatus} [status] 
          * @param {number} [page] 
          * @param {number} [limit] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        listWorkflowRuns(workflowId?: string, status?: ListWorkflowRunsStatusEnum, page?: number, limit?: number, options?: RawAxiosRequestConfig): AxiosPromise<WorkflowRunList> {
+        listWorkflowRuns(workflowId?: string, status?: WorkflowRunStatus, page?: number, limit?: number, options?: RawAxiosRequestConfig): AxiosPromise<WorkflowRunList> {
             return localVarFp.listWorkflowRuns(workflowId, status, page, limit, options).then((request) => request(axios, basePath));
         },
     };
@@ -305,25 +307,15 @@ export class WorkflowRunsApi extends BaseAPI {
      * 
      * @summary List workflow runs
      * @param {string} [workflowId] 
-     * @param {ListWorkflowRunsStatusEnum} [status] 
+     * @param {WorkflowRunStatus} [status] 
      * @param {number} [page] 
      * @param {number} [limit] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof WorkflowRunsApi
      */
-    public listWorkflowRuns(workflowId?: string, status?: ListWorkflowRunsStatusEnum, page?: number, limit?: number, options?: RawAxiosRequestConfig) {
+    public listWorkflowRuns(workflowId?: string, status?: WorkflowRunStatus, page?: number, limit?: number, options?: RawAxiosRequestConfig) {
         return WorkflowRunsApiFp(this.configuration).listWorkflowRuns(workflowId, status, page, limit, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
-/**
- * @export
- */
-export const ListWorkflowRunsStatusEnum = {
-    Pending: 'pending',
-    Running: 'running',
-    Completed: 'completed',
-    Failed: 'failed'
-} as const;
-export type ListWorkflowRunsStatusEnum = typeof ListWorkflowRunsStatusEnum[keyof typeof ListWorkflowRunsStatusEnum];

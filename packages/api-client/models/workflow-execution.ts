@@ -13,6 +13,9 @@
  */
 
 
+// May contain unused imports in some cases
+// @ts-ignore
+import type { WorkflowRunStatus } from './workflow-run-status';
 
 /**
  * 
@@ -34,10 +37,10 @@ export interface WorkflowExecution {
     'workflow_id'?: string;
     /**
      * 
-     * @type {string}
+     * @type {WorkflowRunStatus}
      * @memberof WorkflowExecution
      */
-    'status'?: WorkflowExecutionStatusEnum;
+    'status'?: WorkflowRunStatus;
     /**
      * 
      * @type {string}
@@ -64,13 +67,5 @@ export interface WorkflowExecution {
     'error'?: string;
 }
 
-export const WorkflowExecutionStatusEnum = {
-    Pending: 'pending',
-    Running: 'running',
-    Completed: 'completed',
-    Failed: 'failed'
-} as const;
-
-export type WorkflowExecutionStatusEnum = typeof WorkflowExecutionStatusEnum[keyof typeof WorkflowExecutionStatusEnum];
 
 

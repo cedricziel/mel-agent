@@ -33,13 +33,13 @@ export interface CreateConnectionRequest {
      */
     'integration_id': string;
     /**
-     * 
+     * Connection secret configuration containing authentication credentials
      * @type {{ [key: string]: any; }}
      * @memberof CreateConnectionRequest
      */
     'secret'?: { [key: string]: any; };
     /**
-     * 
+     * Connection configuration containing non-sensitive connection parameters
      * @type {{ [key: string]: any; }}
      * @memberof CreateConnectionRequest
      */

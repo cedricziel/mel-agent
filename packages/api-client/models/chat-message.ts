@@ -15,6 +15,9 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
+import type { ChatMessageRole } from './chat-message-role';
+// May contain unused imports in some cases
+// @ts-ignore
 import type { FunctionCall } from './function-call';
 
 /**
@@ -24,11 +27,11 @@ import type { FunctionCall } from './function-call';
  */
 export interface ChatMessage {
     /**
-     * Message role
-     * @type {string}
+     * 
+     * @type {ChatMessageRole}
      * @memberof ChatMessage
      */
-    'role': ChatMessageRoleEnum;
+    'role': ChatMessageRole;
     /**
      * Message content
      * @type {string}
@@ -49,13 +52,5 @@ export interface ChatMessage {
     'function_call'?: FunctionCall;
 }
 
-export const ChatMessageRoleEnum = {
-    System: 'system',
-    User: 'user',
-    Assistant: 'assistant',
-    Function: 'function'
-} as const;
-
-export type ChatMessageRoleEnum = typeof ChatMessageRoleEnum[keyof typeof ChatMessageRoleEnum];
 
 

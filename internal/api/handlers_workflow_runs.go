@@ -361,7 +361,8 @@ func (h *OpenAPIHandlers) GetWorkflowRunSteps(ctx context.Context, request GetWo
 					Message: &message,
 				}, nil
 			}
-			step.Input = &input
+			genericInput := GenericInput(input)
+			step.Input = &genericInput
 		}
 
 		// Parse output JSON if present
@@ -376,7 +377,8 @@ func (h *OpenAPIHandlers) GetWorkflowRunSteps(ctx context.Context, request GetWo
 					Message: &message,
 				}, nil
 			}
-			step.Output = &output
+			genericOutput := GenericOutput(output)
+			step.Output = &genericOutput
 		}
 
 		if errorMsg.Valid {

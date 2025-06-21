@@ -7,9 +7,9 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **id** | **string** |  | [optional] [default to undefined]
 **name** | **string** |  | [optional] [default to undefined]
-**type** | **string** |  | [optional] [default to undefined]
+**type** | [**TriggerType**](TriggerType.md) |  | [optional] [default to undefined]
 **workflow_id** | **string** |  | [optional] [default to undefined]
-**config** | **{ [key: string]: any; }** |  | [optional] [default to undefined]
+**config** | **{ [key: string]: any; }** | Trigger configuration containing trigger-specific parameters and settings | [optional] [default to undefined]
 **enabled** | **boolean** |  | [optional] [default to undefined]
 **created_at** | **string** |  | [optional] [default to undefined]
 **updated_at** | **string** |  | [optional] [default to undefined]

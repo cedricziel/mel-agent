@@ -6,9 +6,9 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **name** | **string** |  | [default to undefined]
-**type** | **string** |  | [default to undefined]
+**type** | [**TriggerType**](TriggerType.md) |  | [default to undefined]
 **workflow_id** | **string** |  | [default to undefined]
-**config** | **{ [key: string]: any; }** |  | [optional] [default to undefined]
+**config** | **{ [key: string]: any; }** | Trigger configuration containing trigger-specific parameters and settings | [optional] [default to undefined]
 **enabled** | **boolean** |  | [optional] [default to true]
 
 ## Example

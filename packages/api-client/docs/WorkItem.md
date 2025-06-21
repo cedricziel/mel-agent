@@ -7,7 +7,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **id** | **string** |  | [optional] [default to undefined]
 **type** | **string** |  | [optional] [default to undefined]
-**payload** | **{ [key: string]: any; }** |  | [optional] [default to undefined]
+**payload** | **{ [key: string]: any; }** | Generic payload object containing arbitrary data | [optional] [default to undefined]
 **created_at** | **string** |  | [optional] [default to undefined]
 
 ## Example

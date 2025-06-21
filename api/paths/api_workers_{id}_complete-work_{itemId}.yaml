@@ -19,13 +19,7 @@ post:
     content:
       application/json:
         schema:
-          type: object
-          properties:
-            result:
-              type: object
-              additionalProperties: true
-            error:
-              type: string
+          $ref: ../components/schemas/CompleteWorkRequest.yaml
   responses:
     '200':
       description: Work item completed

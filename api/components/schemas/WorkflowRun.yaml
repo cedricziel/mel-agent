@@ -7,12 +7,7 @@ properties:
     type: string
     format: uuid
   status:
-    type: string
-    enum:
-      - pending
-      - running
-      - completed
-      - failed
+    $ref: ./WorkflowRunStatus.yaml
   started_at:
     type: string
     format: date-time

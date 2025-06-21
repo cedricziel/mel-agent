@@ -421,7 +421,7 @@ func (h *OpenAPIHandlers) ExecuteWorkflow(ctx context.Context, request ExecuteWo
 	execution := WorkflowExecution{
 		Id:         &executionID,
 		WorkflowId: &request.Id,
-		Status:     func() *WorkflowExecutionStatus { s := WorkflowExecutionStatusPending; return &s }(),
+		Status:     func() *WorkflowRunStatus { s := WorkflowRunStatusPending; return &s }(),
 		StartedAt:  &now,
 	}
 
@@ -1219,8 +1219,8 @@ func (h *OpenAPIHandlers) CreateWorkflowVersion(ctx context.Context, request Cre
 
 	// Generate new version number
 	var nextVersion int
-	err = h.db.QueryRowContext(ctx, 
-		"SELECT COALESCE(MAX(version_number), 0) + 1 FROM workflow_versions WHERE workflow_id = $1", 
+	err = h.db.QueryRowContext(ctx,
+		"SELECT COALESCE(MAX(version_number), 0) + 1 FROM workflow_versions WHERE workflow_id = $1",
 		request.WorkflowId.String()).Scan(&nextVersion)
 	if err != nil {
 		errorMsg := "database error"
@@ -1307,8 +1307,8 @@ func (h *OpenAPIHandlers) DeployWorkflowVersion(ctx context.Context, request Dep
 
 	// Check if version exists
 	var versionExists bool
-	err = h.db.QueryRowContext(ctx, 
-		"SELECT EXISTS(SELECT 1 FROM workflow_versions WHERE workflow_id = $1 AND version_number = $2)", 
+	err = h.db.QueryRowContext(ctx,
+		"SELECT EXISTS(SELECT 1 FROM workflow_versions WHERE workflow_id = $1 AND version_number = $2)",
 		request.WorkflowId.String(), request.VersionNumber).Scan(&versionExists)
 	if err != nil {
 		errorMsg := "database error"
@@ -1341,8 +1341,8 @@ func (h *OpenAPIHandlers) DeployWorkflowVersion(ctx context.Context, request Dep
 	defer tx.Rollback()
 
 	// Unset current flag from all versions
-	_, err = tx.ExecContext(ctx, 
-		"UPDATE workflow_versions SET is_current = false WHERE workflow_id = $1", 
+	_, err = tx.ExecContext(ctx,
+		"UPDATE workflow_versions SET is_current = false WHERE workflow_id = $1",
 		request.WorkflowId.String())
 	if err != nil {
 		errorMsg := "database error"
@@ -1354,8 +1354,8 @@ func (h *OpenAPIHandlers) DeployWorkflowVersion(ctx context.Context, request Dep
 	}
 
 	// Set the specified version as current
-	_, err = tx.ExecContext(ctx, 
-		"UPDATE workflow_versions SET is_current = true WHERE workflow_id = $1 AND version_number = $2", 
+	_, err = tx.ExecContext(ctx,
+		"UPDATE workflow_versions SET is_current = true WHERE workflow_id = $1 AND version_number = $2",
 		request.WorkflowId.String(), request.VersionNumber)
 	if err != nil {
 		errorMsg := "database error"
@@ -1388,7 +1388,7 @@ func (h *OpenAPIHandlers) DeployWorkflowVersion(ctx context.Context, request Dep
 		FROM workflow_versions 
 		WHERE workflow_id = $1 AND version_number = $2`,
 		request.WorkflowId.String(), request.VersionNumber).Scan(
-		&versionID, &version.WorkflowId, &version.VersionNumber, 
+		&versionID, &version.WorkflowId, &version.VersionNumber,
 		&name, &description, &isCurrent, &createdAt)
 
 	if err != nil {
@@ -1447,7 +1447,7 @@ func (h *OpenAPIHandlers) GetLatestWorkflowVersion(ctx context.Context, request 
 		ORDER BY version_number DESC 
 		LIMIT 1`,
 		request.WorkflowId.String()).Scan(
-		&versionID, &version.WorkflowId, &version.VersionNumber, 
+		&versionID, &version.WorkflowId, &version.VersionNumber,
 		&name, &description, &isCurrent, &createdAt)
 
 	if err != nil {
@@ -1697,7 +1697,7 @@ func (h *OpenAPIHandlers) ListWorkflowVersions(ctx context.Context, request List
 		var isCurrent bool
 		var createdAt time.Time
 
-		err := rows.Scan(&versionID, &version.WorkflowId, &version.VersionNumber, 
+		err := rows.Scan(&versionID, &version.WorkflowId, &version.VersionNumber,
 			&name, &description, &isCurrent, &createdAt)
 		if err != nil {
 			errorMsg := "scan error"

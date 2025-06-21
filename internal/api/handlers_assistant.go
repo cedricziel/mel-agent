@@ -177,7 +177,7 @@ func (h *OpenAPIHandlers) AssistantChat(ctx context.Context, request AssistantCh
 		apiChoice.Message = &msg
 
 		if choice.FinishReason != "" {
-			reason := ChatChoiceFinishReason(choice.FinishReason)
+			reason := ChatFinishReason(choice.FinishReason)
 			apiChoice.FinishReason = &reason
 		}
 

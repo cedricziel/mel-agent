@@ -1,0 +1,5 @@
+type: string
+enum:
+  - schedule
+  - webhook
+description: Type of trigger

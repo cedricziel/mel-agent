@@ -10,10 +10,7 @@ properties:
   type:
     type: string
   status:
-    type: string
-    enum:
-      - active
-      - inactive
+    $ref: ./IntegrationStatus.yaml
   capabilities:
     type: array
     items:

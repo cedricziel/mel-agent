@@ -3,7 +3,6 @@ properties:
   name:
     type: string
   config:
-    type: object
-    additionalProperties: true
+    $ref: ./TriggerConfig.yaml
   enabled:
     type: boolean

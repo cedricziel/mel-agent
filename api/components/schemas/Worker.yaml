@@ -5,10 +5,7 @@ properties:
   name:
     type: string
   status:
-    type: string
-    enum:
-      - active
-      - inactive
+    $ref: ./WorkerStatus.yaml
   last_heartbeat:
     type: string
     format: date-time

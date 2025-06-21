@@ -74,9 +74,9 @@ func TestServerRouterIntegration(t *testing.T) {
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name:           "OpenAPI agents endpoint",
+			name:           "OpenAPI workflows endpoint",
 			method:         "GET",
-			path:           "/api/agents",
+			path:           "/api/workflows",
 			expectedStatus: http.StatusOK,
 		},
 		{
@@ -131,7 +131,6 @@ func TestOpenAPIEndpointsAccessible(t *testing.T) {
 		name   string
 	}{
 		{"GET", "/api/health", "health check"},
-		{"GET", "/api/agents", "list agents"},
 		{"GET", "/api/workflows", "list workflows"},
 		{"GET", "/api/connections", "list connections"},
 		{"GET", "/api/triggers", "list triggers"},

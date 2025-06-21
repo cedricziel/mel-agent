@@ -27,7 +27,7 @@ export interface UpdateTriggerRequest {
      */
     'name'?: string;
     /**
-     * 
+     * Trigger configuration containing trigger-specific parameters and settings
      * @type {{ [key: string]: any; }}
      * @memberof UpdateTriggerRequest
      */

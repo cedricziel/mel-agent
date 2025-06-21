@@ -13,6 +13,9 @@
  */
 
 
+// May contain unused imports in some cases
+// @ts-ignore
+import type { ConnectionStatus } from './connection-status';
 
 /**
  * 
@@ -27,13 +30,13 @@ export interface UpdateConnectionRequest {
      */
     'name'?: string;
     /**
-     * 
+     * Connection secret configuration containing authentication credentials
      * @type {{ [key: string]: any; }}
      * @memberof UpdateConnectionRequest
      */
     'secret'?: { [key: string]: any; };
     /**
-     * 
+     * Connection configuration containing non-sensitive connection parameters
      * @type {{ [key: string]: any; }}
      * @memberof UpdateConnectionRequest
      */
@@ -52,18 +55,11 @@ export interface UpdateConnectionRequest {
     'is_default'?: boolean;
     /**
      * 
-     * @type {string}
+     * @type {ConnectionStatus}
      * @memberof UpdateConnectionRequest
      */
-    'status'?: UpdateConnectionRequestStatusEnum;
+    'status'?: ConnectionStatus;
 }
 
-export const UpdateConnectionRequestStatusEnum = {
-    Valid: 'valid',
-    Invalid: 'invalid',
-    Expired: 'expired'
-} as const;
-
-export type UpdateConnectionRequestStatusEnum = typeof UpdateConnectionRequestStatusEnum[keyof typeof UpdateConnectionRequestStatusEnum];
 
 

@@ -13,6 +13,9 @@
  */
 
 
+// May contain unused imports in some cases
+// @ts-ignore
+import type { WorkflowStepStatus } from './workflow-step-status';
 
 /**
  * 
@@ -40,10 +43,10 @@ export interface WorkflowStep {
     'node_id'?: string;
     /**
      * 
-     * @type {string}
+     * @type {WorkflowStepStatus}
      * @memberof WorkflowStep
      */
-    'status'?: WorkflowStepStatusEnum;
+    'status'?: WorkflowStepStatus;
     /**
      * 
      * @type {string}
@@ -57,13 +60,13 @@ export interface WorkflowStep {
      */
     'completed_at'?: string;
     /**
-     * 
+     * Generic input object containing arbitrary input data
      * @type {{ [key: string]: any; }}
      * @memberof WorkflowStep
      */
     'input'?: { [key: string]: any; };
     /**
-     * 
+     * Generic output object containing arbitrary output data
      * @type {{ [key: string]: any; }}
      * @memberof WorkflowStep
      */
@@ -76,14 +79,5 @@ export interface WorkflowStep {
     'error'?: string;
 }
 
-export const WorkflowStepStatusEnum = {
-    Pending: 'pending',
-    Running: 'running',
-    Completed: 'completed',
-    Failed: 'failed',
-    Skipped: 'skipped'
-} as const;
-
-export type WorkflowStepStatusEnum = typeof WorkflowStepStatusEnum[keyof typeof WorkflowStepStatusEnum];
 
 

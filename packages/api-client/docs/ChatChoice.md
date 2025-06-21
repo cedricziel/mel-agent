@@ -7,7 +7,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **index** | **number** | Choice index | [optional] [default to undefined]
 **message** | [**ChatMessage**](ChatMessage.md) |  | [optional] [default to undefined]
-**finish_reason** | **string** | Reason for finishing | [optional] [default to undefined]
+**finish_reason** | [**ChatFinishReason**](ChatFinishReason.md) |  | [optional] [default to undefined]
 
 ## Example
 

@@ -4,13 +4,7 @@ required:
   - content
 properties:
   role:
-    type: string
-    enum:
-      - system
-      - user
-      - assistant
-      - function
-    description: Message role
+    $ref: ./ChatMessageRole.yaml
   content:
     type: string
     description: Message content

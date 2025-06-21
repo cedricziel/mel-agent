@@ -12,12 +12,7 @@ get:
     - name: status
       in: query
       schema:
-        type: string
-        enum:
-          - pending
-          - running
-          - completed
-          - failed
+        $ref: ../components/schemas/WorkflowRunStatus.yaml
     - name: page
       in: query
       schema:

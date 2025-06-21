@@ -1,6 +1,6 @@
 {
   "generatorName": "typescript-axios",
-  "inputSpec": "../../api/openapi.yaml",
+  "inputSpec": "../../api/openapi-bundled.yaml",
   "outputDir": ".",
   "additionalProperties": {
     "npmName": "@mel-agent/api-client",

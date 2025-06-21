@@ -13,6 +13,9 @@
  */
 
 
+// May contain unused imports in some cases
+// @ts-ignore
+import type { CredentialStatus } from './credential-status';
 
 /**
  * 
@@ -58,18 +61,11 @@ export interface Credential {
     'last_used'?: string;
     /**
      * 
-     * @type {string}
+     * @type {CredentialStatus}
      * @memberof Credential
      */
-    'status'?: CredentialStatusEnum;
+    'status'?: CredentialStatus;
 }
 
-export const CredentialStatusEnum = {
-    Valid: 'valid',
-    Invalid: 'invalid',
-    Expired: 'expired'
-} as const;
-
-export type CredentialStatusEnum = typeof CredentialStatusEnum[keyof typeof CredentialStatusEnum];
 
 

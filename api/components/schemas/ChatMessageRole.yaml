@@ -1,0 +1,7 @@
+type: string
+enum:
+  - system
+  - user
+  - assistant
+  - function
+description: Role of a chat message

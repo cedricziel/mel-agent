@@ -15,7 +15,7 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { CreateWorkflowNodeRequestPosition } from './create-workflow-node-request-position';
+import type { WorkflowLayoutResultNodesInnerPosition } from './workflow-layout-result-nodes-inner-position';
 
 /**
  * 
@@ -31,9 +31,9 @@ export interface WorkflowLayoutResultNodesInner {
     'id'?: string;
     /**
      * 
-     * @type {CreateWorkflowNodeRequestPosition}
+     * @type {WorkflowLayoutResultNodesInnerPosition}
      * @memberof WorkflowLayoutResultNodesInner
      */
-    'position'?: CreateWorkflowNodeRequestPosition;
+    'position'?: WorkflowLayoutResultNodesInnerPosition;
 }
 

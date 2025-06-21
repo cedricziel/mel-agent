@@ -15,7 +15,7 @@
 
 // May contain unused imports in some cases
 // @ts-ignore
-import type { CreateWorkflowNodeRequestPosition } from './create-workflow-node-request-position';
+import type { NodePosition } from './node-position';
 
 /**
  * 
@@ -42,16 +42,16 @@ export interface CreateWorkflowNodeRequest {
      */
     'type': string;
     /**
-     * 
+     * Node configuration containing node-specific parameters and settings
      * @type {{ [key: string]: any; }}
      * @memberof CreateWorkflowNodeRequest
      */
     'config': { [key: string]: any; };
     /**
      * 
-     * @type {CreateWorkflowNodeRequestPosition}
+     * @type {NodePosition}
      * @memberof CreateWorkflowNodeRequest
      */
-    'position'?: CreateWorkflowNodeRequestPosition;
+    'position'?: NodePosition;
 }
 

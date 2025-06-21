@@ -3,8 +3,7 @@ properties:
   success:
     type: boolean
   output:
-    type: object
-    additionalProperties: true
+    $ref: ./GenericOutput.yaml
   error:
     type: string
   execution_time:

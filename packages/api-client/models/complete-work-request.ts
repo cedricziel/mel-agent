@@ -21,13 +21,13 @@
  */
 export interface CompleteWorkRequest {
     /**
-     * 
+     * Generic result object containing arbitrary result data
      * @type {{ [key: string]: any; }}
      * @memberof CompleteWorkRequest
      */
     'result'?: { [key: string]: any; };
     /**
-     * 
+     * Error message if the work item failed
      * @type {string}
      * @memberof CompleteWorkRequest
      */

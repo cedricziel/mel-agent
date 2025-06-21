@@ -6,7 +6,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **name** | **string** |  | [optional] [default to undefined]
-**config** | **{ [key: string]: any; }** |  | [optional] [default to undefined]
+**config** | **{ [key: string]: any; }** | Trigger configuration containing trigger-specific parameters and settings | [optional] [default to undefined]
 **enabled** | **boolean** |  | [optional] [default to undefined]
 
 ## Example

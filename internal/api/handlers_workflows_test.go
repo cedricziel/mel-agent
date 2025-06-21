@@ -512,7 +512,7 @@ func TestOpenAPIExecuteWorkflow(t *testing.T) {
 
 	assert.NotNil(t, response.Id)
 	assert.Equal(t, createdWorkflow.Id, *response.WorkflowId)
-	assert.Equal(t, WorkflowExecutionStatusPending, *response.Status)
+	assert.Equal(t, WorkflowRunStatusPending, *response.Status)
 	assert.NotNil(t, response.StartedAt)
 	assert.NotNil(t, response.Result)
 	assert.Equal(t, "Hello, World!", (*response.Result)["message"])

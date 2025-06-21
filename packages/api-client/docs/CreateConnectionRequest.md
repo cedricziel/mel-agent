@@ -7,8 +7,8 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **name** | **string** |  | [default to undefined]
 **integration_id** | **string** |  | [default to undefined]
-**secret** | **{ [key: string]: any; }** |  | [optional] [default to undefined]
-**config** | **{ [key: string]: any; }** |  | [optional] [default to undefined]
+**secret** | **{ [key: string]: any; }** | Connection secret configuration containing authentication credentials | [optional] [default to undefined]
+**config** | **{ [key: string]: any; }** | Connection configuration containing non-sensitive connection parameters | [optional] [default to undefined]
 **usage_limit_month** | **number** |  | [optional] [default to undefined]
 **is_default** | **boolean** |  | [optional] [default to undefined]
 

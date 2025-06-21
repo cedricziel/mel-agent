@@ -128,7 +128,7 @@ const configuration = new Configuration();
 const apiInstance = new WorkflowRunsApi(configuration);
 
 let workflowId: string; // (optional) (default to undefined)
-let status: 'pending' | 'running' | 'completed' | 'failed'; // (optional) (default to undefined)
+let status: WorkflowRunStatus; // (optional) (default to undefined)
 let page: number; // (optional) (default to 1)
 let limit: number; // (optional) (default to 20)
 
@@ -145,7 +145,7 @@ const { status, data } = await apiInstance.listWorkflowRuns(
 |Name | Type | Description  | Notes|
 |------------- | ------------- | ------------- | -------------|
 | **workflowId** | [**string**] |  | (optional) defaults to undefined|
-| **status** | [**&#39;pending&#39; | &#39;running&#39; | &#39;completed&#39; | &#39;failed&#39;**]**Array<&#39;pending&#39; &#124; &#39;running&#39; &#124; &#39;completed&#39; &#124; &#39;failed&#39;>** |  | (optional) defaults to undefined|
+| **status** | **WorkflowRunStatus** |  | (optional) defaults to undefined|
 | **page** | [**number**] |  | (optional) defaults to 1|
 | **limit** | [**number**] |  | (optional) defaults to 20|
 

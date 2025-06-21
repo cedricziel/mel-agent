@@ -39,7 +39,7 @@ export interface WorkflowNode {
      */
     'type': string;
     /**
-     * 
+     * Node configuration containing node-specific parameters and settings
      * @type {{ [key: string]: any; }}
      * @memberof WorkflowNode
      */

@@ -13,6 +13,9 @@
  */
 
 
+// May contain unused imports in some cases
+// @ts-ignore
+import type { IntegrationStatus } from './integration-status';
 
 /**
  * 
@@ -46,10 +49,10 @@ export interface Integration {
     'type'?: string;
     /**
      * 
-     * @type {string}
+     * @type {IntegrationStatus}
      * @memberof Integration
      */
-    'status'?: IntegrationStatusEnum;
+    'status'?: IntegrationStatus;
     /**
      * 
      * @type {Array<string>}
@@ -76,11 +79,5 @@ export interface Integration {
     'updated_at'?: string;
 }
 
-export const IntegrationStatusEnum = {
-    Active: 'active',
-    Inactive: 'inactive'
-} as const;
-
-export type IntegrationStatusEnum = typeof IntegrationStatusEnum[keyof typeof IntegrationStatusEnum];
 
 

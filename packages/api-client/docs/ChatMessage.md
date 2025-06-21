@@ -5,7 +5,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**role** | **string** | Message role | [default to undefined]
+**role** | [**ChatMessageRole**](ChatMessageRole.md) |  | [default to undefined]
 **content** | **string** | Message content | [default to undefined]
 **name** | **string** | Function name (for function role) | [optional] [default to undefined]
 **function_call** | [**FunctionCall**](FunctionCall.md) |  | [optional] [default to undefined]

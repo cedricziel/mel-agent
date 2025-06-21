@@ -1,0 +1,9 @@
+type: object
+properties:
+  result:
+    allOf:
+      - $ref: ./GenericResult.yaml
+      - description: The result of the completed work item
+  error:
+    type: string
+    description: Error message if the work item failed

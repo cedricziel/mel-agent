@@ -21,7 +21,7 @@
  */
 export interface ClaimWorkRequest {
     /**
-     * 
+     * Maximum number of work items to claim
      * @type {number}
      * @memberof ClaimWorkRequest
      */

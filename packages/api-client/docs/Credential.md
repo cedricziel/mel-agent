@@ -11,7 +11,7 @@ Name | Type | Description | Notes
 **description** | **string** |  | [optional] [default to undefined]
 **created_at** | **string** |  | [optional] [default to undefined]
 **last_used** | **string** |  | [optional] [default to undefined]
-**status** | **string** |  | [optional] [default to undefined]
+**status** | [**CredentialStatus**](CredentialStatus.md) |  | [optional] [default to undefined]
 
 ## Example
 

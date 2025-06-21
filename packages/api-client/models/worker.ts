@@ -13,6 +13,9 @@
  */
 
 
+// May contain unused imports in some cases
+// @ts-ignore
+import type { WorkerStatus } from './worker-status';
 
 /**
  * 
@@ -34,10 +37,10 @@ export interface Worker {
     'name'?: string;
     /**
      * 
-     * @type {string}
+     * @type {WorkerStatus}
      * @memberof Worker
      */
-    'status'?: WorkerStatusEnum;
+    'status'?: WorkerStatus;
     /**
      * 
      * @type {string}
@@ -58,11 +61,5 @@ export interface Worker {
     'registered_at'?: string;
 }
 
-export const WorkerStatusEnum = {
-    Active: 'active',
-    Inactive: 'inactive'
-} as const;
-
-export type WorkerStatusEnum = typeof WorkerStatusEnum[keyof typeof WorkerStatusEnum];
 
 

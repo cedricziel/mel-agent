@@ -8,7 +8,7 @@ Name | Type | Description | Notes
 **id** | **string** |  | [optional] [default to undefined]
 **name** | **string** |  | [optional] [default to undefined]
 **description** | **string** |  | [optional] [default to undefined]
-**kinds** | **Array&lt;string&gt;** |  | [optional] [default to undefined]
+**kinds** | [**Array&lt;NodeKind&gt;**](NodeKind.md) |  | [optional] [default to undefined]
 **inputs** | [**Array&lt;NodeInput&gt;**](NodeInput.md) |  | [optional] [default to undefined]
 **outputs** | [**Array&lt;NodeOutput&gt;**](NodeOutput.md) |  | [optional] [default to undefined]
 

@@ -21,11 +21,11 @@ const (
 	BearerAuthScopes = "BearerAuth.Scopes"
 )
 
-// Defines values for ChatChoiceFinishReason.
+// Defines values for ChatFinishReason.
 const (
-	ChatChoiceFinishReasonFunctionCall ChatChoiceFinishReason = "function_call"
-	ChatChoiceFinishReasonLength       ChatChoiceFinishReason = "length"
-	ChatChoiceFinishReasonStop         ChatChoiceFinishReason = "stop"
+	ChatFinishReasonFunctionCall ChatFinishReason = "function_call"
+	ChatFinishReasonLength       ChatFinishReason = "length"
+	ChatFinishReasonStop         ChatFinishReason = "stop"
 )
 
 // Defines values for ChatMessageRole.
@@ -43,16 +43,11 @@ const (
 	ConnectionStatusValid   ConnectionStatus = "valid"
 )
 
-// Defines values for CreateTriggerRequestType.
-const (
-	CreateTriggerRequestTypeSchedule CreateTriggerRequestType = "schedule"
-	CreateTriggerRequestTypeWebhook  CreateTriggerRequestType = "webhook"
-)
-
 // Defines values for CredentialStatus.
 const (
 	CredentialStatusExpired CredentialStatus = "expired"
 	CredentialStatusInvalid CredentialStatus = "invalid"
+	CredentialStatusRevoked CredentialStatus = "revoked"
 	CredentialStatusValid   CredentialStatus = "valid"
 )
 
@@ -62,40 +57,25 @@ const (
 	IntegrationStatusInactive IntegrationStatus = "inactive"
 )
 
-// Defines values for NodeTypeKinds.
+// Defines values for NodeKind.
 const (
-	NodeTypeKindsAction  NodeTypeKinds = "action"
-	NodeTypeKindsMemory  NodeTypeKinds = "memory"
-	NodeTypeKindsModel   NodeTypeKinds = "model"
-	NodeTypeKindsTool    NodeTypeKinds = "tool"
-	NodeTypeKindsTrigger NodeTypeKinds = "trigger"
+	NodeKindAction  NodeKind = "action"
+	NodeKindMemory  NodeKind = "memory"
+	NodeKindModel   NodeKind = "model"
+	NodeKindTool    NodeKind = "tool"
+	NodeKindTrigger NodeKind = "trigger"
 )
 
 // Defines values for TriggerType.
 const (
-	TriggerTypeSchedule TriggerType = "schedule"
-	TriggerTypeWebhook  TriggerType = "webhook"
-)
-
-// Defines values for UpdateConnectionRequestStatus.
-const (
-	Expired UpdateConnectionRequestStatus = "expired"
-	Invalid UpdateConnectionRequestStatus = "invalid"
-	Valid   UpdateConnectionRequestStatus = "valid"
+	Schedule TriggerType = "schedule"
+	Webhook  TriggerType = "webhook"
 )
 
 // Defines values for WorkerStatus.
 const (
 	WorkerStatusActive   WorkerStatus = "active"
 	WorkerStatusInactive WorkerStatus = "inactive"
-)
-
-// Defines values for WorkflowExecutionStatus.
-const (
-	WorkflowExecutionStatusCompleted WorkflowExecutionStatus = "completed"
-	WorkflowExecutionStatusFailed    WorkflowExecutionStatus = "failed"
-	WorkflowExecutionStatusPending   WorkflowExecutionStatus = "pending"
-	WorkflowExecutionStatusRunning   WorkflowExecutionStatus = "running"
 )
 
 // Defines values for WorkflowRunStatus.
@@ -113,14 +93,6 @@ const (
 	WorkflowStepStatusPending   WorkflowStepStatus = "pending"
 	WorkflowStepStatusRunning   WorkflowStepStatus = "running"
 	WorkflowStepStatusSkipped   WorkflowStepStatus = "skipped"
-)
-
-// Defines values for ListWorkflowRunsParamsStatus.
-const (
-	ListWorkflowRunsParamsStatusCompleted ListWorkflowRunsParamsStatus = "completed"
-	ListWorkflowRunsParamsStatusFailed    ListWorkflowRunsParamsStatus = "failed"
-	ListWorkflowRunsParamsStatusPending   ListWorkflowRunsParamsStatus = "pending"
-	ListWorkflowRunsParamsStatusRunning   ListWorkflowRunsParamsStatus = "running"
 )
 
 // AssistantChatRequest defines model for AssistantChatRequest.
@@ -153,16 +125,16 @@ type AssistantChatResponse struct {
 
 // ChatChoice defines model for ChatChoice.
 type ChatChoice struct {
-	// FinishReason Reason for finishing
-	FinishReason *ChatChoiceFinishReason `json:"finish_reason,omitempty"`
+	// FinishReason Reason for finishing a chat completion
+	FinishReason *ChatFinishReason `json:"finish_reason,omitempty"`
 
 	// Index Choice index
 	Index   *int         `json:"index,omitempty"`
 	Message *ChatMessage `json:"message,omitempty"`
 }
 
-// ChatChoiceFinishReason Reason for finishing
-type ChatChoiceFinishReason string
+// ChatFinishReason Reason for finishing a chat completion
+type ChatFinishReason string
 
 // ChatMessage defines model for ChatMessage.
 type ChatMessage struct {
@@ -173,11 +145,11 @@ type ChatMessage struct {
 	// Name Function name (for function role)
 	Name *string `json:"name,omitempty"`
 
-	// Role Message role
+	// Role Role of a chat message
 	Role ChatMessageRole `json:"role"`
 }
 
-// ChatMessageRole Message role
+// ChatMessageRole Role of a chat message
 type ChatMessageRole string
 
 // ChatUsage defines model for ChatUsage.
@@ -192,45 +164,72 @@ type ChatUsage struct {
 	TotalTokens *int `json:"total_tokens,omitempty"`
 }
 
-// Connection defines model for Connection.
-type Connection struct {
-	Config          *map[string]interface{} `json:"config,omitempty"`
-	CreatedAt       *time.Time              `json:"created_at,omitempty"`
-	Id              *openapi_types.UUID     `json:"id,omitempty"`
-	IntegrationId   *openapi_types.UUID     `json:"integration_id,omitempty"`
-	IsDefault       *bool                   `json:"is_default,omitempty"`
-	LastValidated   *time.Time              `json:"last_validated,omitempty"`
-	Name            *string                 `json:"name,omitempty"`
-	Secret          *map[string]interface{} `json:"secret,omitempty"`
-	Status          *ConnectionStatus       `json:"status,omitempty"`
-	UsageLimitMonth *int                    `json:"usage_limit_month,omitempty"`
-	UserId          *openapi_types.UUID     `json:"user_id,omitempty"`
+// ClaimWorkRequest defines model for ClaimWorkRequest.
+type ClaimWorkRequest struct {
+	// MaxItems Maximum number of work items to claim
+	MaxItems *int `json:"maxItems,omitempty"`
 }
 
-// ConnectionStatus defines model for Connection.Status.
+// CompleteWorkRequest defines model for CompleteWorkRequest.
+type CompleteWorkRequest struct {
+	// Error Error message if the work item failed
+	Error  *string                 `json:"error,omitempty"`
+	Result *map[string]interface{} `json:"result,omitempty"`
+}
+
+// Connection defines model for Connection.
+type Connection struct {
+	// Config Connection configuration containing non-sensitive connection parameters
+	Config        *ConnectionConfig   `json:"config,omitempty"`
+	CreatedAt     *time.Time          `json:"created_at,omitempty"`
+	Id            *openapi_types.UUID `json:"id,omitempty"`
+	IntegrationId *openapi_types.UUID `json:"integration_id,omitempty"`
+	IsDefault     *bool               `json:"is_default,omitempty"`
+	LastValidated *time.Time          `json:"last_validated,omitempty"`
+	Name          *string             `json:"name,omitempty"`
+
+	// Secret Connection secret configuration containing authentication credentials
+	Secret *ConnectionSecret `json:"secret,omitempty"`
+
+	// Status Status of a connection
+	Status          *ConnectionStatus   `json:"status,omitempty"`
+	UsageLimitMonth *int                `json:"usage_limit_month,omitempty"`
+	UserId          *openapi_types.UUID `json:"user_id,omitempty"`
+}
+
+// ConnectionConfig Connection configuration containing non-sensitive connection parameters
+type ConnectionConfig map[string]interface{}
+
+// ConnectionSecret Connection secret configuration containing authentication credentials
+type ConnectionSecret map[string]interface{}
+
+// ConnectionStatus Status of a connection
 type ConnectionStatus string
 
 // CreateConnectionRequest defines model for CreateConnectionRequest.
 type CreateConnectionRequest struct {
-	Config          *map[string]interface{} `json:"config,omitempty"`
-	IntegrationId   openapi_types.UUID      `json:"integration_id"`
-	IsDefault       *bool                   `json:"is_default,omitempty"`
-	Name            string                  `json:"name"`
-	Secret          *map[string]interface{} `json:"secret,omitempty"`
-	UsageLimitMonth *int                    `json:"usage_limit_month,omitempty"`
+	// Config Connection configuration containing non-sensitive connection parameters
+	Config        *ConnectionConfig  `json:"config,omitempty"`
+	IntegrationId openapi_types.UUID `json:"integration_id"`
+	IsDefault     *bool              `json:"is_default,omitempty"`
+	Name          string             `json:"name"`
+
+	// Secret Connection secret configuration containing authentication credentials
+	Secret          *ConnectionSecret `json:"secret,omitempty"`
+	UsageLimitMonth *int              `json:"usage_limit_month,omitempty"`
 }
 
 // CreateTriggerRequest defines model for CreateTriggerRequest.
 type CreateTriggerRequest struct {
-	Config     *map[string]interface{}  `json:"config,omitempty"`
-	Enabled    *bool                    `json:"enabled,omitempty"`
-	Name       string                   `json:"name"`
-	Type       CreateTriggerRequestType `json:"type"`
-	WorkflowId openapi_types.UUID       `json:"workflow_id"`
-}
+	// Config Trigger configuration containing trigger-specific parameters and settings
+	Config  *TriggerConfig `json:"config,omitempty"`
+	Enabled *bool          `json:"enabled,omitempty"`
+	Name    string         `json:"name"`
 
-// CreateTriggerRequestType defines model for CreateTriggerRequest.Type.
-type CreateTriggerRequestType string
+	// Type Type of trigger
+	Type       TriggerType        `json:"type"`
+	WorkflowId openapi_types.UUID `json:"workflow_id"`
+}
 
 // CreateWorkflowEdgeRequest defines model for CreateWorkflowEdgeRequest.
 type CreateWorkflowEdgeRequest struct {
@@ -243,14 +242,14 @@ type CreateWorkflowEdgeRequest struct {
 
 // CreateWorkflowNodeRequest defines model for CreateWorkflowNodeRequest.
 type CreateWorkflowNodeRequest struct {
-	Config   map[string]interface{} `json:"config"`
-	Id       string                 `json:"id"`
-	Name     string                 `json:"name"`
-	Position *struct {
-		X *float32 `json:"x,omitempty"`
-		Y *float32 `json:"y,omitempty"`
-	} `json:"position,omitempty"`
-	Type string `json:"type"`
+	// Config Node configuration containing node-specific parameters and settings
+	Config NodeConfig `json:"config"`
+	Id     string     `json:"id"`
+	Name   string     `json:"name"`
+
+	// Position Node position coordinates in the workflow canvas
+	Position *NodePosition `json:"position,omitempty"`
+	Type     string        `json:"type"`
 }
 
 // CreateWorkflowRequest defines model for CreateWorkflowRequest.
@@ -274,11 +273,13 @@ type Credential struct {
 	Id          *openapi_types.UUID `json:"id,omitempty"`
 	LastUsed    *time.Time          `json:"last_used,omitempty"`
 	Name        *string             `json:"name,omitempty"`
-	Status      *CredentialStatus   `json:"status,omitempty"`
-	Type        *string             `json:"type,omitempty"`
+
+	// Status Status of a credential
+	Status *CredentialStatus `json:"status,omitempty"`
+	Type   *string           `json:"type,omitempty"`
 }
 
-// CredentialStatus defines model for Credential.Status.
+// CredentialStatus Status of a credential
 type CredentialStatus string
 
 // CredentialTestResult defines model for CredentialTestResult.
@@ -317,7 +318,8 @@ type Error struct {
 
 // ExecuteWorkflowRequest defines model for ExecuteWorkflowRequest.
 type ExecuteWorkflowRequest struct {
-	Input *map[string]interface{} `json:"input,omitempty"`
+	// Input Generic input object containing arbitrary input data
+	Input *GenericInput `json:"input,omitempty"`
 }
 
 // Extension defines model for Extension.
@@ -347,6 +349,18 @@ type FunctionCall struct {
 	Name *string `json:"name,omitempty"`
 }
 
+// GenericInput Generic input object containing arbitrary input data
+type GenericInput map[string]interface{}
+
+// GenericOutput Generic output object containing arbitrary output data
+type GenericOutput map[string]interface{}
+
+// GenericPayload Generic payload object containing arbitrary data
+type GenericPayload map[string]interface{}
+
+// GenericResult Generic result object containing arbitrary result data
+type GenericResult map[string]interface{}
+
 // Integration defines model for Integration.
 type Integration struct {
 	Capabilities *[]string  `json:"capabilities,omitempty"`
@@ -357,13 +371,18 @@ type Integration struct {
 	Description    *string             `json:"description,omitempty"`
 	Id             *openapi_types.UUID `json:"id,omitempty"`
 	Name           *string             `json:"name,omitempty"`
-	Status         *IntegrationStatus  `json:"status,omitempty"`
-	Type           *string             `json:"type,omitempty"`
-	UpdatedAt      *time.Time          `json:"updated_at,omitempty"`
+
+	// Status Status of an integration
+	Status    *IntegrationStatus `json:"status,omitempty"`
+	Type      *string            `json:"type,omitempty"`
+	UpdatedAt *time.Time         `json:"updated_at,omitempty"`
 }
 
-// IntegrationStatus defines model for Integration.Status.
+// IntegrationStatus Status of an integration
 type IntegrationStatus string
+
+// NodeConfig Node configuration containing node-specific parameters and settings
+type NodeConfig map[string]interface{}
 
 // NodeInput defines model for NodeInput.
 type NodeInput struct {
@@ -372,6 +391,9 @@ type NodeInput struct {
 	Required    *bool   `json:"required,omitempty"`
 	Type        *string `json:"type,omitempty"`
 }
+
+// NodeKind Kind of node functionality
+type NodeKind string
 
 // NodeOutput defines model for NodeOutput.
 type NodeOutput struct {
@@ -391,6 +413,15 @@ type NodeParameterOptions struct {
 	} `json:"options,omitempty"`
 }
 
+// NodePosition Node position coordinates in the workflow canvas
+type NodePosition struct {
+	// X X coordinate position
+	X *float32 `json:"x,omitempty"`
+
+	// Y Y coordinate position
+	Y *float32 `json:"y,omitempty"`
+}
+
 // NodeTestResult defines model for NodeTestResult.
 type NodeTestResult struct {
 	Error         *string                 `json:"error,omitempty"`
@@ -402,16 +433,13 @@ type NodeTestResult struct {
 
 // NodeType defines model for NodeType.
 type NodeType struct {
-	Description *string          `json:"description,omitempty"`
-	Id          *string          `json:"id,omitempty"`
-	Inputs      *[]NodeInput     `json:"inputs,omitempty"`
-	Kinds       *[]NodeTypeKinds `json:"kinds,omitempty"`
-	Name        *string          `json:"name,omitempty"`
-	Outputs     *[]NodeOutput    `json:"outputs,omitempty"`
+	Description *string       `json:"description,omitempty"`
+	Id          *string       `json:"id,omitempty"`
+	Inputs      *[]NodeInput  `json:"inputs,omitempty"`
+	Kinds       *[]NodeKind   `json:"kinds,omitempty"`
+	Name        *string       `json:"name,omitempty"`
+	Outputs     *[]NodeOutput `json:"outputs,omitempty"`
 }
-
-// NodeTypeKinds defines model for NodeType.Kinds.
-type NodeTypeKinds string
 
 // ParamSpec defines model for ParamSpec.
 type ParamSpec struct {
@@ -455,37 +483,46 @@ type RegisterWorkerRequest struct {
 
 // Trigger defines model for Trigger.
 type Trigger struct {
-	Config     *map[string]interface{} `json:"config,omitempty"`
-	CreatedAt  *time.Time              `json:"created_at,omitempty"`
-	Enabled    *bool                   `json:"enabled,omitempty"`
-	Id         *openapi_types.UUID     `json:"id,omitempty"`
-	Name       *string                 `json:"name,omitempty"`
-	Type       *TriggerType            `json:"type,omitempty"`
-	UpdatedAt  *time.Time              `json:"updated_at,omitempty"`
-	WorkflowId *openapi_types.UUID     `json:"workflow_id,omitempty"`
+	// Config Trigger configuration containing trigger-specific parameters and settings
+	Config    *TriggerConfig      `json:"config,omitempty"`
+	CreatedAt *time.Time          `json:"created_at,omitempty"`
+	Enabled   *bool               `json:"enabled,omitempty"`
+	Id        *openapi_types.UUID `json:"id,omitempty"`
+	Name      *string             `json:"name,omitempty"`
+
+	// Type Type of trigger
+	Type       *TriggerType        `json:"type,omitempty"`
+	UpdatedAt  *time.Time          `json:"updated_at,omitempty"`
+	WorkflowId *openapi_types.UUID `json:"workflow_id,omitempty"`
 }
 
-// TriggerType defines model for Trigger.Type.
+// TriggerConfig Trigger configuration containing trigger-specific parameters and settings
+type TriggerConfig map[string]interface{}
+
+// TriggerType Type of trigger
 type TriggerType string
 
 // UpdateConnectionRequest defines model for UpdateConnectionRequest.
 type UpdateConnectionRequest struct {
-	Config          *map[string]interface{}        `json:"config,omitempty"`
-	IsDefault       *bool                          `json:"is_default,omitempty"`
-	Name            *string                        `json:"name,omitempty"`
-	Secret          *map[string]interface{}        `json:"secret,omitempty"`
-	Status          *UpdateConnectionRequestStatus `json:"status,omitempty"`
-	UsageLimitMonth *int                           `json:"usage_limit_month,omitempty"`
-}
+	// Config Connection configuration containing non-sensitive connection parameters
+	Config    *ConnectionConfig `json:"config,omitempty"`
+	IsDefault *bool             `json:"is_default,omitempty"`
+	Name      *string           `json:"name,omitempty"`
 
-// UpdateConnectionRequestStatus defines model for UpdateConnectionRequest.Status.
-type UpdateConnectionRequestStatus string
+	// Secret Connection secret configuration containing authentication credentials
+	Secret *ConnectionSecret `json:"secret,omitempty"`
+
+	// Status Status of a connection
+	Status          *ConnectionStatus `json:"status,omitempty"`
+	UsageLimitMonth *int              `json:"usage_limit_month,omitempty"`
+}
 
 // UpdateTriggerRequest defines model for UpdateTriggerRequest.
 type UpdateTriggerRequest struct {
-	Config  *map[string]interface{} `json:"config,omitempty"`
-	Enabled *bool                   `json:"enabled,omitempty"`
-	Name    *string                 `json:"name,omitempty"`
+	// Config Trigger configuration containing trigger-specific parameters and settings
+	Config  *TriggerConfig `json:"config,omitempty"`
+	Enabled *bool          `json:"enabled,omitempty"`
+	Name    *string        `json:"name,omitempty"`
 }
 
 // UpdateWorkflowDraftRequest defines model for UpdateWorkflowDraftRequest.
@@ -495,12 +532,12 @@ type UpdateWorkflowDraftRequest struct {
 
 // UpdateWorkflowNodeRequest defines model for UpdateWorkflowNodeRequest.
 type UpdateWorkflowNodeRequest struct {
-	Config   *map[string]interface{} `json:"config,omitempty"`
-	Name     *string                 `json:"name,omitempty"`
-	Position *struct {
-		X *float32 `json:"x,omitempty"`
-		Y *float32 `json:"y,omitempty"`
-	} `json:"position,omitempty"`
+	// Config Node configuration containing node-specific parameters and settings
+	Config *NodeConfig `json:"config,omitempty"`
+	Name   *string     `json:"name,omitempty"`
+
+	// Position Node position coordinates in the workflow canvas
+	Position *NodePosition `json:"position,omitempty"`
 }
 
 // UpdateWorkflowRequest defines model for UpdateWorkflowRequest.
@@ -567,23 +604,27 @@ type WebhookPayload5 = bool
 
 // WorkItem defines model for WorkItem.
 type WorkItem struct {
-	CreatedAt *time.Time              `json:"created_at,omitempty"`
-	Id        *string                 `json:"id,omitempty"`
-	Payload   *map[string]interface{} `json:"payload,omitempty"`
-	Type      *string                 `json:"type,omitempty"`
+	CreatedAt *time.Time `json:"created_at,omitempty"`
+	Id        *string    `json:"id,omitempty"`
+
+	// Payload Generic payload object containing arbitrary data
+	Payload *GenericPayload `json:"payload,omitempty"`
+	Type    *string         `json:"type,omitempty"`
 }
 
 // Worker defines model for Worker.
 type Worker struct {
-	Concurrency   *int          `json:"concurrency,omitempty"`
-	Id            *string       `json:"id,omitempty"`
-	LastHeartbeat *time.Time    `json:"last_heartbeat,omitempty"`
-	Name          *string       `json:"name,omitempty"`
-	RegisteredAt  *time.Time    `json:"registered_at,omitempty"`
-	Status        *WorkerStatus `json:"status,omitempty"`
+	Concurrency   *int       `json:"concurrency,omitempty"`
+	Id            *string    `json:"id,omitempty"`
+	LastHeartbeat *time.Time `json:"last_heartbeat,omitempty"`
+	Name          *string    `json:"name,omitempty"`
+	RegisteredAt  *time.Time `json:"registered_at,omitempty"`
+
+	// Status Status of a worker
+	Status *WorkerStatus `json:"status,omitempty"`
 }
 
-// WorkerStatus defines model for Worker.Status.
+// WorkerStatus Status of a worker
 type WorkerStatus string
 
 // Workflow defines model for Workflow.
@@ -620,17 +661,16 @@ type WorkflowEdge struct {
 
 // WorkflowExecution defines model for WorkflowExecution.
 type WorkflowExecution struct {
-	CompletedAt *time.Time               `json:"completed_at,omitempty"`
-	Error       *string                  `json:"error,omitempty"`
-	Id          *openapi_types.UUID      `json:"id,omitempty"`
-	Result      *map[string]interface{}  `json:"result,omitempty"`
-	StartedAt   *time.Time               `json:"started_at,omitempty"`
-	Status      *WorkflowExecutionStatus `json:"status,omitempty"`
-	WorkflowId  *openapi_types.UUID      `json:"workflow_id,omitempty"`
-}
+	CompletedAt *time.Time              `json:"completed_at,omitempty"`
+	Error       *string                 `json:"error,omitempty"`
+	Id          *openapi_types.UUID     `json:"id,omitempty"`
+	Result      *map[string]interface{} `json:"result,omitempty"`
+	StartedAt   *time.Time              `json:"started_at,omitempty"`
 
-// WorkflowExecutionStatus defines model for WorkflowExecution.Status.
-type WorkflowExecutionStatus string
+	// Status Status of a workflow run
+	Status     *WorkflowRunStatus  `json:"status,omitempty"`
+	WorkflowId *openapi_types.UUID `json:"workflow_id,omitempty"`
+}
 
 // WorkflowLayoutResult defines model for WorkflowLayoutResult.
 type WorkflowLayoutResult struct {
@@ -653,10 +693,11 @@ type WorkflowList struct {
 
 // WorkflowNode defines model for WorkflowNode.
 type WorkflowNode struct {
-	Config map[string]interface{} `json:"config"`
-	Id     string                 `json:"id"`
-	Name   string                 `json:"name"`
-	Type   string                 `json:"type"`
+	// Config Node configuration containing node-specific parameters and settings
+	Config NodeConfig `json:"config"`
+	Id     string     `json:"id"`
+	Name   string     `json:"name"`
+	Type   string     `json:"type"`
 }
 
 // WorkflowRun defines model for WorkflowRun.
@@ -666,12 +707,11 @@ type WorkflowRun struct {
 	Error       *string                 `json:"error,omitempty"`
 	Id          *openapi_types.UUID     `json:"id,omitempty"`
 	StartedAt   *time.Time              `json:"started_at,omitempty"`
-	Status      *WorkflowRunStatus      `json:"status,omitempty"`
-	WorkflowId  *openapi_types.UUID     `json:"workflow_id,omitempty"`
-}
 
-// WorkflowRunStatus defines model for WorkflowRun.Status.
-type WorkflowRunStatus string
+	// Status Status of a workflow run
+	Status     *WorkflowRunStatus  `json:"status,omitempty"`
+	WorkflowId *openapi_types.UUID `json:"workflow_id,omitempty"`
+}
 
 // WorkflowRunList defines model for WorkflowRunList.
 type WorkflowRunList struct {
@@ -681,20 +721,29 @@ type WorkflowRunList struct {
 	Total int           `json:"total"`
 }
 
+// WorkflowRunStatus Status of a workflow run
+type WorkflowRunStatus string
+
 // WorkflowStep defines model for WorkflowStep.
 type WorkflowStep struct {
-	CompletedAt *time.Time              `json:"completed_at,omitempty"`
-	Error       *string                 `json:"error,omitempty"`
-	Id          *openapi_types.UUID     `json:"id,omitempty"`
-	Input       *map[string]interface{} `json:"input,omitempty"`
-	NodeId      *string                 `json:"node_id,omitempty"`
-	Output      *map[string]interface{} `json:"output,omitempty"`
-	RunId       *openapi_types.UUID     `json:"run_id,omitempty"`
-	StartedAt   *time.Time              `json:"started_at,omitempty"`
-	Status      *WorkflowStepStatus     `json:"status,omitempty"`
+	CompletedAt *time.Time          `json:"completed_at,omitempty"`
+	Error       *string             `json:"error,omitempty"`
+	Id          *openapi_types.UUID `json:"id,omitempty"`
+
+	// Input Generic input object containing arbitrary input data
+	Input  *GenericInput `json:"input,omitempty"`
+	NodeId *string       `json:"node_id,omitempty"`
+
+	// Output Generic output object containing arbitrary output data
+	Output    *GenericOutput      `json:"output,omitempty"`
+	RunId     *openapi_types.UUID `json:"run_id,omitempty"`
+	StartedAt *time.Time          `json:"started_at,omitempty"`
+
+	// Status Status of a workflow step
+	Status *WorkflowStepStatus `json:"status,omitempty"`
 }
 
-// WorkflowStepStatus defines model for WorkflowStep.Status.
+// WorkflowStepStatus Status of a workflow step
 type WorkflowStepStatus string
 
 // WorkflowVersion defines model for WorkflowVersion.
@@ -738,27 +787,13 @@ type GetNodeParameterOptionsParams struct {
 	Context *string `form:"context,omitempty" json:"context,omitempty"`
 }
 
-// ClaimWorkJSONBody defines parameters for ClaimWork.
-type ClaimWorkJSONBody struct {
-	MaxItems *int `json:"maxItems,omitempty"`
-}
-
-// CompleteWorkJSONBody defines parameters for CompleteWork.
-type CompleteWorkJSONBody struct {
-	Error  *string                 `json:"error,omitempty"`
-	Result *map[string]interface{} `json:"result,omitempty"`
-}
-
 // ListWorkflowRunsParams defines parameters for ListWorkflowRuns.
 type ListWorkflowRunsParams struct {
-	WorkflowId *openapi_types.UUID           `form:"workflow_id,omitempty" json:"workflow_id,omitempty"`
-	Status     *ListWorkflowRunsParamsStatus `form:"status,omitempty" json:"status,omitempty"`
-	Page       *int                          `form:"page,omitempty" json:"page,omitempty"`
-	Limit      *int                          `form:"limit,omitempty" json:"limit,omitempty"`
+	WorkflowId *openapi_types.UUID `form:"workflow_id,omitempty" json:"workflow_id,omitempty"`
+	Status     *WorkflowRunStatus  `form:"status,omitempty" json:"status,omitempty"`
+	Page       *int                `form:"page,omitempty" json:"page,omitempty"`
+	Limit      *int                `form:"limit,omitempty" json:"limit,omitempty"`
 }
-
-// ListWorkflowRunsParamsStatus defines parameters for ListWorkflowRuns.
-type ListWorkflowRunsParamsStatus string
 
 // ListWorkflowsParams defines parameters for ListWorkflows.
 type ListWorkflowsParams struct {
@@ -799,10 +834,10 @@ type UpdateTriggerJSONRequestBody = UpdateTriggerRequest
 type RegisterWorkerJSONRequestBody = RegisterWorkerRequest
 
 // ClaimWorkJSONRequestBody defines body for ClaimWork for application/json ContentType.
-type ClaimWorkJSONRequestBody ClaimWorkJSONBody
+type ClaimWorkJSONRequestBody = ClaimWorkRequest
 
 // CompleteWorkJSONRequestBody defines body for CompleteWork for application/json ContentType.
-type CompleteWorkJSONRequestBody CompleteWorkJSONBody
+type CompleteWorkJSONRequestBody = CompleteWorkRequest
 
 // CreateWorkflowJSONRequestBody defines body for CreateWorkflow for application/json ContentType.
 type CreateWorkflowJSONRequestBody = CreateWorkflowRequest

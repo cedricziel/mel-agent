@@ -1,4 +1,4 @@
-# CreateWorkflowNodeRequestPosition
+# WorkflowLayoutResultNodesInnerPosition
 
 
 ## Properties
@@ -11,9 +11,9 @@ Name | Type | Description | Notes
 ## Example
 
 ```typescript
-import { CreateWorkflowNodeRequestPosition } from '@mel-agent/api-client';
+import { WorkflowLayoutResultNodesInnerPosition } from '@mel-agent/api-client';
 
-const instance: CreateWorkflowNodeRequestPosition = {
+const instance: WorkflowLayoutResultNodesInnerPosition = {
     x,
     y,
 };

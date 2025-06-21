@@ -14,12 +14,7 @@ post:
     content:
       application/json:
         schema:
-          type: object
-          properties:
-            maxItems:
-              type: integer
-              minimum: 1
-              maximum: 100
+          $ref: ../components/schemas/ClaimWorkRequest.yaml
   responses:
     '200':
       description: Work items claimed

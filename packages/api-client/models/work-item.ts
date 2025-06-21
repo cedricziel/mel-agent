@@ -33,7 +33,7 @@ export interface WorkItem {
      */
     'type'?: string;
     /**
-     * 
+     * Generic payload object containing arbitrary data
      * @type {{ [key: string]: any; }}
      * @memberof WorkItem
      */

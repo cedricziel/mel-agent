@@ -7,16 +7,12 @@ properties:
   name:
     type: string
   type:
-    type: string
-    enum:
-      - schedule
-      - webhook
+    $ref: ./TriggerType.yaml
   workflow_id:
     type: string
     format: uuid
   config:
-    type: object
-    additionalProperties: true
+    $ref: ./TriggerConfig.yaml
   enabled:
     type: boolean
     default: true

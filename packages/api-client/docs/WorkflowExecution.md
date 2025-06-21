@@ -7,7 +7,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **id** | **string** |  | [optional] [default to undefined]
 **workflow_id** | **string** |  | [optional] [default to undefined]
-**status** | **string** |  | [optional] [default to undefined]
+**status** | [**WorkflowRunStatus**](WorkflowRunStatus.md) |  | [optional] [default to undefined]
 **started_at** | **string** |  | [optional] [default to undefined]
 **completed_at** | **string** |  | [optional] [default to undefined]
 **result** | **{ [key: string]: any; }** |  | [optional] [default to undefined]

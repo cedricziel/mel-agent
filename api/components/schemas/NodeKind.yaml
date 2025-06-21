@@ -1,0 +1,8 @@
+type: string
+enum:
+  - action
+  - model
+  - memory
+  - tool
+  - trigger
+description: Kind of node functionality
