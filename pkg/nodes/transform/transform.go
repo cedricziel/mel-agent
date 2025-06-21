@@ -24,8 +24,9 @@ func (transformDefinition) Meta() api.NodeType {
 
 // ExecuteEnvelope applies the expression to the input envelope (currently passthrough).
 func (d transformDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
--	val, ok := node.Data["expression"]
--	expr, ok := val.(string)
+	// extract the expression parameter safely
+	val, exists := node.Data["expression"]
+	if !exists || !ok || expr == "" {
 +	expr, ok := node.Data["expression"].(string)
 	if !ok || expr == "" {
 		err := api.NewNodeError(node.ID, node.Type, "expression parameter required")
