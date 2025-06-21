@@ -46,11 +46,11 @@ describe('useRunsData', () => {
     nodeTypesApi.listNodeTypes.mockResolvedValue({ data: mockNodeDefs });
 
     // Mock workflowRunsApi
-    workflowRunsApi.listWorkflowRuns.mockImplementation((params) => {
-      if (params?.workflow_id === mockAgentId) {
-        return Promise.resolve({ data: mockRuns });
+    workflowRunsApi.listWorkflowRuns.mockImplementation((workflowId) => {
+      if (workflowId === mockAgentId) {
+        return Promise.resolve({ data: { runs: mockRuns } });
       }
-      return Promise.resolve({ data: [] });
+      return Promise.resolve({ data: { runs: [] } });
     });
 
     workflowRunsApi.getWorkflowRun.mockImplementation((runId) => {
@@ -91,9 +91,9 @@ describe('useRunsData', () => {
     const { result } = renderHook(() => useRunsData(mockAgentId));
 
     await waitFor(() => {
-      expect(workflowRunsApi.listWorkflowRuns).toHaveBeenCalledWith({
-        workflow_id: mockAgentId,
-      });
+      expect(workflowRunsApi.listWorkflowRuns).toHaveBeenCalledWith(
+        mockAgentId
+      );
       expect(result.current.runs).toEqual(mockRuns);
     });
   });

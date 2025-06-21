@@ -48,7 +48,7 @@ describe('Connections Page - Realistic Tests', () => {
     }).as('getCredentialTypes')
 
     // Mock credential schema endpoints
-    cy.intercept('GET', '/api/credential-types/schema/api_key', {
+    cy.intercept('GET', '/api/credential-types/api_key/schema', {
       statusCode: 200,
       body: {
         properties: {
@@ -139,7 +139,7 @@ describe('Connections Page - Realistic Tests', () => {
 
   it('should populate form when integration is selected', () => {
     // Mock credential schema
-    cy.intercept('GET', '/api/credential-types/schema/api_key', {
+    cy.intercept('GET', '/api/credential-types/api_key/schema', {
       statusCode: 200,
       body: {
         properties: {
@@ -176,7 +176,7 @@ describe('Connections Page - Realistic Tests', () => {
 
   it('should create a new connection', () => {
     // Mock all necessary APIs
-    cy.intercept('GET', '/api/credential-types/schema/api_key', {
+    cy.intercept('GET', '/api/credential-types/api_key/schema', {
       statusCode: 200,
       body: {
         properties: {
@@ -238,7 +238,7 @@ describe('Connections Page - Realistic Tests', () => {
       }
     }).as('getConnectionDetails')
 
-    cy.intercept('GET', '/api/credential-types/schema/api_key', {
+    cy.intercept('GET', '/api/credential-types/api_key/schema', {
       statusCode: 200,
       body: {
         properties: {
@@ -300,7 +300,7 @@ describe('Connections Page - Realistic Tests', () => {
   })
 
   it('should handle credential testing errors', () => {
-    cy.intercept('GET', '/api/credential-types/schema/api_key', {
+    cy.intercept('GET', '/api/credential-types/api_key/schema', {
       statusCode: 200,
       body: {
         properties: {
