@@ -1,0 +1,30 @@
+post:
+  summary: Chat with AI assistant
+  operationId: assistantChat
+  tags:
+    - Assistant
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/AssistantChatRequest.yaml
+  responses:
+    '200':
+      description: Assistant response
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/AssistantChatResponse.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

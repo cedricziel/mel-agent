@@ -1,0 +1,76 @@
+get:
+  summary: List all nodes in a workflow
+  operationId: listWorkflowNodes
+  tags:
+    - Workflows
+  parameters:
+    - name: workflowId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    '200':
+      description: List of workflow nodes
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: ../components/schemas/WorkflowNode.yaml
+    '404':
+      description: Workflow not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+post:
+  summary: Create a new node in workflow
+  operationId: createWorkflowNode
+  tags:
+    - Workflows
+  parameters:
+    - name: workflowId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/CreateWorkflowNodeRequest.yaml
+  responses:
+    '201':
+      description: Workflow node created successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/WorkflowNode.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '404':
+      description: Workflow not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

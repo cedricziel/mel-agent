@@ -1,0 +1,22 @@
+type: object
+required:
+  - name
+  - type
+  - workflow_id
+properties:
+  name:
+    type: string
+  type:
+    type: string
+    enum:
+      - schedule
+      - webhook
+  workflow_id:
+    type: string
+    format: uuid
+  config:
+    type: object
+    additionalProperties: true
+  enabled:
+    type: boolean
+    default: true

@@ -1,0 +1,101 @@
+get:
+  summary: Get connection by ID
+  operationId: getConnection
+  tags:
+    - Connections
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    '200':
+      description: Connection details
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Connection.yaml
+    '404':
+      description: Connection not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+put:
+  summary: Update connection
+  operationId: updateConnection
+  tags:
+    - Connections
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/UpdateConnectionRequest.yaml
+  responses:
+    '200':
+      description: Connection updated
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Connection.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '404':
+      description: Connection not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+delete:
+  summary: Delete connection
+  operationId: deleteConnection
+  tags:
+    - Connections
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    '204':
+      description: Connection deleted
+    '404':
+      description: Connection not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

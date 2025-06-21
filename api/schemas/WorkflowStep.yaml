@@ -1,0 +1,32 @@
+type: object
+properties:
+  id:
+    type: string
+    format: uuid
+  run_id:
+    type: string
+    format: uuid
+  node_id:
+    type: string
+  status:
+    type: string
+    enum:
+      - pending
+      - running
+      - completed
+      - failed
+      - skipped
+  started_at:
+    type: string
+    format: date-time
+  completed_at:
+    type: string
+    format: date-time
+  input:
+    type: object
+    additionalProperties: true
+  output:
+    type: object
+    additionalProperties: true
+  error:
+    type: string

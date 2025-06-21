@@ -1,0 +1,38 @@
+type: object
+required:
+  - name
+  - type
+properties:
+  name:
+    type: string
+    description: Key name
+  label:
+    type: string
+    description: User-facing label
+  type:
+    type: string
+    description: Data type (e.g. "string", "number", "enum")
+  required:
+    type: boolean
+    description: Must be provided
+  default:
+    description: Default value
+  group:
+    type: string
+    description: UI grouping
+  visibility_condition:
+    type: string
+    description: Conditional display expression
+  options:
+    type: array
+    items:
+      type: string
+    description: Enum options
+  validators:
+    type: array
+    items:
+      $ref: ./ValidatorSpec.yaml
+    description: Validation rules
+  description:
+    type: string
+    description: Help text

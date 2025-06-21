@@ -1,0 +1,14 @@
+type: object
+properties:
+  index:
+    type: integer
+    description: Choice index
+  message:
+    $ref: ./ChatMessage.yaml
+  finish_reason:
+    type: string
+    enum:
+      - stop
+      - length
+      - function_call
+    description: Reason for finishing

@@ -1,0 +1,48 @@
+post:
+  summary: Test a single node in draft context
+  operationId: testWorkflowDraftNode
+  tags:
+    - Workflows
+  parameters:
+    - name: workflowId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    - name: nodeId
+      in: path
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/ExecuteWorkflowRequest.yaml
+  responses:
+    '200':
+      description: Node test result
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/NodeTestResult.yaml
+    '400':
+      description: Invalid request body
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '404':
+      description: Workflow or node not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

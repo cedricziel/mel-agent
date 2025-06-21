@@ -1,0 +1,19 @@
+type: object
+properties:
+  id:
+    type: string
+  name:
+    type: string
+  status:
+    type: string
+    enum:
+      - active
+      - inactive
+  last_heartbeat:
+    type: string
+    format: date-time
+  concurrency:
+    type: integer
+  registered_at:
+    type: string
+    format: date-time

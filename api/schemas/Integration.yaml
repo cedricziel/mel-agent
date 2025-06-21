@@ -1,0 +1,29 @@
+type: object
+properties:
+  id:
+    type: string
+    format: uuid
+  name:
+    type: string
+  description:
+    type: string
+  type:
+    type: string
+  status:
+    type: string
+    enum:
+      - active
+      - inactive
+  capabilities:
+    type: array
+    items:
+      type: string
+  credential_type:
+    type: string
+    description: Type of credential required for this integration
+  created_at:
+    type: string
+    format: date-time
+  updated_at:
+    type: string
+    format: date-time

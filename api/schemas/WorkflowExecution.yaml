@@ -1,0 +1,26 @@
+type: object
+properties:
+  id:
+    type: string
+    format: uuid
+  workflow_id:
+    type: string
+    format: uuid
+  status:
+    type: string
+    enum:
+      - pending
+      - running
+      - completed
+      - failed
+  started_at:
+    type: string
+    format: date-time
+  completed_at:
+    type: string
+    format: date-time
+  result:
+    type: object
+    additionalProperties: true
+  error:
+    type: string

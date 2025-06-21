@@ -1,0 +1,20 @@
+type: object
+properties:
+  success:
+    type: boolean
+  output:
+    type: object
+    additionalProperties: true
+  error:
+    type: string
+  execution_time:
+    type: number
+  logs:
+    type: array
+    items:
+      type: string
+  node_id:
+    type: string
+  agent_id:
+    type: string
+    format: uuid

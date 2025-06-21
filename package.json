@@ -1,6 +1,8 @@
 {
 	"scripts": {
-		"generate:client": "cd packages/api-client && npx @openapitools/openapi-generator-cli generate -c openapi-config.json"
+		"generate:client": "cd packages/api-client && npx @openapitools/openapi-generator-cli generate -c openapi-config.json",
+		"openapi:lint": "npx @redocly/cli@latest lint api/openapi.yaml",
+		"openapi:bundle": "npx @redocly/cli@latest bundle api/openapi.yaml --output api/openapi-bundled.yaml"
 	},
 	"dependencies": {
 		"url-polyfill": "^1.1.13"

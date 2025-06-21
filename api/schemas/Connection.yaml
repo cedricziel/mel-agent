@@ -1,0 +1,35 @@
+type: object
+properties:
+  id:
+    type: string
+    format: uuid
+  user_id:
+    type: string
+    format: uuid
+  integration_id:
+    type: string
+    format: uuid
+  name:
+    type: string
+  secret:
+    type: object
+    additionalProperties: true
+  config:
+    type: object
+    additionalProperties: true
+  usage_limit_month:
+    type: integer
+  is_default:
+    type: boolean
+  created_at:
+    type: string
+    format: date-time
+  last_validated:
+    type: string
+    format: date-time
+  status:
+    type: string
+    enum:
+      - valid
+      - invalid
+      - expired

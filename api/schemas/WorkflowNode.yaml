@@ -1,0 +1,16 @@
+type: object
+required:
+  - id
+  - name
+  - type
+  - config
+properties:
+  id:
+    type: string
+  name:
+    type: string
+  type:
+    type: string
+  config:
+    type: object
+    additionalProperties: true

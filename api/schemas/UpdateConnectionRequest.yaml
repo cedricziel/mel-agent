@@ -1,0 +1,20 @@
+type: object
+properties:
+  name:
+    type: string
+  secret:
+    type: object
+    additionalProperties: true
+  config:
+    type: object
+    additionalProperties: true
+  usage_limit_month:
+    type: integer
+  is_default:
+    type: boolean
+  status:
+    type: string
+    enum:
+      - valid
+      - invalid
+      - expired

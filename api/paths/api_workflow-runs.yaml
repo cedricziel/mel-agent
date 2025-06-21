@@ -1,0 +1,43 @@
+get:
+  summary: List workflow runs
+  operationId: listWorkflowRuns
+  tags:
+    - WorkflowRuns
+  parameters:
+    - name: workflow_id
+      in: query
+      schema:
+        type: string
+        format: uuid
+    - name: status
+      in: query
+      schema:
+        type: string
+        enum:
+          - pending
+          - running
+          - completed
+          - failed
+    - name: page
+      in: query
+      schema:
+        type: integer
+        default: 1
+    - name: limit
+      in: query
+      schema:
+        type: integer
+        default: 20
+  responses:
+    '200':
+      description: List of workflow runs
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/WorkflowRunList.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

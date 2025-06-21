@@ -1,0 +1,31 @@
+post:
+  summary: Claim work items
+  operationId: claimWork
+  tags:
+    - Workers
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            maxItems:
+              type: integer
+              minimum: 1
+              maximum: 100
+  responses:
+    '200':
+      description: Work items claimed
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: ../components/schemas/WorkItem.yaml

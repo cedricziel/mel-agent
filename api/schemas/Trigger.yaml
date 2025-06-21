@@ -1,0 +1,26 @@
+type: object
+properties:
+  id:
+    type: string
+    format: uuid
+  name:
+    type: string
+  type:
+    type: string
+    enum:
+      - schedule
+      - webhook
+  workflow_id:
+    type: string
+    format: uuid
+  config:
+    type: object
+    additionalProperties: true
+  enabled:
+    type: boolean
+  created_at:
+    type: string
+    format: date-time
+  updated_at:
+    type: string
+    format: date-time

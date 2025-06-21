@@ -1,0 +1,10 @@
+type: object
+properties:
+  workflow_id:
+    type: string
+    format: uuid
+  definition:
+    $ref: ./WorkflowDefinition.yaml
+  updated_at:
+    type: string
+    format: date-time

@@ -1,0 +1,14 @@
+type: object
+properties:
+  name:
+    type: string
+  config:
+    type: object
+    additionalProperties: true
+  position:
+    type: object
+    properties:
+      x:
+        type: number
+      'y':
+        type: number
