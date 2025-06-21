@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { workflowsApi } from '../api/client';
 
 function AgentsPage() {
+  const navigate = useNavigate();
   const [workflows, setWorkflows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -64,9 +66,7 @@ function AgentsPage() {
               <tr
                 key={w.id}
                 className="border-t cursor-pointer hover:bg-gray-50"
-                onClick={() =>
-                  (window.location.href = `/workflows/${w.id}/edit`)
-                }
+                onClick={() => navigate(`/workflows/${w.id}/edit`)}
               >
                 <td className="px-4 py-2">{w.name}</td>
                 <td className="px-4 py-2 text-gray-600">{w.description}</td>
