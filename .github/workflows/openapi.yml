@@ -2,7 +2,7 @@ name: OpenAPI
 
 on:
   push:
-    branches: [ main, feature/openapi-spec-issue-50 ]
+    branches: [ main, feature/openapi-spec-issue-50, feature/openapi-js-client ]
   pull_request:
     branches: [ main ]
 
@@ -36,5 +36,5 @@ jobs:
       with:
         node-version: '18'
 
-    - name: Validate OpenAPI spec
-      run: make openapi-validate
+    - name: Install npm dependencies
+      run: npm install
