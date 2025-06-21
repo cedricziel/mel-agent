@@ -1,4 +1,3 @@
----
 openapi: 3.0.3
 info:
   title: MEL Agent API
@@ -10,13 +9,37 @@ info:
   license:
     name: AGPL-3.0
     url: https://www.gnu.org/licenses/agpl-3.0.html
-
 servers:
   - url: http://localhost:8080
     description: Local development server
   - url: https://api.mel-agent.com
     description: Production server
-
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+tags:
+  - name: System
+    description: System health and status endpoints
+  - name: Workflows
+    description: Workflow management endpoints
+  - name: WorkflowRuns
+    description: Workflow execution management
+  - name: NodeTypes
+    description: Node type discovery endpoints
+  - name: Connections
+    description: Integration connection management
+  - name: Triggers
+    description: Workflow trigger management
+  - name: Workers
+    description: Worker management endpoints
+  - name: Webhooks
+    description: External webhook handlers
+  - name: Credentials
+    description: Credential management for node connections
+  - name: Integrations
+    description: Available integration services
+  - name: CredentialTypes
+    description: Credential type definitions and schemas
 paths:
   /api/health:
     get:
@@ -41,8 +64,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
-
   /api/workflows:
     get:
       summary: List all workflows
@@ -73,7 +94,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
     post:
       summary: Create a new workflow
       operationId: createWorkflow
@@ -104,7 +124,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/workflows/{id}:
     get:
       summary: Get workflow by ID
@@ -137,7 +156,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
     put:
       summary: Update workflow
       operationId: updateWorkflow
@@ -181,7 +199,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
     delete:
       summary: Delete workflow
       operationId: deleteWorkflow
@@ -209,7 +226,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/workflows/{id}/execute:
     post:
       summary: Execute a workflow
@@ -258,7 +274,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/workflow-runs:
     get:
       summary: List workflow runs
@@ -275,7 +290,11 @@ paths:
           in: query
           schema:
             type: string
-            enum: [pending, running, completed, failed]
+            enum:
+              - pending
+              - running
+              - completed
+              - failed
         - name: page
           in: query
           schema:
@@ -299,7 +318,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/workflow-runs/{id}:
     get:
       summary: Get workflow run details
@@ -332,7 +350,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/workflow-runs/{id}/steps:
     get:
       summary: Get workflow run steps
@@ -367,7 +384,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/node-types:
     get:
       summary: List available node types
@@ -390,7 +406,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/NodeType'
-
   /api/connections:
     get:
       summary: List connections
@@ -412,7 +427,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
     post:
       summary: Create a connection
       operationId: createConnection
@@ -443,7 +457,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/connections/{id}:
     get:
       summary: Get connection by ID
@@ -476,7 +489,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
     put:
       summary: Update connection
       operationId: updateConnection
@@ -520,7 +532,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
     delete:
       summary: Delete connection
       operationId: deleteConnection
@@ -548,7 +559,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/triggers:
     get:
       summary: List triggers
@@ -570,7 +580,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
     post:
       summary: Create a trigger
       operationId: createTrigger
@@ -601,7 +610,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/triggers/{id}:
     get:
       summary: Get trigger by ID
@@ -634,7 +642,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
     put:
       summary: Update trigger
       operationId: updateTrigger
@@ -678,7 +685,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
     delete:
       summary: Delete trigger
       operationId: deleteTrigger
@@ -706,7 +712,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/workers:
     get:
       summary: List all workers
@@ -728,7 +733,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
     post:
       summary: Register a new worker
       operationId: registerWorker
@@ -759,7 +763,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/workers/{id}:
     delete:
       summary: Unregister a worker
@@ -787,7 +790,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/workers/{id}/heartbeat:
     put:
       summary: Update worker heartbeat
@@ -815,7 +817,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/workers/{id}/claim-work:
     post:
       summary: Claim work items
@@ -848,7 +849,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/WorkItem'
-
   /api/workers/{id}/complete-work/{itemId}:
     post:
       summary: Complete a work item
@@ -881,7 +881,6 @@ paths:
       responses:
         '200':
           description: Work item completed
-
   /api/workflows/{workflowId}/nodes:
     get:
       summary: List all nodes in a workflow
@@ -916,7 +915,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
     post:
       summary: Create a new node in workflow
       operationId: createWorkflowNode
@@ -960,7 +958,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/workflows/{workflowId}/nodes/{nodeId}:
     get:
       summary: Get specific workflow node
@@ -998,7 +995,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
     put:
       summary: Update workflow node
       operationId: updateWorkflowNode
@@ -1047,7 +1043,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
     delete:
       summary: Delete workflow node
       operationId: deleteWorkflowNode
@@ -1080,7 +1075,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/workflows/{workflowId}/edges:
     get:
       summary: List all edges in a workflow
@@ -1115,7 +1109,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
     post:
       summary: Create a new edge in workflow
       operationId: createWorkflowEdge
@@ -1159,7 +1152,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/workflows/{workflowId}/edges/{edgeId}:
     delete:
       summary: Delete workflow edge
@@ -1193,7 +1185,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/workflows/{workflowId}/layout:
     post:
       summary: Auto-layout workflow nodes
@@ -1226,7 +1217,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/workflows/{workflowId}/draft:
     get:
       summary: Get current draft for a workflow
@@ -1259,7 +1249,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
     put:
       summary: Update workflow draft with auto-persistence
       operationId: updateWorkflowDraft
@@ -1303,7 +1292,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/workflows/{workflowId}/draft/nodes/{nodeId}/test:
     post:
       summary: Test a single node in draft context
@@ -1353,7 +1341,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/workflows/{workflowId}/versions:
     get:
       summary: List all versions of a workflow
@@ -1396,7 +1383,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
     post:
       summary: Create a new workflow version
       operationId: createWorkflowVersion
@@ -1440,7 +1426,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/workflows/{workflowId}/versions/latest:
     get:
       summary: Get latest version of a workflow
@@ -1473,7 +1458,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/workflows/{workflowId}/versions/{versionNumber}/deploy:
     post:
       summary: Deploy a specific workflow version
@@ -1511,7 +1495,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/credentials:
     get:
       summary: List credentials for selection in nodes
@@ -1539,7 +1522,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /webhooks/{token}:
     post:
       summary: Webhook endpoint
@@ -1573,7 +1555,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/integrations:
     get:
       summary: List available integrations
@@ -1595,7 +1576,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/credential-types:
     get:
       summary: List credential type definitions
@@ -1617,7 +1597,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/credential-types/{type}/schema:
     get:
       summary: Get JSON schema for credential type
@@ -1649,7 +1628,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/credential-types/{type}/test:
     post:
       summary: Test credentials for a specific type
@@ -1697,7 +1675,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/node-types/{type}/parameters/{parameter}/options:
     get:
       summary: Get dynamic options for node parameters
@@ -1739,7 +1716,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/extensions:
     get:
       summary: List available extensions and plugins
@@ -1761,7 +1737,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /api/assistant/chat:
     post:
       summary: Chat with AI assistant
@@ -1793,9 +1768,648 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
 components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
   schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        code:
+          type: integer
+    WorkflowNode:
+      type: object
+      required:
+        - id
+        - name
+        - type
+        - config
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        config:
+          type: object
+          additionalProperties: true
+    WorkflowEdge:
+      type: object
+      required:
+        - id
+        - source
+        - target
+      properties:
+        id:
+          type: string
+        source:
+          type: string
+        target:
+          type: string
+        sourceOutput:
+          type: string
+        targetInput:
+          type: string
+    WorkflowDefinition:
+      type: object
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowNode'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowEdge'
+    Workflow:
+      type: object
+      required:
+        - id
+        - name
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        definition:
+          $ref: '#/components/schemas/WorkflowDefinition'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    WorkflowList:
+      type: object
+      required:
+        - workflows
+        - total
+        - page
+        - limit
+      properties:
+        workflows:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workflow'
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+    CreateWorkflowRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        definition:
+          $ref: '#/components/schemas/WorkflowDefinition'
+    UpdateWorkflowRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        definition:
+          $ref: '#/components/schemas/WorkflowDefinition'
+    WorkflowExecution:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        workflow_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - pending
+            - running
+            - completed
+            - failed
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        result:
+          type: object
+          additionalProperties: true
+        error:
+          type: string
+    WorkflowRun:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        workflow_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - pending
+            - running
+            - completed
+            - failed
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        context:
+          type: object
+          additionalProperties: true
+        error:
+          type: string
+    WorkflowRunList:
+      type: object
+      required:
+        - runs
+        - total
+        - page
+        - limit
+      properties:
+        runs:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowRun'
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+    WorkflowStep:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        run_id:
+          type: string
+          format: uuid
+        node_id:
+          type: string
+        status:
+          type: string
+          enum:
+            - pending
+            - running
+            - completed
+            - failed
+            - skipped
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        input:
+          type: object
+          additionalProperties: true
+        output:
+          type: object
+          additionalProperties: true
+        error:
+          type: string
+    NodeInput:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        required:
+          type: boolean
+        description:
+          type: string
+    NodeOutput:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        description:
+          type: string
+    NodeType:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        kinds:
+          type: array
+          items:
+            type: string
+            enum:
+              - action
+              - model
+              - memory
+              - tool
+              - trigger
+        inputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeInput'
+        outputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeOutput'
+    Connection:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        integration_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        secret:
+          type: object
+          additionalProperties: true
+        config:
+          type: object
+          additionalProperties: true
+        usage_limit_month:
+          type: integer
+        is_default:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        last_validated:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+            - valid
+            - invalid
+            - expired
+    CreateConnectionRequest:
+      type: object
+      required:
+        - name
+        - integration_id
+      properties:
+        name:
+          type: string
+        integration_id:
+          type: string
+          format: uuid
+        secret:
+          type: object
+          additionalProperties: true
+        config:
+          type: object
+          additionalProperties: true
+        usage_limit_month:
+          type: integer
+        is_default:
+          type: boolean
+    UpdateConnectionRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        secret:
+          type: object
+          additionalProperties: true
+        config:
+          type: object
+          additionalProperties: true
+        usage_limit_month:
+          type: integer
+        is_default:
+          type: boolean
+        status:
+          type: string
+          enum:
+            - valid
+            - invalid
+            - expired
+    Trigger:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        type:
+          type: string
+          enum:
+            - schedule
+            - webhook
+        workflow_id:
+          type: string
+          format: uuid
+        config:
+          type: object
+          additionalProperties: true
+        enabled:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CreateTriggerRequest:
+      type: object
+      required:
+        - name
+        - type
+        - workflow_id
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum:
+            - schedule
+            - webhook
+        workflow_id:
+          type: string
+          format: uuid
+        config:
+          type: object
+          additionalProperties: true
+        enabled:
+          type: boolean
+          default: true
+    UpdateTriggerRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        config:
+          type: object
+          additionalProperties: true
+        enabled:
+          type: boolean
+    Worker:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum:
+            - active
+            - inactive
+        last_heartbeat:
+          type: string
+          format: date-time
+        concurrency:
+          type: integer
+        registered_at:
+          type: string
+          format: date-time
+    RegisterWorkerRequest:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        concurrency:
+          type: integer
+          minimum: 1
+          default: 5
+    WorkItem:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+    CreateWorkflowNodeRequest:
+      type: object
+      required:
+        - id
+        - name
+        - type
+        - config
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        config:
+          type: object
+          additionalProperties: true
+        position:
+          type: object
+          properties:
+            x:
+              type: number
+            'y':
+              type: number
+    UpdateWorkflowNodeRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        config:
+          type: object
+          additionalProperties: true
+        position:
+          type: object
+          properties:
+            x:
+              type: number
+            'y':
+              type: number
+    CreateWorkflowEdgeRequest:
+      type: object
+      required:
+        - id
+        - source
+        - target
+      properties:
+        id:
+          type: string
+        source:
+          type: string
+        target:
+          type: string
+        sourceOutput:
+          type: string
+        targetInput:
+          type: string
+    WorkflowLayoutResult:
+      type: object
+      properties:
+        nodes:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              position:
+                type: object
+                properties:
+                  x:
+                    type: number
+                  'y':
+                    type: number
+    WorkflowDraft:
+      type: object
+      properties:
+        workflow_id:
+          type: string
+          format: uuid
+        definition:
+          $ref: '#/components/schemas/WorkflowDefinition'
+        updated_at:
+          type: string
+          format: date-time
+    UpdateWorkflowDraftRequest:
+      type: object
+      properties:
+        definition:
+          $ref: '#/components/schemas/WorkflowDefinition'
+    ExecuteWorkflowRequest:
+      type: object
+      properties:
+        input:
+          type: object
+          additionalProperties: true
+    NodeTestResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        output:
+          type: object
+          additionalProperties: true
+        error:
+          type: string
+        execution_time:
+          type: number
+        logs:
+          type: array
+          items:
+            type: string
+    WorkflowVersion:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        workflow_id:
+          type: string
+          format: uuid
+        version_number:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        definition:
+          $ref: '#/components/schemas/WorkflowDefinition'
+        is_current:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+    WorkflowVersionList:
+      type: object
+      required:
+        - versions
+        - total
+      properties:
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowVersion'
+        total:
+          type: integer
+    CreateWorkflowVersionRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        definition:
+          $ref: '#/components/schemas/WorkflowDefinition'
+    Credential:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        type:
+          type: string
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        last_used:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+            - valid
+            - invalid
+            - expired
     WebhookPayload:
       description: Any valid JSON payload for webhook
       anyOf:
@@ -1823,72 +2437,111 @@ components:
           description: JSON integer value
         - type: boolean
           description: JSON boolean (true/false)
-
-    AssistantChatRequest:
+    Integration:
       type: object
-      required:
-        - messages
       properties:
-        messages:
-          type: array
-          items:
-            $ref: '#/components/schemas/ChatMessage'
-          description: Array of chat messages
-        workflow_id:
+        id:
           type: string
           format: uuid
-          description: Optional workflow ID for context-aware assistance
-
-    AssistantChatResponse:
-      type: object
-      properties:
-        id:
+        name:
           type: string
-          description: Response ID
-        object:
+        description:
           type: string
-          description: Object type (e.g., "chat.completion")
-        created:
-          type: integer
-          description: Unix timestamp
-        model:
+        type:
           type: string
-          description: Model used
-        choices:
-          type: array
-          items:
-            $ref: '#/components/schemas/ChatChoice'
-          description: Array of response choices
-        usage:
-          $ref: '#/components/schemas/ChatUsage'
-
-    Extension:
-      type: object
-      required:
-        - id
-        - version
-        - categories
-      properties:
-        id:
+        status:
           type: string
-          description: Unique plugin identifier
-        version:
-          type: string
-          description: Semver-compliant version string
-        categories:
+          enum:
+            - active
+            - inactive
+        capabilities:
           type: array
           items:
             type: string
-          description: Extension types provided (e.g. "node", "trigger")
-        params:
+        credential_type:
+          type: string
+          description: Type of credential required for this integration
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CredentialType:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        schema:
+          type: object
+          additionalProperties: true
+        required_fields:
           type: array
           items:
-            $ref: '#/components/schemas/ParamSpec'
-          description: Parameter schema for configuration/UI
-        ui_component:
+            type: string
+        test_endpoint:
           type: string
-          description: Optional path or URL to React bundle
-
+    CredentialTypeSchema:
+      type: object
+      properties:
+        type:
+          type: string
+        properties:
+          type: object
+          additionalProperties: true
+        required:
+          type: array
+          items:
+            type: string
+        title:
+          type: string
+        description:
+          type: string
+    CredentialTestResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        error:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+    NodeParameterOptions:
+      type: object
+      properties:
+        options:
+          type: array
+          items:
+            type: object
+            properties:
+              value:
+                type: string
+              label:
+                type: string
+              description:
+                type: string
+        dynamic:
+          type: boolean
+        context_dependent:
+          type: boolean
+    ValidatorSpec:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          description: Validator type (e.g. "notEmpty", "regex")
+        params:
+          type: object
+          description: Parameters for the validator
     ParamSpec:
       type: object
       required:
@@ -1928,19 +2581,41 @@ components:
         description:
           type: string
           description: Help text
-
-    ValidatorSpec:
+    Extension:
       type: object
       required:
-        - type
+        - id
+        - version
+        - categories
       properties:
-        type:
+        id:
           type: string
-          description: Validator type (e.g. "notEmpty", "regex")
+          description: Unique plugin identifier
+        version:
+          type: string
+          description: Semver-compliant version string
+        categories:
+          type: array
+          items:
+            type: string
+          description: Extension types provided (e.g. "node", "trigger")
         params:
-          type: object
-          description: Parameters for the validator
-
+          type: array
+          items:
+            $ref: '#/components/schemas/ParamSpec'
+          description: Parameter schema for configuration/UI
+        ui_component:
+          type: string
+          description: Optional path or URL to React bundle
+    FunctionCall:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Function name
+        arguments:
+          type: string
+          description: Function arguments as JSON string
     ChatMessage:
       type: object
       required:
@@ -1949,7 +2624,11 @@ components:
       properties:
         role:
           type: string
-          enum: [system, user, assistant, function]
+          enum:
+            - system
+            - user
+            - assistant
+            - function
           description: Message role
         content:
           type: string
@@ -1959,7 +2638,20 @@ components:
           description: Function name (for function role)
         function_call:
           $ref: '#/components/schemas/FunctionCall'
-
+    AssistantChatRequest:
+      type: object
+      required:
+        - messages
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatMessage'
+          description: Array of chat messages
+        workflow_id:
+          type: string
+          format: uuid
+          description: Optional workflow ID for context-aware assistance
     ChatChoice:
       type: object
       properties:
@@ -1970,19 +2662,11 @@ components:
           $ref: '#/components/schemas/ChatMessage'
         finish_reason:
           type: string
-          enum: [stop, length, function_call]
+          enum:
+            - stop
+            - length
+            - function_call
           description: Reason for finishing
-
-    FunctionCall:
-      type: object
-      properties:
-        name:
-          type: string
-          description: Function name
-        arguments:
-          type: string
-          description: Function arguments as JSON string
-
     ChatUsage:
       type: object
       properties:
@@ -1995,797 +2679,25 @@ components:
         total_tokens:
           type: integer
           description: Total tokens used
-
-
-    Workflow:
+    AssistantChatResponse:
       type: object
-      required:
-        - id
-        - name
-        - created_at
-        - updated_at
       properties:
         id:
           type: string
-          format: uuid
-        name:
+          description: Response ID
+        object:
           type: string
-        description:
-          type: string
-        definition:
-          $ref: '#/components/schemas/WorkflowDefinition'
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-
-    CreateWorkflowRequest:
-      type: object
-      required:
-        - name
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        definition:
-          $ref: '#/components/schemas/WorkflowDefinition'
-
-    UpdateWorkflowRequest:
-      type: object
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        definition:
-          $ref: '#/components/schemas/WorkflowDefinition'
-
-    WorkflowList:
-      type: object
-      required:
-        - workflows
-        - total
-        - page
-        - limit
-      properties:
-        workflows:
-          type: array
-          items:
-            $ref: '#/components/schemas/Workflow'
-        total:
+          description: Object type (e.g., "chat.completion")
+        created:
           type: integer
-        page:
-          type: integer
-        limit:
-          type: integer
-
-    WorkflowDefinition:
-      type: object
-      properties:
-        nodes:
+          description: Unix timestamp
+        model:
+          type: string
+          description: Model used
+        choices:
           type: array
           items:
-            $ref: '#/components/schemas/WorkflowNode'
-        edges:
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkflowEdge'
-
-    WorkflowNode:
-      type: object
-      required:
-        - id
-        - name
-        - type
-        - config
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        type:
-          type: string
-        config:
-          type: object
-          additionalProperties: true
-
-    WorkflowEdge:
-      type: object
-      required:
-        - id
-        - source
-        - target
-      properties:
-        id:
-          type: string
-        source:
-          type: string
-        target:
-          type: string
-        sourceOutput:
-          type: string
-        targetInput:
-          type: string
-
-    WorkflowDraft:
-      type: object
-      properties:
-        workflow_id:
-          type: string
-          format: uuid
-        definition:
-          $ref: '#/components/schemas/WorkflowDefinition'
-        updated_at:
-          type: string
-          format: date-time
-
-    UpdateWorkflowDraftRequest:
-      type: object
-      properties:
-        definition:
-          $ref: '#/components/schemas/WorkflowDefinition'
-
-    WorkflowVersion:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        workflow_id:
-          type: string
-          format: uuid
-        version_number:
-          type: integer
-        name:
-          type: string
-        description:
-          type: string
-        definition:
-          $ref: '#/components/schemas/WorkflowDefinition'
-        is_current:
-          type: boolean
-        created_at:
-          type: string
-          format: date-time
-
-    CreateWorkflowVersionRequest:
-      type: object
-      required:
-        - name
-      properties:
-        name:
-          type: string
-        description:
-          type: string
-        definition:
-          $ref: '#/components/schemas/WorkflowDefinition'
-
-    WorkflowVersionList:
-      type: object
-      required:
-        - versions
-        - total
-      properties:
-        versions:
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkflowVersion'
-        total:
-          type: integer
-
-    ExecuteWorkflowRequest:
-      type: object
-      properties:
-        input:
-          type: object
-          additionalProperties: true
-
-    WorkflowExecution:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        workflow_id:
-          type: string
-          format: uuid
-        status:
-          type: string
-          enum: [pending, running, completed, failed]
-        started_at:
-          type: string
-          format: date-time
-        completed_at:
-          type: string
-          format: date-time
-        result:
-          type: object
-          additionalProperties: true
-        error:
-          type: string
-
-    WorkflowRun:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        workflow_id:
-          type: string
-          format: uuid
-        status:
-          type: string
-          enum: [pending, running, completed, failed]
-        started_at:
-          type: string
-          format: date-time
-        completed_at:
-          type: string
-          format: date-time
-        context:
-          type: object
-          additionalProperties: true
-        error:
-          type: string
-
-    WorkflowRunList:
-      type: object
-      required:
-        - runs
-        - total
-        - page
-        - limit
-      properties:
-        runs:
-          type: array
-          items:
-            $ref: '#/components/schemas/WorkflowRun'
-        total:
-          type: integer
-        page:
-          type: integer
-        limit:
-          type: integer
-
-    WorkflowStep:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        run_id:
-          type: string
-          format: uuid
-        node_id:
-          type: string
-        status:
-          type: string
-          enum: [pending, running, completed, failed, skipped]
-        started_at:
-          type: string
-          format: date-time
-        completed_at:
-          type: string
-          format: date-time
-        input:
-          type: object
-          additionalProperties: true
-        output:
-          type: object
-          additionalProperties: true
-        error:
-          type: string
-
-    NodeType:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        description:
-          type: string
-        kinds:
-          type: array
-          items:
-            type: string
-            enum: [action, model, memory, tool, trigger]
-        inputs:
-          type: array
-          items:
-            $ref: '#/components/schemas/NodeInput'
-        outputs:
-          type: array
-          items:
-            $ref: '#/components/schemas/NodeOutput'
-
-    NodeInput:
-      type: object
-      properties:
-        name:
-          type: string
-        type:
-          type: string
-        required:
-          type: boolean
-        description:
-          type: string
-
-    NodeOutput:
-      type: object
-      properties:
-        name:
-          type: string
-        type:
-          type: string
-        description:
-          type: string
-
-    Connection:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        user_id:
-          type: string
-          format: uuid
-        integration_id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        secret:
-          type: object
-          additionalProperties: true
-        config:
-          type: object
-          additionalProperties: true
-        usage_limit_month:
-          type: integer
-        is_default:
-          type: boolean
-        created_at:
-          type: string
-          format: date-time
-        last_validated:
-          type: string
-          format: date-time
-        status:
-          type: string
-          enum: [valid, invalid, expired]
-
-    CreateConnectionRequest:
-      type: object
-      required:
-        - name
-        - integration_id
-      properties:
-        name:
-          type: string
-        integration_id:
-          type: string
-          format: uuid
-        secret:
-          type: object
-          additionalProperties: true
-        config:
-          type: object
-          additionalProperties: true
-        usage_limit_month:
-          type: integer
-        is_default:
-          type: boolean
-
-    UpdateConnectionRequest:
-      type: object
-      properties:
-        name:
-          type: string
-        secret:
-          type: object
-          additionalProperties: true
-        config:
-          type: object
-          additionalProperties: true
-        usage_limit_month:
-          type: integer
-        is_default:
-          type: boolean
-        status:
-          type: string
-          enum: [valid, invalid, expired]
-
-    Trigger:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        type:
-          type: string
-          enum: [schedule, webhook]
-        workflow_id:
-          type: string
-          format: uuid
-        config:
-          type: object
-          additionalProperties: true
-        enabled:
-          type: boolean
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-
-    CreateTriggerRequest:
-      type: object
-      required:
-        - name
-        - type
-        - workflow_id
-      properties:
-        name:
-          type: string
-        type:
-          type: string
-          enum: [schedule, webhook]
-        workflow_id:
-          type: string
-          format: uuid
-        config:
-          type: object
-          additionalProperties: true
-        enabled:
-          type: boolean
-          default: true
-
-    UpdateTriggerRequest:
-      type: object
-      properties:
-        name:
-          type: string
-        config:
-          type: object
-          additionalProperties: true
-        enabled:
-          type: boolean
-
-    Worker:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        status:
-          type: string
-          enum: [active, inactive]
-        last_heartbeat:
-          type: string
-          format: date-time
-        concurrency:
-          type: integer
-        registered_at:
-          type: string
-          format: date-time
-
-    RegisterWorkerRequest:
-      type: object
-      required:
-        - id
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        concurrency:
-          type: integer
-          minimum: 1
-          default: 5
-
-    WorkItem:
-      type: object
-      properties:
-        id:
-          type: string
-        type:
-          type: string
-        payload:
-          type: object
-          additionalProperties: true
-        created_at:
-          type: string
-          format: date-time
-
-    NodeTestResult:
-      type: object
-      properties:
-        success:
-          type: boolean
-        output:
-          type: object
-          additionalProperties: true
-        error:
-          type: string
-        execution_time:
-          type: number
-        logs:
-          type: array
-          items:
-            type: string
-
-
-    CreateWorkflowNodeRequest:
-      type: object
-      required:
-        - id
-        - name
-        - type
-        - config
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        type:
-          type: string
-        config:
-          type: object
-          additionalProperties: true
-        position:
-          type: object
-          properties:
-            x:
-              type: number
-            y:
-              type: number
-
-    UpdateWorkflowNodeRequest:
-      type: object
-      properties:
-        name:
-          type: string
-        config:
-          type: object
-          additionalProperties: true
-        position:
-          type: object
-          properties:
-            x:
-              type: number
-            y:
-              type: number
-
-    CreateWorkflowEdgeRequest:
-      type: object
-      required:
-        - id
-        - source
-        - target
-      properties:
-        id:
-          type: string
-        source:
-          type: string
-        target:
-          type: string
-        sourceOutput:
-          type: string
-        targetInput:
-          type: string
-
-    WorkflowLayoutResult:
-      type: object
-      properties:
-        nodes:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: string
-              position:
-                type: object
-                properties:
-                  x:
-                    type: number
-                  y:
-                    type: number
-
-    Credential:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        type:
-          type: string
-        description:
-          type: string
-        created_at:
-          type: string
-          format: date-time
-        last_used:
-          type: string
-          format: date-time
-        status:
-          type: string
-          enum: [valid, invalid, expired]
-
-    Integration:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        description:
-          type: string
-        type:
-          type: string
-        status:
-          type: string
-          enum: [active, inactive]
-        capabilities:
-          type: array
-          items:
-            type: string
-        credential_type:
-          type: string
-          description: Type of credential required for this integration
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
-
-    CredentialType:
-      type: object
-      properties:
-        id:
-          type: string
-        name:
-          type: string
-        description:
-          type: string
-        schema:
-          type: object
-          additionalProperties: true
-        required_fields:
-          type: array
-          items:
-            type: string
-        test_endpoint:
-          type: string
-
-    CredentialTypeSchema:
-      type: object
-      properties:
-        type:
-          type: string
-        properties:
-          type: object
-          additionalProperties: true
-        required:
-          type: array
-          items:
-            type: string
-        title:
-          type: string
-        description:
-          type: string
-
-    CredentialTestResult:
-      type: object
-      properties:
-        success:
-          type: boolean
-        message:
-          type: string
-        error:
-          type: string
-        details:
-          type: object
-          additionalProperties: true
-
-    NodeExecutionResult:
-      type: object
-      properties:
-        success:
-          type: boolean
-        output:
-          type: object
-          additionalProperties: true
-        error:
-          type: string
-        execution_time:
-          type: number
-        logs:
-          type: array
-          items:
-            type: string
-        node_id:
-          type: string
-        agent_id:
-          type: string
-          format: uuid
-
-    NodeParameterOptions:
-      type: object
-      properties:
-        options:
-          type: array
-          items:
-            type: object
-            properties:
-              value:
-                type: string
-              label:
-                type: string
-              description:
-                type: string
-        dynamic:
-          type: boolean
-        context_dependent:
-          type: boolean
-
-    Error:
-      type: object
-      properties:
-        error:
-          type: string
-        message:
-          type: string
-        code:
-          type: integer
-
-  securitySchemes:
-    BearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-
-    ApiKeyAuth:
-      type: apiKey
-      in: header
-      name: X-API-Key
-
-security:
-  - BearerAuth: []
-  - ApiKeyAuth: []
-
-tags:
-  - name: System
-    description: System health and status endpoints
-  - name: Workflows
-    description: Workflow management endpoints
-  - name: WorkflowRuns
-    description: Workflow execution management
-  - name: NodeTypes
-    description: Node type discovery endpoints
-  - name: Connections
-    description: Integration connection management
-  - name: Triggers
-    description: Workflow trigger management
-  - name: Workers
-    description: Worker management endpoints
-  - name: Webhooks
-    description: External webhook handlers
-  - name: Credentials
-    description: Credential management for node connections
-  - name: Integrations
-    description: Available integration services
-  - name: CredentialTypes
-    description: Credential type definitions and schemas
+            $ref: '#/components/schemas/ChatChoice'
+          description: Array of response choices
+        usage:
+          $ref: '#/components/schemas/ChatUsage'
