@@ -254,11 +254,11 @@ function BuilderPage({ agentId }) {
     if (viewMode === 'executions') {
       setLoadingExecutions(true);
       workflowRunsApi
-        .listWorkflowRuns({ workflow_id: agentId })
+        .listWorkflowRuns(agentId)
         .then((res) => {
-          setExecutions(res.data);
-          if (res.data.length > 0 && !selectedExecution) {
-            setSelectedExecution(res.data[0]);
+          setExecutions(res.data.runs);
+          if (res.data.runs.length > 0 && !selectedExecution) {
+            setSelectedExecution(res.data.runs[0]);
           }
         })
         .catch((err) => {

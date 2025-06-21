@@ -21,8 +21,8 @@ export function useRunsData(agentId) {
     if (!agentId) return;
 
     workflowRunsApi
-      .listWorkflowRuns({ workflow_id: agentId })
-      .then((res) => setRuns(res.data))
+      .listWorkflowRuns(agentId)
+      .then((res) => setRuns(res.data.runs))
       .catch((err) => console.error('fetch runs list failed', err));
   }, [agentId]);
 
