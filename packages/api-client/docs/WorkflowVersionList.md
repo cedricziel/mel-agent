@@ -5,8 +5,8 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**versions** | [**Array&lt;WorkflowVersion&gt;**](WorkflowVersion.md) |  | [optional] [default to undefined]
-**total** | **number** |  | [optional] [default to undefined]
+**versions** | [**Array&lt;WorkflowVersion&gt;**](WorkflowVersion.md) |  | [default to undefined]
+**total** | **number** |  | [default to undefined]
 
 ## Example
 

@@ -28,24 +28,24 @@ export interface WorkflowList {
      * @type {Array<Workflow>}
      * @memberof WorkflowList
      */
-    'workflows'?: Array<Workflow>;
+    'workflows': Array<Workflow>;
     /**
      * 
      * @type {number}
      * @memberof WorkflowList
      */
-    'total'?: number;
+    'total': number;
     /**
      * 
      * @type {number}
      * @memberof WorkflowList
      */
-    'page'?: number;
+    'page': number;
     /**
      * 
      * @type {number}
      * @memberof WorkflowList
      */
-    'limit'?: number;
+    'limit': number;
 }
 

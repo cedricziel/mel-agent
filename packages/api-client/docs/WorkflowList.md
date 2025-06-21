@@ -5,10 +5,10 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**workflows** | [**Array&lt;Workflow&gt;**](Workflow.md) |  | [optional] [default to undefined]
-**total** | **number** |  | [optional] [default to undefined]
-**page** | **number** |  | [optional] [default to undefined]
-**limit** | **number** |  | [optional] [default to undefined]
+**workflows** | [**Array&lt;Workflow&gt;**](Workflow.md) |  | [default to undefined]
+**total** | **number** |  | [default to undefined]
+**page** | **number** |  | [default to undefined]
+**limit** | **number** |  | [default to undefined]
 
 ## Example
 

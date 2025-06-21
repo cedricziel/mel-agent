@@ -11,6 +11,7 @@ Name | Type | Description | Notes
 **type** | **string** |  | [optional] [default to undefined]
 **status** | **string** |  | [optional] [default to undefined]
 **capabilities** | **Array&lt;string&gt;** |  | [optional] [default to undefined]
+**credential_type** | **string** | Type of credential required for this integration | [optional] [default to undefined]
 **created_at** | **string** |  | [optional] [default to undefined]
 **updated_at** | **string** |  | [optional] [default to undefined]
 
@@ -26,6 +27,7 @@ const instance: Integration = {
     type,
     status,
     capabilities,
+    credential_type,
     created_at,
     updated_at,
 };

@@ -15,17 +15,7 @@ function AgentsPage() {
     setLoading(true);
     try {
       const res = await workflowsApi.listWorkflows();
-      // Handle the API response structure: { workflows: Array|null, total, page, limit }
-      const workflowsArray = res.data?.workflows;
-      if (Array.isArray(workflowsArray)) {
-        setWorkflows(workflowsArray);
-      } else if (workflowsArray === null) {
-        // Backend returns null when there are no workflows
-        setWorkflows([]);
-      } else {
-        console.warn('Unexpected workflows response format:', res.data);
-        setWorkflows([]);
-      }
+      setWorkflows(res.data.workflows);
     } catch (err) {
       console.error('Failed to fetch workflows:', err);
       setWorkflows([]); // Ensure we have an empty array on error

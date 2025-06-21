@@ -76,7 +76,7 @@ func (h *OpenAPIHandlers) ListWorkflowRuns(ctx context.Context, request ListWork
 	}
 	defer rows.Close()
 
-	var runs []WorkflowRun
+	runs := make([]WorkflowRun, 0)
 	for rows.Next() {
 		var run WorkflowRun
 		var id, workflowID, status string
@@ -163,10 +163,10 @@ func (h *OpenAPIHandlers) ListWorkflowRuns(ctx context.Context, request ListWork
 	}
 
 	return ListWorkflowRuns200JSONResponse{
-		Runs:  &runs,
-		Total: &total,
-		Page:  &page,
-		Limit: &limit,
+		Runs:  runs,
+		Total: total,
+		Page:  page,
+		Limit: limit,
 	}, nil
 }
 

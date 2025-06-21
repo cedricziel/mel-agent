@@ -22,7 +22,7 @@ function App() {
                   : 'text-gray-600 hover:text-indigo-600'
               }
             >
-              Agents
+              Workflows
             </NavLink>
             <NavLink
               to="/connections"

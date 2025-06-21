@@ -28,12 +28,12 @@ export interface WorkflowVersionList {
      * @type {Array<WorkflowVersion>}
      * @memberof WorkflowVersionList
      */
-    'versions'?: Array<WorkflowVersion>;
+    'versions': Array<WorkflowVersion>;
     /**
      * 
      * @type {number}
      * @memberof WorkflowVersionList
      */
-    'total'?: number;
+    'total': number;
 }
 

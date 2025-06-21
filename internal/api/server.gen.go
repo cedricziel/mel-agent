@@ -645,10 +645,10 @@ type WorkflowLayoutResult struct {
 
 // WorkflowList defines model for WorkflowList.
 type WorkflowList struct {
-	Limit     *int        `json:"limit,omitempty"`
-	Page      *int        `json:"page,omitempty"`
-	Total     *int        `json:"total,omitempty"`
-	Workflows *[]Workflow `json:"workflows,omitempty"`
+	Limit     int        `json:"limit"`
+	Page      int        `json:"page"`
+	Total     int        `json:"total"`
+	Workflows []Workflow `json:"workflows"`
 }
 
 // WorkflowNode defines model for WorkflowNode.
@@ -675,10 +675,10 @@ type WorkflowRunStatus string
 
 // WorkflowRunList defines model for WorkflowRunList.
 type WorkflowRunList struct {
-	Limit *int           `json:"limit,omitempty"`
-	Page  *int           `json:"page,omitempty"`
-	Runs  *[]WorkflowRun `json:"runs,omitempty"`
-	Total *int           `json:"total,omitempty"`
+	Limit int           `json:"limit"`
+	Page  int           `json:"page"`
+	Runs  []WorkflowRun `json:"runs"`
+	Total int           `json:"total"`
 }
 
 // WorkflowStep defines model for WorkflowStep.
@@ -711,8 +711,8 @@ type WorkflowVersion struct {
 
 // WorkflowVersionList defines model for WorkflowVersionList.
 type WorkflowVersionList struct {
-	Total    *int               `json:"total,omitempty"`
-	Versions *[]WorkflowVersion `json:"versions,omitempty"`
+	Total    int               `json:"total"`
+	Versions []WorkflowVersion `json:"versions"`
 }
 
 // TestCredentialsJSONBody defines parameters for TestCredentials.

@@ -57,6 +57,12 @@ export interface Integration {
      */
     'capabilities'?: Array<string>;
     /**
+     * Type of credential required for this integration
+     * @type {string}
+     * @memberof Integration
+     */
+    'credential_type'?: string;
+    /**
      * 
      * @type {string}
      * @memberof Integration

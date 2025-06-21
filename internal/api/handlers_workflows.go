@@ -51,7 +51,7 @@ func (h *OpenAPIHandlers) ListWorkflows(ctx context.Context, request ListWorkflo
 	}
 	defer rows.Close()
 
-	var workflows []Workflow
+	workflows := make([]Workflow, 0)
 	for rows.Next() {
 		var workflow Workflow
 		var description sql.NullString
@@ -106,10 +106,10 @@ func (h *OpenAPIHandlers) ListWorkflows(ctx context.Context, request ListWorkflo
 	}
 
 	return ListWorkflows200JSONResponse{
-		Workflows: &workflows,
-		Total:     &total,
-		Page:      &page,
-		Limit:     &limit,
+		Workflows: workflows,
+		Total:     total,
+		Page:      page,
+		Limit:     limit,
 	}, nil
 }
 
@@ -1689,7 +1689,7 @@ func (h *OpenAPIHandlers) ListWorkflowVersions(ctx context.Context, request List
 	}
 	defer rows.Close()
 
-	var versions []WorkflowVersion
+	versions := make([]WorkflowVersion, 0)
 	for rows.Next() {
 		var version WorkflowVersion
 		var versionID uuid.UUID
@@ -1720,8 +1720,8 @@ func (h *OpenAPIHandlers) ListWorkflowVersions(ctx context.Context, request List
 
 	total := len(versions)
 	versionList := WorkflowVersionList{
-		Total:    &total,
-		Versions: &versions,
+		Total:    total,
+		Versions: versions,
 	}
 	return ListWorkflowVersions200JSONResponse(versionList), nil
 }

@@ -28,24 +28,24 @@ export interface WorkflowRunList {
      * @type {Array<WorkflowRun>}
      * @memberof WorkflowRunList
      */
-    'runs'?: Array<WorkflowRun>;
+    'runs': Array<WorkflowRun>;
     /**
      * 
      * @type {number}
      * @memberof WorkflowRunList
      */
-    'total'?: number;
+    'total': number;
     /**
      * 
      * @type {number}
      * @memberof WorkflowRunList
      */
-    'page'?: number;
+    'page': number;
     /**
      * 
      * @type {number}
      * @memberof WorkflowRunList
      */
-    'limit'?: number;
+    'limit': number;
 }
 

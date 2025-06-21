@@ -88,13 +88,13 @@ describe('Configuration Node Click Functionality', () => {
 
   it('should load the builder page with nodes', () => {
     // Wait for the page to load
-    cy.get('[data-testid="react-flow"]', { timeout: 15000 }).should('be.visible');
+    cy.get('.react-flow', { timeout: 15000 }).should('be.visible');
     cy.get('.react-flow__renderer').should('be.visible');
   });
 
   it('should have clickable configuration nodes', () => {
     // Wait for the page to load
-    cy.get('[data-testid="react-flow"]', { timeout: 15000 }).should('be.visible');
+    cy.get('.react-flow', { timeout: 15000 }).should('be.visible');
 
     // Look for configuration nodes (they should have cursor-pointer class)
     cy.get('.cursor-pointer').then($nodes => {
@@ -113,7 +113,7 @@ describe('Configuration Node Click Functionality', () => {
 
   it('should show config node labels', () => {
     // Wait for the page to load
-    cy.get('[data-testid="react-flow"]', { timeout: 15000 }).should('be.visible');
+    cy.get('.react-flow', { timeout: 15000 }).should('be.visible');
 
     // Look for common config node text
     const configTexts = ['OpenAI', 'Memory', 'Tools'];
@@ -129,27 +129,33 @@ describe('Configuration Node Click Functionality', () => {
 
   it('should open modal when config node is clicked', () => {
     // Wait for the page to load
-    cy.get('[data-testid="react-flow"]', { timeout: 15000 }).should('be.visible');
+    cy.get('.react-flow', { timeout: 15000 }).should('be.visible');
 
     // Find and click on a config node
     cy.get('.cursor-pointer').first().click();
 
-    // Should open a modal
-    cy.get('body').should('contain', 'OpenAI Model').or('contain', 'Configuration');
+    // Should open a modal - check for either text
+    cy.get('body').then($body => {
+      expect($body.text()).to.match(/OpenAI Model|Configuration/);
+    });
     
     // Modal should have basic elements
-    cy.get('body').should('contain', 'Save').or('contain', 'Close');
+    cy.get('body').then($body => {
+      expect($body.text()).to.match(/Save|Close/);
+    });
   });
 
   it('should display config node parameters in modal', () => {
     // Wait for page load
-    cy.get('[data-testid="react-flow"]', { timeout: 15000 }).should('be.visible');
+    cy.get('.react-flow', { timeout: 15000 }).should('be.visible');
 
     // Click config node to open modal
     cy.get('.cursor-pointer').first().click();
 
     // Should show configuration options
-    cy.get('body').should('contain', 'Configuration').or('contain', 'OpenAI Model');
+    cy.get('body').then($body => {
+      expect($body.text()).to.match(/Configuration|OpenAI Model/);
+    });
     
     // Should show parameter inputs (exact text depends on implementation)
     cy.get('body').then($body => {

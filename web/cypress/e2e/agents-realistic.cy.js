@@ -3,18 +3,23 @@ describe('Workflows Page - Realistic Tests', () => {
     // Mock the workflows API endpoint
     cy.intercept('GET', '/api/workflows', {
       statusCode: 200,
-      body: [
-        {
-          id: 'agent-1',
-          name: 'Test Workflow',
-          description: 'A sample workflow for testing'
-        },
-        {
-          id: 'agent-2', 
-          name: 'Data Processing',
-          description: 'Processes incoming data'
-        }
-      ]
+      body: {
+        workflows: [
+          {
+            id: 'agent-1',
+            name: 'Test Workflow',
+            description: 'A sample workflow for testing'
+          },
+          {
+            id: 'agent-2', 
+            name: 'Data Processing',
+            description: 'Processes incoming data'
+          }
+        ],
+        total: 2,
+        page: 1,
+        limit: 20
+      }
     }).as('getWorkflows')
 
     cy.visit('/agents')
@@ -28,7 +33,11 @@ describe('Workflows Page - Realistic Tests', () => {
 
   it('should show loading state initially', () => {
     // Visit page before API mock is ready
-    cy.intercept('GET', '/api/workflows', { delay: 1000, statusCode: 200, body: [] }).as('slowWorkflows')
+    cy.intercept('GET', '/api/workflows', { 
+      delay: 1000, 
+      statusCode: 200, 
+      body: { workflows: [], total: 0, page: 1, limit: 20 } 
+    }).as('slowWorkflows')
     cy.visit('/agents')
     cy.contains('Loading…').should('be.visible')
   })
@@ -68,23 +77,28 @@ describe('Workflows Page - Realistic Tests', () => {
     // Re-mock the GET request to include the new workflow
     cy.intercept('GET', '/api/workflows', {
       statusCode: 200,
-      body: [
-        {
-          id: 'agent-1',
-          name: 'Test Workflow', 
-          description: 'A sample workflow for testing'
-        },
-        {
-          id: 'agent-2',
-          name: 'Data Processing',
-          description: 'Processes incoming data'
-        },
-        {
-          id: 'new-workflow',
-          name: 'New Workflow',
-          description: 'New description'
-        }
-      ]
+      body: {
+        workflows: [
+          {
+            id: 'agent-1',
+            name: 'Test Workflow', 
+            description: 'A sample workflow for testing'
+          },
+          {
+            id: 'agent-2',
+            name: 'Data Processing',
+            description: 'Processes incoming data'
+          },
+          {
+            id: 'new-workflow',
+            name: 'New Workflow',
+            description: 'New description'
+          }
+        ],
+        total: 3,
+        page: 1,
+        limit: 20
+      }
     }).as('getWorkflowsWithNew')
 
     cy.contains('+ New Workflow').click()

@@ -163,14 +163,14 @@ func TestOpenAPIListWorkflows(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.NotNil(t, response.Workflows)
-	assert.Len(t, *response.Workflows, 5)
-	assert.Equal(t, 5, *response.Total)
-	assert.Equal(t, 1, *response.Page)
-	assert.Equal(t, 20, *response.Limit)
+	assert.Len(t, response.Workflows, 5)
+	assert.Equal(t, 5, response.Total)
+	assert.Equal(t, 1, response.Page)
+	assert.Equal(t, 20, response.Limit)
 
 	// Check that we have all the expected workflows
 	workflowNames := make(map[string]bool)
-	for _, workflow := range *response.Workflows {
+	for _, workflow := range response.Workflows {
 		workflowNames[workflow.Name] = true
 	}
 
@@ -213,10 +213,10 @@ func TestOpenAPIListWorkflowsWithPagination(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.NotNil(t, response.Workflows)
-	assert.Len(t, *response.Workflows, 3)
-	assert.Equal(t, 7, *response.Total)
-	assert.Equal(t, 1, *response.Page)
-	assert.Equal(t, 3, *response.Limit)
+	assert.Len(t, response.Workflows, 3)
+	assert.Equal(t, 7, response.Total)
+	assert.Equal(t, 1, response.Page)
+	assert.Equal(t, 3, response.Limit)
 
 	// List workflows with pagination: page 2, limit 3
 	w = httptest.NewRecorder()
@@ -229,10 +229,10 @@ func TestOpenAPIListWorkflowsWithPagination(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.NotNil(t, response.Workflows)
-	assert.Len(t, *response.Workflows, 3)
-	assert.Equal(t, 7, *response.Total)
-	assert.Equal(t, 2, *response.Page)
-	assert.Equal(t, 3, *response.Limit)
+	assert.Len(t, response.Workflows, 3)
+	assert.Equal(t, 7, response.Total)
+	assert.Equal(t, 2, response.Page)
+	assert.Equal(t, 3, response.Limit)
 }
 
 // TestOpenAPIGetWorkflow tests retrieving a single workflow

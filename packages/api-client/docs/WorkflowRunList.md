@@ -5,10 +5,10 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**runs** | [**Array&lt;WorkflowRun&gt;**](WorkflowRun.md) |  | [optional] [default to undefined]
-**total** | **number** |  | [optional] [default to undefined]
-**page** | **number** |  | [optional] [default to undefined]
-**limit** | **number** |  | [optional] [default to undefined]
+**runs** | [**Array&lt;WorkflowRun&gt;**](WorkflowRun.md) |  | [default to undefined]
+**total** | **number** |  | [default to undefined]
+**page** | **number** |  | [default to undefined]
+**limit** | **number** |  | [default to undefined]
 
 ## Example
 

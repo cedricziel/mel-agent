@@ -5,15 +5,20 @@ Cypress.Commands.add('mockAPIEndpoints', () => {
   // Mock workflows endpoint
   cy.intercept('GET', '/api/workflows', {
     statusCode: 200,
-    body: [
-      {
-        id: 'test-agent-1',
-        name: 'Test Agent',
-        description: 'A test workflow',
-        created_at: '2024-01-01T00:00:00Z',
-        updated_at: '2024-01-01T00:00:00Z'
-      }
-    ]
+    body: {
+      workflows: [
+        {
+          id: 'test-agent-1',
+          name: 'Test Agent',
+          description: 'A test workflow',
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z'
+        }
+      ],
+      total: 1,
+      page: 1,
+      limit: 20
+    }
   }).as('getWorkflows')
 
   // Mock node types endpoint

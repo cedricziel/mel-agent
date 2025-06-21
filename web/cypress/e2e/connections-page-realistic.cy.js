@@ -47,6 +47,45 @@ describe('Connections Page - Realistic Tests', () => {
       ]
     }).as('getCredentialTypes')
 
+    // Mock credential schema endpoints
+    cy.intercept('GET', '/api/credential-types/schema/api_key', {
+      statusCode: 200,
+      body: {
+        properties: {
+          apiKey: { title: 'API Key', type: 'string' },
+          baseUrl: { title: 'Base URL', type: 'string', default: 'https://api.example.com' }
+        },
+        required: ['apiKey']
+      }
+    }).as('getApiKeySchema')
+
+    cy.intercept('GET', '/api/credential-types/schema/*', {
+      statusCode: 200,
+      body: {
+        properties: {
+          apiKey: { title: 'API Key', type: 'string' }
+        },
+        required: ['apiKey']
+      }
+    }).as('getSchema')
+
+    // Mock connection details
+    cy.intercept('GET', '/api/connections/*', {
+      statusCode: 200,
+      body: {
+        id: 'conn-1',
+        name: 'Test API Connection',
+        integration_id: 'int-1',
+        credentials: { apiKey: '***' }
+      }
+    }).as('getConnectionDetails')
+
+    // Mock test credentials
+    cy.intercept('POST', '/api/credentials/test', {
+      statusCode: 200,
+      body: { success: true, message: 'Connection successful' }
+    }).as('testCredentials')
+
     cy.visit('/connections')
     cy.wait(['@getConnections', '@getIntegrations', '@getCredentialTypes'])
   })
