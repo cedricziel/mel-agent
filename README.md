@@ -138,7 +138,7 @@ docker-compose -f docker-compose.scale.yml up -d --scale api=3 --scale worker=2
 
 ### Option 2: Development Setup
 
-**Prerequisites**: Go 1.21+, Node.js 18+, PostgreSQL 15+
+**Prerequisites**: Go 1.23+, Node.js 18+, PostgreSQL 15+
 
 ```bash
 # Backend (includes local workers)
