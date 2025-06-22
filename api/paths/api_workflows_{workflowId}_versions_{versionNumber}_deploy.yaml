@@ -1,0 +1,36 @@
+post:
+  summary: Deploy a specific workflow version
+  operationId: deployWorkflowVersion
+  tags:
+    - Workflows
+  parameters:
+    - name: workflowId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    - name: versionNumber
+      in: path
+      required: true
+      schema:
+        type: integer
+  responses:
+    '200':
+      description: Version deployed successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/WorkflowVersion.yaml
+    '404':
+      description: Workflow or version not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

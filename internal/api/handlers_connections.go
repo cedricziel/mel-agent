@@ -107,8 +107,10 @@ func (h *OpenAPIHandlers) ListConnections(ctx context.Context, request ListConne
 		connection.UserId = &userUUID
 		connection.IntegrationId = &integrationUUID
 		connection.Name = &name
-		connection.Secret = &secret
-		connection.Config = &config
+		connectionSecret := ConnectionSecret(secret)
+		connectionConfig := ConnectionConfig(config)
+		connection.Secret = &connectionSecret
+		connection.Config = &connectionConfig
 		if usageLimitMonth.Valid {
 			usageLimit := int(usageLimitMonth.Int32)
 			connection.UsageLimitMonth = &usageLimit
@@ -300,8 +302,10 @@ func (h *OpenAPIHandlers) GetConnection(ctx context.Context, request GetConnecti
 	connection.UserId = &userUUID
 	connection.IntegrationId = &integrationUUID
 	connection.Name = &name
-	connection.Secret = &secret
-	connection.Config = &config
+	connectionSecret := ConnectionSecret(secret)
+	connectionConfig := ConnectionConfig(config)
+	connection.Secret = &connectionSecret
+	connection.Config = &connectionConfig
 	if usageLimitMonth.Valid {
 		usageLimit := int(usageLimitMonth.Int32)
 		connection.UsageLimitMonth = &usageLimit

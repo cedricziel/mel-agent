@@ -1,0 +1,17 @@
+type: object
+required:
+  - id
+  - name
+  - type
+  - config
+properties:
+  id:
+    type: string
+  name:
+    type: string
+  type:
+    type: string
+  config:
+    $ref: ./NodeConfig.yaml
+  position:
+    $ref: ./NodePosition.yaml

@@ -25,7 +25,7 @@ func TestOpenAPICreateWorkflow(t *testing.T) {
 
 	// Create a test workflow definition
 	definition := WorkflowDefinition{
-		Nodes: &[]WorkflowNode{
+		Nodes: []WorkflowNode{
 			{
 				Id:   "node-1",
 				Type: "start",
@@ -43,7 +43,7 @@ func TestOpenAPICreateWorkflow(t *testing.T) {
 				},
 			},
 		},
-		Edges: &[]WorkflowEdge{
+		Edges: []WorkflowEdge{
 			{
 				Id:     "edge-1",
 				Source: "node-1",
@@ -80,7 +80,7 @@ func TestOpenAPICreateWorkflow(t *testing.T) {
 	assert.Equal(t, "A test workflow for testing", *response.Description)
 	assert.NotNil(t, response.Definition)
 	assert.NotNil(t, response.Definition.Nodes)
-	assert.Len(t, *response.Definition.Nodes, 2)
+	assert.Len(t, response.Definition.Nodes, 2)
 	assert.NotEqual(t, uuid.Nil, response.Id)
 	assert.False(t, response.CreatedAt.IsZero())
 	assert.False(t, response.UpdatedAt.IsZero())
@@ -163,14 +163,14 @@ func TestOpenAPIListWorkflows(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.NotNil(t, response.Workflows)
-	assert.Len(t, *response.Workflows, 5)
-	assert.Equal(t, 5, *response.Total)
-	assert.Equal(t, 1, *response.Page)
-	assert.Equal(t, 20, *response.Limit)
+	assert.Len(t, response.Workflows, 5)
+	assert.Equal(t, 5, response.Total)
+	assert.Equal(t, 1, response.Page)
+	assert.Equal(t, 20, response.Limit)
 
 	// Check that we have all the expected workflows
 	workflowNames := make(map[string]bool)
-	for _, workflow := range *response.Workflows {
+	for _, workflow := range response.Workflows {
 		workflowNames[workflow.Name] = true
 	}
 
@@ -213,10 +213,10 @@ func TestOpenAPIListWorkflowsWithPagination(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.NotNil(t, response.Workflows)
-	assert.Len(t, *response.Workflows, 3)
-	assert.Equal(t, 7, *response.Total)
-	assert.Equal(t, 1, *response.Page)
-	assert.Equal(t, 3, *response.Limit)
+	assert.Len(t, response.Workflows, 3)
+	assert.Equal(t, 7, response.Total)
+	assert.Equal(t, 1, response.Page)
+	assert.Equal(t, 3, response.Limit)
 
 	// List workflows with pagination: page 2, limit 3
 	w = httptest.NewRecorder()
@@ -229,10 +229,10 @@ func TestOpenAPIListWorkflowsWithPagination(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.NotNil(t, response.Workflows)
-	assert.Len(t, *response.Workflows, 3)
-	assert.Equal(t, 7, *response.Total)
-	assert.Equal(t, 2, *response.Page)
-	assert.Equal(t, 3, *response.Limit)
+	assert.Len(t, response.Workflows, 3)
+	assert.Equal(t, 7, response.Total)
+	assert.Equal(t, 2, response.Page)
+	assert.Equal(t, 3, response.Limit)
 }
 
 // TestOpenAPIGetWorkflow tests retrieving a single workflow
@@ -245,7 +245,7 @@ func TestOpenAPIGetWorkflow(t *testing.T) {
 
 	// Create a test workflow with definition
 	definition := WorkflowDefinition{
-		Nodes: &[]WorkflowNode{
+		Nodes: []WorkflowNode{
 			{
 				Id:   "get-node-1",
 				Type: "trigger",
@@ -289,8 +289,8 @@ func TestOpenAPIGetWorkflow(t *testing.T) {
 	assert.Equal(t, "A workflow for get testing", *response.Description)
 	assert.NotNil(t, response.Definition)
 	assert.NotNil(t, response.Definition.Nodes)
-	assert.Len(t, *response.Definition.Nodes, 1)
-	assert.Equal(t, "get-node-1", (*response.Definition.Nodes)[0].Id)
+	assert.Len(t, response.Definition.Nodes, 1)
+	assert.Equal(t, "get-node-1", (response.Definition.Nodes)[0].Id)
 }
 
 // TestOpenAPIGetWorkflowNotFound tests retrieving a non-existent workflow
@@ -341,7 +341,7 @@ func TestOpenAPIUpdateWorkflow(t *testing.T) {
 
 	// Update the workflow
 	newDefinition := WorkflowDefinition{
-		Nodes: &[]WorkflowNode{
+		Nodes: []WorkflowNode{
 			{
 				Id:   "updated-node",
 				Type: "action",
@@ -376,7 +376,7 @@ func TestOpenAPIUpdateWorkflow(t *testing.T) {
 	assert.Equal(t, "Updated description", *response.Description)
 	assert.NotNil(t, response.Definition)
 	assert.NotNil(t, response.Definition.Nodes)
-	assert.Len(t, *response.Definition.Nodes, 1)
+	assert.Len(t, response.Definition.Nodes, 1)
 	assert.True(t, response.UpdatedAt.After(createdWorkflow.UpdatedAt))
 }
 
@@ -512,7 +512,7 @@ func TestOpenAPIExecuteWorkflow(t *testing.T) {
 
 	assert.NotNil(t, response.Id)
 	assert.Equal(t, createdWorkflow.Id, *response.WorkflowId)
-	assert.Equal(t, WorkflowExecutionStatusPending, *response.Status)
+	assert.Equal(t, WorkflowRunStatusPending, *response.Status)
 	assert.NotNil(t, response.StartedAt)
 	assert.NotNil(t, response.Result)
 	assert.Equal(t, "Hello, World!", (*response.Result)["message"])

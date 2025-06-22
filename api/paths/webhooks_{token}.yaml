@@ -1,0 +1,32 @@
+post:
+  summary: Webhook endpoint
+  operationId: handleWebhook
+  tags:
+    - Webhooks
+  parameters:
+    - name: token
+      in: path
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/WebhookPayload.yaml
+  responses:
+    '200':
+      description: Webhook processed
+    '404':
+      description: Webhook not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

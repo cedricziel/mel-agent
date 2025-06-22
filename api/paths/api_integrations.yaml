@@ -1,0 +1,20 @@
+get:
+  summary: List available integrations
+  operationId: listIntegrations
+  tags:
+    - Integrations
+  responses:
+    '200':
+      description: List of available integrations
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: ../components/schemas/Integration.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

@@ -1,0 +1,84 @@
+get:
+  summary: List all versions of a workflow
+  operationId: listWorkflowVersions
+  tags:
+    - Workflows
+  parameters:
+    - name: workflowId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    - name: page
+      in: query
+      schema:
+        type: integer
+        default: 1
+    - name: limit
+      in: query
+      schema:
+        type: integer
+        default: 20
+  responses:
+    '200':
+      description: List of workflow versions
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/WorkflowVersionList.yaml
+    '404':
+      description: Workflow not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+post:
+  summary: Create a new workflow version
+  operationId: createWorkflowVersion
+  tags:
+    - Workflows
+  parameters:
+    - name: workflowId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/CreateWorkflowVersionRequest.yaml
+  responses:
+    '201':
+      description: Version created successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/WorkflowVersion.yaml
+    '400':
+      description: Invalid request body
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '404':
+      description: Workflow not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

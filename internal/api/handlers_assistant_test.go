@@ -10,6 +10,7 @@ import (
 
 	"github.com/cedricziel/mel-agent/internal/testutil"
 	"github.com/cedricziel/mel-agent/pkg/execution"
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -31,9 +32,6 @@ func TestOpenAPIAssistantChatNoAPIKey(t *testing.T) {
 
 	router := NewOpenAPIRouter(db, mockEngine)
 
-	// Create a test agent first
-	agentID := getTestAgentID(t, db)
-
 	chatRequest := AssistantChatRequest{
 		Messages: []ChatMessage{
 			{
@@ -44,7 +42,7 @@ func TestOpenAPIAssistantChatNoAPIKey(t *testing.T) {
 	}
 	reqBody, _ := json.Marshal(chatRequest)
 
-	req := httptest.NewRequest(http.MethodPost, "/api/agents/"+agentID.String()+"/assistant/chat", bytes.NewReader(reqBody))
+	req := httptest.NewRequest(http.MethodPost, "/api/assistant/chat", bytes.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -59,38 +57,39 @@ func TestOpenAPIAssistantChatNoAPIKey(t *testing.T) {
 	assert.Contains(t, response["message"], "OPENAI_API_KEY")
 }
 
-// TestOpenAPIAssistantChatAgentNotFound tests assistant chat with non-existent agent
-func TestOpenAPIAssistantChatAgentNotFound(t *testing.T) {
+// TestOpenAPIAssistantChatEmptyMessages tests assistant chat with empty messages
+func TestOpenAPIAssistantChatEmptyMessages(t *testing.T) {
 	db, cleanup := testutil.SetupOpenAPITestDB(t)
 	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
-	router := NewOpenAPIRouter(db, mockEngine)
+	// Create handlers with test API key
+	handlers := NewOpenAPIHandlers(db, mockEngine, "test-api-key")
+	strictHandler := NewStrictHandler(handlers, nil)
+	
+	// Create router manually for test
+	r := chi.NewRouter()
+	HandlerFromMux(strictHandler, r)
+	router := r
 
 	chatRequest := AssistantChatRequest{
-		Messages: []ChatMessage{
-			{
-				Role:    User,
-				Content: "Hello, can you help me build a workflow?",
-			},
-		},
+		Messages: []ChatMessage{}, // Empty messages
 	}
 	reqBody, _ := json.Marshal(chatRequest)
 
-	// Use a non-existent agent ID
-	req := httptest.NewRequest(http.MethodPost, "/api/agents/00000000-0000-0000-0000-000000000999/assistant/chat", bytes.NewReader(reqBody))
+	req := httptest.NewRequest(http.MethodPost, "/api/assistant/chat", bytes.NewReader(reqBody))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
 	router.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
 
 	var response map[string]interface{}
 	err := json.NewDecoder(w.Body).Decode(&response)
 	require.NoError(t, err)
 
-	assert.Contains(t, response["message"], "Agent not found")
+	assert.Contains(t, response["error"], "openai")
 }
 
 // TestOpenAPIAssistantChatInvalidJSON tests assistant chat with malformed JSON
@@ -101,10 +100,7 @@ func TestOpenAPIAssistantChatInvalidJSON(t *testing.T) {
 
 	router := NewOpenAPIRouter(db, mockEngine)
 
-	// Create a test agent first
-	agentID := getTestAgentID(t, db)
-
-	req := httptest.NewRequest(http.MethodPost, "/api/agents/"+agentID.String()+"/assistant/chat", bytes.NewReader([]byte("invalid json")))
+	req := httptest.NewRequest(http.MethodPost, "/api/assistant/chat", bytes.NewReader([]byte("invalid json")))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 

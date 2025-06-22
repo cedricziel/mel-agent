@@ -86,6 +86,6 @@ func TestOpenAPIListNodeTypesWithFilter(t *testing.T) {
 
 	// Should return only model node types
 	for _, nodeType := range response {
-		assert.Contains(t, *nodeType.Kinds, NodeTypeKindsModel)
+		assert.Contains(t, *nodeType.Kinds, NodeKindModel)
 	}
 }

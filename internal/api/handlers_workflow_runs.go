@@ -76,7 +76,7 @@ func (h *OpenAPIHandlers) ListWorkflowRuns(ctx context.Context, request ListWork
 	}
 	defer rows.Close()
 
-	var runs []WorkflowRun
+	runs := make([]WorkflowRun, 0)
 	for rows.Next() {
 		var run WorkflowRun
 		var id, workflowID, status string
@@ -163,10 +163,10 @@ func (h *OpenAPIHandlers) ListWorkflowRuns(ctx context.Context, request ListWork
 	}
 
 	return ListWorkflowRuns200JSONResponse{
-		Runs:  &runs,
-		Total: &total,
-		Page:  &page,
-		Limit: &limit,
+		Runs:  runs,
+		Total: total,
+		Page:  page,
+		Limit: limit,
 	}, nil
 }
 
@@ -361,7 +361,8 @@ func (h *OpenAPIHandlers) GetWorkflowRunSteps(ctx context.Context, request GetWo
 					Message: &message,
 				}, nil
 			}
-			step.Input = &input
+			genericInput := GenericInput(input)
+			step.Input = &genericInput
 		}
 
 		// Parse output JSON if present
@@ -376,7 +377,8 @@ func (h *OpenAPIHandlers) GetWorkflowRunSteps(ctx context.Context, request GetWo
 					Message: &message,
 				}, nil
 			}
-			step.Output = &output
+			genericOutput := GenericOutput(output)
+			step.Output = &genericOutput
 		}
 
 		if errorMsg.Valid {

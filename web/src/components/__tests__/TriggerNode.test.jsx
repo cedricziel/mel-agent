@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import TriggerNode from '../TriggerNode';
-import axios from 'axios';
+import { workflowRunsApi } from '../../api/client';
 
-// Mock axios
-vi.mock('axios', () => ({
-  default: {
-    post: vi.fn(),
+// Mock the API client
+vi.mock('../../api/client', () => ({
+  workflowRunsApi: {
+    createWorkflowRun: vi.fn(),
   },
 }));
 
@@ -128,7 +128,9 @@ describe('TriggerNode', () => {
   });
 
   it('should call API when manual trigger button is clicked', async () => {
-    axios.post.mockResolvedValue({ data: { success: true } });
+    workflowRunsApi.createWorkflowRun.mockResolvedValue({
+      data: { success: true },
+    });
 
     const manualTriggerProps = {
       ...defaultProps,
@@ -141,14 +143,16 @@ describe('TriggerNode', () => {
     const triggerButton = screen.getByText('▶️ Trigger');
     fireEvent.click(triggerButton);
 
-    expect(axios.post).toHaveBeenCalledWith('/api/workflow-runs', {
-      agent_id: 'test-agent-123',
+    expect(workflowRunsApi.createWorkflowRun).toHaveBeenCalledWith({
+      workflow_id: 'test-agent-123',
       input_data: {},
     });
   });
 
   it('should show visual feedback on successful manual trigger', async () => {
-    axios.post.mockResolvedValue({ data: { success: true } });
+    workflowRunsApi.createWorkflowRun.mockResolvedValue({
+      data: { success: true },
+    });
 
     const manualTriggerProps = {
       ...defaultProps,
@@ -172,7 +176,7 @@ describe('TriggerNode', () => {
     const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
 
     const networkError = new Error('Network error');
-    axios.post.mockRejectedValue(networkError);
+    workflowRunsApi.createWorkflowRun.mockRejectedValue(networkError);
 
     const manualTriggerProps = {
       ...defaultProps,
@@ -212,7 +216,7 @@ describe('TriggerNode', () => {
     fireEvent.click(triggerButton);
 
     expect(alertSpy).toHaveBeenCalledWith('Could not determine agent ID');
-    expect(axios.post).not.toHaveBeenCalled();
+    expect(workflowRunsApi.createWorkflowRun).not.toHaveBeenCalled();
 
     alertSpy.mockRestore();
   });

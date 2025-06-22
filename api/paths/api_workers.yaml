@@ -1,0 +1,50 @@
+get:
+  summary: List all workers
+  operationId: listWorkers
+  tags:
+    - Workers
+  responses:
+    '200':
+      description: List of workers
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: ../components/schemas/Worker.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+post:
+  summary: Register a new worker
+  operationId: registerWorker
+  tags:
+    - Workers
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/RegisterWorkerRequest.yaml
+  responses:
+    '201':
+      description: Worker registered successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Worker.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

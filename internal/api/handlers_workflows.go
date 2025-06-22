@@ -51,7 +51,7 @@ func (h *OpenAPIHandlers) ListWorkflows(ctx context.Context, request ListWorkflo
 	}
 	defer rows.Close()
 
-	var workflows []Workflow
+	workflows := make([]Workflow, 0)
 	for rows.Next() {
 		var workflow Workflow
 		var description sql.NullString
@@ -106,10 +106,10 @@ func (h *OpenAPIHandlers) ListWorkflows(ctx context.Context, request ListWorkflo
 	}
 
 	return ListWorkflows200JSONResponse{
-		Workflows: &workflows,
-		Total:     &total,
-		Page:      &page,
-		Limit:     &limit,
+		Workflows: workflows,
+		Total:     total,
+		Page:      page,
+		Limit:     limit,
 	}, nil
 }
 
@@ -421,7 +421,7 @@ func (h *OpenAPIHandlers) ExecuteWorkflow(ctx context.Context, request ExecuteWo
 	execution := WorkflowExecution{
 		Id:         &executionID,
 		WorkflowId: &request.Id,
-		Status:     func() *WorkflowExecutionStatus { s := WorkflowExecutionStatusPending; return &s }(),
+		Status:     func() *WorkflowRunStatus { s := WorkflowRunStatusPending; return &s }(),
 		StartedAt:  &now,
 	}
 
@@ -467,7 +467,7 @@ func (h *OpenAPIHandlers) ListWorkflowNodes(ctx context.Context, request ListWor
 		}, nil
 	}
 
-	var nodes []WorkflowNode
+	nodes := make([]WorkflowNode, 0)
 	if definitionJson.Valid && definitionJson.String != "" {
 		var definition WorkflowDefinition
 		err = json.Unmarshal([]byte(definitionJson.String), &definition)
@@ -481,7 +481,7 @@ func (h *OpenAPIHandlers) ListWorkflowNodes(ctx context.Context, request ListWor
 		}
 
 		if definition.Nodes != nil {
-			nodes = *definition.Nodes
+			nodes = definition.Nodes
 		}
 	}
 
@@ -546,9 +546,9 @@ func (h *OpenAPIHandlers) CreateWorkflowNode(ctx context.Context, request Create
 
 	// Add to nodes array
 	if definition.Nodes == nil {
-		definition.Nodes = &[]WorkflowNode{}
+		definition.Nodes = []WorkflowNode{}
 	}
-	*definition.Nodes = append(*definition.Nodes, newNode)
+	definition.Nodes = append(definition.Nodes, newNode)
 
 	// Update workflow definition in database
 	updatedDefinitionJson, err := json.Marshal(definition)
@@ -633,7 +633,7 @@ func (h *OpenAPIHandlers) GetWorkflowNode(ctx context.Context, request GetWorkfl
 
 	// Find the node
 	if definition.Nodes != nil {
-		for _, node := range *definition.Nodes {
+		for _, node := range definition.Nodes {
 			if node.Id == request.NodeId {
 				return GetWorkflowNode200JSONResponse(node), nil
 			}
@@ -706,16 +706,16 @@ func (h *OpenAPIHandlers) UpdateWorkflowNode(ctx context.Context, request Update
 	// Find and update the node
 	var updatedNode *WorkflowNode
 	if definition.Nodes != nil {
-		for i, node := range *definition.Nodes {
+		for i, node := range definition.Nodes {
 			if node.Id == request.NodeId {
 				// Update fields if provided
 				if request.Body.Name != nil {
-					(*definition.Nodes)[i].Name = *request.Body.Name
+					definition.Nodes[i].Name = *request.Body.Name
 				}
 				if request.Body.Config != nil {
-					(*definition.Nodes)[i].Config = *request.Body.Config
+					definition.Nodes[i].Config = *request.Body.Config
 				}
-				updatedNode = &(*definition.Nodes)[i]
+				updatedNode = &definition.Nodes[i]
 				break
 			}
 		}
@@ -814,10 +814,10 @@ func (h *OpenAPIHandlers) DeleteWorkflowNode(ctx context.Context, request Delete
 	// Find and remove the node
 	found := false
 	if definition.Nodes != nil {
-		for i, node := range *definition.Nodes {
+		for i, node := range definition.Nodes {
 			if node.Id == request.NodeId {
 				// Remove node from slice
-				*definition.Nodes = append((*definition.Nodes)[:i], (*definition.Nodes)[i+1:]...)
+				definition.Nodes = append(definition.Nodes[:i], definition.Nodes[i+1:]...)
 				found = true
 				break
 			}
@@ -894,7 +894,7 @@ func (h *OpenAPIHandlers) ListWorkflowEdges(ctx context.Context, request ListWor
 		}, nil
 	}
 
-	var edges []WorkflowEdge
+	edges := make([]WorkflowEdge, 0)
 	if definitionJson.Valid && definitionJson.String != "" {
 		var definition WorkflowDefinition
 		err = json.Unmarshal([]byte(definitionJson.String), &definition)
@@ -908,7 +908,7 @@ func (h *OpenAPIHandlers) ListWorkflowEdges(ctx context.Context, request ListWor
 		}
 
 		if definition.Edges != nil {
-			edges = *definition.Edges
+			edges = definition.Edges
 		}
 	}
 
@@ -980,9 +980,9 @@ func (h *OpenAPIHandlers) CreateWorkflowEdge(ctx context.Context, request Create
 
 	// Add to edges array
 	if definition.Edges == nil {
-		definition.Edges = &[]WorkflowEdge{}
+		definition.Edges = []WorkflowEdge{}
 	}
-	*definition.Edges = append(*definition.Edges, newEdge)
+	definition.Edges = append(definition.Edges, newEdge)
 
 	// Update workflow definition in database
 	updatedDefinitionJson, err := json.Marshal(definition)
@@ -1068,10 +1068,10 @@ func (h *OpenAPIHandlers) DeleteWorkflowEdge(ctx context.Context, request Delete
 	// Find and remove the edge
 	found := false
 	if definition.Edges != nil {
-		for i, edge := range *definition.Edges {
+		for i, edge := range definition.Edges {
 			if edge.Id == request.EdgeId {
 				// Remove edge from slice
-				*definition.Edges = append((*definition.Edges)[:i], (*definition.Edges)[i+1:]...)
+				definition.Edges = append(definition.Edges[:i], definition.Edges[i+1:]...)
 				found = true
 				break
 			}
@@ -1182,4 +1182,662 @@ func (h *OpenAPIHandlers) AutoLayoutWorkflow(ctx context.Context, request AutoLa
 	}
 
 	return AutoLayoutWorkflow200JSONResponse(result), nil
+}
+
+// CreateWorkflowVersion creates a new version of a workflow
+func (h *OpenAPIHandlers) CreateWorkflowVersion(ctx context.Context, request CreateWorkflowVersionRequestObject) (CreateWorkflowVersionResponseObject, error) {
+	// Check if workflow exists
+	var workflowExists bool
+	err := h.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM workflows WHERE id = $1)", request.WorkflowId.String()).Scan(&workflowExists)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return CreateWorkflowVersion500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	if !workflowExists {
+		errorMsg := "not found"
+		message := "Workflow not found"
+		return CreateWorkflowVersion404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Validate request body
+	if request.Body == nil {
+		errorMsg := "bad request"
+		message := "Request body is required"
+		return CreateWorkflowVersion400JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Generate new version number
+	var nextVersion int
+	err = h.db.QueryRowContext(ctx,
+		"SELECT COALESCE(MAX(version_number), 0) + 1 FROM workflow_versions WHERE workflow_id = $1",
+		request.WorkflowId.String()).Scan(&nextVersion)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return CreateWorkflowVersion500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Get current workflow definition to save as version
+	var currentDefinition []byte
+	err = h.db.QueryRowContext(ctx, "SELECT definition FROM workflows WHERE id = $1", request.WorkflowId.String()).Scan(&currentDefinition)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return CreateWorkflowVersion500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Create new version
+	versionID := uuid.New()
+	name := request.Body.Name
+	description := ""
+	if request.Body.Description != nil {
+		description = *request.Body.Description
+	}
+	isCurrent := false // New versions are not current by default
+
+	createdAt := time.Now()
+	_, err = h.db.ExecContext(ctx, `
+		INSERT INTO workflow_versions 
+		(id, workflow_id, version_number, name, description, definition, is_current, created_at) 
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+		versionID, request.WorkflowId.String(), nextVersion, name, description, currentDefinition, isCurrent, createdAt)
+
+	if err != nil {
+		errorMsg := "failed to create version"
+		message := err.Error()
+		return CreateWorkflowVersion500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Return the created version
+	version := WorkflowVersion{
+		Id:            &versionID,
+		WorkflowId:    &request.WorkflowId,
+		VersionNumber: &nextVersion,
+		Name:          &name,
+		Description:   &description,
+		IsCurrent:     &isCurrent,
+		CreatedAt:     &createdAt,
+	}
+
+	return CreateWorkflowVersion201JSONResponse(version), nil
+}
+
+// DeployWorkflowVersion deploys a specific version of a workflow (makes it current)
+func (h *OpenAPIHandlers) DeployWorkflowVersion(ctx context.Context, request DeployWorkflowVersionRequestObject) (DeployWorkflowVersionResponseObject, error) {
+	// Check if workflow exists
+	var workflowExists bool
+	err := h.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM workflows WHERE id = $1)", request.WorkflowId.String()).Scan(&workflowExists)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return DeployWorkflowVersion500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	if !workflowExists {
+		errorMsg := "not found"
+		message := "Workflow not found"
+		return DeployWorkflowVersion404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Check if version exists
+	var versionExists bool
+	err = h.db.QueryRowContext(ctx,
+		"SELECT EXISTS(SELECT 1 FROM workflow_versions WHERE workflow_id = $1 AND version_number = $2)",
+		request.WorkflowId.String(), request.VersionNumber).Scan(&versionExists)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return DeployWorkflowVersion500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	if !versionExists {
+		errorMsg := "not found"
+		message := "Version not found"
+		return DeployWorkflowVersion404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Start transaction to ensure atomicity
+	tx, err := h.db.BeginTx(ctx, nil)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return DeployWorkflowVersion500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+	defer tx.Rollback()
+
+	// Unset current flag from all versions
+	_, err = tx.ExecContext(ctx,
+		"UPDATE workflow_versions SET is_current = false WHERE workflow_id = $1",
+		request.WorkflowId.String())
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return DeployWorkflowVersion500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Set the specified version as current
+	_, err = tx.ExecContext(ctx,
+		"UPDATE workflow_versions SET is_current = true WHERE workflow_id = $1 AND version_number = $2",
+		request.WorkflowId.String(), request.VersionNumber)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return DeployWorkflowVersion500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Commit transaction
+	if err = tx.Commit(); err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return DeployWorkflowVersion500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Fetch and return the deployed version
+	var version WorkflowVersion
+	var versionID uuid.UUID
+	var name, description string
+	var isCurrent bool
+	var createdAt time.Time
+
+	err = h.db.QueryRowContext(ctx, `
+		SELECT id, workflow_id, version_number, name, description, is_current, created_at 
+		FROM workflow_versions 
+		WHERE workflow_id = $1 AND version_number = $2`,
+		request.WorkflowId.String(), request.VersionNumber).Scan(
+		&versionID, &version.WorkflowId, &version.VersionNumber,
+		&name, &description, &isCurrent, &createdAt)
+
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return DeployWorkflowVersion500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	version.Id = &versionID
+	version.WorkflowId = &request.WorkflowId
+	version.Name = &name
+	version.Description = &description
+	version.IsCurrent = &isCurrent
+	version.CreatedAt = &createdAt
+
+	return DeployWorkflowVersion200JSONResponse(version), nil
+}
+
+// GetLatestWorkflowVersion gets the latest version of a workflow
+func (h *OpenAPIHandlers) GetLatestWorkflowVersion(ctx context.Context, request GetLatestWorkflowVersionRequestObject) (GetLatestWorkflowVersionResponseObject, error) {
+	// Check if workflow exists
+	var workflowExists bool
+	err := h.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM workflows WHERE id = $1)", request.WorkflowId.String()).Scan(&workflowExists)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return GetLatestWorkflowVersion500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	if !workflowExists {
+		errorMsg := "not found"
+		message := "Workflow not found"
+		return GetLatestWorkflowVersion404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Get the latest version (highest version_number)
+	var version WorkflowVersion
+	var versionID uuid.UUID
+	var name, description string
+	var isCurrent bool
+	var createdAt time.Time
+
+	err = h.db.QueryRowContext(ctx, `
+		SELECT id, workflow_id, version_number, name, description, is_current, created_at 
+		FROM workflow_versions 
+		WHERE workflow_id = $1 
+		ORDER BY version_number DESC 
+		LIMIT 1`,
+		request.WorkflowId.String()).Scan(
+		&versionID, &version.WorkflowId, &version.VersionNumber,
+		&name, &description, &isCurrent, &createdAt)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			errorMsg := "not found"
+			message := "No versions found for this workflow"
+			return GetLatestWorkflowVersion404JSONResponse{
+				Error:   &errorMsg,
+				Message: &message,
+			}, nil
+		}
+		errorMsg := "database error"
+		message := err.Error()
+		return GetLatestWorkflowVersion500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	version.Id = &versionID
+	version.WorkflowId = &request.WorkflowId
+	version.Name = &name
+	version.Description = &description
+	version.IsCurrent = &isCurrent
+	version.CreatedAt = &createdAt
+
+	return GetLatestWorkflowVersion200JSONResponse(version), nil
+}
+
+// GetWorkflowDraft gets the current draft of a workflow
+func (h *OpenAPIHandlers) GetWorkflowDraft(ctx context.Context, request GetWorkflowDraftRequestObject) (GetWorkflowDraftResponseObject, error) {
+	// Check if workflow exists
+	var workflowExists bool
+	err := h.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM workflows WHERE id = $1)", request.WorkflowId.String()).Scan(&workflowExists)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return GetWorkflowDraft500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	if !workflowExists {
+		errorMsg := "not found"
+		message := "Workflow not found"
+		return GetWorkflowDraft404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Try to get existing draft
+	var draft WorkflowDraft
+	var workflowID uuid.UUID
+	var definitionJSON []byte
+	var createdAt, updatedAt time.Time
+
+	err = h.db.QueryRowContext(ctx, `
+		SELECT workflow_id, definition, created_at, updated_at 
+		FROM workflow_drafts 
+		WHERE workflow_id = $1`,
+		request.WorkflowId.String()).Scan(&workflowID, &definitionJSON, &createdAt, &updatedAt)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			// No draft exists, create empty one based on current workflow definition
+			var currentDefinition []byte
+			err = h.db.QueryRowContext(ctx, "SELECT definition FROM workflows WHERE id = $1", request.WorkflowId.String()).Scan(&currentDefinition)
+			if err != nil {
+				errorMsg := "database error"
+				message := err.Error()
+				return GetWorkflowDraft500JSONResponse{
+					Error:   &errorMsg,
+					Message: &message,
+				}, nil
+			}
+
+			// Parse current definition or create empty one if null/empty
+			var workflowDef WorkflowDefinition
+			if len(currentDefinition) > 0 {
+				if err := json.Unmarshal(currentDefinition, &workflowDef); err != nil {
+					errorMsg := "definition parse error"
+					message := err.Error()
+					return GetWorkflowDraft500JSONResponse{
+						Error:   &errorMsg,
+						Message: &message,
+					}, nil
+				}
+			} else {
+				// Create empty definition with empty arrays
+				nodes := make([]WorkflowNode, 0)
+				edges := make([]WorkflowEdge, 0)
+				workflowDef = WorkflowDefinition{
+					Nodes: nodes,
+					Edges: edges,
+				}
+			}
+
+			// Return draft based on current workflow
+			now := time.Now()
+			draft = WorkflowDraft{
+				WorkflowId: &request.WorkflowId,
+				Definition: &workflowDef,
+				UpdatedAt:  &now,
+			}
+		} else {
+			errorMsg := "database error"
+			message := err.Error()
+			return GetWorkflowDraft500JSONResponse{
+				Error:   &errorMsg,
+				Message: &message,
+			}, nil
+		}
+	} else {
+		// Parse existing draft definition or create empty one if null/empty
+		var workflowDef WorkflowDefinition
+		if len(definitionJSON) > 0 {
+			if err := json.Unmarshal(definitionJSON, &workflowDef); err != nil {
+				errorMsg := "definition parse error"
+				message := err.Error()
+				return GetWorkflowDraft500JSONResponse{
+					Error:   &errorMsg,
+					Message: &message,
+				}, nil
+			}
+		} else {
+			// Create empty definition with empty arrays
+			nodes := make([]WorkflowNode, 0)
+			edges := make([]WorkflowEdge, 0)
+			workflowDef = WorkflowDefinition{
+				Nodes: nodes,
+				Edges: edges,
+			}
+		}
+
+		draft = WorkflowDraft{
+			WorkflowId: &workflowID,
+			Definition: &workflowDef,
+			UpdatedAt:  &updatedAt,
+		}
+	}
+
+	return GetWorkflowDraft200JSONResponse(draft), nil
+}
+
+// UpdateWorkflowDraft updates the draft of a workflow
+func (h *OpenAPIHandlers) UpdateWorkflowDraft(ctx context.Context, request UpdateWorkflowDraftRequestObject) (UpdateWorkflowDraftResponseObject, error) {
+	// Check if workflow exists
+	var workflowExists bool
+	err := h.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM workflows WHERE id = $1)", request.WorkflowId.String()).Scan(&workflowExists)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return UpdateWorkflowDraft500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	if !workflowExists {
+		errorMsg := "not found"
+		message := "Workflow not found"
+		return UpdateWorkflowDraft404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Validate request body
+	if request.Body == nil || request.Body.Definition == nil {
+		errorMsg := "bad request"
+		message := "Definition is required"
+		return UpdateWorkflowDraft400JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Serialize definition
+	definitionJSON, err := json.Marshal(request.Body.Definition)
+	if err != nil {
+		errorMsg := "definition marshal error"
+		message := err.Error()
+		return UpdateWorkflowDraft500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	now := time.Now()
+
+	// Upsert draft
+	_, err = h.db.ExecContext(ctx, `
+		INSERT INTO workflow_drafts (workflow_id, definition, created_at, updated_at)
+		VALUES ($1, $2, $3, $4)
+		ON CONFLICT (workflow_id) 
+		DO UPDATE SET 
+			definition = EXCLUDED.definition,
+			updated_at = EXCLUDED.updated_at`,
+		request.WorkflowId.String(), definitionJSON, now, now)
+
+	if err != nil {
+		errorMsg := "failed to update draft"
+		message := err.Error()
+		return UpdateWorkflowDraft500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Return updated draft
+	draft := WorkflowDraft{
+		WorkflowId: &request.WorkflowId,
+		Definition: request.Body.Definition,
+		UpdatedAt:  &now,
+	}
+
+	return UpdateWorkflowDraft200JSONResponse(draft), nil
+}
+
+// ListWorkflowVersions lists all versions of a workflow
+func (h *OpenAPIHandlers) ListWorkflowVersions(ctx context.Context, request ListWorkflowVersionsRequestObject) (ListWorkflowVersionsResponseObject, error) {
+	// Check if workflow exists
+	var workflowExists bool
+	err := h.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM workflows WHERE id = $1)", request.WorkflowId.String()).Scan(&workflowExists)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return ListWorkflowVersions500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	if !workflowExists {
+		errorMsg := "not found"
+		message := "Workflow not found"
+		return ListWorkflowVersions404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Get all versions for the workflow
+	rows, err := h.db.QueryContext(ctx, `
+		SELECT id, workflow_id, version_number, name, description, is_current, created_at 
+		FROM workflow_versions 
+		WHERE workflow_id = $1 
+		ORDER BY version_number DESC`,
+		request.WorkflowId.String())
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return ListWorkflowVersions500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+	defer rows.Close()
+
+	versions := make([]WorkflowVersion, 0)
+	for rows.Next() {
+		var version WorkflowVersion
+		var versionID uuid.UUID
+		var name, description string
+		var isCurrent bool
+		var createdAt time.Time
+
+		err := rows.Scan(&versionID, &version.WorkflowId, &version.VersionNumber,
+			&name, &description, &isCurrent, &createdAt)
+		if err != nil {
+			errorMsg := "scan error"
+			message := err.Error()
+			return ListWorkflowVersions500JSONResponse{
+				Error:   &errorMsg,
+				Message: &message,
+			}, nil
+		}
+
+		version.Id = &versionID
+		version.WorkflowId = &request.WorkflowId
+		version.Name = &name
+		version.Description = &description
+		version.IsCurrent = &isCurrent
+		version.CreatedAt = &createdAt
+
+		versions = append(versions, version)
+	}
+
+	total := len(versions)
+	versionList := WorkflowVersionList{
+		Total:    total,
+		Versions: versions,
+	}
+	return ListWorkflowVersions200JSONResponse(versionList), nil
+}
+
+// TestWorkflowDraftNode tests a single node in the workflow draft
+func (h *OpenAPIHandlers) TestWorkflowDraftNode(ctx context.Context, request TestWorkflowDraftNodeRequestObject) (TestWorkflowDraftNodeResponseObject, error) {
+	// Check if workflow exists
+	var workflowExists bool
+	err := h.db.QueryRowContext(ctx, "SELECT EXISTS(SELECT 1 FROM workflows WHERE id = $1)", request.WorkflowId.String()).Scan(&workflowExists)
+	if err != nil {
+		errorMsg := "database error"
+		message := err.Error()
+		return TestWorkflowDraftNode500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	if !workflowExists {
+		errorMsg := "not found"
+		message := "Workflow not found"
+		return TestWorkflowDraftNode404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Get draft definition
+	var definitionJSON []byte
+	err = h.db.QueryRowContext(ctx, `
+		SELECT definition 
+		FROM workflow_drafts 
+		WHERE workflow_id = $1`,
+		request.WorkflowId.String()).Scan(&definitionJSON)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			errorMsg := "not found"
+			message := "No draft found for this workflow"
+			return TestWorkflowDraftNode404JSONResponse{
+				Error:   &errorMsg,
+				Message: &message,
+			}, nil
+		}
+		errorMsg := "database error"
+		message := err.Error()
+		return TestWorkflowDraftNode500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Parse draft definition
+	var workflowDef WorkflowDefinition
+	if err := json.Unmarshal(definitionJSON, &workflowDef); err != nil {
+		errorMsg := "definition parse error"
+		message := err.Error()
+		return TestWorkflowDraftNode500JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// Find the node in the draft
+	var targetNode *WorkflowNode
+	if workflowDef.Nodes != nil {
+		for i := range workflowDef.Nodes {
+			if workflowDef.Nodes[i].Id == request.NodeId {
+				targetNode = &workflowDef.Nodes[i]
+				break
+			}
+		}
+	}
+
+	if targetNode == nil {
+		errorMsg := "not found"
+		message := "Node not found in draft"
+		return TestWorkflowDraftNode404JSONResponse{
+			Error:   &errorMsg,
+			Message: &message,
+		}, nil
+	}
+
+	// For now, return a simple test result
+	// In a real implementation, this would execute the node with test data
+	success := true
+	executionTime := float32(0.1) // Mock execution time
+	output := map[string]interface{}{
+		"status": "test_passed",
+		"nodeId": request.NodeId,
+	}
+	result := NodeTestResult{
+		Success:       &success,
+		ExecutionTime: &executionTime,
+		Output:        &output,
+	}
+
+	return TestWorkflowDraftNode200JSONResponse(result), nil
 }

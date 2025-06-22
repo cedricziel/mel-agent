@@ -1,0 +1,17 @@
+type: object
+properties:
+  options:
+    type: array
+    items:
+      type: object
+      properties:
+        value:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+  dynamic:
+    type: boolean
+  context_dependent:
+    type: boolean

@@ -1,0 +1,25 @@
+post:
+  summary: Complete a work item
+  operationId: completeWork
+  tags:
+    - Workers
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: itemId
+      in: path
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/CompleteWorkRequest.yaml
+  responses:
+    '200':
+      description: Work item completed

@@ -11,7 +11,7 @@ jobs:
   backend:
     name: Backend Tests
     runs-on: ubuntu-24.04
-    
+
     services:
       postgres:
         image: postgres:15
@@ -26,7 +26,7 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -67,7 +67,7 @@ jobs:
     name: E2E Tests
     runs-on: ubuntu-24.04
     needs: [backend]
-    
+
     services:
       postgres:
         image: postgres:15
@@ -82,7 +82,7 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -117,15 +117,19 @@ jobs:
         with:
           node-version: '22'
           cache: 'pnpm'
-          cache-dependency-path: web/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
-      # Simplified: let Cypress action handle install → build → start → test
+      - name: Install dependencies
+        run: pnpm install
+
+      # Simplified: let Cypress action handle build → start → test
       - name: Run Cypress E2E tests
         uses: cypress-io/github-action@v6
         with:
           working-directory: web
-          build: pnpm build
-          start: pnpm preview --port 5173
+          install: false
+          build: pnpm --filter agentsaas-web build
+          start: pnpm --filter agentsaas-web preview --port 5173
           wait-on: 'http://localhost:5173'
           wait-on-timeout: 60
           browser: chrome

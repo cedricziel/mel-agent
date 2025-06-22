@@ -81,16 +81,17 @@ func (h *OpenAPIHandlers) ListTriggers(ctx context.Context, request ListTriggers
 		trigger.Name = &name
 		trigger.Type = func() *TriggerType {
 			if triggerType == "schedule" {
-				t := TriggerTypeSchedule
+				t := Schedule
 				return &t
 			} else if triggerType == "webhook" {
-				t := TriggerTypeWebhook
+				t := Webhook
 				return &t
 			}
 			return nil
 		}()
 		trigger.WorkflowId = &workflowUUID
-		trigger.Config = &config
+		triggerConfig := TriggerConfig(config)
+		trigger.Config = &triggerConfig
 		trigger.Enabled = &enabled
 		trigger.CreatedAt = &createdAt
 		trigger.UpdatedAt = &updatedAt
@@ -226,16 +227,17 @@ func (h *OpenAPIHandlers) GetTrigger(ctx context.Context, request GetTriggerRequ
 	trigger.Name = &name
 	trigger.Type = func() *TriggerType {
 		if triggerType == "schedule" {
-			t := TriggerTypeSchedule
+			t := Schedule
 			return &t
 		} else if triggerType == "webhook" {
-			t := TriggerTypeWebhook
+			t := Webhook
 			return &t
 		}
 		return nil
 	}()
 	trigger.WorkflowId = &workflowUUID
-	trigger.Config = &config
+	triggerConfig := TriggerConfig(config)
+	trigger.Config = &triggerConfig
 	trigger.Enabled = &enabled
 	trigger.CreatedAt = &createdAt
 	trigger.UpdatedAt = &updatedAt

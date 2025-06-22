@@ -1,0 +1,74 @@
+get:
+  summary: Get current draft for a workflow
+  operationId: getWorkflowDraft
+  tags:
+    - Workflows
+  parameters:
+    - name: workflowId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    '200':
+      description: Workflow draft
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/WorkflowDraft.yaml
+    '404':
+      description: Workflow not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+put:
+  summary: Update workflow draft with auto-persistence
+  operationId: updateWorkflowDraft
+  tags:
+    - Workflows
+  parameters:
+    - name: workflowId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/UpdateWorkflowDraftRequest.yaml
+  responses:
+    '200':
+      description: Draft updated successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/WorkflowDraft.yaml
+    '400':
+      description: Invalid request body
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '404':
+      description: Workflow not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

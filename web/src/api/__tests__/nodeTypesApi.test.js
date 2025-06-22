@@ -1,10 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import axios from 'axios';
 import { nodeTypesApi } from '../nodeTypesApi';
 
-// Mock axios
-vi.mock('axios');
-const mockedAxios = vi.mocked(axios);
+// Mock the generated client
+vi.mock('../client', () => ({
+  nodeTypesApi: {
+    listNodeTypes: vi.fn(),
+  },
+}));
+
+import { nodeTypesApi as generatedNodeTypesApi } from '../client';
 
 describe('nodeTypesApi', () => {
   beforeEach(() => {
@@ -38,13 +42,13 @@ describe('nodeTypesApi', () => {
         },
       ];
 
-      mockedAxios.get.mockResolvedValueOnce({
+      generatedNodeTypesApi.listNodeTypes.mockResolvedValueOnce({
         data: allNodeTypes,
       });
 
       const result = await nodeTypesApi.getAllNodeTypes();
 
-      expect(mockedAxios.get).toHaveBeenCalledWith('/api/node-types');
+      expect(generatedNodeTypesApi.listNodeTypes).toHaveBeenCalledWith();
       expect(result).toHaveLength(6);
       expect(result.some((node) => node.type === 'agent')).toBe(true);
       expect(result.some((node) => node.type === 'openai_model')).toBe(true);
@@ -54,9 +58,13 @@ describe('nodeTypesApi', () => {
     });
 
     it('should throw error on API failure', async () => {
-      mockedAxios.get.mockRejectedValueOnce(new Error('API Error'));
+      generatedNodeTypesApi.listNodeTypes.mockRejectedValueOnce(
+        new Error('API Error')
+      );
 
-      await expect(nodeTypesApi.getAllNodeTypes()).rejects.toThrow('API Error');
+      await expect(nodeTypesApi.getAllNodeTypes()).rejects.toThrow(
+        'Failed to fetch all node types: API Error'
+      );
     });
   });
 
@@ -67,15 +75,15 @@ describe('nodeTypesApi', () => {
         { type: 'anthropic_model', category: 'Configuration' },
       ];
 
-      mockedAxios.get.mockResolvedValueOnce({
+      generatedNodeTypesApi.listNodeTypes.mockResolvedValueOnce({
         data: modelNodes,
       });
 
       const result = await nodeTypesApi.getNodeTypes('model');
 
-      expect(mockedAxios.get).toHaveBeenCalledWith(
-        '/api/node-types?kind=model'
-      );
+      expect(generatedNodeTypesApi.listNodeTypes).toHaveBeenCalledWith({
+        kind: 'model',
+      });
       expect(result).toEqual(modelNodes);
     });
 
@@ -85,23 +93,25 @@ describe('nodeTypesApi', () => {
         { type: 'openai_model', category: 'Configuration' },
       ];
 
-      mockedAxios.get.mockResolvedValueOnce({
+      generatedNodeTypesApi.listNodeTypes.mockResolvedValueOnce({
         data: filteredNodes,
       });
 
       const result = await nodeTypesApi.getNodeTypes(['action', 'model']);
 
-      expect(mockedAxios.get).toHaveBeenCalledWith(
-        '/api/node-types?kind=action%2Cmodel'
-      );
+      expect(generatedNodeTypesApi.listNodeTypes).toHaveBeenCalledWith({
+        kind: 'action,model',
+      });
       expect(result).toEqual(filteredNodes);
     });
 
     it('should throw error on API failure', async () => {
-      mockedAxios.get.mockRejectedValueOnce(new Error('API Error'));
+      generatedNodeTypesApi.listNodeTypes.mockRejectedValueOnce(
+        new Error('API Error')
+      );
 
       await expect(nodeTypesApi.getNodeTypes(['model'])).rejects.toThrow(
-        'API Error'
+        'Failed to fetch node types: API Error'
       );
     });
   });
@@ -122,7 +132,7 @@ describe('nodeTypesApi', () => {
         },
       ];
 
-      mockedAxios.get.mockResolvedValueOnce({
+      generatedNodeTypesApi.listNodeTypes.mockResolvedValueOnce({
         data: modelNodes,
       });
 
@@ -157,7 +167,7 @@ describe('nodeTypesApi', () => {
         },
       ];
 
-      mockedAxios.get.mockResolvedValueOnce({
+      generatedNodeTypesApi.listNodeTypes.mockResolvedValueOnce({
         data: memoryNodes,
       });
 

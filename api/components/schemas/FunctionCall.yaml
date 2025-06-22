@@ -1,0 +1,8 @@
+type: object
+properties:
+  name:
+    type: string
+    description: Function name
+  arguments:
+    type: string
+    description: Function arguments as JSON string

@@ -1,0 +1,3 @@
+type: object
+additionalProperties: true
+description: Node configuration containing node-specific parameters and settings

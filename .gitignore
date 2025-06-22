@@ -6,6 +6,9 @@ bin/
 # Node
 web/node_modules/
 web/dist/
+packages/api-client/dist/
+node_modules/
+.pnpm-store/
 
 # Cypress
 web/cypress/screenshots/

@@ -1,0 +1,8 @@
+type: string
+enum:
+  - pending
+  - running
+  - completed
+  - failed
+  - skipped
+description: Status of a workflow step

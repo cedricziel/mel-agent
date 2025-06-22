@@ -1,0 +1,14 @@
+type: object
+properties:
+  name:
+    type: string
+  secret:
+    $ref: ./ConnectionSecret.yaml
+  config:
+    $ref: ./ConnectionConfig.yaml
+  usage_limit_month:
+    type: integer
+  is_default:
+    type: boolean
+  status:
+    $ref: ./ConnectionStatus.yaml

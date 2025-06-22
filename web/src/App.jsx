@@ -22,7 +22,7 @@ function App() {
                   : 'text-gray-600 hover:text-indigo-600'
               }
             >
-              Agents
+              Workflows
             </NavLink>
             <NavLink
               to="/connections"
@@ -50,7 +50,16 @@ function App() {
               </ErrorBoundary>
             }
           />
+          <Route
+            path="/workflows/:id/edit"
+            element={
+              <ErrorBoundary>
+                <AgentBuilderWrapper />
+              </ErrorBoundary>
+            }
+          />
           <Route path="/agents/:id/runs" element={<RunsPage />} />
+          <Route path="/workflows/:id/runs" element={<RunsPage />} />
         </Routes>
       </main>
     </div>

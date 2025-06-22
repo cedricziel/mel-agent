@@ -11,7 +11,7 @@ jobs:
   backend:
     name: Backend Tests
     runs-on: ubuntu-24.04
-    
+
     services:
       postgres:
         image: postgres:15
@@ -26,7 +26,7 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -66,7 +66,7 @@ jobs:
   frontend:
     name: Frontend Tests & Build
     runs-on: ubuntu-24.04
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -81,31 +81,27 @@ jobs:
         with:
           node-version: '22'
           cache: 'pnpm'
-          cache-dependency-path: web/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Cache Cypress binary
         uses: actions/cache@v4
         with:
           path: ~/.cache/Cypress
-          key: cypress-${{ runner.os }}-${{ hashFiles('web/pnpm-lock.yaml') }}
+          key: cypress-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
             cypress-${{ runner.os }}-
 
-      - name: Install frontend dependencies
+      - name: Install dependencies
         run: pnpm install
-        working-directory: web
 
       - name: Install Cypress binary
         run: npx cypress install
-        working-directory: web
 
       - name: Run frontend unit tests
-        run: pnpm test:run
-        working-directory: web
+        run: pnpm --filter agentsaas-web test:run
 
       - name: Lint frontend
-        run: pnpm lint
-        working-directory: web
+        run: pnpm --filter agentsaas-web lint
 
       - name: Cache frontend build
         uses: actions/cache@v4
@@ -116,8 +112,7 @@ jobs:
             frontend-build-${{ runner.os }}-
 
       - name: Build frontend
-        run: pnpm build
-        working-directory: web
+        run: pnpm --filter agentsaas-web build
 
       - name: Upload frontend build
         uses: actions/upload-artifact@v4
@@ -131,7 +126,7 @@ jobs:
     name: E2E Tests
     runs-on: ubuntu-24.04
     needs: [backend, frontend]
-    
+
     services:
       postgres:
         image: postgres:15
@@ -146,7 +141,7 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -169,13 +164,13 @@ jobs:
         with:
           node-version: '22'
           cache: 'pnpm'
-          cache-dependency-path: web/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Cache Cypress binary
         uses: actions/cache@v4
         with:
           path: ~/.cache/Cypress
-          key: cypress-${{ runner.os }}-${{ hashFiles('web/pnpm-lock.yaml') }}
+          key: cypress-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
             cypress-${{ runner.os }}-
 
@@ -195,9 +190,8 @@ jobs:
           name: frontend-build
           path: web/dist
 
-      - name: Install frontend dependencies (needed for preview)
+      - name: Install dependencies (needed for preview)
         run: pnpm install
-        working-directory: web
 
       - name: Start backend server
         run: |
@@ -213,9 +207,8 @@ jobs:
 
       - name: Start frontend preview server
         run: |
-          pnpm preview --port 5173 &
+          pnpm --filter agentsaas-web preview --port 5173 &
           echo $! > preview.pid
-        working-directory: web
 
       - name: Wait for frontend to be ready
         run: |
