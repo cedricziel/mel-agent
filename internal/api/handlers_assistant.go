@@ -32,8 +32,11 @@ func (h *OpenAPIHandlers) AssistantChat(ctx context.Context, request AssistantCh
 		}
 	}
 
-	// Check for OpenAI API key
-	apiKey := os.Getenv("OPENAI_API_KEY")
+	// Check for OpenAI API key (use configured key or fall back to environment)
+	apiKey := h.openAIAPIKey
+	if apiKey == "" {
+		apiKey = os.Getenv("OPENAI_API_KEY")
+	}
 	if apiKey == "" {
 		errorMsg := "configuration error"
 		message := "OPENAI_API_KEY not set"

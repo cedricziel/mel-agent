@@ -8,14 +8,16 @@ import (
 
 // OpenAPIHandlers implements the StrictServerInterface for type-safe OpenAPI handling
 type OpenAPIHandlers struct {
-	db     *sql.DB
-	engine execution.ExecutionEngine
+	db            *sql.DB
+	engine        execution.ExecutionEngine
+	openAIAPIKey  string
 }
 
 // NewOpenAPIHandlers creates a new OpenAPI handlers instance
-func NewOpenAPIHandlers(database *sql.DB, engine execution.ExecutionEngine) *OpenAPIHandlers {
+func NewOpenAPIHandlers(database *sql.DB, engine execution.ExecutionEngine, openAIAPIKey string) *OpenAPIHandlers {
 	return &OpenAPIHandlers{
-		db:     database,
-		engine: engine,
+		db:           database,
+		engine:       engine,
+		openAIAPIKey: openAIAPIKey,
 	}
 }

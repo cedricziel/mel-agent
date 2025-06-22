@@ -10,6 +10,7 @@ import (
 
 	"github.com/cedricziel/mel-agent/internal/testutil"
 	"github.com/cedricziel/mel-agent/pkg/execution"
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -62,7 +63,14 @@ func TestOpenAPIAssistantChatEmptyMessages(t *testing.T) {
 	mockEngine := execution.NewMockExecutionEngine()
 	defer cleanup()
 
-	router := NewOpenAPIRouter(db, mockEngine)
+	// Create handlers with test API key
+	handlers := NewOpenAPIHandlers(db, mockEngine, "test-api-key")
+	strictHandler := NewStrictHandler(handlers, nil)
+	
+	// Create router manually for test
+	r := chi.NewRouter()
+	HandlerFromMux(strictHandler, r)
+	router := r
 
 	chatRequest := AssistantChatRequest{
 		Messages: []ChatMessage{}, // Empty messages
