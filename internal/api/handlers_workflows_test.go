@@ -25,7 +25,7 @@ func TestOpenAPICreateWorkflow(t *testing.T) {
 
 	// Create a test workflow definition
 	definition := WorkflowDefinition{
-		Nodes: &[]WorkflowNode{
+		Nodes: []WorkflowNode{
 			{
 				Id:   "node-1",
 				Type: "start",
@@ -43,7 +43,7 @@ func TestOpenAPICreateWorkflow(t *testing.T) {
 				},
 			},
 		},
-		Edges: &[]WorkflowEdge{
+		Edges: []WorkflowEdge{
 			{
 				Id:     "edge-1",
 				Source: "node-1",
@@ -80,7 +80,7 @@ func TestOpenAPICreateWorkflow(t *testing.T) {
 	assert.Equal(t, "A test workflow for testing", *response.Description)
 	assert.NotNil(t, response.Definition)
 	assert.NotNil(t, response.Definition.Nodes)
-	assert.Len(t, *response.Definition.Nodes, 2)
+	assert.Len(t, response.Definition.Nodes, 2)
 	assert.NotEqual(t, uuid.Nil, response.Id)
 	assert.False(t, response.CreatedAt.IsZero())
 	assert.False(t, response.UpdatedAt.IsZero())
@@ -245,7 +245,7 @@ func TestOpenAPIGetWorkflow(t *testing.T) {
 
 	// Create a test workflow with definition
 	definition := WorkflowDefinition{
-		Nodes: &[]WorkflowNode{
+		Nodes: []WorkflowNode{
 			{
 				Id:   "get-node-1",
 				Type: "trigger",
@@ -289,8 +289,8 @@ func TestOpenAPIGetWorkflow(t *testing.T) {
 	assert.Equal(t, "A workflow for get testing", *response.Description)
 	assert.NotNil(t, response.Definition)
 	assert.NotNil(t, response.Definition.Nodes)
-	assert.Len(t, *response.Definition.Nodes, 1)
-	assert.Equal(t, "get-node-1", (*response.Definition.Nodes)[0].Id)
+	assert.Len(t, response.Definition.Nodes, 1)
+	assert.Equal(t, "get-node-1", (response.Definition.Nodes)[0].Id)
 }
 
 // TestOpenAPIGetWorkflowNotFound tests retrieving a non-existent workflow
@@ -341,7 +341,7 @@ func TestOpenAPIUpdateWorkflow(t *testing.T) {
 
 	// Update the workflow
 	newDefinition := WorkflowDefinition{
-		Nodes: &[]WorkflowNode{
+		Nodes: []WorkflowNode{
 			{
 				Id:   "updated-node",
 				Type: "action",
@@ -376,7 +376,7 @@ func TestOpenAPIUpdateWorkflow(t *testing.T) {
 	assert.Equal(t, "Updated description", *response.Description)
 	assert.NotNil(t, response.Definition)
 	assert.NotNil(t, response.Definition.Nodes)
-	assert.Len(t, *response.Definition.Nodes, 1)
+	assert.Len(t, response.Definition.Nodes, 1)
 	assert.True(t, response.UpdatedAt.After(createdWorkflow.UpdatedAt))
 }
 

@@ -13,6 +13,19 @@ vi.mock('../../api/client', () => ({
     getWorkflow: vi.fn(),
     updateWorkflow: vi.fn(),
     deleteWorkflow: vi.fn(),
+    listWorkflowNodes: vi.fn(),
+    createWorkflowNode: vi.fn(),
+    getWorkflowNode: vi.fn(),
+    updateWorkflowNode: vi.fn(),
+    deleteWorkflowNode: vi.fn(),
+    listWorkflowEdges: vi.fn(),
+    createWorkflowEdge: vi.fn(),
+    deleteWorkflowEdge: vi.fn(),
+    autoLayoutWorkflow: vi.fn(),
+    listWorkflowVersions: vi.fn(),
+    createWorkflowVersion: vi.fn(),
+    getLatestWorkflowVersion: vi.fn(),
+    executeWorkflow: vi.fn(),
   },
   workflowRunsApi: {
     listWorkflowRuns: vi.fn(),
@@ -148,26 +161,49 @@ const setupDefaultMocks = () => {
   // Setup workflowsApi mocks with successful data
   workflowsApi.getWorkflowDraft.mockResolvedValue({
     data: {
-      nodes: [
-        {
-          id: 'config-node-1',
-          type: 'openai_model',
-          position: { x: 100, y: 100 },
-          data: {
-            label: 'OpenAI Model',
-            nodeTypeLabel: 'OpenAI Model',
-            model: 'gpt-4',
-            temperature: 0.7,
-            maxTokens: 1000,
+      workflow_id: 'test-agent',
+      definition: {
+        nodes: [
+          {
+            id: 'config-node-1',
+            type: 'openai_model',
+            position: { x: 100, y: 100 },
+            data: {
+              label: 'OpenAI Model',
+              nodeTypeLabel: 'OpenAI Model',
+              model: 'gpt-4',
+              temperature: 0.7,
+              maxTokens: 1000,
+            },
           },
-        },
-      ],
-      edges: [],
+        ],
+        edges: [],
+      },
+      updated_at: new Date().toISOString(),
     },
   });
   workflowsApi.updateWorkflowDraft.mockResolvedValue({ data: {} });
   workflowsApi.getWorkflow.mockResolvedValue({
     data: { id: 'test-agent', name: 'Test Agent' },
+  });
+  workflowsApi.listWorkflowNodes.mockResolvedValue({
+    data: [
+      {
+        id: 'config-node-1',
+        type: 'openai_model',
+        position: { x: 100, y: 100 },
+        data: {
+          label: 'OpenAI Model',
+          nodeTypeLabel: 'OpenAI Model',
+          model: 'gpt-4',
+          temperature: 0.7,
+          maxTokens: 1000,
+        },
+      },
+    ],
+  });
+  workflowsApi.listWorkflowEdges.mockResolvedValue({
+    data: [],
   });
 };
 
@@ -301,20 +337,24 @@ describe('Config Node Modal Integration', () => {
     // Set up custom mock for this test with memory node
     workflowsApi.getWorkflowDraft.mockResolvedValue({
       data: {
-        nodes: [
-          {
-            id: 'memory-node-1',
-            type: 'local_memory',
-            position: { x: 200, y: 100 },
-            data: {
-              label: 'Local Memory',
-              nodeTypeLabel: 'Local Memory',
-              maxMessages: 100,
-              enableSummarization: true,
+        workflow_id: 'test-agent',
+        definition: {
+          nodes: [
+            {
+              id: 'memory-node-1',
+              type: 'local_memory',
+              position: { x: 200, y: 100 },
+              data: {
+                label: 'Local Memory',
+                nodeTypeLabel: 'Local Memory',
+                maxMessages: 100,
+                enableSummarization: true,
+              },
             },
-          },
-        ],
-        edges: [],
+          ],
+          edges: [],
+        },
+        updated_at: new Date().toISOString(),
       },
     });
 

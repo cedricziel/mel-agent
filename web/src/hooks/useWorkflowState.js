@@ -55,9 +55,14 @@ export function useWorkflowState(workflowId, enableAutoPersistence = true) {
       if (enableAutoPersistence) {
         try {
           const draft = await DraftAPI.getDraft(workflowId);
-          if (draft && (draft.nodes.length > 0 || draft.edges.length > 0)) {
+          if (
+            draft &&
+            draft.definition &&
+            (draft.definition.nodes.length > 0 ||
+              draft.definition.edges.length > 0)
+          ) {
             // Ensure draft nodes have proper ReactFlow format
-            const formattedNodes = draft.nodes.map((node) => ({
+            const formattedNodes = draft.definition.nodes.map((node) => ({
               ...node,
               position: node.position || { x: 100, y: 100 }, // Default position if missing
               data: node.data || {},
@@ -66,9 +71,13 @@ export function useWorkflowState(workflowId, enableAutoPersistence = true) {
             workflowData = {
               workflow: { id: workflowId, name: 'Draft' },
               nodes: formattedNodes,
-              edges: draft.edges,
+              edges: draft.definition.edges,
             };
-            console.log('✅ Loaded draft with', draft.nodes.length, 'nodes');
+            console.log(
+              '✅ Loaded draft with',
+              draft.definition.nodes.length,
+              'nodes'
+            );
           }
         } catch (draftErr) {
           console.log(

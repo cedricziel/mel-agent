@@ -88,10 +88,17 @@ describe('useWorkflowState', () => {
 
   it('should prefer draft over production version when available', async () => {
     const mockDraft = {
-      nodes: [
-        { id: 'draft-1', type: 'test', data: {}, position: { x: 100, y: 100 } },
-      ],
-      edges: [{ id: 'draft-e1', source: 'draft-1', target: 'draft-2' }],
+      definition: {
+        nodes: [
+          {
+            id: 'draft-1',
+            type: 'test',
+            data: {},
+            position: { x: 100, y: 100 },
+          },
+        ],
+        edges: [{ id: 'draft-e1', source: 'draft-1', target: 'draft-2' }],
+      },
     };
 
     draftClient.DraftAPI.getDraft.mockResolvedValue(mockDraft);
@@ -103,8 +110,8 @@ describe('useWorkflowState', () => {
     });
 
     expect(result.current.isDraft).toBe(true);
-    expect(result.current.nodes).toEqual(mockDraft.nodes);
-    expect(result.current.edges).toEqual(mockDraft.edges);
+    expect(result.current.nodes).toEqual(mockDraft.definition.nodes);
+    expect(result.current.edges).toEqual(mockDraft.definition.edges);
     expect(workflowClient.default.loadWorkflowData).not.toHaveBeenCalled();
   });
 
@@ -165,10 +172,17 @@ describe('useWorkflowState', () => {
 
   it('should test a draft node when in draft mode', async () => {
     const mockDraft = {
-      nodes: [
-        { id: 'node-1', type: 'test', data: {}, position: { x: 100, y: 100 } },
-      ],
-      edges: [],
+      definition: {
+        nodes: [
+          {
+            id: 'node-1',
+            type: 'test',
+            data: {},
+            position: { x: 100, y: 100 },
+          },
+        ],
+        edges: [],
+      },
     };
     const mockResult = { success: true, result: { data: 'test output' } };
 
@@ -253,10 +267,17 @@ describe('useWorkflowState', () => {
 
   it('should deploy draft successfully when in draft mode', async () => {
     const mockDraft = {
-      nodes: [
-        { id: 'node-1', type: 'test', data: {}, position: { x: 100, y: 100 } },
-      ],
-      edges: [],
+      definition: {
+        nodes: [
+          {
+            id: 'node-1',
+            type: 'test',
+            data: {},
+            position: { x: 100, y: 100 },
+          },
+        ],
+        edges: [],
+      },
     };
 
     draftClient.DraftAPI.getDraft.mockResolvedValue(mockDraft);

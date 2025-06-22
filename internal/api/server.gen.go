@@ -639,8 +639,8 @@ type Workflow struct {
 
 // WorkflowDefinition defines model for WorkflowDefinition.
 type WorkflowDefinition struct {
-	Edges *[]WorkflowEdge `json:"edges,omitempty"`
-	Nodes *[]WorkflowNode `json:"nodes,omitempty"`
+	Edges []WorkflowEdge `json:"edges"`
+	Nodes []WorkflowNode `json:"nodes"`
 }
 
 // WorkflowDraft defines model for WorkflowDraft.

@@ -2,13 +2,27 @@ import { Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { HANDLE_TYPES, getHandleColor } from '../utils/connectionTypes';
 
+interface MemoryNodeProps {
+  data: {
+    label: string;
+    status?: string;
+    nodeTypeLabel?: string;
+    error?: boolean;
+    [key: string]: string | number | boolean | object | undefined;
+  };
+  onAddClick?: () => void;
+  onDelete?: (id: string) => void;
+  id: string;
+  onClick?: () => void;
+}
+
 export default function MemoryNode({
   data,
   onAddClick,
   onDelete,
   id,
   onClick,
-}) {
+}: MemoryNodeProps) {
   const summaryKeys = Object.keys(data).filter(
     (k) =>
       k !== 'label' && k !== 'status' && k !== 'nodeTypeLabel' && k !== 'error'

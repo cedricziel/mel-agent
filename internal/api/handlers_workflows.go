@@ -467,7 +467,7 @@ func (h *OpenAPIHandlers) ListWorkflowNodes(ctx context.Context, request ListWor
 		}, nil
 	}
 
-	var nodes []WorkflowNode
+	nodes := make([]WorkflowNode, 0)
 	if definitionJson.Valid && definitionJson.String != "" {
 		var definition WorkflowDefinition
 		err = json.Unmarshal([]byte(definitionJson.String), &definition)
@@ -481,7 +481,7 @@ func (h *OpenAPIHandlers) ListWorkflowNodes(ctx context.Context, request ListWor
 		}
 
 		if definition.Nodes != nil {
-			nodes = *definition.Nodes
+			nodes = definition.Nodes
 		}
 	}
 
@@ -546,9 +546,9 @@ func (h *OpenAPIHandlers) CreateWorkflowNode(ctx context.Context, request Create
 
 	// Add to nodes array
 	if definition.Nodes == nil {
-		definition.Nodes = &[]WorkflowNode{}
+		definition.Nodes = []WorkflowNode{}
 	}
-	*definition.Nodes = append(*definition.Nodes, newNode)
+	definition.Nodes = append(definition.Nodes, newNode)
 
 	// Update workflow definition in database
 	updatedDefinitionJson, err := json.Marshal(definition)
@@ -633,7 +633,7 @@ func (h *OpenAPIHandlers) GetWorkflowNode(ctx context.Context, request GetWorkfl
 
 	// Find the node
 	if definition.Nodes != nil {
-		for _, node := range *definition.Nodes {
+		for _, node := range definition.Nodes {
 			if node.Id == request.NodeId {
 				return GetWorkflowNode200JSONResponse(node), nil
 			}
@@ -706,16 +706,16 @@ func (h *OpenAPIHandlers) UpdateWorkflowNode(ctx context.Context, request Update
 	// Find and update the node
 	var updatedNode *WorkflowNode
 	if definition.Nodes != nil {
-		for i, node := range *definition.Nodes {
+		for i, node := range definition.Nodes {
 			if node.Id == request.NodeId {
 				// Update fields if provided
 				if request.Body.Name != nil {
-					(*definition.Nodes)[i].Name = *request.Body.Name
+					definition.Nodes[i].Name = *request.Body.Name
 				}
 				if request.Body.Config != nil {
-					(*definition.Nodes)[i].Config = *request.Body.Config
+					definition.Nodes[i].Config = *request.Body.Config
 				}
-				updatedNode = &(*definition.Nodes)[i]
+				updatedNode = &definition.Nodes[i]
 				break
 			}
 		}
@@ -814,10 +814,10 @@ func (h *OpenAPIHandlers) DeleteWorkflowNode(ctx context.Context, request Delete
 	// Find and remove the node
 	found := false
 	if definition.Nodes != nil {
-		for i, node := range *definition.Nodes {
+		for i, node := range definition.Nodes {
 			if node.Id == request.NodeId {
 				// Remove node from slice
-				*definition.Nodes = append((*definition.Nodes)[:i], (*definition.Nodes)[i+1:]...)
+				definition.Nodes = append(definition.Nodes[:i], definition.Nodes[i+1:]...)
 				found = true
 				break
 			}
@@ -894,7 +894,7 @@ func (h *OpenAPIHandlers) ListWorkflowEdges(ctx context.Context, request ListWor
 		}, nil
 	}
 
-	var edges []WorkflowEdge
+	edges := make([]WorkflowEdge, 0)
 	if definitionJson.Valid && definitionJson.String != "" {
 		var definition WorkflowDefinition
 		err = json.Unmarshal([]byte(definitionJson.String), &definition)
@@ -908,7 +908,7 @@ func (h *OpenAPIHandlers) ListWorkflowEdges(ctx context.Context, request ListWor
 		}
 
 		if definition.Edges != nil {
-			edges = *definition.Edges
+			edges = definition.Edges
 		}
 	}
 
@@ -980,9 +980,9 @@ func (h *OpenAPIHandlers) CreateWorkflowEdge(ctx context.Context, request Create
 
 	// Add to edges array
 	if definition.Edges == nil {
-		definition.Edges = &[]WorkflowEdge{}
+		definition.Edges = []WorkflowEdge{}
 	}
-	*definition.Edges = append(*definition.Edges, newEdge)
+	definition.Edges = append(definition.Edges, newEdge)
 
 	// Update workflow definition in database
 	updatedDefinitionJson, err := json.Marshal(definition)
@@ -1068,10 +1068,10 @@ func (h *OpenAPIHandlers) DeleteWorkflowEdge(ctx context.Context, request Delete
 	// Find and remove the edge
 	found := false
 	if definition.Edges != nil {
-		for i, edge := range *definition.Edges {
+		for i, edge := range definition.Edges {
 			if edge.Id == request.EdgeId {
 				// Remove edge from slice
-				*definition.Edges = append((*definition.Edges)[:i], (*definition.Edges)[i+1:]...)
+				definition.Edges = append(definition.Edges[:i], definition.Edges[i+1:]...)
 				found = true
 				break
 			}
@@ -1526,15 +1526,25 @@ func (h *OpenAPIHandlers) GetWorkflowDraft(ctx context.Context, request GetWorkf
 				}, nil
 			}
 
-			// Parse current definition
+			// Parse current definition or create empty one if null/empty
 			var workflowDef WorkflowDefinition
-			if err := json.Unmarshal(currentDefinition, &workflowDef); err != nil {
-				errorMsg := "definition parse error"
-				message := err.Error()
-				return GetWorkflowDraft500JSONResponse{
-					Error:   &errorMsg,
-					Message: &message,
-				}, nil
+			if len(currentDefinition) > 0 {
+				if err := json.Unmarshal(currentDefinition, &workflowDef); err != nil {
+					errorMsg := "definition parse error"
+					message := err.Error()
+					return GetWorkflowDraft500JSONResponse{
+						Error:   &errorMsg,
+						Message: &message,
+					}, nil
+				}
+			} else {
+				// Create empty definition with empty arrays
+				nodes := make([]WorkflowNode, 0)
+				edges := make([]WorkflowEdge, 0)
+				workflowDef = WorkflowDefinition{
+					Nodes: nodes,
+					Edges: edges,
+				}
 			}
 
 			// Return draft based on current workflow
@@ -1553,15 +1563,25 @@ func (h *OpenAPIHandlers) GetWorkflowDraft(ctx context.Context, request GetWorkf
 			}, nil
 		}
 	} else {
-		// Parse existing draft definition
+		// Parse existing draft definition or create empty one if null/empty
 		var workflowDef WorkflowDefinition
-		if err := json.Unmarshal(definitionJSON, &workflowDef); err != nil {
-			errorMsg := "definition parse error"
-			message := err.Error()
-			return GetWorkflowDraft500JSONResponse{
-				Error:   &errorMsg,
-				Message: &message,
-			}, nil
+		if len(definitionJSON) > 0 {
+			if err := json.Unmarshal(definitionJSON, &workflowDef); err != nil {
+				errorMsg := "definition parse error"
+				message := err.Error()
+				return GetWorkflowDraft500JSONResponse{
+					Error:   &errorMsg,
+					Message: &message,
+				}, nil
+			}
+		} else {
+			// Create empty definition with empty arrays
+			nodes := make([]WorkflowNode, 0)
+			edges := make([]WorkflowEdge, 0)
+			workflowDef = WorkflowDefinition{
+				Nodes: nodes,
+				Edges: edges,
+			}
 		}
 
 		draft = WorkflowDraft{
@@ -1788,9 +1808,9 @@ func (h *OpenAPIHandlers) TestWorkflowDraftNode(ctx context.Context, request Tes
 	// Find the node in the draft
 	var targetNode *WorkflowNode
 	if workflowDef.Nodes != nil {
-		for i := range *workflowDef.Nodes {
-			if (*workflowDef.Nodes)[i].Id == request.NodeId {
-				targetNode = &(*workflowDef.Nodes)[i]
+		for i := range workflowDef.Nodes {
+			if workflowDef.Nodes[i].Id == request.NodeId {
+				targetNode = &workflowDef.Nodes[i]
 				break
 			}
 		}

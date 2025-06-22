@@ -5,8 +5,8 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**nodes** | [**Array&lt;WorkflowNode&gt;**](WorkflowNode.md) |  | [optional] [default to undefined]
-**edges** | [**Array&lt;WorkflowEdge&gt;**](WorkflowEdge.md) |  | [optional] [default to undefined]
+**nodes** | [**Array&lt;WorkflowNode&gt;**](WorkflowNode.md) |  | [default to undefined]
+**edges** | [**Array&lt;WorkflowEdge&gt;**](WorkflowEdge.md) |  | [default to undefined]
 
 ## Example
 

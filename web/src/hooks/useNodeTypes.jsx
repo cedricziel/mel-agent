@@ -5,7 +5,7 @@ import DefaultNode from '../components/DefaultNode';
 import AgentNode from '../components/AgentNode';
 import ModelNode from '../components/ModelNode';
 import ToolsNode from '../components/ToolsNode';
-import MemoryNode from '../components/MemoryNode';
+import MemoryNode from '../components/MemoryNode.tsx';
 import OpenAIModelNode from '../components/OpenAIModelNode';
 import AnthropicModelNode from '../components/AnthropicModelNode';
 import LocalMemoryNode from '../components/LocalMemoryNode';

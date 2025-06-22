@@ -31,12 +31,12 @@ export interface WorkflowDefinition {
      * @type {Array<WorkflowNode>}
      * @memberof WorkflowDefinition
      */
-    'nodes'?: Array<WorkflowNode>;
+    'nodes': Array<WorkflowNode>;
     /**
      * 
      * @type {Array<WorkflowEdge>}
      * @memberof WorkflowDefinition
      */
-    'edges'?: Array<WorkflowEdge>;
+    'edges': Array<WorkflowEdge>;
 }
 
