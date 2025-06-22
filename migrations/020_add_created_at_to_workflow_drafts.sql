@@ -1,4 +1,4 @@
--- Migration 019: Add created_at column to workflow_drafts table
+-- Migration 020: Add created_at column to workflow_drafts table
 -- This ensures consistency with the handler expectations
 
 ALTER TABLE workflow_drafts 
