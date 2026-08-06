@@ -71,7 +71,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         name: Install pnpm
         with:
           version: 10
@@ -154,7 +154,7 @@ jobs:
       - name: Make server binary executable
         run: chmod +x server
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         name: Install pnpm
         with:
           version: 10
