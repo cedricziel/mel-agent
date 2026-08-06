@@ -14,34 +14,12 @@
 
 
 
-/**
- * 
- * @export
- * @interface WorkflowNode
- */
 export interface WorkflowNode {
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowNode
-     */
     'id': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowNode
-     */
     'name': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowNode
-     */
     'type': string;
     /**
      * Node configuration containing node-specific parameters and settings
-     * @type {{ [key: string]: any; }}
-     * @memberof WorkflowNode
      */
     'config': { [key: string]: any; };
 }

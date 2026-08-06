@@ -17,40 +17,25 @@
 // @ts-ignore
 import type { ParamSpec } from './param-spec';
 
-/**
- * 
- * @export
- * @interface Extension
- */
 export interface Extension {
     /**
      * Unique plugin identifier
-     * @type {string}
-     * @memberof Extension
      */
     'id': string;
     /**
      * Semver-compliant version string
-     * @type {string}
-     * @memberof Extension
      */
     'version': string;
     /**
      * Extension types provided (e.g. \"node\", \"trigger\")
-     * @type {Array<string>}
-     * @memberof Extension
      */
     'categories': Array<string>;
     /**
      * Parameter schema for configuration/UI
-     * @type {Array<ParamSpec>}
-     * @memberof Extension
      */
     'params'?: Array<ParamSpec>;
     /**
      * Optional path or URL to React bundle
-     * @type {string}
-     * @memberof Extension
      */
     'ui_component'?: string;
 }

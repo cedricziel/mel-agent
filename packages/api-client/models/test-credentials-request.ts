@@ -14,17 +14,7 @@
 
 
 
-/**
- * 
- * @export
- * @interface TestCredentialsRequest
- */
 export interface TestCredentialsRequest {
-    /**
-     * 
-     * @type {{ [key: string]: any; }}
-     * @memberof TestCredentialsRequest
-     */
     'credentials'?: { [key: string]: any; };
 }
 

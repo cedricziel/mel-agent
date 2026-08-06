@@ -17,53 +17,13 @@
 // @ts-ignore
 import type { WorkflowRunStatus } from './workflow-run-status';
 
-/**
- * 
- * @export
- * @interface WorkflowExecution
- */
 export interface WorkflowExecution {
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowExecution
-     */
     'id'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowExecution
-     */
     'workflow_id'?: string;
-    /**
-     * 
-     * @type {WorkflowRunStatus}
-     * @memberof WorkflowExecution
-     */
     'status'?: WorkflowRunStatus;
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowExecution
-     */
     'started_at'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowExecution
-     */
     'completed_at'?: string;
-    /**
-     * 
-     * @type {{ [key: string]: any; }}
-     * @memberof WorkflowExecution
-     */
     'result'?: { [key: string]: any; };
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowExecution
-     */
     'error'?: string;
 }
 

@@ -17,70 +17,45 @@
 // @ts-ignore
 import type { ValidatorSpec } from './validator-spec';
 
-/**
- * 
- * @export
- * @interface ParamSpec
- */
 export interface ParamSpec {
     /**
      * Key name
-     * @type {string}
-     * @memberof ParamSpec
      */
     'name': string;
     /**
      * User-facing label
-     * @type {string}
-     * @memberof ParamSpec
      */
     'label'?: string;
     /**
      * Data type (e.g. \"string\", \"number\", \"enum\")
-     * @type {string}
-     * @memberof ParamSpec
      */
     'type': string;
     /**
      * Must be provided
-     * @type {boolean}
-     * @memberof ParamSpec
      */
     'required'?: boolean;
     /**
      * Default value
-     * @type {any}
-     * @memberof ParamSpec
      */
     'default'?: any;
     /**
      * UI grouping
-     * @type {string}
-     * @memberof ParamSpec
      */
     'group'?: string;
     /**
      * Conditional display expression
-     * @type {string}
-     * @memberof ParamSpec
      */
     'visibility_condition'?: string;
     /**
      * Enum options
-     * @type {Array<string>}
-     * @memberof ParamSpec
      */
     'options'?: Array<string>;
     /**
      * Validation rules
-     * @type {Array<ValidatorSpec>}
-     * @memberof ParamSpec
      */
     'validators'?: Array<ValidatorSpec>;
     /**
      * Help text
-     * @type {string}
-     * @memberof ParamSpec
      */
     'description'?: string;
 }

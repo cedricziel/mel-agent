@@ -20,29 +20,12 @@ import type { ChatFinishReason } from './chat-finish-reason';
 // @ts-ignore
 import type { ChatMessage } from './chat-message';
 
-/**
- * 
- * @export
- * @interface ChatChoice
- */
 export interface ChatChoice {
     /**
      * Choice index
-     * @type {number}
-     * @memberof ChatChoice
      */
     'index'?: number;
-    /**
-     * 
-     * @type {ChatMessage}
-     * @memberof ChatChoice
-     */
     'message'?: ChatMessage;
-    /**
-     * 
-     * @type {ChatFinishReason}
-     * @memberof ChatChoice
-     */
     'finish_reason'?: ChatFinishReason;
 }
 

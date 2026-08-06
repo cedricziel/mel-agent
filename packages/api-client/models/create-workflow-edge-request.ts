@@ -14,41 +14,11 @@
 
 
 
-/**
- * 
- * @export
- * @interface CreateWorkflowEdgeRequest
- */
 export interface CreateWorkflowEdgeRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateWorkflowEdgeRequest
-     */
     'id': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateWorkflowEdgeRequest
-     */
     'source': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateWorkflowEdgeRequest
-     */
     'target': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateWorkflowEdgeRequest
-     */
     'sourceOutput'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateWorkflowEdgeRequest
-     */
     'targetInput'?: string;
 }
 

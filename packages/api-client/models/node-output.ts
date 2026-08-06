@@ -14,29 +14,9 @@
 
 
 
-/**
- * 
- * @export
- * @interface NodeOutput
- */
 export interface NodeOutput {
-    /**
-     * 
-     * @type {string}
-     * @memberof NodeOutput
-     */
     'name'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof NodeOutput
-     */
     'type'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof NodeOutput
-     */
     'description'?: string;
 }
 

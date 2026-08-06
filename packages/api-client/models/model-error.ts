@@ -14,29 +14,9 @@
 
 
 
-/**
- * 
- * @export
- * @interface ModelError
- */
 export interface ModelError {
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelError
-     */
     'error'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ModelError
-     */
     'message'?: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof ModelError
-     */
     'code'?: number;
 }
 

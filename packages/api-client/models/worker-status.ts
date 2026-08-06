@@ -16,13 +16,11 @@
 
 /**
  * Status of a worker
- * @export
- * @enum {string}
  */
 
 export const WorkerStatus = {
     Active: 'active',
-    Inactive: 'inactive'
+    Inactive: 'inactive',
 } as const;
 
 export type WorkerStatus = typeof WorkerStatus[keyof typeof WorkerStatus];

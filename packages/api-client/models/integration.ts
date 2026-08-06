@@ -17,65 +17,18 @@
 // @ts-ignore
 import type { IntegrationStatus } from './integration-status';
 
-/**
- * 
- * @export
- * @interface Integration
- */
 export interface Integration {
-    /**
-     * 
-     * @type {string}
-     * @memberof Integration
-     */
     'id'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Integration
-     */
     'name'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Integration
-     */
     'description'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Integration
-     */
     'type'?: string;
-    /**
-     * 
-     * @type {IntegrationStatus}
-     * @memberof Integration
-     */
     'status'?: IntegrationStatus;
-    /**
-     * 
-     * @type {Array<string>}
-     * @memberof Integration
-     */
     'capabilities'?: Array<string>;
     /**
      * Type of credential required for this integration
-     * @type {string}
-     * @memberof Integration
      */
     'credential_type'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Integration
-     */
     'created_at'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Integration
-     */
     'updated_at'?: string;
 }
 

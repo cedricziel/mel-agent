@@ -14,47 +14,12 @@
 
 
 
-/**
- * 
- * @export
- * @interface CredentialType
- */
 export interface CredentialType {
-    /**
-     * 
-     * @type {string}
-     * @memberof CredentialType
-     */
     'id'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof CredentialType
-     */
     'name'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof CredentialType
-     */
     'description'?: string;
-    /**
-     * 
-     * @type {{ [key: string]: any; }}
-     * @memberof CredentialType
-     */
     'schema'?: { [key: string]: any; };
-    /**
-     * 
-     * @type {Array<string>}
-     * @memberof CredentialType
-     */
     'required_fields'?: Array<string>;
-    /**
-     * 
-     * @type {string}
-     * @memberof CredentialType
-     */
     'test_endpoint'?: string;
 }
 

@@ -16,14 +16,12 @@
 
 /**
  * Status of a connection
- * @export
- * @enum {string}
  */
 
 export const ConnectionStatus = {
     Valid: 'valid',
     Invalid: 'invalid',
-    Expired: 'expired'
+    Expired: 'expired',
 } as const;
 
 export type ConnectionStatus = typeof ConnectionStatus[keyof typeof ConnectionStatus];

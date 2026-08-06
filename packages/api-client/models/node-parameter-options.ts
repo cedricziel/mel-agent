@@ -17,29 +17,9 @@
 // @ts-ignore
 import type { NodeParameterOptionsOptionsInner } from './node-parameter-options-options-inner';
 
-/**
- * 
- * @export
- * @interface NodeParameterOptions
- */
 export interface NodeParameterOptions {
-    /**
-     * 
-     * @type {Array<NodeParameterOptionsOptionsInner>}
-     * @memberof NodeParameterOptions
-     */
     'options'?: Array<NodeParameterOptionsOptionsInner>;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof NodeParameterOptions
-     */
     'dynamic'?: boolean;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof NodeParameterOptions
-     */
     'context_dependent'?: boolean;
 }
 

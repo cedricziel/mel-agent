@@ -17,59 +17,14 @@
 // @ts-ignore
 import type { WorkflowDefinition } from './workflow-definition';
 
-/**
- * 
- * @export
- * @interface WorkflowVersion
- */
 export interface WorkflowVersion {
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowVersion
-     */
     'id'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowVersion
-     */
     'workflow_id'?: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof WorkflowVersion
-     */
     'version_number'?: number;
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowVersion
-     */
     'name'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowVersion
-     */
     'description'?: string;
-    /**
-     * 
-     * @type {WorkflowDefinition}
-     * @memberof WorkflowVersion
-     */
     'definition'?: WorkflowDefinition;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof WorkflowVersion
-     */
     'is_current'?: boolean;
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowVersion
-     */
     'created_at'?: string;
 }
 

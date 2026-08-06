@@ -17,47 +17,12 @@
 // @ts-ignore
 import type { WorkerStatus } from './worker-status';
 
-/**
- * 
- * @export
- * @interface Worker
- */
 export interface Worker {
-    /**
-     * 
-     * @type {string}
-     * @memberof Worker
-     */
     'id'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Worker
-     */
     'name'?: string;
-    /**
-     * 
-     * @type {WorkerStatus}
-     * @memberof Worker
-     */
     'status'?: WorkerStatus;
-    /**
-     * 
-     * @type {string}
-     * @memberof Worker
-     */
     'last_heartbeat'?: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof Worker
-     */
     'concurrency'?: number;
-    /**
-     * 
-     * @type {string}
-     * @memberof Worker
-     */
     'registered_at'?: string;
 }
 

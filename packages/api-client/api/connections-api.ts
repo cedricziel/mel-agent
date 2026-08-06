@@ -18,7 +18,7 @@ import type { AxiosPromise, AxiosInstance, RawAxiosRequestConfig } from 'axios';
 import globalAxios from 'axios';
 // Some imports not used depending on template conditions
 // @ts-ignore
-import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction } from '../common';
+import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction, replaceWithSerializableTypeIfNeeded } from '../common';
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS, type RequestArgs, BaseAPI, RequiredError, operationServerMap } from '../base';
 // @ts-ignore
@@ -29,7 +29,6 @@ import type { CreateConnectionRequest } from '../models';
 import type { UpdateConnectionRequest } from '../models';
 /**
  * ConnectionsApi - axios parameter creator
- * @export
  */
 export const ConnectionsApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
@@ -62,9 +61,8 @@ export const ConnectionsApiAxiosParamCreator = function (configuration?: Configu
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
-
-    
             localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -87,7 +85,7 @@ export const ConnectionsApiAxiosParamCreator = function (configuration?: Configu
             // verify required parameter 'id' is not null or undefined
             assertParamExists('deleteConnection', 'id', id)
             const localVarPath = `/api/connections/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+                .replace('{id}', encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -106,8 +104,8 @@ export const ConnectionsApiAxiosParamCreator = function (configuration?: Configu
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -128,7 +126,7 @@ export const ConnectionsApiAxiosParamCreator = function (configuration?: Configu
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getConnection', 'id', id)
             const localVarPath = `/api/connections/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+                .replace('{id}', encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -147,8 +145,8 @@ export const ConnectionsApiAxiosParamCreator = function (configuration?: Configu
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -184,8 +182,8 @@ export const ConnectionsApiAxiosParamCreator = function (configuration?: Configu
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -209,7 +207,7 @@ export const ConnectionsApiAxiosParamCreator = function (configuration?: Configu
             // verify required parameter 'updateConnectionRequest' is not null or undefined
             assertParamExists('updateConnection', 'updateConnectionRequest', updateConnectionRequest)
             const localVarPath = `/api/connections/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+                .replace('{id}', encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -228,9 +226,8 @@ export const ConnectionsApiAxiosParamCreator = function (configuration?: Configu
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
-
-    
             localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -247,7 +244,6 @@ export const ConnectionsApiAxiosParamCreator = function (configuration?: Configu
 
 /**
  * ConnectionsApi - functional programming interface
- * @export
  */
 export const ConnectionsApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = ConnectionsApiAxiosParamCreator(configuration)
@@ -322,7 +318,6 @@ export const ConnectionsApiFp = function(configuration?: Configuration) {
 
 /**
  * ConnectionsApi - factory interface
- * @export
  */
 export const ConnectionsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
     const localVarFp = ConnectionsApiFp(configuration)
@@ -382,9 +377,6 @@ export const ConnectionsApiFactory = function (configuration?: Configuration, ba
 
 /**
  * ConnectionsApi - object-oriented interface
- * @export
- * @class ConnectionsApi
- * @extends {BaseAPI}
  */
 export class ConnectionsApi extends BaseAPI {
     /**
@@ -393,7 +385,6 @@ export class ConnectionsApi extends BaseAPI {
      * @param {CreateConnectionRequest} createConnectionRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof ConnectionsApi
      */
     public createConnection(createConnectionRequest: CreateConnectionRequest, options?: RawAxiosRequestConfig) {
         return ConnectionsApiFp(this.configuration).createConnection(createConnectionRequest, options).then((request) => request(this.axios, this.basePath));
@@ -405,7 +396,6 @@ export class ConnectionsApi extends BaseAPI {
      * @param {string} id 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof ConnectionsApi
      */
     public deleteConnection(id: string, options?: RawAxiosRequestConfig) {
         return ConnectionsApiFp(this.configuration).deleteConnection(id, options).then((request) => request(this.axios, this.basePath));
@@ -417,7 +407,6 @@ export class ConnectionsApi extends BaseAPI {
      * @param {string} id 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof ConnectionsApi
      */
     public getConnection(id: string, options?: RawAxiosRequestConfig) {
         return ConnectionsApiFp(this.configuration).getConnection(id, options).then((request) => request(this.axios, this.basePath));
@@ -428,7 +417,6 @@ export class ConnectionsApi extends BaseAPI {
      * @summary List connections
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof ConnectionsApi
      */
     public listConnections(options?: RawAxiosRequestConfig) {
         return ConnectionsApiFp(this.configuration).listConnections(options).then((request) => request(this.axios, this.basePath));
@@ -441,7 +429,6 @@ export class ConnectionsApi extends BaseAPI {
      * @param {UpdateConnectionRequest} updateConnectionRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof ConnectionsApi
      */
     public updateConnection(id: string, updateConnectionRequest: UpdateConnectionRequest, options?: RawAxiosRequestConfig) {
         return ConnectionsApiFp(this.configuration).updateConnection(id, updateConnectionRequest, options).then((request) => request(this.axios, this.basePath));

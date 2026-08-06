@@ -23,47 +23,12 @@ import type { NodeKind } from './node-kind';
 // @ts-ignore
 import type { NodeOutput } from './node-output';
 
-/**
- * 
- * @export
- * @interface NodeType
- */
 export interface NodeType {
-    /**
-     * 
-     * @type {string}
-     * @memberof NodeType
-     */
     'id'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof NodeType
-     */
     'name'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof NodeType
-     */
     'description'?: string;
-    /**
-     * 
-     * @type {Array<NodeKind>}
-     * @memberof NodeType
-     */
     'kinds'?: Array<NodeKind>;
-    /**
-     * 
-     * @type {Array<NodeInput>}
-     * @memberof NodeType
-     */
     'inputs'?: Array<NodeInput>;
-    /**
-     * 
-     * @type {Array<NodeOutput>}
-     * @memberof NodeType
-     */
     'outputs'?: Array<NodeOutput>;
 }
 

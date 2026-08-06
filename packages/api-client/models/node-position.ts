@@ -16,20 +16,14 @@
 
 /**
  * Node position coordinates in the workflow canvas
- * @export
- * @interface NodePosition
  */
 export interface NodePosition {
     /**
      * X coordinate position
-     * @type {number}
-     * @memberof NodePosition
      */
     'x'?: number;
     /**
      * Y coordinate position
-     * @type {number}
-     * @memberof NodePosition
      */
     'y'?: number;
 }

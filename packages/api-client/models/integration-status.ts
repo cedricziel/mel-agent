@@ -16,13 +16,11 @@
 
 /**
  * Status of an integration
- * @export
- * @enum {string}
  */
 
 export const IntegrationStatus = {
     Active: 'active',
-    Inactive: 'inactive'
+    Inactive: 'inactive',
 } as const;
 
 export type IntegrationStatus = typeof IntegrationStatus[keyof typeof IntegrationStatus];

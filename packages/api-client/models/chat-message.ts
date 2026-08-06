@@ -20,35 +20,16 @@ import type { ChatMessageRole } from './chat-message-role';
 // @ts-ignore
 import type { FunctionCall } from './function-call';
 
-/**
- * 
- * @export
- * @interface ChatMessage
- */
 export interface ChatMessage {
-    /**
-     * 
-     * @type {ChatMessageRole}
-     * @memberof ChatMessage
-     */
     'role': ChatMessageRole;
     /**
      * Message content
-     * @type {string}
-     * @memberof ChatMessage
      */
     'content': string;
     /**
      * Function name (for function role)
-     * @type {string}
-     * @memberof ChatMessage
      */
     'name'?: string;
-    /**
-     * 
-     * @type {FunctionCall}
-     * @memberof ChatMessage
-     */
     'function_call'?: FunctionCall;
 }
 

@@ -20,47 +20,27 @@ import type { ChatChoice } from './chat-choice';
 // @ts-ignore
 import type { ChatUsage } from './chat-usage';
 
-/**
- * 
- * @export
- * @interface AssistantChatResponse
- */
 export interface AssistantChatResponse {
     /**
      * Response ID
-     * @type {string}
-     * @memberof AssistantChatResponse
      */
     'id'?: string;
     /**
      * Object type (e.g., \"chat.completion\")
-     * @type {string}
-     * @memberof AssistantChatResponse
      */
     'object'?: string;
     /**
      * Unix timestamp
-     * @type {number}
-     * @memberof AssistantChatResponse
      */
     'created'?: number;
     /**
      * Model used
-     * @type {string}
-     * @memberof AssistantChatResponse
      */
     'model'?: string;
     /**
      * Array of response choices
-     * @type {Array<ChatChoice>}
-     * @memberof AssistantChatResponse
      */
     'choices'?: Array<ChatChoice>;
-    /**
-     * 
-     * @type {ChatUsage}
-     * @memberof AssistantChatResponse
-     */
     'usage'?: ChatUsage;
 }
 

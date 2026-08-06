@@ -17,29 +17,9 @@
 // @ts-ignore
 import type { WorkflowDefinition } from './workflow-definition';
 
-/**
- * 
- * @export
- * @interface WorkflowDraft
- */
 export interface WorkflowDraft {
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowDraft
-     */
     'workflow_id'?: string;
-    /**
-     * 
-     * @type {WorkflowDefinition}
-     * @memberof WorkflowDraft
-     */
     'definition'?: WorkflowDefinition;
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowDraft
-     */
     'updated_at'?: string;
 }
 

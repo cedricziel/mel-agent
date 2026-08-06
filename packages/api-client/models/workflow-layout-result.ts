@@ -17,17 +17,7 @@
 // @ts-ignore
 import type { WorkflowLayoutResultNodesInner } from './workflow-layout-result-nodes-inner';
 
-/**
- * 
- * @export
- * @interface WorkflowLayoutResult
- */
 export interface WorkflowLayoutResult {
-    /**
-     * 
-     * @type {Array<WorkflowLayoutResultNodesInner>}
-     * @memberof WorkflowLayoutResult
-     */
     'nodes'?: Array<WorkflowLayoutResultNodesInner>;
 }
 

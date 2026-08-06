@@ -20,23 +20,8 @@ import type { WorkflowEdge } from './workflow-edge';
 // @ts-ignore
 import type { WorkflowNode } from './workflow-node';
 
-/**
- * 
- * @export
- * @interface WorkflowDefinition
- */
 export interface WorkflowDefinition {
-    /**
-     * 
-     * @type {Array<WorkflowNode>}
-     * @memberof WorkflowDefinition
-     */
     'nodes': Array<WorkflowNode>;
-    /**
-     * 
-     * @type {Array<WorkflowEdge>}
-     * @memberof WorkflowDefinition
-     */
     'edges': Array<WorkflowEdge>;
 }
 

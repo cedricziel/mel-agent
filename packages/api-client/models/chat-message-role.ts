@@ -16,15 +16,13 @@
 
 /**
  * Role of a chat message
- * @export
- * @enum {string}
  */
 
 export const ChatMessageRole = {
     System: 'system',
     User: 'user',
     Assistant: 'assistant',
-    Function: 'function'
+    Function: 'function',
 } as const;
 
 export type ChatMessageRole = typeof ChatMessageRole[keyof typeof ChatMessageRole];

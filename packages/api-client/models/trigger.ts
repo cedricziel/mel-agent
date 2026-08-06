@@ -17,59 +17,17 @@
 // @ts-ignore
 import type { TriggerType } from './trigger-type';
 
-/**
- * 
- * @export
- * @interface Trigger
- */
 export interface Trigger {
-    /**
-     * 
-     * @type {string}
-     * @memberof Trigger
-     */
     'id'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Trigger
-     */
     'name'?: string;
-    /**
-     * 
-     * @type {TriggerType}
-     * @memberof Trigger
-     */
     'type'?: TriggerType;
-    /**
-     * 
-     * @type {string}
-     * @memberof Trigger
-     */
     'workflow_id'?: string;
     /**
      * Trigger configuration containing trigger-specific parameters and settings
-     * @type {{ [key: string]: any; }}
-     * @memberof Trigger
      */
     'config'?: { [key: string]: any; };
-    /**
-     * 
-     * @type {boolean}
-     * @memberof Trigger
-     */
     'enabled'?: boolean;
-    /**
-     * 
-     * @type {string}
-     * @memberof Trigger
-     */
     'created_at'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Trigger
-     */
     'updated_at'?: string;
 }
 

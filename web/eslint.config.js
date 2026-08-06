@@ -29,7 +29,11 @@ export default [
     },
     settings: {
       react: {
-        version: 'detect'
+        // Pinned instead of 'detect': eslint-plugin-react's version
+        // auto-detection uses a context API removed in ESLint 10 and crashes.
+        // Revert to 'detect' (and unpin) once eslint-plugin-react ships a
+        // release whose peer range includes eslint 10.
+        version: '19.1'
       }
     },
     plugins: {
@@ -45,7 +49,11 @@ export default [
 
       // Custom rules
       'no-unused-vars': 'warn',
+      // New-in-ESLint-10 / react-hooks-7 rules downgraded to warnings for
+      // pre-existing violations; burn these down and restore to errors.
+      'preserve-caught-error': 'warn',
       'react-hooks/exhaustive-deps': 'warn',
+      'react-hooks/set-state-in-effect': 'warn',
       'react/prop-types': 'off', // Turn off prop-types as we might be using TypeScript or don't need it
       'react/react-in-jsx-scope': 'off', // Not needed with React 17+
       'react-refresh/only-export-components': [
@@ -82,6 +90,9 @@ export default [
       // TypeScript specific rules
       '@typescript-eslint/no-unused-vars': 'warn',
       'no-unused-vars': 'off', // Turn off base rule as it conflicts with TypeScript rule
+      // See the js block above: downgraded pending burn-down.
+      'preserve-caught-error': 'warn',
+      'react-hooks/set-state-in-effect': 'warn',
       'react/prop-types': 'off', // Not needed with TypeScript
       'react-refresh/only-export-components': [
         'warn',

@@ -14,22 +14,13 @@
 
 
 
-/**
- * 
- * @export
- * @interface FunctionCall
- */
 export interface FunctionCall {
     /**
      * Function name
-     * @type {string}
-     * @memberof FunctionCall
      */
     'name'?: string;
     /**
      * Function arguments as JSON string
-     * @type {string}
-     * @memberof FunctionCall
      */
     'arguments'?: string;
 }

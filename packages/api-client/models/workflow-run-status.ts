@@ -16,15 +16,13 @@
 
 /**
  * Status of a workflow run
- * @export
- * @enum {string}
  */
 
 export const WorkflowRunStatus = {
     Pending: 'pending',
     Running: 'running',
     Completed: 'completed',
-    Failed: 'failed'
+    Failed: 'failed',
 } as const;
 
 export type WorkflowRunStatus = typeof WorkflowRunStatus[keyof typeof WorkflowRunStatus];

@@ -16,15 +16,13 @@
 
 /**
  * Status of a credential
- * @export
- * @enum {string}
  */
 
 export const CredentialStatus = {
     Valid: 'valid',
     Invalid: 'invalid',
     Expired: 'expired',
-    Revoked: 'revoked'
+    Revoked: 'revoked',
 } as const;
 
 export type CredentialStatus = typeof CredentialStatus[keyof typeof CredentialStatus];

@@ -17,29 +17,9 @@
 // @ts-ignore
 import type { WorkflowDefinition } from './workflow-definition';
 
-/**
- * 
- * @export
- * @interface CreateWorkflowRequest
- */
 export interface CreateWorkflowRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateWorkflowRequest
-     */
     'name': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateWorkflowRequest
-     */
     'description'?: string;
-    /**
-     * 
-     * @type {WorkflowDefinition}
-     * @memberof CreateWorkflowRequest
-     */
     'definition'?: WorkflowDefinition;
 }
 

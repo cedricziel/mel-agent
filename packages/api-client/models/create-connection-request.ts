@@ -14,47 +14,18 @@
 
 
 
-/**
- * 
- * @export
- * @interface CreateConnectionRequest
- */
 export interface CreateConnectionRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateConnectionRequest
-     */
     'name': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateConnectionRequest
-     */
     'integration_id': string;
     /**
      * Connection secret configuration containing authentication credentials
-     * @type {{ [key: string]: any; }}
-     * @memberof CreateConnectionRequest
      */
     'secret'?: { [key: string]: any; };
     /**
      * Connection configuration containing non-sensitive connection parameters
-     * @type {{ [key: string]: any; }}
-     * @memberof CreateConnectionRequest
      */
     'config'?: { [key: string]: any; };
-    /**
-     * 
-     * @type {number}
-     * @memberof CreateConnectionRequest
-     */
     'usage_limit_month'?: number;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof CreateConnectionRequest
-     */
     'is_default'?: boolean;
 }
 

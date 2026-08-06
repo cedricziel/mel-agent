@@ -14,35 +14,13 @@
 
 
 
-/**
- * 
- * @export
- * @interface WorkItem
- */
 export interface WorkItem {
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkItem
-     */
     'id'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkItem
-     */
     'type'?: string;
     /**
      * Generic payload object containing arbitrary data
-     * @type {{ [key: string]: any; }}
-     * @memberof WorkItem
      */
     'payload'?: { [key: string]: any; };
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkItem
-     */
     'created_at'?: string;
 }
 

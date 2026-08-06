@@ -17,41 +17,14 @@
 // @ts-ignore
 import type { NodePosition } from './node-position';
 
-/**
- * 
- * @export
- * @interface CreateWorkflowNodeRequest
- */
 export interface CreateWorkflowNodeRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateWorkflowNodeRequest
-     */
     'id': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateWorkflowNodeRequest
-     */
     'name': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof CreateWorkflowNodeRequest
-     */
     'type': string;
     /**
      * Node configuration containing node-specific parameters and settings
-     * @type {{ [key: string]: any; }}
-     * @memberof CreateWorkflowNodeRequest
      */
     'config': { [key: string]: any; };
-    /**
-     * 
-     * @type {NodePosition}
-     * @memberof CreateWorkflowNodeRequest
-     */
     'position'?: NodePosition;
 }
 

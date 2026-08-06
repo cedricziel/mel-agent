@@ -14,22 +14,13 @@
 
 
 
-/**
- * 
- * @export
- * @interface CompleteWorkRequest
- */
 export interface CompleteWorkRequest {
     /**
-     * Generic result object containing arbitrary result data
-     * @type {{ [key: string]: any; }}
-     * @memberof CompleteWorkRequest
+     * The result of the completed work item
      */
     'result'?: { [key: string]: any; };
     /**
      * Error message if the work item failed
-     * @type {string}
-     * @memberof CompleteWorkRequest
      */
     'error'?: string;
 }

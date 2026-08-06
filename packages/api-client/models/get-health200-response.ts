@@ -14,17 +14,7 @@
 
 
 
-/**
- * 
- * @export
- * @interface GetHealth200Response
- */
 export interface GetHealth200Response {
-    /**
-     * 
-     * @type {string}
-     * @memberof GetHealth200Response
-     */
     'status'?: string;
 }
 
