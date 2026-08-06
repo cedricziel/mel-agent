@@ -1,0 +1,11 @@
+type: object
+properties:
+  id:
+    type: string
+  type:
+    type: string
+  payload:
+    $ref: ./GenericPayload.yaml
+  created_at:
+    type: string
+    format: date-time

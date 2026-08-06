@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import { assistantApi, nodeTypesApi } from '../api/client';
 // Temporarily disabled due to React 19 compatibility issues
 // import ReactMarkdown from 'react-markdown';
 // import remarkGfm from 'remark-gfm';
@@ -78,15 +78,10 @@ export default function ChatAssistant({
 
       while (loopCount < MAX_FUNCTION_CALLS) {
         loopCount++;
-        const res = await axios.post(
-          `/api/agents/${agentId}/assistant/chat`,
-          {
-            messages: convo,
-          },
-          {
-            signal: abortControllerRef.current.signal,
-          }
-        );
+        const res = await assistantApi.assistantChat({
+          messages: convo,
+          workflow_id: agentId, // Optional workflow context
+        });
         const msg = res.data.choices[0].message;
         if (msg.function_call) {
           // Append the function_call message
@@ -106,21 +101,15 @@ export default function ChatAssistant({
           if (fnName === 'add_node') result = onAddNode(fnArgs);
           else if (fnName === 'connect_nodes') result = onConnectNodes(fnArgs);
           else if (fnName === 'list_node_types') {
-            const r = await axios.get(`/api/node-types`, {
-              signal: abortControllerRef.current.signal,
-            });
+            const r = await nodeTypesApi.listNodeTypes();
             result = r.data;
           } else if (fnName === 'get_node_type_schema') {
             const { type } = fnArgs;
-            const r = await axios.get(`/api/node-types/schema/${type}`, {
-              signal: abortControllerRef.current.signal,
-            });
+            const r = await nodeTypesApi.getNodeTypeSchema(type);
             result = r.data;
           } else if (fnName === 'get_node_definition') {
             const { type } = fnArgs;
-            const r = await axios.get(`/api/node-types`, {
-              signal: abortControllerRef.current.signal,
-            });
+            const r = await nodeTypesApi.listNodeTypes();
             result = (r.data || []).find((nt) => nt.type === type) || {};
           } else if (fnName === 'get_workflow') result = onGetWorkflow();
           const resultContent = JSON.stringify(result || {});

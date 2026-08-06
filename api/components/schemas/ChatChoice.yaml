@@ -1,0 +1,9 @@
+type: object
+properties:
+  index:
+    type: integer
+    description: Choice index
+  message:
+    $ref: ./ChatMessage.yaml
+  finish_reason:
+    $ref: ./ChatFinishReason.yaml

@@ -7,6 +7,7 @@ import (
 	"dario.cat/mergo"
 
 	api "github.com/cedricziel/mel-agent/pkg/api"
+	"github.com/cedricziel/mel-agent/pkg/core"
 )
 
 // mergeDefinition provides the built-in "Merge" node.
@@ -44,7 +45,7 @@ func (d mergeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node
 	}
 	valid := map[string]bool{"concat": true, "union": true, "deep": true, "intersection": true}
 	if !valid[strategy] {
-		err := fmt.Errorf("invalid merge strategy %q", strategy)
+		err := api.NewNodeError(node.ID, node.Type, fmt.Sprintf("invalid merge strategy %q", strategy))
 		envelope.AddError(node.ID, "invalid strategy", err)
 		return envelope, err
 	}
@@ -84,7 +85,7 @@ func (d mergeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node
 			resultData = merged
 		case "intersection":
 			resultData = intersectMaps(dataSlice)
-		default: // concat or union (union handles maps like override)
+		default: // concat or union merge object keys with last-value wins
 			merged := make(map[string]interface{})
 			for _, item := range dataSlice {
 				if m, ok := item.(map[string]interface{}); ok {
@@ -99,7 +100,7 @@ func (d mergeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node
 		switch strategy {
 		case "intersection":
 			resultData = intersectValues(dataSlice)
-		default: // concat or union or deep
+		default: // concat, union, or deep flatten arrays in order
 			var merged []interface{}
 			seen := make(map[string]bool)
 			for _, item := range dataSlice {
@@ -133,7 +134,7 @@ func (d mergeDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node
 	result := envelope.Clone()
 	result.Trace = envelope.Trace.Next(node.ID)
 	result.Data = resultData
-	result.DataType = inferDataType(resultData)
+	result.DataType = core.InferDataType(resultData)
 	return result, nil
 }
 
@@ -147,31 +148,6 @@ func init() {
 
 // assert that mergeDefinition implements the interface
 var _ api.NodeDefinition = (*mergeDefinition)(nil)
-
-// inferDataType replicates core.inferDataType without exporting it
-func inferDataType(data interface{}) string {
-	if data == nil {
-		return "null"
-	}
-	switch data.(type) {
-	case string:
-		return "string"
-	case int, int8, int16, int32, int64:
-		return "integer"
-	case uint, uint8, uint16, uint32, uint64:
-		return "integer"
-	case float32, float64:
-		return "number"
-	case bool:
-		return "boolean"
-	case []interface{}:
-		return "array"
-	case map[string]interface{}:
-		return "object"
-	default:
-		return "unknown"
-	}
-}
 
 // intersectMaps returns a map containing only keys present in all maps.
 func intersectMaps(items []interface{}) map[string]interface{} {
@@ -226,7 +202,8 @@ func intersectMaps(items []interface{}) map[string]interface{} {
 	return result
 }
 
-// intersectValues returns slice elements that occur in every array/item.
+// intersectValues returns slice elements that occur in every array/item,
+// preserving the order in which they first appear.
 func intersectValues(items []interface{}) []interface{} {
 	if len(items) == 0 {
 		return nil
@@ -242,41 +219,35 @@ func intersectValues(items []interface{}) []interface{} {
 		val   interface{}
 		count int
 	}{}
+	var order []string
 	total := 0
 
 	for _, item := range items {
 		total++
 		seen := map[string]bool{}
+		values := []interface{}{item}
 		if arr, ok := item.([]interface{}); ok {
-			for _, v := range arr {
-				key := dedupKey(v)
-				if !seen[key] {
-					seen[key] = true
-					c := counts[key]
-					if c.count == 0 {
-						c.val = v
-					}
-					c.count++
-					counts[key] = c
-				}
+			values = arr
+		}
+		for _, v := range values {
+			key := dedupKey(v)
+			if seen[key] {
+				continue
 			}
-		} else {
-			key := dedupKey(item)
-			if !seen[key] {
-				seen[key] = true
-				c := counts[key]
-				if c.count == 0 {
-					c.val = item
-				}
-				c.count++
-				counts[key] = c
+			seen[key] = true
+			c := counts[key]
+			if c.count == 0 {
+				c.val = v
+				order = append(order, key)
 			}
+			c.count++
+			counts[key] = c
 		}
 	}
 
 	var result []interface{}
-	for _, c := range counts {
-		if c.count == total {
+	for _, key := range order {
+		if c := counts[key]; c.count == total {
 			result = append(result, c.val)
 		}
 	}

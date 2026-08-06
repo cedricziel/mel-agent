@@ -1,0 +1,15 @@
+type: object
+required:
+  - role
+  - content
+properties:
+  role:
+    $ref: ./ChatMessageRole.yaml
+  content:
+    type: string
+    description: Message content
+  name:
+    type: string
+    description: Function name (for function role)
+  function_call:
+    $ref: ./FunctionCall.yaml

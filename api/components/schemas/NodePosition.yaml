@@ -1,0 +1,9 @@
+type: object
+properties:
+  x:
+    type: number
+    description: X coordinate position
+  'y':
+    type: number
+    description: Y coordinate position
+description: Node position coordinates in the workflow canvas

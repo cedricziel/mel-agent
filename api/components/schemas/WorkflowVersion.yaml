@@ -1,0 +1,21 @@
+type: object
+properties:
+  id:
+    type: string
+    format: uuid
+  workflow_id:
+    type: string
+    format: uuid
+  version_number:
+    type: integer
+  name:
+    type: string
+  description:
+    type: string
+  definition:
+    $ref: ./WorkflowDefinition.yaml
+  is_current:
+    type: boolean
+  created_at:
+    type: string
+    format: date-time

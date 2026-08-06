@@ -32,7 +32,7 @@ func NewEnvelope[T any](data T, trace api.Trace) *api.Envelope[T] {
 		ID:       GenerateEnvelopeID(),
 		IssuedAt: time.Now(),
 		Version:  1,
-		DataType: inferDataType(data),
+		DataType: InferDataType(data),
 		Data:     data,
 		Trace:    trace,
 	}
@@ -79,7 +79,7 @@ func TransformEnvelope[TIn, TOut any](envelope *api.Envelope[TIn], transformer f
 		ID:       GenerateEnvelopeID(),
 		IssuedAt: time.Now(),
 		Version:  envelope.Version,
-		DataType: inferDataType(transformed),
+		DataType: InferDataType(transformed),
 		Data:     transformed,
 		Trace:    envelope.Trace,
 	}
@@ -180,7 +180,7 @@ func SplitEnvelope[T any](envelope *api.Envelope[[]T]) []*api.Envelope[T] {
 			ID:       GenerateEnvelopeID(),
 			IssuedAt: time.Now(),
 			Version:  envelope.Version,
-			DataType: inferDataType(item),
+			DataType: InferDataType(item),
 			Data:     item,
 			Trace:    childTrace,
 		}
@@ -247,8 +247,8 @@ func ValidateEnvelope[T any](envelope *api.Envelope[T]) error {
 	return nil
 }
 
-// inferDataType attempts to determine a data type string from the given data
-func inferDataType(data interface{}) string {
+// InferDataType attempts to determine a data type string from the given data
+func InferDataType(data interface{}) string {
 	if data == nil {
 		return "null"
 	}

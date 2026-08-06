@@ -1,0 +1,26 @@
+delete:
+  summary: Unregister a worker
+  operationId: unregisterWorker
+  tags:
+    - Workers
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    '204':
+      description: Worker unregistered successfully
+    '404':
+      description: Worker not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

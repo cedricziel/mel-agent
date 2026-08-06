@@ -1,0 +1,50 @@
+get:
+  summary: List triggers
+  operationId: listTriggers
+  tags:
+    - Triggers
+  responses:
+    '200':
+      description: List of triggers
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: ../components/schemas/Trigger.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+post:
+  summary: Create a trigger
+  operationId: createTrigger
+  tags:
+    - Triggers
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/CreateTriggerRequest.yaml
+  responses:
+    '201':
+      description: Trigger created
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Trigger.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

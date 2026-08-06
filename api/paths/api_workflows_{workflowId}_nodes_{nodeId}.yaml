@@ -1,0 +1,116 @@
+get:
+  summary: Get specific workflow node
+  operationId: getWorkflowNode
+  tags:
+    - Workflows
+  parameters:
+    - name: workflowId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    - name: nodeId
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Workflow node details
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/WorkflowNode.yaml
+    '404':
+      description: Workflow or node not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+put:
+  summary: Update workflow node
+  operationId: updateWorkflowNode
+  tags:
+    - Workflows
+  parameters:
+    - name: workflowId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    - name: nodeId
+      in: path
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/UpdateWorkflowNodeRequest.yaml
+  responses:
+    '200':
+      description: Workflow node updated successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/WorkflowNode.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '404':
+      description: Workflow or node not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+delete:
+  summary: Delete workflow node
+  operationId: deleteWorkflowNode
+  tags:
+    - Workflows
+  parameters:
+    - name: workflowId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    - name: nodeId
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    '204':
+      description: Workflow node deleted successfully
+    '404':
+      description: Workflow or node not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

@@ -332,7 +332,7 @@ func TestOpenAPIClaimWork(t *testing.T) {
 	require.Equal(t, http.StatusCreated, w.Code)
 
 	// Claim work
-	claimReq := ClaimWorkJSONBody{
+	claimReq := ClaimWorkRequest{
 		MaxItems: testutil.IntPtr(5),
 	}
 	reqBody, _ = json.Marshal(claimReq)
@@ -375,11 +375,14 @@ func TestOpenAPICompleteWork(t *testing.T) {
 	require.Equal(t, http.StatusCreated, w.Code)
 
 	// Complete work
-	completeReq := CompleteWorkJSONBody{
-		Result: &map[string]interface{}{
-			"status": "success",
-			"output": "Work completed successfully",
-		},
+	completeReq := CompleteWorkRequest{
+		Result: func() *map[string]interface{} {
+			result := map[string]interface{}{
+				"status": "success",
+				"output": "Work completed successfully",
+			}
+			return &result
+		}(),
 	}
 	reqBody, _ = json.Marshal(completeReq)
 

@@ -1,7 +1,8 @@
 package transform
 
 import (
-	"github.com/aymerick/raymond"
+	"bytes"
+	"text/template"
 
 	api "github.com/cedricziel/mel-agent/pkg/api"
 )
@@ -17,24 +18,26 @@ func (transformDefinition) Meta() api.NodeType {
 		Icon:     "🔄",
 		Category: "Utility",
 		Parameters: []api.ParameterDefinition{
-			api.NewStringParameter("expression", "Expression", true).WithGroup("Settings").WithDescription("Transform input via expression"),
+			api.NewStringParameter("expression", "Expression", true).
+				WithGroup("Settings").
+				WithFormat("template").
+				WithDescription("Go template applied to the input, e.g. 'Hello, {{.input.name}}!'. The input data is available as .input and workflow variables as .vars"),
 		},
 	}
 }
 
-// ExecuteEnvelope applies the expression to the input envelope (currently passthrough).
+// ExecuteEnvelope renders the configured template expression against the input
+// envelope. The input data is exposed as .input and execution variables as
+// .vars. The rendered string becomes the output envelope's data.
 func (d transformDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.Node, envelope *api.Envelope[interface{}]) (*api.Envelope[interface{}], error) {
-	// extract the expression parameter safely
-	val, exists := node.Data["expression"]
-	if !exists || !ok || expr == "" {
-+	expr, ok := node.Data["expression"].(string)
+	expr, ok := node.Data["expression"].(string)
 	if !ok || expr == "" {
 		err := api.NewNodeError(node.ID, node.Type, "expression parameter required")
 		envelope.AddError(node.ID, "expression parameter required", err)
 		return envelope, err
 	}
 
-	tmpl, err := raymond.Parse(expr)
+	tmpl, err := template.New("transform").Parse(expr)
 	if err != nil {
 		envelope.AddError(node.ID, "template parse failed", err)
 		return envelope, err
@@ -45,15 +48,15 @@ func (d transformDefinition) ExecuteEnvelope(ctx api.ExecutionContext, node api.
 		"vars":  ctx.Variables,
 	}
 
-	out, err := tmpl.Exec(data)
-	if err != nil {
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
 		envelope.AddError(node.ID, "template execute failed", err)
 		return envelope, err
 	}
 
 	result := envelope.Clone()
 	result.Trace = envelope.Trace.Next(node.ID)
-	result.Data = out
+	result.Data = buf.String()
 	result.DataType = "string"
 	return result, nil
 }

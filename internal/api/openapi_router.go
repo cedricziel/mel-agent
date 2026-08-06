@@ -18,8 +18,8 @@ func NewOpenAPIRouter(database *sql.DB, engine execution.ExecutionEngine) http.H
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
 
-	// Create OpenAPI handlers
-	handlers := NewOpenAPIHandlers(database, engine)
+	// Create OpenAPI handlers (empty string means use OPENAI_API_KEY env var)
+	handlers := NewOpenAPIHandlers(database, engine, "")
 
 	// Create strict server
 	strictHandler := NewStrictHandler(handlers, nil)
@@ -39,8 +39,8 @@ func NewCombinedRouter(database *sql.DB, engine execution.ExecutionEngine) http.
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.RequestID)
 
-	// Create OpenAPI handlers
-	openAPIHandlers := NewOpenAPIHandlers(database, engine)
+	// Create OpenAPI handlers (empty string means use OPENAI_API_KEY env var)
+	openAPIHandlers := NewOpenAPIHandlers(database, engine, "")
 	strictHandler := NewStrictHandler(openAPIHandlers, nil)
 
 	// Mount all OpenAPI routes (which are prefixed with /api in the spec)

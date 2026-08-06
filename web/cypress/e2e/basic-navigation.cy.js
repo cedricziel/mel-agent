@@ -11,13 +11,13 @@ describe('Basic Navigation', () => {
 
   it('should have navigation links in header', () => {
     cy.visit('/')
-    cy.contains('Agents').should('be.visible')
+    cy.contains('Workflows').should('be.visible')
     cy.contains('Connections').should('be.visible')
   })
 
   it('should navigate to agents page', () => {
     cy.visit('/')
-    cy.contains('Agents').click()
+    cy.contains('Workflows').click()
     cy.url().should('include', '/agents')
   })
 

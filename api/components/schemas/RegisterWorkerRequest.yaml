@@ -1,0 +1,12 @@
+type: object
+required:
+  - id
+properties:
+  id:
+    type: string
+  name:
+    type: string
+  concurrency:
+    type: integer
+    minimum: 1
+    default: 5

@@ -1,0 +1,40 @@
+get:
+  summary: Get dynamic options for node parameters
+  operationId: getNodeParameterOptions
+  tags:
+    - NodeTypes
+  parameters:
+    - name: type
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: parameter
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: context
+      in: query
+      description: Context for dynamic option generation
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Dynamic parameter options
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/NodeParameterOptions.yaml
+    '404':
+      description: Node type or parameter not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

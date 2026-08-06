@@ -1,10 +1,21 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import axios from 'axios';
 import { useNodeTypes } from '../useNodeTypes.jsx';
+import { nodeTypesApi } from '../../api/nodeTypesApi';
+import { triggersApi } from '../../api/client';
 
-// Mock axios
-vi.mock('axios');
+// Mock the API clients
+vi.mock('../../api/nodeTypesApi', () => ({
+  nodeTypesApi: {
+    getAllNodeTypes: vi.fn(),
+  },
+}));
+
+vi.mock('../../api/client', () => ({
+  triggersApi: {
+    listTriggers: vi.fn(),
+  },
+}));
 
 // Mock components
 vi.mock('../components/DefaultNode', () => ({
@@ -94,15 +105,10 @@ describe('useNodeTypes', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    axios.get.mockImplementation((url) => {
-      if (url === '/api/node-types') {
-        return Promise.resolve({ data: mockNodeDefs });
-      }
-      if (url === '/api/triggers') {
-        return Promise.resolve({ data: mockTriggers });
-      }
-      return Promise.reject(new Error('Unknown URL'));
-    });
+
+    // Setup mocks
+    nodeTypesApi.getAllNodeTypes.mockResolvedValue(mockNodeDefs);
+    triggersApi.listTriggers.mockResolvedValue({ data: mockTriggers });
   });
 
   afterEach(() => {
@@ -124,21 +130,14 @@ describe('useNodeTypes', () => {
       expect(result.current.triggers).toEqual(mockTriggers);
     });
 
-    expect(axios.get).toHaveBeenCalledWith('/api/node-types');
-    expect(axios.get).toHaveBeenCalledWith('/api/triggers');
+    expect(nodeTypesApi.getAllNodeTypes).toHaveBeenCalled();
+    expect(triggersApi.listTriggers).toHaveBeenCalled();
   });
 
   it('should handle node definitions loading errors', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    axios.get.mockImplementation((url) => {
-      if (url === '/api/node-types') {
-        return Promise.reject(new Error('Network error'));
-      }
-      if (url === '/api/triggers') {
-        return Promise.resolve({ data: mockTriggers });
-      }
-      return Promise.reject(new Error('Unknown URL'));
-    });
+    nodeTypesApi.getAllNodeTypes.mockRejectedValue(new Error('Network error'));
+    triggersApi.listTriggers.mockResolvedValue({ data: mockTriggers });
 
     const { result } = renderHook(() =>
       useNodeTypes(
@@ -162,15 +161,8 @@ describe('useNodeTypes', () => {
 
   it('should handle triggers loading errors', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    axios.get.mockImplementation((url) => {
-      if (url === '/api/node-types') {
-        return Promise.resolve({ data: mockNodeDefs });
-      }
-      if (url === '/api/triggers') {
-        return Promise.reject(new Error('Network error'));
-      }
-      return Promise.reject(new Error('Unknown URL'));
-    });
+    nodeTypesApi.getAllNodeTypes.mockResolvedValue(mockNodeDefs);
+    triggersApi.listTriggers.mockRejectedValue(new Error('Network error'));
 
     const { result } = renderHook(() =>
       useNodeTypes(
@@ -302,12 +294,7 @@ describe('useNodeTypes', () => {
       },
     ];
 
-    axios.get.mockImplementation((url) => {
-      if (url === '/api/triggers') {
-        return Promise.resolve({ data: updatedTriggers });
-      }
-      return Promise.reject(new Error('Unknown URL'));
-    });
+    triggersApi.listTriggers.mockResolvedValue({ data: updatedTriggers });
 
     await result.current.refreshTriggers();
 
@@ -331,12 +318,7 @@ describe('useNodeTypes', () => {
       expect(result.current.triggers).toEqual(mockTriggers);
     });
 
-    axios.get.mockImplementation((url) => {
-      if (url === '/api/triggers') {
-        return Promise.reject(new Error('Network error'));
-      }
-      return Promise.reject(new Error('Unknown URL'));
-    });
+    triggersApi.listTriggers.mockRejectedValue(new Error('Network error'));
 
     await result.current.refreshTriggers();
 
@@ -348,15 +330,8 @@ describe('useNodeTypes', () => {
   });
 
   it('should handle empty node definitions gracefully', async () => {
-    axios.get.mockImplementation((url) => {
-      if (url === '/api/node-types') {
-        return Promise.resolve({ data: [] });
-      }
-      if (url === '/api/triggers') {
-        return Promise.resolve({ data: mockTriggers });
-      }
-      return Promise.reject(new Error('Unknown URL'));
-    });
+    nodeTypesApi.getAllNodeTypes.mockResolvedValue([]);
+    triggersApi.listTriggers.mockResolvedValue({ data: mockTriggers });
 
     const { result } = renderHook(() =>
       useNodeTypes(
@@ -380,15 +355,8 @@ describe('useNodeTypes', () => {
   });
 
   it('should handle empty triggers gracefully', async () => {
-    axios.get.mockImplementation((url) => {
-      if (url === '/api/node-types') {
-        return Promise.resolve({ data: mockNodeDefs });
-      }
-      if (url === '/api/triggers') {
-        return Promise.resolve({ data: [] });
-      }
-      return Promise.reject(new Error('Unknown URL'));
-    });
+    nodeTypesApi.getAllNodeTypes.mockResolvedValue(mockNodeDefs);
+    triggersApi.listTriggers.mockResolvedValue({ data: [] });
 
     const { result } = renderHook(() =>
       useNodeTypes(

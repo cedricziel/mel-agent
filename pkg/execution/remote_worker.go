@@ -86,8 +86,8 @@ func (rw *RemoteWorker) Start(ctx context.Context) error {
 
 // registerWorker registers this worker with the API server
 func (rw *RemoteWorker) registerWorker(ctx context.Context) error {
-	// Convert internal WorkflowWorker to client RegisterWorkerRequest
-	req := client.RegisterWorkerRequest{
+	// Convert internal WorkflowWorker to client RegisterWorkerJSONRequestBody
+	req := client.RegisterWorkerJSONRequestBody{
 		Id:          rw.workerID,
 		Name:        &rw.workerInfo.Hostname,
 		Concurrency: &rw.concurrency,
@@ -232,7 +232,7 @@ func (rw *RemoteWorker) processWork(ctx context.Context) error {
 func (rw *RemoteWorker) claimWork(ctx context.Context) ([]*QueueItem, error) {
 	// Create the claim work request body
 	maxItems := rw.concurrency
-	reqBody := client.ClaimWorkJSONBody{
+	reqBody := client.ClaimWorkRequest{
 		MaxItems: &maxItems,
 	}
 
@@ -249,7 +249,7 @@ func (rw *RemoteWorker) claimWork(ctx context.Context) ([]*QueueItem, error) {
 	var workItems []*QueueItem
 	if resp.JSON200 != nil {
 		for _, item := range *resp.JSON200 {
-			// Convert from client.WorkItem to internal QueueItem
+			// Convert from response WorkItem to internal QueueItem
 			queueItem, err := convertWorkItemToQueueItem(&item)
 			if err != nil {
 				return nil, fmt.Errorf("failed to convert work item: %w", err)
@@ -336,7 +336,7 @@ func (rw *RemoteWorker) processCompleteRun(ctx context.Context, item *QueueItem)
 // completeWork reports the work result back to the API server
 func (rw *RemoteWorker) completeWork(ctx context.Context, itemID uuid.UUID, result *WorkResult) error {
 	// Convert internal WorkResult to client CompleteWorkJSONBody
-	reqBody := client.CompleteWorkJSONBody{}
+	reqBody := client.CompleteWorkRequest{}
 
 	if result.Success {
 		if result.OutputData != nil {
@@ -382,7 +382,7 @@ func generateWorkerID() string {
 	return fmt.Sprintf("worker-%s", hex.EncodeToString(bytes))
 }
 
-// convertWorkItemToQueueItem converts a client WorkItem to internal QueueItem
+// convertWorkItemToQueueItem converts a response WorkItem to internal QueueItem
 func convertWorkItemToQueueItem(item *client.WorkItem) (*QueueItem, error) {
 	if item.Id == nil || item.Type == nil {
 		return nil, fmt.Errorf("invalid work item: missing required fields")

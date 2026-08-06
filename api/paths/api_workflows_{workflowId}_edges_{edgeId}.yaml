@@ -1,0 +1,32 @@
+delete:
+  summary: Delete workflow edge
+  operationId: deleteWorkflowEdge
+  tags:
+    - Workflows
+  parameters:
+    - name: workflowId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    - name: edgeId
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    '204':
+      description: Workflow edge deleted successfully
+    '404':
+      description: Workflow or edge not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

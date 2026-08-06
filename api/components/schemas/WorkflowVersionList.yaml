@@ -1,0 +1,11 @@
+type: object
+required:
+  - versions
+  - total
+properties:
+  versions:
+    type: array
+    items:
+      $ref: ./WorkflowVersion.yaml
+  total:
+    type: integer

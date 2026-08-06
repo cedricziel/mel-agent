@@ -1,0 +1,17 @@
+type: object
+required:
+  - runs
+  - total
+  - page
+  - limit
+properties:
+  runs:
+    type: array
+    items:
+      $ref: ./WorkflowRun.yaml
+  total:
+    type: integer
+  page:
+    type: integer
+  limit:
+    type: integer

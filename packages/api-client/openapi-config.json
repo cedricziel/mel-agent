@@ -1,0 +1,27 @@
+{
+  "generatorName": "typescript-axios",
+  "inputSpec": "../../api/openapi-bundled.yaml",
+  "outputDir": ".",
+  "additionalProperties": {
+    "npmName": "@mel-agent/api-client",
+    "npmVersion": "1.0.0",
+    "supportsES6": true,
+    "withSeparateModelsAndApi": true,
+    "modelPackage": "models",
+    "apiPackage": "api",
+    "npmRepository": "https://github.com/cedricziel/mel-agent.git",
+    "gitUserId": "cedricziel",
+    "gitRepoId": "mel-agent",
+    "license": "AGPL-3.0",
+    "packageCompany": "MEL Agent Team",
+    "packageDescription": "TypeScript API client for MEL Agent, generated from OpenAPI specification",
+    "packageKeywords": "api,client,openapi,typescript,mel-agent,axios",
+    "packageRepository": "https://github.com/cedricziel/mel-agent.git",
+    "withNodeImports": false,
+    "useSingleRequestParameter": false,
+    "platform": "browser",
+    "generateAliasAsModel": false,
+    "packageUrl": "https://github.com/cedricziel/mel-agent/tree/main/packages/api-client",
+    "packageAuthor": "MEL Agent Team"
+  }
+}

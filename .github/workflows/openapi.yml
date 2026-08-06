@@ -2,7 +2,7 @@ name: OpenAPI
 
 on:
   push:
-    branches: [ main, feature/openapi-spec-issue-50 ]
+    branches: [ main, feature/openapi-spec-issue-50, feature/openapi-js-client ]
   pull_request:
     branches: [ main ]
 
@@ -10,12 +10,12 @@ jobs:
   generate:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Set up Go
-      uses: actions/setup-go@v5
+      uses: actions/setup-go@v7
       with:
-        go-version: '1.21'
+        go-version-file: 'go.mod'
 
     - name: Install dependencies
       run: go mod download
@@ -31,10 +31,17 @@ jobs:
           exit 1
         fi
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
+    - uses: pnpm/action-setup@v6
+      name: Install pnpm
       with:
-        node-version: '18'
+        version: 10
 
-    - name: Validate OpenAPI spec
-      run: make openapi-validate
+    - name: Set up Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: '22'
+        cache: 'pnpm'
+        cache-dependency-path: pnpm-lock.yaml
+
+    - name: Install dependencies
+      run: pnpm install

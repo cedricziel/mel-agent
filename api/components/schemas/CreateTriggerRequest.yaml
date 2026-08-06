@@ -1,0 +1,18 @@
+type: object
+required:
+  - name
+  - type
+  - workflow_id
+properties:
+  name:
+    type: string
+  type:
+    $ref: ./TriggerType.yaml
+  workflow_id:
+    type: string
+    format: uuid
+  config:
+    $ref: ./TriggerConfig.yaml
+  enabled:
+    type: boolean
+    default: true

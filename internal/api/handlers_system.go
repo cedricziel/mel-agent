@@ -55,9 +55,9 @@ func (h *OpenAPIHandlers) ListNodeTypes(ctx context.Context, request ListNodeTyp
 
 		// Convert kinds
 		if meta.Kinds != nil {
-			kinds := make([]NodeTypeKinds, len(meta.Kinds))
+			kinds := make([]NodeKind, len(meta.Kinds))
 			for i, kind := range meta.Kinds {
-				kinds[i] = NodeTypeKinds(kind)
+				kinds[i] = NodeKind(kind)
 			}
 			nodeType.Kinds = &kinds
 		}

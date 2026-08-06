@@ -54,12 +54,15 @@ func TestOpenAPICreateTrigger(t *testing.T) {
 
 	createReq := CreateTriggerRequest{
 		Name:       "Test Schedule Trigger",
-		Type:       CreateTriggerRequestTypeSchedule,
+		Type:       Schedule,
 		WorkflowId: agentID,
-		Config: &map[string]interface{}{
-			"schedule": "0 */6 * * *",
-			"timezone": "UTC",
-		},
+		Config: func() *TriggerConfig {
+			config := TriggerConfig{
+				"schedule": "0 */6 * * *",
+				"timezone": "UTC",
+			}
+			return &config
+		}(),
 		Enabled: testutil.BoolPtr(true),
 	}
 
@@ -82,7 +85,7 @@ func TestOpenAPICreateTrigger(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, "Test Schedule Trigger", *response.Name)
-	assert.Equal(t, TriggerTypeSchedule, *response.Type)
+	assert.Equal(t, Schedule, *response.Type)
 	assert.Equal(t, agentID, *response.WorkflowId)
 	assert.NotNil(t, response.Config)
 	assert.Equal(t, "0 */6 * * *", (*response.Config)["schedule"])
@@ -113,12 +116,15 @@ func TestOpenAPICreateTriggerWebhook(t *testing.T) {
 
 	createReq := CreateTriggerRequest{
 		Name:       "Test Webhook Trigger",
-		Type:       CreateTriggerRequestTypeWebhook,
+		Type:       Webhook,
 		WorkflowId: agentID,
-		Config: &map[string]interface{}{
-			"path":   "/webhook/test",
-			"method": "POST",
-		},
+		Config: func() *TriggerConfig {
+			config := TriggerConfig{
+				"path":   "/webhook/test",
+				"method": "POST",
+			}
+			return &config
+		}(),
 		Enabled: testutil.BoolPtr(false),
 	}
 
@@ -138,7 +144,7 @@ func TestOpenAPICreateTriggerWebhook(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, "Test Webhook Trigger", *response.Name)
-	assert.Equal(t, TriggerTypeWebhook, *response.Type)
+	assert.Equal(t, Webhook, *response.Type)
 	assert.Equal(t, agentID, *response.WorkflowId)
 	assert.NotNil(t, response.Config)
 	assert.Equal(t, "/webhook/test", (*response.Config)["path"])
@@ -160,7 +166,7 @@ func TestOpenAPICreateTriggerMinimal(t *testing.T) {
 
 	createReq := CreateTriggerRequest{
 		Name:       "Minimal Trigger",
-		Type:       CreateTriggerRequestTypeSchedule,
+		Type:       Schedule,
 		WorkflowId: agentID,
 	}
 
@@ -183,7 +189,7 @@ func TestOpenAPICreateTriggerMinimal(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, "Minimal Trigger", *response.Name)
-	assert.Equal(t, TriggerTypeSchedule, *response.Type)
+	assert.Equal(t, Schedule, *response.Type)
 	assert.Equal(t, agentID, *response.WorkflowId)
 	assert.Nil(t, response.Config)
 	assert.NotNil(t, response.Enabled)
@@ -204,11 +210,11 @@ func TestOpenAPIListTriggers(t *testing.T) {
 	// Create test triggers
 	testTriggers := []struct {
 		name        string
-		triggerType CreateTriggerRequestType
+		triggerType TriggerType
 	}{
-		{"Schedule Trigger 1", CreateTriggerRequestTypeSchedule},
-		{"Webhook Trigger 1", CreateTriggerRequestTypeWebhook},
-		{"Schedule Trigger 2", CreateTriggerRequestTypeSchedule},
+		{"Schedule Trigger 1", Schedule},
+		{"Webhook Trigger 1", Webhook},
+		{"Schedule Trigger 2", Schedule},
 	}
 
 	for _, trigger := range testTriggers {
@@ -264,11 +270,14 @@ func TestOpenAPIGetTrigger(t *testing.T) {
 	// Create test trigger
 	createReq := CreateTriggerRequest{
 		Name:       "Get Test Trigger",
-		Type:       CreateTriggerRequestTypeWebhook,
+		Type:       Webhook,
 		WorkflowId: agentID,
-		Config: &map[string]interface{}{
-			"path": "/webhook/get-test",
-		},
+		Config: func() *TriggerConfig {
+			config := TriggerConfig{
+				"path": "/webhook/get-test",
+			}
+			return &config
+		}(),
 		Enabled: testutil.BoolPtr(false),
 	}
 	reqBody, _ := json.Marshal(createReq)
@@ -295,7 +304,7 @@ func TestOpenAPIGetTrigger(t *testing.T) {
 
 	assert.Equal(t, *createdTrigger.Id, *response.Id)
 	assert.Equal(t, "Get Test Trigger", *response.Name)
-	assert.Equal(t, TriggerTypeWebhook, *response.Type)
+	assert.Equal(t, Webhook, *response.Type)
 	assert.Equal(t, agentID, *response.WorkflowId)
 	assert.Equal(t, "/webhook/get-test", (*response.Config)["path"])
 	assert.Equal(t, false, *response.Enabled)
@@ -337,11 +346,14 @@ func TestOpenAPIUpdateTrigger(t *testing.T) {
 	// Create test trigger
 	createReq := CreateTriggerRequest{
 		Name:       "Original Trigger",
-		Type:       CreateTriggerRequestTypeSchedule,
+		Type:       Schedule,
 		WorkflowId: agentID,
-		Config: &map[string]interface{}{
-			"schedule": "0 0 * * *",
-		},
+		Config: func() *TriggerConfig {
+			config := TriggerConfig{
+				"schedule": "0 0 * * *",
+			}
+			return &config
+		}(),
 		Enabled: testutil.BoolPtr(true),
 	}
 	reqBody, _ := json.Marshal(createReq)
@@ -358,10 +370,13 @@ func TestOpenAPIUpdateTrigger(t *testing.T) {
 	// Update the trigger
 	updateReq := UpdateTriggerRequest{
 		Name: testutil.StringPtr("Updated Trigger"),
-		Config: &map[string]interface{}{
-			"schedule": "0 12 * * *",
-			"timezone": "America/New_York",
-		},
+		Config: func() *TriggerConfig {
+			config := TriggerConfig{
+				"schedule": "0 12 * * *",
+				"timezone": "America/New_York",
+			}
+			return &config
+		}(),
 		Enabled: testutil.BoolPtr(false),
 	}
 	reqBody, _ = json.Marshal(updateReq)
@@ -379,7 +394,7 @@ func TestOpenAPIUpdateTrigger(t *testing.T) {
 
 	assert.Equal(t, *createdTrigger.Id, *response.Id)
 	assert.Equal(t, "Updated Trigger", *response.Name)
-	assert.Equal(t, TriggerTypeSchedule, *response.Type)
+	assert.Equal(t, Schedule, *response.Type)
 	assert.Equal(t, agentID, *response.WorkflowId)
 	assert.Equal(t, "0 12 * * *", (*response.Config)["schedule"])
 	assert.Equal(t, "America/New_York", (*response.Config)["timezone"])
@@ -428,7 +443,7 @@ func TestOpenAPIDeleteTrigger(t *testing.T) {
 	// Create test trigger
 	createReq := CreateTriggerRequest{
 		Name:       "Delete Test Trigger",
-		Type:       CreateTriggerRequestTypeSchedule,
+		Type:       Schedule,
 		WorkflowId: agentID,
 	}
 	reqBody, _ := json.Marshal(createReq)

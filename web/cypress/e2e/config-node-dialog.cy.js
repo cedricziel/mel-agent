@@ -1,9 +1,14 @@
 describe('Configuration Node Dialog', () => {
   beforeEach(() => {
     // Mock the API endpoints
-    cy.intercept('GET', '/api/agents/*/versions/latest', {
+    cy.intercept('GET', '/api/workflows/*/draft', {
+      statusCode: 404,
+      body: { error: 'No draft found' }
+    }).as('getDraft');
+
+    cy.intercept('GET', '/api/workflows/*', {
       fixture: 'agent.json'
-    }).as('getAgent');
+    }).as('getWorkflow');
 
     cy.intercept('GET', '/api/workflows/*/nodes', {
       fixture: 'nodes.json'
@@ -26,7 +31,7 @@ describe('Configuration Node Dialog', () => {
     cy.visit('/agents/test-agent-id/edit');
 
     // Wait for the page to load
-    cy.wait(['@getAgent', '@getNodes', '@getEdges', '@getNodeTypes']);
+    cy.wait(['@getDraft', '@getWorkflow', '@getNodes', '@getEdges', '@getNodeTypes']);
   });
 
   it('should open dialog when clicking on configuration nodes', () => {
@@ -194,7 +199,7 @@ describe('Configuration Node Dialog', () => {
 
     // Refresh page
     cy.reload();
-    cy.wait(['@getAgent', '@getNodes', '@getEdges', '@getNodeTypes']);
+    cy.wait(['@getDraft', '@getWorkflow', '@getNodes', '@getEdges', '@getNodeTypes']);
 
     // Check that the value persisted
     cy.get('[data-testid="openai-model-node"]').click();

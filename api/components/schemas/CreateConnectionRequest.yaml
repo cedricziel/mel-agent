@@ -1,0 +1,18 @@
+type: object
+required:
+  - name
+  - integration_id
+properties:
+  name:
+    type: string
+  integration_id:
+    type: string
+    format: uuid
+  secret:
+    $ref: ./ConnectionSecret.yaml
+  config:
+    $ref: ./ConnectionConfig.yaml
+  usage_limit_month:
+    type: integer
+  is_default:
+    type: boolean

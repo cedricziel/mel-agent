@@ -1,86 +1,54 @@
 // Draft API client for auto-persistence workflow management
 
 import { useState, useEffect, useCallback } from 'react';
-
-const API_BASE = '/api';
+import { workflowsApi } from './client';
 
 export class DraftAPI {
-  static async getDraft(agentId) {
+  static async getDraft(workflowId) {
     try {
-      const response = await fetch(`${API_BASE}/agents/${agentId}/draft`);
-      if (!response.ok) {
-        throw new Error(`Failed to get draft: ${response.statusText}`);
-      }
-      return await response.json();
+      const response = await workflowsApi.getWorkflowDraft(workflowId);
+      return response.data;
     } catch (error) {
       console.error('Error getting draft:', error);
       throw error;
     }
   }
 
-  static async updateDraft(agentId, draftData) {
+  static async updateDraft(workflowId, draftData) {
     try {
-      const response = await fetch(`${API_BASE}/agents/${agentId}/draft`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(draftData),
+      const response = await workflowsApi.updateWorkflowDraft(workflowId, {
+        definition: draftData,
       });
-
-      if (!response.ok) {
-        throw new Error(`Failed to update draft: ${response.statusText}`);
-      }
-      return await response.json();
+      return response.data;
     } catch (error) {
       console.error('Error updating draft:', error);
       throw error;
     }
   }
 
-  static async testDraftNode(agentId, nodeId, testData = {}) {
+  static async testDraftNode(workflowId, nodeId, testData = {}) {
     try {
-      const response = await fetch(
-        `${API_BASE}/agents/${agentId}/draft/nodes/${nodeId}/test`,
+      const response = await workflowsApi.testWorkflowDraftNode(
+        workflowId,
+        nodeId,
         {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            node_id: nodeId,
-            test_data: testData,
-          }),
+          input: testData,
         }
       );
-
-      if (!response.ok) {
-        throw new Error(`Failed to test node: ${response.statusText}`);
-      }
-      return await response.json();
+      return response.data;
     } catch (error) {
       console.error('Error testing draft node:', error);
       throw error;
     }
   }
 
-  static async deployVersion(agentId, version, notes = '') {
+  static async deployVersion(workflowId, versionNumber) {
     try {
-      const response = await fetch(`${API_BASE}/agents/${agentId}/deploy`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          version: version,
-          notes: notes,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to deploy version: ${response.statusText}`);
-      }
-      return await response.json();
+      const response = await workflowsApi.deployWorkflowVersion(
+        workflowId,
+        versionNumber
+      );
+      return response.data;
     } catch (error) {
       console.error('Error deploying version:', error);
       throw error;
@@ -90,8 +58,8 @@ export class DraftAPI {
 
 // Auto-save utilities
 export class AutoSaver {
-  constructor(agentId, onSave = null, onError = null) {
-    this.agentId = agentId;
+  constructor(workflowId, onSave = null, onError = null) {
+    this.workflowId = workflowId;
     this.onSave = onSave;
     this.onError = onError;
     this.saveTimeout = null;
@@ -125,7 +93,7 @@ export class AutoSaver {
 
     try {
       const result = await DraftAPI.updateDraft(
-        this.agentId,
+        this.workflowId,
         this.pendingChanges
       );
       this.pendingChanges = null;
@@ -165,18 +133,18 @@ export class AutoSaver {
 }
 
 // Hook for React components
-export function useAutoSaver(agentId) {
+export function useAutoSaver(workflowId) {
   const [autoSaver, setAutoSaver] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
   const [saveError, setSaveError] = useState(null);
 
   useEffect(() => {
-    if (!agentId) return;
+    if (!workflowId) return;
 
     const saver = new AutoSaver(
-      agentId,
-      (result) => {
+      workflowId,
+      () => {
         setIsSaving(false);
         setLastSaved(new Date());
         setSaveError(null);
@@ -192,7 +160,7 @@ export function useAutoSaver(agentId) {
     return () => {
       saver.destroy();
     };
-  }, [agentId]);
+  }, [workflowId]);
 
   const scheduleSave = useCallback(
     (draftData) => {

@@ -1,0 +1,21 @@
+get:
+  summary: List available node types
+  operationId: listNodeTypes
+  tags:
+    - NodeTypes
+  parameters:
+    - name: kind
+      in: query
+      description: Filter by node kind (can be comma-separated)
+      schema:
+        type: string
+        example: model,memory,action,tool,trigger
+  responses:
+    '200':
+      description: List of node types
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: ../components/schemas/NodeType.yaml

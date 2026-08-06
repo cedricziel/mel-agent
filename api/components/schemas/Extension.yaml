@@ -1,0 +1,25 @@
+type: object
+required:
+  - id
+  - version
+  - categories
+properties:
+  id:
+    type: string
+    description: Unique plugin identifier
+  version:
+    type: string
+    description: Semver-compliant version string
+  categories:
+    type: array
+    items:
+      type: string
+    description: Extension types provided (e.g. "node", "trigger")
+  params:
+    type: array
+    items:
+      $ref: ./ParamSpec.yaml
+    description: Parameter schema for configuration/UI
+  ui_component:
+    type: string
+    description: Optional path or URL to React bundle

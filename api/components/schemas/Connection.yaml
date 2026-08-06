@@ -1,0 +1,29 @@
+type: object
+properties:
+  id:
+    type: string
+    format: uuid
+  user_id:
+    type: string
+    format: uuid
+  integration_id:
+    type: string
+    format: uuid
+  name:
+    type: string
+  secret:
+    $ref: ./ConnectionSecret.yaml
+  config:
+    $ref: ./ConnectionConfig.yaml
+  usage_limit_month:
+    type: integer
+  is_default:
+    type: boolean
+  created_at:
+    type: string
+    format: date-time
+  last_validated:
+    type: string
+    format: date-time
+  status:
+    $ref: ./ConnectionStatus.yaml

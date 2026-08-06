@@ -8,7 +8,7 @@ updates:
     assignees:
       - cedricziel
   - package-ecosystem: "npm"
-    directory: "/web"
+    directory: "/"
     schedule:
       interval: "daily"
     assignees:

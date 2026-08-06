@@ -1,0 +1,17 @@
+type: object
+required:
+  - workflows
+  - total
+  - page
+  - limit
+properties:
+  workflows:
+    type: array
+    items:
+      $ref: ./Workflow.yaml
+  total:
+    type: integer
+  page:
+    type: integer
+  limit:
+    type: integer

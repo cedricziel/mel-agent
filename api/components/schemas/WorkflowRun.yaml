@@ -1,0 +1,21 @@
+type: object
+properties:
+  id:
+    type: string
+    format: uuid
+  workflow_id:
+    type: string
+    format: uuid
+  status:
+    $ref: ./WorkflowRunStatus.yaml
+  started_at:
+    type: string
+    format: date-time
+  completed_at:
+    type: string
+    format: date-time
+  context:
+    type: object
+    additionalProperties: true
+  error:
+    type: string

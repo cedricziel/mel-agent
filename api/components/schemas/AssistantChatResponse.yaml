@@ -1,0 +1,21 @@
+type: object
+properties:
+  id:
+    type: string
+    description: Response ID
+  object:
+    type: string
+    description: Object type (e.g., "chat.completion")
+  created:
+    type: integer
+    description: Unix timestamp
+  model:
+    type: string
+    description: Model used
+  choices:
+    type: array
+    items:
+      $ref: ./ChatChoice.yaml
+    description: Array of response choices
+  usage:
+    $ref: ./ChatUsage.yaml

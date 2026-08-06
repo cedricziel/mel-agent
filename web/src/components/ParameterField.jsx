@@ -1,5 +1,6 @@
 import CronEditor from './CronEditor';
 import CodeEditor from './CodeEditor';
+import TemplateEditor from './TemplateEditor';
 
 /**
  * Component to render individual parameter fields based on parameter type
@@ -43,6 +44,18 @@ export default function ParameterField({
             <CronEditor
               value={value}
               onCronChange={(cron) => onChange(param.name, cron)}
+            />
+          );
+        }
+
+        // Template format: expression editor with live preview
+        if (param.jsonSchema && param.jsonSchema.format === 'template') {
+          return (
+            <TemplateEditor
+              value={value || ''}
+              onChange={(template) => onChange(param.name, template)}
+              readOnly={readOnly}
+              placeholder={param.description || 'Hello, {{.input.name}}!'}
             />
           );
         }

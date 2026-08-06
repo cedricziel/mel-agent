@@ -10,7 +10,7 @@ import (
 // ListIntegrations lists available integrations
 func (h *OpenAPIHandlers) ListIntegrations(ctx context.Context, request ListIntegrationsRequestObject) (ListIntegrationsResponseObject, error) {
 	// Get integrations from database
-	rows, err := h.db.QueryContext(ctx, "SELECT id, name, description, type, status, created_at, updated_at FROM integrations ORDER BY name")
+	rows, err := h.db.QueryContext(ctx, "SELECT id, name, description, type, status, created_at, updated_at, credential_type FROM integrations ORDER BY name")
 	if err != nil {
 		errorMsg := "database error"
 		message := err.Error()
@@ -25,9 +25,10 @@ func (h *OpenAPIHandlers) ListIntegrations(ctx context.Context, request ListInte
 	for rows.Next() {
 		var integration Integration
 		var id, name, description, integrationType, status string
+		var credentialType *string
 		var createdAt, updatedAt time.Time
 
-		err := rows.Scan(&id, &name, &description, &integrationType, &status, &createdAt, &updatedAt)
+		err := rows.Scan(&id, &name, &description, &integrationType, &status, &createdAt, &updatedAt, &credentialType)
 		if err != nil {
 			errorMsg := "scan error"
 			message := err.Error()
@@ -54,6 +55,7 @@ func (h *OpenAPIHandlers) ListIntegrations(ctx context.Context, request ListInte
 		integration.Status = func() *IntegrationStatus { s := IntegrationStatus(status); return &s }()
 		integration.CreatedAt = &createdAt
 		integration.UpdatedAt = &updatedAt
+		integration.CredentialType = credentialType
 
 		integrations = append(integrations, integration)
 	}

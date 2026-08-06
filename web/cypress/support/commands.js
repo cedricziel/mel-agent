@@ -2,19 +2,24 @@
 
 // Mock API responses for testing
 Cypress.Commands.add('mockAPIEndpoints', () => {
-  // Mock agents/workflows endpoint
-  cy.intercept('GET', '/api/agents', {
+  // Mock workflows endpoint
+  cy.intercept('GET', '/api/workflows', {
     statusCode: 200,
-    body: [
-      {
-        id: 'test-agent-1',
-        name: 'Test Agent',
-        description: 'A test workflow',
-        created_at: '2024-01-01T00:00:00Z',
-        updated_at: '2024-01-01T00:00:00Z'
-      }
-    ]
-  }).as('getAgents')
+    body: {
+      workflows: [
+        {
+          id: 'test-agent-1',
+          name: 'Test Agent',
+          description: 'A test workflow',
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z'
+        }
+      ],
+      total: 1,
+      page: 1,
+      limit: 20
+    }
+  }).as('getWorkflows')
 
   // Mock node types endpoint
   cy.intercept('GET', '/api/node-types', {
@@ -41,18 +46,25 @@ Cypress.Commands.add('mockAPIEndpoints', () => {
   }).as('getNodeTypes')
 
   // Mock workflow data endpoints
-  cy.intercept('GET', '/api/agents/*/versions/latest', {
-    statusCode: 200,
-    body: {
-      nodes: [],
-      edges: []
-    }
-  }).as('getWorkflowVersion')
-
-  cy.intercept('GET', '/api/agents/*/draft', {
+  cy.intercept('GET', '/api/workflows/*/draft', {
     statusCode: 404,
     body: { error: 'No draft found' }
   }).as('getDraft')
+  
+  cy.intercept('GET', '/api/workflows/*', {
+    statusCode: 200,
+    body: { id: 'test-agent-1', name: 'Test Agent' }
+  }).as('getWorkflow')
+  
+  cy.intercept('GET', '/api/workflows/*/nodes', {
+    statusCode: 200,
+    body: []
+  }).as('getWorkflowNodes')
+  
+  cy.intercept('GET', '/api/workflows/*/edges', {
+    statusCode: 200,
+    body: []
+  }).as('getWorkflowEdges')
 })
 
 // Login command (if authentication is needed)
@@ -64,8 +76,8 @@ Cypress.Commands.add('login', (username = 'test@example.com', password = 'passwo
 // Visit workflow builder with common setup
 Cypress.Commands.add('visitBuilder', (agentId = 'test-agent-1') => {
   cy.mockAPIEndpoints()
-  cy.visit(`/builder/${agentId}`)
-  cy.wait(['@getNodeTypes', '@getWorkflowVersion'])
+  cy.visit(`/agents/${agentId}/edit`)
+  cy.wait(['@getNodeTypes', '@getDraft', '@getWorkflow', '@getWorkflowNodes', '@getWorkflowEdges'])
 })
 
 // Drag and drop node from sidebar

@@ -1,7 +1,7 @@
 import { Handle, Position } from 'reactflow';
-import axios from 'axios';
 import 'reactflow/dist/style.css';
 import { HANDLE_TYPES, getHandleColor } from '../utils/connectionTypes';
+import { workflowRunsApi } from '../api/client';
 
 // Trigger node: entry point without input handle, with n8n-style curved left side
 export default function TriggerNode({
@@ -27,8 +27,8 @@ export default function TriggerNode({
         return;
       }
 
-      const response = await axios.post('/api/workflow-runs', {
-        agent_id: agentId,
+      const response = await workflowRunsApi.createWorkflowRun({
+        workflow_id: agentId,
         input_data: {},
       });
       console.log('Manual trigger executed:', response.data);

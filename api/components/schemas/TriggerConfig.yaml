@@ -1,0 +1,3 @@
+type: object
+additionalProperties: true
+description: Trigger configuration containing trigger-specific parameters and settings

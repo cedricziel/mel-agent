@@ -1,0 +1,50 @@
+get:
+  summary: List connections
+  operationId: listConnections
+  tags:
+    - Connections
+  responses:
+    '200':
+      description: List of connections
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: ../components/schemas/Connection.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+post:
+  summary: Create a connection
+  operationId: createConnection
+  tags:
+    - Connections
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/CreateConnectionRequest.yaml
+  responses:
+    '201':
+      description: Connection created
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Connection.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

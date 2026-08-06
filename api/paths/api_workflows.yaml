@@ -1,0 +1,59 @@
+get:
+  summary: List all workflows
+  operationId: listWorkflows
+  tags:
+    - Workflows
+  parameters:
+    - name: page
+      in: query
+      schema:
+        type: integer
+        default: 1
+    - name: limit
+      in: query
+      schema:
+        type: integer
+        default: 20
+  responses:
+    '200':
+      description: List of workflows
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/WorkflowList.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+post:
+  summary: Create a new workflow
+  operationId: createWorkflow
+  tags:
+    - Workflows
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/CreateWorkflowRequest.yaml
+  responses:
+    '201':
+      description: Workflow created successfully
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Workflow.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

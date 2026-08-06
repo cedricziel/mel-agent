@@ -1,0 +1,11 @@
+type: object
+properties:
+  prompt_tokens:
+    type: integer
+    description: Tokens used in prompt
+  completion_tokens:
+    type: integer
+    description: Tokens used in completion
+  total_tokens:
+    type: integer
+    description: Total tokens used

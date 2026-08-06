@@ -141,14 +141,14 @@ func TestOpenAPIListWorkflowRuns(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.NotNil(t, response.Runs)
-	assert.Len(t, *response.Runs, 3)
-	assert.Equal(t, 3, *response.Total)
-	assert.Equal(t, 1, *response.Page)
-	assert.Equal(t, 20, *response.Limit)
+	assert.Len(t, response.Runs, 3)
+	assert.Equal(t, 3, response.Total)
+	assert.Equal(t, 1, response.Page)
+	assert.Equal(t, 20, response.Limit)
 
 	// Verify the runs have the expected data
 	runStatuses := make(map[WorkflowRunStatus]bool)
-	for _, run := range *response.Runs {
+	for _, run := range response.Runs {
 		runStatuses[*run.Status] = true
 		assert.NotNil(t, run.Id)
 		assert.Equal(t, createdWorkflow.Id, *run.WorkflowId)
@@ -224,8 +224,8 @@ func TestOpenAPIListWorkflowRunsWithFilters(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.NotNil(t, response.Runs)
-	assert.Len(t, *response.Runs, 2)
-	for _, run := range *response.Runs {
+	assert.Len(t, response.Runs, 2)
+	for _, run := range response.Runs {
 		assert.Equal(t, workflow1ID, *run.WorkflowId)
 	}
 
@@ -240,8 +240,8 @@ func TestOpenAPIListWorkflowRunsWithFilters(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.NotNil(t, response.Runs)
-	assert.Len(t, *response.Runs, 2)
-	for _, run := range *response.Runs {
+	assert.Len(t, response.Runs, 2)
+	for _, run := range response.Runs {
 		assert.Equal(t, WorkflowRunStatusCompleted, *run.Status)
 	}
 }
@@ -290,10 +290,10 @@ func TestOpenAPIListWorkflowRunsWithPagination(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.NotNil(t, response.Runs)
-	assert.Len(t, *response.Runs, 3)
-	assert.Equal(t, 7, *response.Total)
-	assert.Equal(t, 1, *response.Page)
-	assert.Equal(t, 3, *response.Limit)
+	assert.Len(t, response.Runs, 3)
+	assert.Equal(t, 7, response.Total)
+	assert.Equal(t, 1, response.Page)
+	assert.Equal(t, 3, response.Limit)
 
 	// Test page 2 with limit 3
 	w = httptest.NewRecorder()
@@ -306,10 +306,10 @@ func TestOpenAPIListWorkflowRunsWithPagination(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.NotNil(t, response.Runs)
-	assert.Len(t, *response.Runs, 3)
-	assert.Equal(t, 7, *response.Total)
-	assert.Equal(t, 2, *response.Page)
-	assert.Equal(t, 3, *response.Limit)
+	assert.Len(t, response.Runs, 3)
+	assert.Equal(t, 7, response.Total)
+	assert.Equal(t, 2, response.Page)
+	assert.Equal(t, 3, response.Limit)
 }
 
 // TestOpenAPIGetWorkflowRun tests retrieving a single workflow run
@@ -676,9 +676,9 @@ func TestOpenAPIWorkflowRunLegacyCompatibility(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.NotNil(t, listResponse.Runs)
-	assert.Len(t, *listResponse.Runs, 1)
+	assert.Len(t, listResponse.Runs, 1)
 
-	legacyRun := (*listResponse.Runs)[0]
+	legacyRun := (listResponse.Runs)[0]
 	assert.Equal(t, runID, *legacyRun.Id)
 	assert.Equal(t, agentID, *legacyRun.WorkflowId)
 }

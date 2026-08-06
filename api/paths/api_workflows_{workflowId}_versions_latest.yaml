@@ -1,0 +1,31 @@
+get:
+  summary: Get latest version of a workflow
+  operationId: getLatestWorkflowVersion
+  tags:
+    - Workflows
+  parameters:
+    - name: workflowId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    '200':
+      description: Latest workflow version
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/WorkflowVersion.yaml
+    '404':
+      description: Workflow not found or no versions exist
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

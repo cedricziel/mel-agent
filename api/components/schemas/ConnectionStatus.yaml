@@ -1,0 +1,6 @@
+type: string
+enum:
+  - valid
+  - invalid
+  - expired
+description: Status of a connection

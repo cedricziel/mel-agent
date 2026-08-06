@@ -1,11 +1,18 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import axios from 'axios';
 import { useRunsData } from '../useRunsData';
+import { nodeTypesApi, workflowRunsApi } from '../../api/client';
 
-// Mock axios
-vi.mock('axios');
-const mockedAxios = vi.mocked(axios);
+// Mock the API clients
+vi.mock('../../api/client', () => ({
+  nodeTypesApi: {
+    listNodeTypes: vi.fn(),
+  },
+  workflowRunsApi: {
+    listWorkflowRuns: vi.fn(),
+    getWorkflowRun: vi.fn(),
+  },
+}));
 
 describe('useRunsData', () => {
   const mockAgentId = 'agent-123';
@@ -34,17 +41,23 @@ describe('useRunsData', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockedAxios.get.mockImplementation((url) => {
-      if (url === '/api/node-types') {
-        return Promise.resolve({ data: mockNodeDefs });
+
+    // Mock nodeTypesApi
+    nodeTypesApi.listNodeTypes.mockResolvedValue({ data: mockNodeDefs });
+
+    // Mock workflowRunsApi
+    workflowRunsApi.listWorkflowRuns.mockImplementation((workflowId) => {
+      if (workflowId === mockAgentId) {
+        return Promise.resolve({ data: { runs: mockRuns } });
       }
-      if (url === `/api/workflow-runs?agent_id=${mockAgentId}`) {
-        return Promise.resolve({ data: mockRuns });
-      }
-      if (url === `/api/workflow-runs/run-1`) {
+      return Promise.resolve({ data: { runs: [] } });
+    });
+
+    workflowRunsApi.getWorkflowRun.mockImplementation((runId) => {
+      if (runId === 'run-1') {
         return Promise.resolve({ data: mockRunDetails });
       }
-      return Promise.reject(new Error('Unknown URL'));
+      return Promise.reject(new Error('Run not found'));
     });
   });
 
@@ -70,7 +83,7 @@ describe('useRunsData', () => {
     renderHook(() => useRunsData(mockAgentId));
 
     await waitFor(() => {
-      expect(mockedAxios.get).toHaveBeenCalledWith('/api/node-types');
+      expect(nodeTypesApi.listNodeTypes).toHaveBeenCalled();
     });
   });
 
@@ -78,8 +91,8 @@ describe('useRunsData', () => {
     const { result } = renderHook(() => useRunsData(mockAgentId));
 
     await waitFor(() => {
-      expect(mockedAxios.get).toHaveBeenCalledWith(
-        `/api/workflow-runs?agent_id=${mockAgentId}`
+      expect(workflowRunsApi.listWorkflowRuns).toHaveBeenCalledWith(
+        mockAgentId
       );
       expect(result.current.runs).toEqual(mockRuns);
     });
@@ -88,9 +101,7 @@ describe('useRunsData', () => {
   it('should not fetch runs when agentId is not provided', () => {
     renderHook(() => useRunsData(null));
 
-    expect(mockedAxios.get).not.toHaveBeenCalledWith(
-      expect.stringContaining('workflow-runs?agent_id=')
-    );
+    expect(workflowRunsApi.listWorkflowRuns).not.toHaveBeenCalled();
   });
 
   it('should fetch run details when run is selected', async () => {
@@ -105,7 +116,7 @@ describe('useRunsData', () => {
     });
 
     await waitFor(() => {
-      expect(mockedAxios.get).toHaveBeenCalledWith(`/api/workflow-runs/run-1`);
+      expect(workflowRunsApi.getWorkflowRun).toHaveBeenCalledWith('run-1');
       expect(result.current.selectedRunID).toBe('run-1');
       expect(result.current.runDetails).toEqual(mockRunDetails);
     });
@@ -168,20 +179,14 @@ describe('useRunsData', () => {
 
   it('should reset selected node when run details change', async () => {
     // Add mock for run-2
-    mockedAxios.get.mockImplementation((url) => {
-      if (url === '/api/node-types') {
-        return Promise.resolve({ data: mockNodeDefs });
-      }
-      if (url === `/api/workflow-runs?agent_id=${mockAgentId}`) {
-        return Promise.resolve({ data: mockRuns });
-      }
-      if (url === `/api/workflow-runs/run-1`) {
+    workflowRunsApi.getWorkflowRun.mockImplementation((runId) => {
+      if (runId === 'run-1') {
         return Promise.resolve({ data: mockRunDetails });
       }
-      if (url === `/api/workflow-runs/run-2`) {
+      if (runId === 'run-2') {
         return Promise.resolve({ data: { ...mockRunDetails, id: 'run-2' } });
       }
-      return Promise.reject(new Error('Unknown URL'));
+      return Promise.reject(new Error('Run not found'));
     });
 
     const { result } = renderHook(() => useRunsData(mockAgentId));
@@ -236,7 +241,8 @@ describe('useRunsData', () => {
 
   it('should handle API errors gracefully', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    mockedAxios.get.mockRejectedValue(new Error('API Error'));
+    nodeTypesApi.listNodeTypes.mockRejectedValue(new Error('API Error'));
+    workflowRunsApi.listWorkflowRuns.mockRejectedValue(new Error('API Error'));
 
     renderHook(() => useRunsData(mockAgentId));
 
@@ -255,18 +261,8 @@ describe('useRunsData', () => {
   });
 
   it('should handle empty run details gracefully', async () => {
-    mockedAxios.get.mockImplementation((url) => {
-      if (url === '/api/node-types') {
-        return Promise.resolve({ data: mockNodeDefs });
-      }
-      if (url === `/api/workflow-runs?agent_id=${mockAgentId}`) {
-        return Promise.resolve({ data: mockRuns });
-      }
-      if (url === `/api/workflow-runs/run-1`) {
-        return Promise.resolve({ data: null });
-      }
-      return Promise.reject(new Error('Unknown URL'));
-    });
+    // Override mock to return null for run details
+    workflowRunsApi.getWorkflowRun.mockResolvedValue({ data: null });
 
     const { result } = renderHook(() => useRunsData(mockAgentId));
 

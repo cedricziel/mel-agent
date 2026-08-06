@@ -1,0 +1,47 @@
+post:
+  summary: Execute a workflow
+  operationId: executeWorkflow
+  tags:
+    - Workflows
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  requestBody:
+    required: false
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            input:
+              type: object
+              additionalProperties: true
+  responses:
+    '200':
+      description: Workflow execution started
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/WorkflowExecution.yaml
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '404':
+      description: Workflow not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

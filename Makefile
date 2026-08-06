@@ -10,8 +10,22 @@ generate-client: ## Generate client code from OpenAPI spec
 generate-server: ## Generate server code from OpenAPI spec
 	cd internal/api && go generate
 
+.PHONY: generate-frontend
+generate-frontend: ## Generate frontend TypeScript client from OpenAPI spec
+	rm -rf packages/api-client/api packages/api-client/models packages/api-client/docs
+	rm -f packages/api-client/*.ts packages/api-client/git_push.sh packages/api-client/README.md
+	npm run generate:client
+
+.PHONY: openapi-lint
+openapi-lint: ## Lint OpenAPI spec using Redocly CLI
+	npm run openapi:lint
+
+.PHONY: openapi-bundle
+openapi-bundle: ## Bundle OpenAPI partials into single file
+	npm run openapi:bundle
+
 .PHONY: generate
-generate: generate-client generate-server
+generate: openapi-lint openapi-bundle generate-client generate-server generate-frontend ## Generate all code from OpenAPI spec
 
 .PHONY: build
 build: ## Build the server binary

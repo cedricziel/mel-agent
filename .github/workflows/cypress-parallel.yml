@@ -11,7 +11,7 @@ jobs:
   backend:
     name: Backend Tests
     runs-on: ubuntu-24.04
-    
+
     services:
       postgres:
         image: postgres:15
@@ -26,15 +26,15 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
-          go-version: '1.22'
+          go-version-file: 'go.mod'
 
       - name: Cache Go modules
         uses: actions/cache@v4
@@ -56,7 +56,7 @@ jobs:
         run: go build ./cmd/server
 
       - name: Upload server binary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: server-binary
           path: server
@@ -67,7 +67,7 @@ jobs:
     name: E2E Tests
     runs-on: ubuntu-24.04
     needs: [backend]
-    
+
     services:
       postgres:
         image: postgres:15
@@ -82,13 +82,13 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Download server binary
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: server-binary
 
@@ -107,25 +107,29 @@ jobs:
         run: |
           timeout 30 bash -c 'until curl -f http://localhost:8080/health; do sleep 1; done'
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         name: Install pnpm
         with:
           version: 10
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'pnpm'
-          cache-dependency-path: web/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
-      # Simplified: let Cypress action handle install → build → start → test
+      - name: Install dependencies
+        run: pnpm install
+
+      # Simplified: let Cypress action handle build → start → test
       - name: Run Cypress E2E tests
-        uses: cypress-io/github-action@v6
+        uses: cypress-io/github-action@v7
         with:
           working-directory: web
-          build: pnpm build
-          start: pnpm preview --port 5173
+          install: false
+          build: pnpm --filter agentsaas-web build
+          start: pnpm --filter agentsaas-web preview --port 5173
           wait-on: 'http://localhost:5173'
           wait-on-timeout: 60
           browser: chrome

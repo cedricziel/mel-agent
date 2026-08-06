@@ -44,12 +44,14 @@ func TestOpenAPICreateConnection(t *testing.T) {
 	createReq := CreateConnectionRequest{
 		Name:          "Test Connection",
 		IntegrationId: integrationID,
-		Secret: &map[string]interface{}{
-			"api_key": "test-secret-key",
-		},
-		Config: &map[string]interface{}{
-			"base_url": "https://api.example.com",
-		},
+		Secret: func() *ConnectionSecret {
+			secret := ConnectionSecret{"api_key": "test-secret-key"}
+			return &secret
+		}(),
+		Config: func() *ConnectionConfig {
+			config := ConnectionConfig{"base_url": "https://api.example.com"}
+			return &config
+		}(),
 		UsageLimitMonth: testutil.IntPtr(1000),
 		IsDefault:       testutil.BoolPtr(false),
 	}
@@ -200,9 +202,10 @@ func TestOpenAPIGetConnection(t *testing.T) {
 	createReq := CreateConnectionRequest{
 		Name:          "Get Test Connection",
 		IntegrationId: integrationID,
-		Secret: &map[string]interface{}{
-			"token": "secret-token",
-		},
+		Secret: func() *ConnectionSecret {
+			secret := ConnectionSecret{"token": "secret-token"}
+			return &secret
+		}(),
 	}
 	reqBody, _ := json.Marshal(createReq)
 
@@ -268,9 +271,10 @@ func TestOpenAPIUpdateConnection(t *testing.T) {
 	createReq := CreateConnectionRequest{
 		Name:          "Original Connection",
 		IntegrationId: integrationID,
-		Secret: &map[string]interface{}{
-			"api_key": "original-key",
-		},
+		Secret: func() *ConnectionSecret {
+			secret := ConnectionSecret{"api_key": "original-key"}
+			return &secret
+		}(),
 		UsageLimitMonth: testutil.IntPtr(500),
 	}
 	reqBody, _ := json.Marshal(createReq)
@@ -287,11 +291,12 @@ func TestOpenAPIUpdateConnection(t *testing.T) {
 	// Update the connection
 	updateReq := UpdateConnectionRequest{
 		Name: testutil.StringPtr("Updated Connection"),
-		Secret: &map[string]interface{}{
-			"api_key": "updated-key",
-		},
+		Secret: func() *ConnectionSecret {
+			secret := ConnectionSecret{"api_key": "updated-key"}
+			return &secret
+		}(),
 		UsageLimitMonth: testutil.IntPtr(1000),
-		Status:          func() *UpdateConnectionRequestStatus { s := Invalid; return &s }(),
+		Status:          func() *ConnectionStatus { s := ConnectionStatusInvalid; return &s }(),
 	}
 	reqBody, _ = json.Marshal(updateReq)
 

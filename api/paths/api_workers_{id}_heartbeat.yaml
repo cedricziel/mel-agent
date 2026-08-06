@@ -1,0 +1,26 @@
+put:
+  summary: Update worker heartbeat
+  operationId: updateWorkerHeartbeat
+  tags:
+    - Workers
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Heartbeat updated successfully
+    '404':
+      description: Worker not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

@@ -1,0 +1,20 @@
+get:
+  summary: List available extensions and plugins
+  operationId: listExtensions
+  tags:
+    - System
+  responses:
+    '200':
+      description: List of available extensions
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: ../components/schemas/Extension.yaml
+    '500':
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

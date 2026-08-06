@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import {
+  credentialTypesApi,
+  integrationsApi,
+  connectionsApi,
+} from '../api/client';
 
 function ConnectionsPage() {
   const [connections, setConnections] = useState([]);
@@ -25,9 +29,9 @@ function ConnectionsPage() {
     setLoading(true);
     try {
       const [connRes, integRes, credRes] = await Promise.all([
-        axios.get('/api/connections'),
-        axios.get('/api/integrations'),
-        axios.get('/api/credential-types'),
+        connectionsApi.listConnections(),
+        integrationsApi.listIntegrations(),
+        credentialTypesApi.listCredentialTypes(),
       ]);
       setConnections(connRes.data);
       setIntegrations(integRes.data);
@@ -41,9 +45,8 @@ function ConnectionsPage() {
 
   async function fetchCredentialSchema(credentialType, skipDefaults = false) {
     try {
-      const response = await axios.get(
-        `/api/credential-types/schema/${credentialType}`
-      );
+      const response =
+        await credentialTypesApi.getCredentialTypeSchema(credentialType);
       const schema = response.data;
       setCredentialSchema(schema);
 
@@ -91,9 +94,11 @@ function ConnectionsPage() {
     try {
       // First, test the credentials
       if (selectedIntegration.credential_type) {
-        await axios.post(
-          `/api/credential-types/${selectedIntegration.credential_type}/test`,
-          form.credentials
+        await credentialTypesApi.testCredentials(
+          selectedIntegration.credential_type,
+          {
+            credentials: form.credentials,
+          }
         );
         setTestResult({ success: true, message: 'credentials are valid' });
       }
@@ -109,10 +114,10 @@ function ConnectionsPage() {
 
       if (editingConnection) {
         // Update existing connection
-        await axios.put(`/api/connections/${editingConnection.id}`, payload);
+        await connectionsApi.updateConnection(editingConnection.id, payload);
       } else {
         // Create new connection
-        await axios.post('/api/connections', payload);
+        await connectionsApi.createConnection(payload);
       }
 
       resetForm();
@@ -196,7 +201,7 @@ function ConnectionsPage() {
 
     try {
       // Fetch the full connection details including secret data
-      const response = await axios.get(`/api/connections/${connection.id}`);
+      const response = await connectionsApi.getConnection(connection.id);
       const connectionData = response.data;
 
       // Extract non-sensitive fields from the secret data
@@ -247,7 +252,7 @@ function ConnectionsPage() {
     }
 
     try {
-      await axios.delete(`/api/connections/${connectionId}`);
+      await connectionsApi.deleteConnection(connectionId);
       fetchData();
     } catch (err) {
       console.error('Failed to delete connection:', err);
