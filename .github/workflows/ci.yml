@@ -215,7 +215,7 @@ jobs:
           timeout 30 bash -c 'until curl -f http://localhost:5173; do sleep 1; done'
 
       - name: Run Cypress E2E tests
-        uses: cypress-io/github-action@v6
+        uses: cypress-io/github-action@v7
         with:
           working-directory: web
           install: false
