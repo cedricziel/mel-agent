@@ -11,6 +11,7 @@ import AnthropicModelNode from '../components/AnthropicModelNode';
 import LocalMemoryNode from '../components/LocalMemoryNode';
 import IfNode from '../components/IfNode';
 import HttpRequestNode from '../components/HttpRequestNode';
+import TransformNode from '../components/TransformNode.tsx';
 import TriggerNode from '../components/TriggerNode';
 
 export function useNodeTypes(
@@ -137,6 +138,16 @@ export function useNodeTypes(
       http_request: (props) => (
         <HttpRequestNode {...props} onDelete={stableHandleNodeDelete} />
       ),
+      transform: (props) => {
+        const nodeDef = nodeDefs.find((def) => def.type === 'transform');
+        return (
+          <TransformNode
+            {...props}
+            icon={nodeDef?.icon}
+            onDelete={stableHandleNodeDelete}
+          />
+        );
+      },
     };
 
     // Add trigger nodes with special rendering

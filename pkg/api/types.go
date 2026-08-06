@@ -407,3 +407,16 @@ func (pd ParameterDefinition) WithDynamicOptions() ParameterDefinition {
 	pd.DynamicOptions = true
 	return pd
 }
+
+// WithFormat sets a JSON schema format hint, which the builder UI uses to pick
+// a specialized editor for the parameter (e.g. "code", "template").
+func (pd ParameterDefinition) WithFormat(format string) ParameterDefinition {
+	schema := pd.GetEffectiveType().ToJSONSchema()
+	if pd.JSONSchema != nil {
+		copied := *pd.JSONSchema
+		schema = &copied
+	}
+	schema.Format = format
+	pd.JSONSchema = schema
+	return pd
+}

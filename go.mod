@@ -3,6 +3,7 @@ module github.com/cedricziel/mel-agent
 go 1.25.0
 
 require (
+	dario.cat/mergo v1.0.2
 	github.com/dop251/goja v0.0.0-20250531102226-cb187b08699c
 	github.com/go-chi/chi/v5 v5.2.3
 	github.com/google/uuid v1.6.0
@@ -19,7 +20,6 @@ require (
 )
 
 require (
-	dario.cat/mergo v1.0.2 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
