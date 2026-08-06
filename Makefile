@@ -11,6 +11,12 @@ generate-server: ## Generate server code from OpenAPI spec
 	cd internal/api && go generate
 
 .PHONY: generate-frontend
+# NOTE: generate:client cd's into packages/api-client; that cd is load-bearing —
+# openapi-config.json's "templateDir" is relative to the CWD, and the generator
+# silently falls back to its embedded templates if the directory is missing.
+# When bumping the generator version in packages/api-client/openapitools.json,
+# re-sync packages/api-client/templates/typescript-axios/common.mustache from
+# the new generator jar (see the header comment in that file).
 generate-frontend: ## Generate frontend TypeScript client from OpenAPI spec
 	rm -rf packages/api-client/api packages/api-client/models packages/api-client/docs
 	rm -f packages/api-client/*.ts packages/api-client/git_push.sh packages/api-client/README.md

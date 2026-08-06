@@ -24,4 +24,7 @@
 
 # package.json is maintained by hand so Dependabot can manage dependency
 # versions (e.g. axios); the generator's template pins outdated versions.
+# NOTE: because the generator no longer writes this file, a future generator
+# version that requires a NEW runtime dependency will not add it here —
+# check the generator's changelog when bumping openapitools.json.
 package.json
