@@ -18,7 +18,7 @@ import type { AxiosPromise, AxiosInstance, RawAxiosRequestConfig } from 'axios';
 import globalAxios from 'axios';
 // Some imports not used depending on template conditions
 // @ts-ignore
-import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction } from '../common';
+import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction, replaceWithSerializableTypeIfNeeded } from '../common';
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS, type RequestArgs, BaseAPI, RequiredError, operationServerMap } from '../base';
 // @ts-ignore
@@ -27,7 +27,6 @@ import type { NodeParameterOptions } from '../models';
 import type { NodeType } from '../models';
 /**
  * NodeTypesApi - axios parameter creator
- * @export
  */
 export const NodeTypesApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
@@ -46,8 +45,8 @@ export const NodeTypesApiAxiosParamCreator = function (configuration?: Configura
             // verify required parameter 'parameter' is not null or undefined
             assertParamExists('getNodeParameterOptions', 'parameter', parameter)
             const localVarPath = `/api/node-types/{type}/parameters/{parameter}/options`
-                .replace(`{${"type"}}`, encodeURIComponent(String(type)))
-                .replace(`{${"parameter"}}`, encodeURIComponent(String(parameter)));
+                .replace('{type}', encodeURIComponent(String(type)))
+                .replace('{parameter}', encodeURIComponent(String(parameter)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -70,8 +69,8 @@ export const NodeTypesApiAxiosParamCreator = function (configuration?: Configura
                 localVarQueryParameter['context'] = context;
             }
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -112,8 +111,8 @@ export const NodeTypesApiAxiosParamCreator = function (configuration?: Configura
                 localVarQueryParameter['kind'] = kind;
             }
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -128,7 +127,6 @@ export const NodeTypesApiAxiosParamCreator = function (configuration?: Configura
 
 /**
  * NodeTypesApi - functional programming interface
- * @export
  */
 export const NodeTypesApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = NodeTypesApiAxiosParamCreator(configuration)
@@ -166,7 +164,6 @@ export const NodeTypesApiFp = function(configuration?: Configuration) {
 
 /**
  * NodeTypesApi - factory interface
- * @export
  */
 export const NodeTypesApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
     const localVarFp = NodeTypesApiFp(configuration)
@@ -198,9 +195,6 @@ export const NodeTypesApiFactory = function (configuration?: Configuration, base
 
 /**
  * NodeTypesApi - object-oriented interface
- * @export
- * @class NodeTypesApi
- * @extends {BaseAPI}
  */
 export class NodeTypesApi extends BaseAPI {
     /**
@@ -211,7 +205,6 @@ export class NodeTypesApi extends BaseAPI {
      * @param {string} [context] Context for dynamic option generation
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof NodeTypesApi
      */
     public getNodeParameterOptions(type: string, parameter: string, context?: string, options?: RawAxiosRequestConfig) {
         return NodeTypesApiFp(this.configuration).getNodeParameterOptions(type, parameter, context, options).then((request) => request(this.axios, this.basePath));
@@ -223,7 +216,6 @@ export class NodeTypesApi extends BaseAPI {
      * @param {string} [kind] Filter by node kind (can be comma-separated)
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof NodeTypesApi
      */
     public listNodeTypes(kind?: string, options?: RawAxiosRequestConfig) {
         return NodeTypesApiFp(this.configuration).listNodeTypes(kind, options).then((request) => request(this.axios, this.basePath));

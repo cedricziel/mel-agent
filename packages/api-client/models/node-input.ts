@@ -14,35 +14,10 @@
 
 
 
-/**
- * 
- * @export
- * @interface NodeInput
- */
 export interface NodeInput {
-    /**
-     * 
-     * @type {string}
-     * @memberof NodeInput
-     */
     'name'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof NodeInput
-     */
     'type'?: string;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof NodeInput
-     */
     'required'?: boolean;
-    /**
-     * 
-     * @type {string}
-     * @memberof NodeInput
-     */
     'description'?: string;
 }
 

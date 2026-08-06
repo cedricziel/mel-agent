@@ -17,23 +17,8 @@
 // @ts-ignore
 import type { WorkflowVersion } from './workflow-version';
 
-/**
- * 
- * @export
- * @interface WorkflowVersionList
- */
 export interface WorkflowVersionList {
-    /**
-     * 
-     * @type {Array<WorkflowVersion>}
-     * @memberof WorkflowVersionList
-     */
     'versions': Array<WorkflowVersion>;
-    /**
-     * 
-     * @type {number}
-     * @memberof WorkflowVersionList
-     */
     'total': number;
 }
 

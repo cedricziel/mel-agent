@@ -16,8 +16,6 @@
 
 /**
  * Kind of node functionality
- * @export
- * @enum {string}
  */
 
 export const NodeKind = {
@@ -25,7 +23,7 @@ export const NodeKind = {
     Model: 'model',
     Memory: 'memory',
     Tool: 'tool',
-    Trigger: 'trigger'
+    Trigger: 'trigger',
 } as const;
 
 export type NodeKind = typeof NodeKind[keyof typeof NodeKind];

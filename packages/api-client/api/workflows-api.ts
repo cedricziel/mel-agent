@@ -18,7 +18,7 @@ import type { AxiosPromise, AxiosInstance, RawAxiosRequestConfig } from 'axios';
 import globalAxios from 'axios';
 // Some imports not used depending on template conditions
 // @ts-ignore
-import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction } from '../common';
+import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction, replaceWithSerializableTypeIfNeeded } from '../common';
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS, type RequestArgs, BaseAPI, RequiredError, operationServerMap } from '../base';
 // @ts-ignore
@@ -59,7 +59,6 @@ import type { WorkflowVersion } from '../models';
 import type { WorkflowVersionList } from '../models';
 /**
  * WorkflowsApi - axios parameter creator
- * @export
  */
 export const WorkflowsApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
@@ -74,7 +73,7 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // verify required parameter 'workflowId' is not null or undefined
             assertParamExists('autoLayoutWorkflow', 'workflowId', workflowId)
             const localVarPath = `/api/workflows/{workflowId}/layout`
-                .replace(`{${"workflowId"}}`, encodeURIComponent(String(workflowId)));
+                .replace('{workflowId}', encodeURIComponent(String(workflowId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -93,8 +92,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -133,9 +132,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
-
-    
             localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -161,7 +159,7 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // verify required parameter 'createWorkflowEdgeRequest' is not null or undefined
             assertParamExists('createWorkflowEdge', 'createWorkflowEdgeRequest', createWorkflowEdgeRequest)
             const localVarPath = `/api/workflows/{workflowId}/edges`
-                .replace(`{${"workflowId"}}`, encodeURIComponent(String(workflowId)));
+                .replace('{workflowId}', encodeURIComponent(String(workflowId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -180,9 +178,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
-
-    
             localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -208,7 +205,7 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // verify required parameter 'createWorkflowNodeRequest' is not null or undefined
             assertParamExists('createWorkflowNode', 'createWorkflowNodeRequest', createWorkflowNodeRequest)
             const localVarPath = `/api/workflows/{workflowId}/nodes`
-                .replace(`{${"workflowId"}}`, encodeURIComponent(String(workflowId)));
+                .replace('{workflowId}', encodeURIComponent(String(workflowId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -227,9 +224,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
-
-    
             localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -255,7 +251,7 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // verify required parameter 'createWorkflowVersionRequest' is not null or undefined
             assertParamExists('createWorkflowVersion', 'createWorkflowVersionRequest', createWorkflowVersionRequest)
             const localVarPath = `/api/workflows/{workflowId}/versions`
-                .replace(`{${"workflowId"}}`, encodeURIComponent(String(workflowId)));
+                .replace('{workflowId}', encodeURIComponent(String(workflowId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -274,9 +270,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
-
-    
             localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -299,7 +294,7 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // verify required parameter 'id' is not null or undefined
             assertParamExists('deleteWorkflow', 'id', id)
             const localVarPath = `/api/workflows/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+                .replace('{id}', encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -318,8 +313,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -343,8 +338,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // verify required parameter 'edgeId' is not null or undefined
             assertParamExists('deleteWorkflowEdge', 'edgeId', edgeId)
             const localVarPath = `/api/workflows/{workflowId}/edges/{edgeId}`
-                .replace(`{${"workflowId"}}`, encodeURIComponent(String(workflowId)))
-                .replace(`{${"edgeId"}}`, encodeURIComponent(String(edgeId)));
+                .replace('{workflowId}', encodeURIComponent(String(workflowId)))
+                .replace('{edgeId}', encodeURIComponent(String(edgeId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -363,8 +358,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -388,8 +383,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // verify required parameter 'nodeId' is not null or undefined
             assertParamExists('deleteWorkflowNode', 'nodeId', nodeId)
             const localVarPath = `/api/workflows/{workflowId}/nodes/{nodeId}`
-                .replace(`{${"workflowId"}}`, encodeURIComponent(String(workflowId)))
-                .replace(`{${"nodeId"}}`, encodeURIComponent(String(nodeId)));
+                .replace('{workflowId}', encodeURIComponent(String(workflowId)))
+                .replace('{nodeId}', encodeURIComponent(String(nodeId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -408,8 +403,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -433,8 +428,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // verify required parameter 'versionNumber' is not null or undefined
             assertParamExists('deployWorkflowVersion', 'versionNumber', versionNumber)
             const localVarPath = `/api/workflows/{workflowId}/versions/{versionNumber}/deploy`
-                .replace(`{${"workflowId"}}`, encodeURIComponent(String(workflowId)))
-                .replace(`{${"versionNumber"}}`, encodeURIComponent(String(versionNumber)));
+                .replace('{workflowId}', encodeURIComponent(String(workflowId)))
+                .replace('{versionNumber}', encodeURIComponent(String(versionNumber)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -453,8 +448,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -476,7 +471,7 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // verify required parameter 'id' is not null or undefined
             assertParamExists('executeWorkflow', 'id', id)
             const localVarPath = `/api/workflows/{id}/execute`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+                .replace('{id}', encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -495,9 +490,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
-
-    
             localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -520,7 +514,7 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // verify required parameter 'workflowId' is not null or undefined
             assertParamExists('getLatestWorkflowVersion', 'workflowId', workflowId)
             const localVarPath = `/api/workflows/{workflowId}/versions/latest`
-                .replace(`{${"workflowId"}}`, encodeURIComponent(String(workflowId)));
+                .replace('{workflowId}', encodeURIComponent(String(workflowId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -539,8 +533,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -561,7 +555,7 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getWorkflow', 'id', id)
             const localVarPath = `/api/workflows/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+                .replace('{id}', encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -580,8 +574,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -602,7 +596,7 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // verify required parameter 'workflowId' is not null or undefined
             assertParamExists('getWorkflowDraft', 'workflowId', workflowId)
             const localVarPath = `/api/workflows/{workflowId}/draft`
-                .replace(`{${"workflowId"}}`, encodeURIComponent(String(workflowId)));
+                .replace('{workflowId}', encodeURIComponent(String(workflowId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -621,8 +615,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -646,8 +640,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // verify required parameter 'nodeId' is not null or undefined
             assertParamExists('getWorkflowNode', 'nodeId', nodeId)
             const localVarPath = `/api/workflows/{workflowId}/nodes/{nodeId}`
-                .replace(`{${"workflowId"}}`, encodeURIComponent(String(workflowId)))
-                .replace(`{${"nodeId"}}`, encodeURIComponent(String(nodeId)));
+                .replace('{workflowId}', encodeURIComponent(String(workflowId)))
+                .replace('{nodeId}', encodeURIComponent(String(nodeId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -666,8 +660,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -688,7 +682,7 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // verify required parameter 'workflowId' is not null or undefined
             assertParamExists('listWorkflowEdges', 'workflowId', workflowId)
             const localVarPath = `/api/workflows/{workflowId}/edges`
-                .replace(`{${"workflowId"}}`, encodeURIComponent(String(workflowId)));
+                .replace('{workflowId}', encodeURIComponent(String(workflowId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -707,8 +701,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -729,7 +723,7 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // verify required parameter 'workflowId' is not null or undefined
             assertParamExists('listWorkflowNodes', 'workflowId', workflowId)
             const localVarPath = `/api/workflows/{workflowId}/nodes`
-                .replace(`{${"workflowId"}}`, encodeURIComponent(String(workflowId)));
+                .replace('{workflowId}', encodeURIComponent(String(workflowId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -748,8 +742,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -772,7 +766,7 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // verify required parameter 'workflowId' is not null or undefined
             assertParamExists('listWorkflowVersions', 'workflowId', workflowId)
             const localVarPath = `/api/workflows/{workflowId}/versions`
-                .replace(`{${"workflowId"}}`, encodeURIComponent(String(workflowId)));
+                .replace('{workflowId}', encodeURIComponent(String(workflowId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -799,8 +793,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
                 localVarQueryParameter['limit'] = limit;
             }
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -846,8 +840,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
                 localVarQueryParameter['limit'] = limit;
             }
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -874,8 +868,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // verify required parameter 'executeWorkflowRequest' is not null or undefined
             assertParamExists('testWorkflowDraftNode', 'executeWorkflowRequest', executeWorkflowRequest)
             const localVarPath = `/api/workflows/{workflowId}/draft/nodes/{nodeId}/test`
-                .replace(`{${"workflowId"}}`, encodeURIComponent(String(workflowId)))
-                .replace(`{${"nodeId"}}`, encodeURIComponent(String(nodeId)));
+                .replace('{workflowId}', encodeURIComponent(String(workflowId)))
+                .replace('{nodeId}', encodeURIComponent(String(nodeId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -894,9 +888,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
-
-    
             localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -922,7 +915,7 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // verify required parameter 'updateWorkflowRequest' is not null or undefined
             assertParamExists('updateWorkflow', 'updateWorkflowRequest', updateWorkflowRequest)
             const localVarPath = `/api/workflows/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+                .replace('{id}', encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -941,9 +934,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
-
-    
             localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -969,7 +961,7 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // verify required parameter 'updateWorkflowDraftRequest' is not null or undefined
             assertParamExists('updateWorkflowDraft', 'updateWorkflowDraftRequest', updateWorkflowDraftRequest)
             const localVarPath = `/api/workflows/{workflowId}/draft`
-                .replace(`{${"workflowId"}}`, encodeURIComponent(String(workflowId)));
+                .replace('{workflowId}', encodeURIComponent(String(workflowId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -988,9 +980,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
-
-    
             localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -1019,8 +1010,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // verify required parameter 'updateWorkflowNodeRequest' is not null or undefined
             assertParamExists('updateWorkflowNode', 'updateWorkflowNodeRequest', updateWorkflowNodeRequest)
             const localVarPath = `/api/workflows/{workflowId}/nodes/{nodeId}`
-                .replace(`{${"workflowId"}}`, encodeURIComponent(String(workflowId)))
-                .replace(`{${"nodeId"}}`, encodeURIComponent(String(nodeId)));
+                .replace('{workflowId}', encodeURIComponent(String(workflowId)))
+                .replace('{nodeId}', encodeURIComponent(String(nodeId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -1039,9 +1030,8 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
-
-    
             localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -1058,7 +1048,6 @@ export const WorkflowsApiAxiosParamCreator = function (configuration?: Configura
 
 /**
  * WorkflowsApi - functional programming interface
- * @export
  */
 export const WorkflowsApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = WorkflowsApiAxiosParamCreator(configuration)
@@ -1371,7 +1360,6 @@ export const WorkflowsApiFp = function(configuration?: Configuration) {
 
 /**
  * WorkflowsApi - factory interface
- * @export
  */
 export const WorkflowsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
     const localVarFp = WorkflowsApiFp(configuration)
@@ -1618,9 +1606,6 @@ export const WorkflowsApiFactory = function (configuration?: Configuration, base
 
 /**
  * WorkflowsApi - object-oriented interface
- * @export
- * @class WorkflowsApi
- * @extends {BaseAPI}
  */
 export class WorkflowsApi extends BaseAPI {
     /**
@@ -1629,7 +1614,6 @@ export class WorkflowsApi extends BaseAPI {
      * @param {string} workflowId 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkflowsApi
      */
     public autoLayoutWorkflow(workflowId: string, options?: RawAxiosRequestConfig) {
         return WorkflowsApiFp(this.configuration).autoLayoutWorkflow(workflowId, options).then((request) => request(this.axios, this.basePath));
@@ -1641,7 +1625,6 @@ export class WorkflowsApi extends BaseAPI {
      * @param {CreateWorkflowRequest} createWorkflowRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkflowsApi
      */
     public createWorkflow(createWorkflowRequest: CreateWorkflowRequest, options?: RawAxiosRequestConfig) {
         return WorkflowsApiFp(this.configuration).createWorkflow(createWorkflowRequest, options).then((request) => request(this.axios, this.basePath));
@@ -1654,7 +1637,6 @@ export class WorkflowsApi extends BaseAPI {
      * @param {CreateWorkflowEdgeRequest} createWorkflowEdgeRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkflowsApi
      */
     public createWorkflowEdge(workflowId: string, createWorkflowEdgeRequest: CreateWorkflowEdgeRequest, options?: RawAxiosRequestConfig) {
         return WorkflowsApiFp(this.configuration).createWorkflowEdge(workflowId, createWorkflowEdgeRequest, options).then((request) => request(this.axios, this.basePath));
@@ -1667,7 +1649,6 @@ export class WorkflowsApi extends BaseAPI {
      * @param {CreateWorkflowNodeRequest} createWorkflowNodeRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkflowsApi
      */
     public createWorkflowNode(workflowId: string, createWorkflowNodeRequest: CreateWorkflowNodeRequest, options?: RawAxiosRequestConfig) {
         return WorkflowsApiFp(this.configuration).createWorkflowNode(workflowId, createWorkflowNodeRequest, options).then((request) => request(this.axios, this.basePath));
@@ -1680,7 +1661,6 @@ export class WorkflowsApi extends BaseAPI {
      * @param {CreateWorkflowVersionRequest} createWorkflowVersionRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkflowsApi
      */
     public createWorkflowVersion(workflowId: string, createWorkflowVersionRequest: CreateWorkflowVersionRequest, options?: RawAxiosRequestConfig) {
         return WorkflowsApiFp(this.configuration).createWorkflowVersion(workflowId, createWorkflowVersionRequest, options).then((request) => request(this.axios, this.basePath));
@@ -1692,7 +1672,6 @@ export class WorkflowsApi extends BaseAPI {
      * @param {string} id 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkflowsApi
      */
     public deleteWorkflow(id: string, options?: RawAxiosRequestConfig) {
         return WorkflowsApiFp(this.configuration).deleteWorkflow(id, options).then((request) => request(this.axios, this.basePath));
@@ -1705,7 +1684,6 @@ export class WorkflowsApi extends BaseAPI {
      * @param {string} edgeId 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkflowsApi
      */
     public deleteWorkflowEdge(workflowId: string, edgeId: string, options?: RawAxiosRequestConfig) {
         return WorkflowsApiFp(this.configuration).deleteWorkflowEdge(workflowId, edgeId, options).then((request) => request(this.axios, this.basePath));
@@ -1718,7 +1696,6 @@ export class WorkflowsApi extends BaseAPI {
      * @param {string} nodeId 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkflowsApi
      */
     public deleteWorkflowNode(workflowId: string, nodeId: string, options?: RawAxiosRequestConfig) {
         return WorkflowsApiFp(this.configuration).deleteWorkflowNode(workflowId, nodeId, options).then((request) => request(this.axios, this.basePath));
@@ -1731,7 +1708,6 @@ export class WorkflowsApi extends BaseAPI {
      * @param {number} versionNumber 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkflowsApi
      */
     public deployWorkflowVersion(workflowId: string, versionNumber: number, options?: RawAxiosRequestConfig) {
         return WorkflowsApiFp(this.configuration).deployWorkflowVersion(workflowId, versionNumber, options).then((request) => request(this.axios, this.basePath));
@@ -1744,7 +1720,6 @@ export class WorkflowsApi extends BaseAPI {
      * @param {ExecuteWorkflowRequest} [executeWorkflowRequest] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkflowsApi
      */
     public executeWorkflow(id: string, executeWorkflowRequest?: ExecuteWorkflowRequest, options?: RawAxiosRequestConfig) {
         return WorkflowsApiFp(this.configuration).executeWorkflow(id, executeWorkflowRequest, options).then((request) => request(this.axios, this.basePath));
@@ -1756,7 +1731,6 @@ export class WorkflowsApi extends BaseAPI {
      * @param {string} workflowId 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkflowsApi
      */
     public getLatestWorkflowVersion(workflowId: string, options?: RawAxiosRequestConfig) {
         return WorkflowsApiFp(this.configuration).getLatestWorkflowVersion(workflowId, options).then((request) => request(this.axios, this.basePath));
@@ -1768,7 +1742,6 @@ export class WorkflowsApi extends BaseAPI {
      * @param {string} id 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkflowsApi
      */
     public getWorkflow(id: string, options?: RawAxiosRequestConfig) {
         return WorkflowsApiFp(this.configuration).getWorkflow(id, options).then((request) => request(this.axios, this.basePath));
@@ -1780,7 +1753,6 @@ export class WorkflowsApi extends BaseAPI {
      * @param {string} workflowId 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkflowsApi
      */
     public getWorkflowDraft(workflowId: string, options?: RawAxiosRequestConfig) {
         return WorkflowsApiFp(this.configuration).getWorkflowDraft(workflowId, options).then((request) => request(this.axios, this.basePath));
@@ -1793,7 +1765,6 @@ export class WorkflowsApi extends BaseAPI {
      * @param {string} nodeId 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkflowsApi
      */
     public getWorkflowNode(workflowId: string, nodeId: string, options?: RawAxiosRequestConfig) {
         return WorkflowsApiFp(this.configuration).getWorkflowNode(workflowId, nodeId, options).then((request) => request(this.axios, this.basePath));
@@ -1805,7 +1776,6 @@ export class WorkflowsApi extends BaseAPI {
      * @param {string} workflowId 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkflowsApi
      */
     public listWorkflowEdges(workflowId: string, options?: RawAxiosRequestConfig) {
         return WorkflowsApiFp(this.configuration).listWorkflowEdges(workflowId, options).then((request) => request(this.axios, this.basePath));
@@ -1817,7 +1787,6 @@ export class WorkflowsApi extends BaseAPI {
      * @param {string} workflowId 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkflowsApi
      */
     public listWorkflowNodes(workflowId: string, options?: RawAxiosRequestConfig) {
         return WorkflowsApiFp(this.configuration).listWorkflowNodes(workflowId, options).then((request) => request(this.axios, this.basePath));
@@ -1831,7 +1800,6 @@ export class WorkflowsApi extends BaseAPI {
      * @param {number} [limit] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkflowsApi
      */
     public listWorkflowVersions(workflowId: string, page?: number, limit?: number, options?: RawAxiosRequestConfig) {
         return WorkflowsApiFp(this.configuration).listWorkflowVersions(workflowId, page, limit, options).then((request) => request(this.axios, this.basePath));
@@ -1844,7 +1812,6 @@ export class WorkflowsApi extends BaseAPI {
      * @param {number} [limit] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkflowsApi
      */
     public listWorkflows(page?: number, limit?: number, options?: RawAxiosRequestConfig) {
         return WorkflowsApiFp(this.configuration).listWorkflows(page, limit, options).then((request) => request(this.axios, this.basePath));
@@ -1858,7 +1825,6 @@ export class WorkflowsApi extends BaseAPI {
      * @param {ExecuteWorkflowRequest} executeWorkflowRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkflowsApi
      */
     public testWorkflowDraftNode(workflowId: string, nodeId: string, executeWorkflowRequest: ExecuteWorkflowRequest, options?: RawAxiosRequestConfig) {
         return WorkflowsApiFp(this.configuration).testWorkflowDraftNode(workflowId, nodeId, executeWorkflowRequest, options).then((request) => request(this.axios, this.basePath));
@@ -1871,7 +1837,6 @@ export class WorkflowsApi extends BaseAPI {
      * @param {UpdateWorkflowRequest} updateWorkflowRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkflowsApi
      */
     public updateWorkflow(id: string, updateWorkflowRequest: UpdateWorkflowRequest, options?: RawAxiosRequestConfig) {
         return WorkflowsApiFp(this.configuration).updateWorkflow(id, updateWorkflowRequest, options).then((request) => request(this.axios, this.basePath));
@@ -1884,7 +1849,6 @@ export class WorkflowsApi extends BaseAPI {
      * @param {UpdateWorkflowDraftRequest} updateWorkflowDraftRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkflowsApi
      */
     public updateWorkflowDraft(workflowId: string, updateWorkflowDraftRequest: UpdateWorkflowDraftRequest, options?: RawAxiosRequestConfig) {
         return WorkflowsApiFp(this.configuration).updateWorkflowDraft(workflowId, updateWorkflowDraftRequest, options).then((request) => request(this.axios, this.basePath));
@@ -1898,7 +1862,6 @@ export class WorkflowsApi extends BaseAPI {
      * @param {UpdateWorkflowNodeRequest} updateWorkflowNodeRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkflowsApi
      */
     public updateWorkflowNode(workflowId: string, nodeId: string, updateWorkflowNodeRequest: UpdateWorkflowNodeRequest, options?: RawAxiosRequestConfig) {
         return WorkflowsApiFp(this.configuration).updateWorkflowNode(workflowId, nodeId, updateWorkflowNodeRequest, options).then((request) => request(this.axios, this.basePath));

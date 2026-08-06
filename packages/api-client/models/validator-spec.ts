@@ -14,22 +14,13 @@
 
 
 
-/**
- * 
- * @export
- * @interface ValidatorSpec
- */
 export interface ValidatorSpec {
     /**
      * Validator type (e.g. \"notEmpty\", \"regex\")
-     * @type {string}
-     * @memberof ValidatorSpec
      */
     'type': string;
     /**
      * Parameters for the validator
-     * @type {object}
-     * @memberof ValidatorSpec
      */
     'params'?: object;
 }

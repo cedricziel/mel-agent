@@ -14,17 +14,7 @@
 
 
 
-/**
- * 
- * @export
- * @interface ExecuteWorkflowRequest
- */
 export interface ExecuteWorkflowRequest {
-    /**
-     * 
-     * @type {{ [key: string]: any; }}
-     * @memberof ExecuteWorkflowRequest
-     */
     'input'?: { [key: string]: any; };
 }
 

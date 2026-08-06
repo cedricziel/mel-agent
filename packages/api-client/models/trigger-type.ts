@@ -16,13 +16,11 @@
 
 /**
  * Type of trigger
- * @export
- * @enum {string}
  */
 
 export const TriggerType = {
     Schedule: 'schedule',
-    Webhook: 'webhook'
+    Webhook: 'webhook',
 } as const;
 
 export type TriggerType = typeof TriggerType[keyof typeof TriggerType];

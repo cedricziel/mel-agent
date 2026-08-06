@@ -17,53 +17,13 @@
 // @ts-ignore
 import type { CredentialStatus } from './credential-status';
 
-/**
- * 
- * @export
- * @interface Credential
- */
 export interface Credential {
-    /**
-     * 
-     * @type {string}
-     * @memberof Credential
-     */
     'id'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Credential
-     */
     'name'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Credential
-     */
     'type'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Credential
-     */
     'description'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Credential
-     */
     'created_at'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Credential
-     */
     'last_used'?: string;
-    /**
-     * 
-     * @type {CredentialStatus}
-     * @memberof Credential
-     */
     'status'?: CredentialStatus;
 }
 

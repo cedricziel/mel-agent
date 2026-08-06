@@ -18,7 +18,7 @@ import type { AxiosPromise, AxiosInstance, RawAxiosRequestConfig } from 'axios';
 import globalAxios from 'axios';
 // Some imports not used depending on template conditions
 // @ts-ignore
-import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction } from '../common';
+import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction, replaceWithSerializableTypeIfNeeded } from '../common';
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS, type RequestArgs, BaseAPI, RequiredError, operationServerMap } from '../base';
 // @ts-ignore
@@ -31,7 +31,6 @@ import type { CredentialTypeSchema } from '../models';
 import type { TestCredentialsRequest } from '../models';
 /**
  * CredentialTypesApi - axios parameter creator
- * @export
  */
 export const CredentialTypesApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
@@ -46,7 +45,7 @@ export const CredentialTypesApiAxiosParamCreator = function (configuration?: Con
             // verify required parameter 'type' is not null or undefined
             assertParamExists('getCredentialTypeSchema', 'type', type)
             const localVarPath = `/api/credential-types/{type}/schema`
-                .replace(`{${"type"}}`, encodeURIComponent(String(type)));
+                .replace('{type}', encodeURIComponent(String(type)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -65,8 +64,8 @@ export const CredentialTypesApiAxiosParamCreator = function (configuration?: Con
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -102,8 +101,8 @@ export const CredentialTypesApiAxiosParamCreator = function (configuration?: Con
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -127,7 +126,7 @@ export const CredentialTypesApiAxiosParamCreator = function (configuration?: Con
             // verify required parameter 'testCredentialsRequest' is not null or undefined
             assertParamExists('testCredentials', 'testCredentialsRequest', testCredentialsRequest)
             const localVarPath = `/api/credential-types/{type}/test`
-                .replace(`{${"type"}}`, encodeURIComponent(String(type)));
+                .replace('{type}', encodeURIComponent(String(type)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -146,9 +145,8 @@ export const CredentialTypesApiAxiosParamCreator = function (configuration?: Con
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
-
-    
             localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -165,7 +163,6 @@ export const CredentialTypesApiAxiosParamCreator = function (configuration?: Con
 
 /**
  * CredentialTypesApi - functional programming interface
- * @export
  */
 export const CredentialTypesApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = CredentialTypesApiAxiosParamCreator(configuration)
@@ -214,7 +211,6 @@ export const CredentialTypesApiFp = function(configuration?: Configuration) {
 
 /**
  * CredentialTypesApi - factory interface
- * @export
  */
 export const CredentialTypesApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
     const localVarFp = CredentialTypesApiFp(configuration)
@@ -254,9 +250,6 @@ export const CredentialTypesApiFactory = function (configuration?: Configuration
 
 /**
  * CredentialTypesApi - object-oriented interface
- * @export
- * @class CredentialTypesApi
- * @extends {BaseAPI}
  */
 export class CredentialTypesApi extends BaseAPI {
     /**
@@ -265,7 +258,6 @@ export class CredentialTypesApi extends BaseAPI {
      * @param {string} type 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof CredentialTypesApi
      */
     public getCredentialTypeSchema(type: string, options?: RawAxiosRequestConfig) {
         return CredentialTypesApiFp(this.configuration).getCredentialTypeSchema(type, options).then((request) => request(this.axios, this.basePath));
@@ -276,7 +268,6 @@ export class CredentialTypesApi extends BaseAPI {
      * @summary List credential type definitions
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof CredentialTypesApi
      */
     public listCredentialTypes(options?: RawAxiosRequestConfig) {
         return CredentialTypesApiFp(this.configuration).listCredentialTypes(options).then((request) => request(this.axios, this.basePath));
@@ -289,7 +280,6 @@ export class CredentialTypesApi extends BaseAPI {
      * @param {TestCredentialsRequest} testCredentialsRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof CredentialTypesApi
      */
     public testCredentials(type: string, testCredentialsRequest: TestCredentialsRequest, options?: RawAxiosRequestConfig) {
         return CredentialTypesApiFp(this.configuration).testCredentials(type, testCredentialsRequest, options).then((request) => request(this.axios, this.basePath));

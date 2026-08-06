@@ -18,7 +18,7 @@ import type { AxiosPromise, AxiosInstance, RawAxiosRequestConfig } from 'axios';
 import globalAxios from 'axios';
 // Some imports not used depending on template conditions
 // @ts-ignore
-import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction } from '../common';
+import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction, replaceWithSerializableTypeIfNeeded } from '../common';
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS, type RequestArgs, BaseAPI, RequiredError, operationServerMap } from '../base';
 // @ts-ignore
@@ -29,7 +29,6 @@ import type { Trigger } from '../models';
 import type { UpdateTriggerRequest } from '../models';
 /**
  * TriggersApi - axios parameter creator
- * @export
  */
 export const TriggersApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
@@ -62,9 +61,8 @@ export const TriggersApiAxiosParamCreator = function (configuration?: Configurat
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
-
-    
             localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -87,7 +85,7 @@ export const TriggersApiAxiosParamCreator = function (configuration?: Configurat
             // verify required parameter 'id' is not null or undefined
             assertParamExists('deleteTrigger', 'id', id)
             const localVarPath = `/api/triggers/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+                .replace('{id}', encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -106,8 +104,8 @@ export const TriggersApiAxiosParamCreator = function (configuration?: Configurat
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -128,7 +126,7 @@ export const TriggersApiAxiosParamCreator = function (configuration?: Configurat
             // verify required parameter 'id' is not null or undefined
             assertParamExists('getTrigger', 'id', id)
             const localVarPath = `/api/triggers/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+                .replace('{id}', encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -147,8 +145,8 @@ export const TriggersApiAxiosParamCreator = function (configuration?: Configurat
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -184,8 +182,8 @@ export const TriggersApiAxiosParamCreator = function (configuration?: Configurat
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -209,7 +207,7 @@ export const TriggersApiAxiosParamCreator = function (configuration?: Configurat
             // verify required parameter 'updateTriggerRequest' is not null or undefined
             assertParamExists('updateTrigger', 'updateTriggerRequest', updateTriggerRequest)
             const localVarPath = `/api/triggers/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+                .replace('{id}', encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -228,9 +226,8 @@ export const TriggersApiAxiosParamCreator = function (configuration?: Configurat
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
-
-    
             localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -247,7 +244,6 @@ export const TriggersApiAxiosParamCreator = function (configuration?: Configurat
 
 /**
  * TriggersApi - functional programming interface
- * @export
  */
 export const TriggersApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = TriggersApiAxiosParamCreator(configuration)
@@ -322,7 +318,6 @@ export const TriggersApiFp = function(configuration?: Configuration) {
 
 /**
  * TriggersApi - factory interface
- * @export
  */
 export const TriggersApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
     const localVarFp = TriggersApiFp(configuration)
@@ -382,9 +377,6 @@ export const TriggersApiFactory = function (configuration?: Configuration, baseP
 
 /**
  * TriggersApi - object-oriented interface
- * @export
- * @class TriggersApi
- * @extends {BaseAPI}
  */
 export class TriggersApi extends BaseAPI {
     /**
@@ -393,7 +385,6 @@ export class TriggersApi extends BaseAPI {
      * @param {CreateTriggerRequest} createTriggerRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof TriggersApi
      */
     public createTrigger(createTriggerRequest: CreateTriggerRequest, options?: RawAxiosRequestConfig) {
         return TriggersApiFp(this.configuration).createTrigger(createTriggerRequest, options).then((request) => request(this.axios, this.basePath));
@@ -405,7 +396,6 @@ export class TriggersApi extends BaseAPI {
      * @param {string} id 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof TriggersApi
      */
     public deleteTrigger(id: string, options?: RawAxiosRequestConfig) {
         return TriggersApiFp(this.configuration).deleteTrigger(id, options).then((request) => request(this.axios, this.basePath));
@@ -417,7 +407,6 @@ export class TriggersApi extends BaseAPI {
      * @param {string} id 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof TriggersApi
      */
     public getTrigger(id: string, options?: RawAxiosRequestConfig) {
         return TriggersApiFp(this.configuration).getTrigger(id, options).then((request) => request(this.axios, this.basePath));
@@ -428,7 +417,6 @@ export class TriggersApi extends BaseAPI {
      * @summary List triggers
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof TriggersApi
      */
     public listTriggers(options?: RawAxiosRequestConfig) {
         return TriggersApiFp(this.configuration).listTriggers(options).then((request) => request(this.axios, this.basePath));
@@ -441,7 +429,6 @@ export class TriggersApi extends BaseAPI {
      * @param {UpdateTriggerRequest} updateTriggerRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof TriggersApi
      */
     public updateTrigger(id: string, updateTriggerRequest: UpdateTriggerRequest, options?: RawAxiosRequestConfig) {
         return TriggersApiFp(this.configuration).updateTrigger(id, updateTriggerRequest, options).then((request) => request(this.axios, this.basePath));

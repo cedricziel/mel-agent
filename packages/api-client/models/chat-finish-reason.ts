@@ -16,14 +16,12 @@
 
 /**
  * Reason for finishing a chat completion
- * @export
- * @enum {string}
  */
 
 export const ChatFinishReason = {
     Stop: 'stop',
     Length: 'length',
-    FunctionCall: 'function_call'
+    FunctionCall: 'function_call',
 } as const;
 
 export type ChatFinishReason = typeof ChatFinishReason[keyof typeof ChatFinishReason];

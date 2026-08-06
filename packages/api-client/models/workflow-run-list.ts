@@ -17,35 +17,10 @@
 // @ts-ignore
 import type { WorkflowRun } from './workflow-run';
 
-/**
- * 
- * @export
- * @interface WorkflowRunList
- */
 export interface WorkflowRunList {
-    /**
-     * 
-     * @type {Array<WorkflowRun>}
-     * @memberof WorkflowRunList
-     */
     'runs': Array<WorkflowRun>;
-    /**
-     * 
-     * @type {number}
-     * @memberof WorkflowRunList
-     */
     'total': number;
-    /**
-     * 
-     * @type {number}
-     * @memberof WorkflowRunList
-     */
     'page': number;
-    /**
-     * 
-     * @type {number}
-     * @memberof WorkflowRunList
-     */
     'limit': number;
 }
 

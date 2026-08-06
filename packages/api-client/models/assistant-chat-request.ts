@@ -17,22 +17,13 @@
 // @ts-ignore
 import type { ChatMessage } from './chat-message';
 
-/**
- * 
- * @export
- * @interface AssistantChatRequest
- */
 export interface AssistantChatRequest {
     /**
      * Array of chat messages
-     * @type {Array<ChatMessage>}
-     * @memberof AssistantChatRequest
      */
     'messages': Array<ChatMessage>;
     /**
      * Optional workflow ID for context-aware assistance
-     * @type {string}
-     * @memberof AssistantChatRequest
      */
     'workflow_id'?: string;
 }

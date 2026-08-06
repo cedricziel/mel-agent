@@ -14,41 +14,11 @@
 
 
 
-/**
- * 
- * @export
- * @interface CredentialTypeSchema
- */
 export interface CredentialTypeSchema {
-    /**
-     * 
-     * @type {string}
-     * @memberof CredentialTypeSchema
-     */
     'type'?: string;
-    /**
-     * 
-     * @type {{ [key: string]: any; }}
-     * @memberof CredentialTypeSchema
-     */
     'properties'?: { [key: string]: any; };
-    /**
-     * 
-     * @type {Array<string>}
-     * @memberof CredentialTypeSchema
-     */
     'required'?: Array<string>;
-    /**
-     * 
-     * @type {string}
-     * @memberof CredentialTypeSchema
-     */
     'title'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof CredentialTypeSchema
-     */
     'description'?: string;
 }
 

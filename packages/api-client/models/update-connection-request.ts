@@ -17,47 +17,18 @@
 // @ts-ignore
 import type { ConnectionStatus } from './connection-status';
 
-/**
- * 
- * @export
- * @interface UpdateConnectionRequest
- */
 export interface UpdateConnectionRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof UpdateConnectionRequest
-     */
     'name'?: string;
     /**
      * Connection secret configuration containing authentication credentials
-     * @type {{ [key: string]: any; }}
-     * @memberof UpdateConnectionRequest
      */
     'secret'?: { [key: string]: any; };
     /**
      * Connection configuration containing non-sensitive connection parameters
-     * @type {{ [key: string]: any; }}
-     * @memberof UpdateConnectionRequest
      */
     'config'?: { [key: string]: any; };
-    /**
-     * 
-     * @type {number}
-     * @memberof UpdateConnectionRequest
-     */
     'usage_limit_month'?: number;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof UpdateConnectionRequest
-     */
     'is_default'?: boolean;
-    /**
-     * 
-     * @type {ConnectionStatus}
-     * @memberof UpdateConnectionRequest
-     */
     'status'?: ConnectionStatus;
 }
 

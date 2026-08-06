@@ -18,14 +18,13 @@ import type { AxiosPromise, AxiosInstance, RawAxiosRequestConfig } from 'axios';
 import globalAxios from 'axios';
 // Some imports not used depending on template conditions
 // @ts-ignore
-import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction } from '../common';
+import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction, replaceWithSerializableTypeIfNeeded } from '../common';
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS, type RequestArgs, BaseAPI, RequiredError, operationServerMap } from '../base';
 // @ts-ignore
 import type { Integration } from '../models';
 /**
  * IntegrationsApi - axios parameter creator
- * @export
  */
 export const IntegrationsApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
@@ -55,8 +54,8 @@ export const IntegrationsApiAxiosParamCreator = function (configuration?: Config
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -71,7 +70,6 @@ export const IntegrationsApiAxiosParamCreator = function (configuration?: Config
 
 /**
  * IntegrationsApi - functional programming interface
- * @export
  */
 export const IntegrationsApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = IntegrationsApiAxiosParamCreator(configuration)
@@ -93,7 +91,6 @@ export const IntegrationsApiFp = function(configuration?: Configuration) {
 
 /**
  * IntegrationsApi - factory interface
- * @export
  */
 export const IntegrationsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
     const localVarFp = IntegrationsApiFp(configuration)
@@ -112,9 +109,6 @@ export const IntegrationsApiFactory = function (configuration?: Configuration, b
 
 /**
  * IntegrationsApi - object-oriented interface
- * @export
- * @class IntegrationsApi
- * @extends {BaseAPI}
  */
 export class IntegrationsApi extends BaseAPI {
     /**
@@ -122,7 +116,6 @@ export class IntegrationsApi extends BaseAPI {
      * @summary List available integrations
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof IntegrationsApi
      */
     public listIntegrations(options?: RawAxiosRequestConfig) {
         return IntegrationsApiFp(this.configuration).listIntegrations(options).then((request) => request(this.axios, this.basePath));

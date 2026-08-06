@@ -16,8 +16,6 @@
 
 /**
  * Status of a workflow step
- * @export
- * @enum {string}
  */
 
 export const WorkflowStepStatus = {
@@ -25,7 +23,7 @@ export const WorkflowStepStatus = {
     Running: 'running',
     Completed: 'completed',
     Failed: 'failed',
-    Skipped: 'skipped'
+    Skipped: 'skipped',
 } as const;
 
 export type WorkflowStepStatus = typeof WorkflowStepStatus[keyof typeof WorkflowStepStatus];

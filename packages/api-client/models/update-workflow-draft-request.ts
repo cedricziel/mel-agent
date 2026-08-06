@@ -17,17 +17,7 @@
 // @ts-ignore
 import type { WorkflowDefinition } from './workflow-definition';
 
-/**
- * 
- * @export
- * @interface UpdateWorkflowDraftRequest
- */
 export interface UpdateWorkflowDraftRequest {
-    /**
-     * 
-     * @type {WorkflowDefinition}
-     * @memberof UpdateWorkflowDraftRequest
-     */
     'definition'?: WorkflowDefinition;
 }
 

@@ -17,65 +17,21 @@
 // @ts-ignore
 import type { WorkflowStepStatus } from './workflow-step-status';
 
-/**
- * 
- * @export
- * @interface WorkflowStep
- */
 export interface WorkflowStep {
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowStep
-     */
     'id'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowStep
-     */
     'run_id'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowStep
-     */
     'node_id'?: string;
-    /**
-     * 
-     * @type {WorkflowStepStatus}
-     * @memberof WorkflowStep
-     */
     'status'?: WorkflowStepStatus;
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowStep
-     */
     'started_at'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowStep
-     */
     'completed_at'?: string;
     /**
      * Generic input object containing arbitrary input data
-     * @type {{ [key: string]: any; }}
-     * @memberof WorkflowStep
      */
     'input'?: { [key: string]: any; };
     /**
      * Generic output object containing arbitrary output data
-     * @type {{ [key: string]: any; }}
-     * @memberof WorkflowStep
      */
     'output'?: { [key: string]: any; };
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowStep
-     */
     'error'?: string;
 }
 

@@ -14,41 +14,11 @@
 
 
 
-/**
- * 
- * @export
- * @interface WorkflowEdge
- */
 export interface WorkflowEdge {
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowEdge
-     */
     'id': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowEdge
-     */
     'source': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowEdge
-     */
     'target': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowEdge
-     */
     'sourceOutput'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowEdge
-     */
     'targetInput'?: string;
 }
 

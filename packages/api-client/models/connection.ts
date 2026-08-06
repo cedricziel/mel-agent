@@ -17,77 +17,23 @@
 // @ts-ignore
 import type { ConnectionStatus } from './connection-status';
 
-/**
- * 
- * @export
- * @interface Connection
- */
 export interface Connection {
-    /**
-     * 
-     * @type {string}
-     * @memberof Connection
-     */
     'id'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Connection
-     */
     'user_id'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Connection
-     */
     'integration_id'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Connection
-     */
     'name'?: string;
     /**
      * Connection secret configuration containing authentication credentials
-     * @type {{ [key: string]: any; }}
-     * @memberof Connection
      */
     'secret'?: { [key: string]: any; };
     /**
      * Connection configuration containing non-sensitive connection parameters
-     * @type {{ [key: string]: any; }}
-     * @memberof Connection
      */
     'config'?: { [key: string]: any; };
-    /**
-     * 
-     * @type {number}
-     * @memberof Connection
-     */
     'usage_limit_month'?: number;
-    /**
-     * 
-     * @type {boolean}
-     * @memberof Connection
-     */
     'is_default'?: boolean;
-    /**
-     * 
-     * @type {string}
-     * @memberof Connection
-     */
     'created_at'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Connection
-     */
     'last_validated'?: string;
-    /**
-     * 
-     * @type {ConnectionStatus}
-     * @memberof Connection
-     */
     'status'?: ConnectionStatus;
 }
 

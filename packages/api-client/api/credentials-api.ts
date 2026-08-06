@@ -18,14 +18,13 @@ import type { AxiosPromise, AxiosInstance, RawAxiosRequestConfig } from 'axios';
 import globalAxios from 'axios';
 // Some imports not used depending on template conditions
 // @ts-ignore
-import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction } from '../common';
+import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction, replaceWithSerializableTypeIfNeeded } from '../common';
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS, type RequestArgs, BaseAPI, RequiredError, operationServerMap } from '../base';
 // @ts-ignore
 import type { Credential } from '../models';
 /**
  * CredentialsApi - axios parameter creator
- * @export
  */
 export const CredentialsApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
@@ -60,8 +59,8 @@ export const CredentialsApiAxiosParamCreator = function (configuration?: Configu
                 localVarQueryParameter['credential_type'] = credentialType;
             }
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -76,7 +75,6 @@ export const CredentialsApiAxiosParamCreator = function (configuration?: Configu
 
 /**
  * CredentialsApi - functional programming interface
- * @export
  */
 export const CredentialsApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = CredentialsApiAxiosParamCreator(configuration)
@@ -99,7 +97,6 @@ export const CredentialsApiFp = function(configuration?: Configuration) {
 
 /**
  * CredentialsApi - factory interface
- * @export
  */
 export const CredentialsApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
     const localVarFp = CredentialsApiFp(configuration)
@@ -119,9 +116,6 @@ export const CredentialsApiFactory = function (configuration?: Configuration, ba
 
 /**
  * CredentialsApi - object-oriented interface
- * @export
- * @class CredentialsApi
- * @extends {BaseAPI}
  */
 export class CredentialsApi extends BaseAPI {
     /**
@@ -130,7 +124,6 @@ export class CredentialsApi extends BaseAPI {
      * @param {string} [credentialType] Filter by credential type
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof CredentialsApi
      */
     public listCredentials(credentialType?: string, options?: RawAxiosRequestConfig) {
         return CredentialsApiFp(this.configuration).listCredentials(credentialType, options).then((request) => request(this.axios, this.basePath));

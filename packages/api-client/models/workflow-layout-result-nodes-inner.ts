@@ -17,23 +17,8 @@
 // @ts-ignore
 import type { WorkflowLayoutResultNodesInnerPosition } from './workflow-layout-result-nodes-inner-position';
 
-/**
- * 
- * @export
- * @interface WorkflowLayoutResultNodesInner
- */
 export interface WorkflowLayoutResultNodesInner {
-    /**
-     * 
-     * @type {string}
-     * @memberof WorkflowLayoutResultNodesInner
-     */
     'id'?: string;
-    /**
-     * 
-     * @type {WorkflowLayoutResultNodesInnerPosition}
-     * @memberof WorkflowLayoutResultNodesInner
-     */
     'position'?: WorkflowLayoutResultNodesInnerPosition;
 }
 

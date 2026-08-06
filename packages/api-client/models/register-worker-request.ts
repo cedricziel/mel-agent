@@ -14,29 +14,9 @@
 
 
 
-/**
- * 
- * @export
- * @interface RegisterWorkerRequest
- */
 export interface RegisterWorkerRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof RegisterWorkerRequest
-     */
     'id': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof RegisterWorkerRequest
-     */
     'name'?: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof RegisterWorkerRequest
-     */
     'concurrency'?: number;
 }
 

@@ -14,35 +14,10 @@
 
 
 
-/**
- * 
- * @export
- * @interface CredentialTestResult
- */
 export interface CredentialTestResult {
-    /**
-     * 
-     * @type {boolean}
-     * @memberof CredentialTestResult
-     */
     'success'?: boolean;
-    /**
-     * 
-     * @type {string}
-     * @memberof CredentialTestResult
-     */
     'message'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof CredentialTestResult
-     */
     'error'?: string;
-    /**
-     * 
-     * @type {{ [key: string]: any; }}
-     * @memberof CredentialTestResult
-     */
     'details'?: { [key: string]: any; };
 }
 

@@ -14,28 +14,17 @@
 
 
 
-/**
- * 
- * @export
- * @interface ChatUsage
- */
 export interface ChatUsage {
     /**
      * Tokens used in prompt
-     * @type {number}
-     * @memberof ChatUsage
      */
     'prompt_tokens'?: number;
     /**
      * Tokens used in completion
-     * @type {number}
-     * @memberof ChatUsage
      */
     'completion_tokens'?: number;
     /**
      * Total tokens used
-     * @type {number}
-     * @memberof ChatUsage
      */
     'total_tokens'?: number;
 }

@@ -14,23 +14,8 @@
 
 
 
-/**
- * 
- * @export
- * @interface WorkflowLayoutResultNodesInnerPosition
- */
 export interface WorkflowLayoutResultNodesInnerPosition {
-    /**
-     * 
-     * @type {number}
-     * @memberof WorkflowLayoutResultNodesInnerPosition
-     */
     'x'?: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof WorkflowLayoutResultNodesInnerPosition
-     */
     'y'?: number;
 }
 

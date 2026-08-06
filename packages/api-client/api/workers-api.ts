@@ -18,7 +18,7 @@ import type { AxiosPromise, AxiosInstance, RawAxiosRequestConfig } from 'axios';
 import globalAxios from 'axios';
 // Some imports not used depending on template conditions
 // @ts-ignore
-import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction } from '../common';
+import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction, replaceWithSerializableTypeIfNeeded } from '../common';
 // @ts-ignore
 import { BASE_PATH, COLLECTION_FORMATS, type RequestArgs, BaseAPI, RequiredError, operationServerMap } from '../base';
 // @ts-ignore
@@ -33,7 +33,6 @@ import type { WorkItem } from '../models';
 import type { Worker } from '../models';
 /**
  * WorkersApi - axios parameter creator
- * @export
  */
 export const WorkersApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
@@ -51,7 +50,7 @@ export const WorkersApiAxiosParamCreator = function (configuration?: Configurati
             // verify required parameter 'claimWorkRequest' is not null or undefined
             assertParamExists('claimWork', 'claimWorkRequest', claimWorkRequest)
             const localVarPath = `/api/workers/{id}/claim-work`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+                .replace('{id}', encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -70,9 +69,8 @@ export const WorkersApiAxiosParamCreator = function (configuration?: Configurati
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
-
-    
             localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -101,8 +99,8 @@ export const WorkersApiAxiosParamCreator = function (configuration?: Configurati
             // verify required parameter 'completeWorkRequest' is not null or undefined
             assertParamExists('completeWork', 'completeWorkRequest', completeWorkRequest)
             const localVarPath = `/api/workers/{id}/complete-work/{itemId}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)))
-                .replace(`{${"itemId"}}`, encodeURIComponent(String(itemId)));
+                .replace('{id}', encodeURIComponent(String(id)))
+                .replace('{itemId}', encodeURIComponent(String(itemId)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -121,8 +119,6 @@ export const WorkersApiAxiosParamCreator = function (configuration?: Configurati
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
-
-    
             localVarHeaderParameter['Content-Type'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
@@ -161,8 +157,8 @@ export const WorkersApiAxiosParamCreator = function (configuration?: Configurati
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -201,9 +197,8 @@ export const WorkersApiAxiosParamCreator = function (configuration?: Configurati
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
-
-    
             localVarHeaderParameter['Content-Type'] = 'application/json';
+            localVarHeaderParameter['Accept'] = 'application/json';
 
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
@@ -226,7 +221,7 @@ export const WorkersApiAxiosParamCreator = function (configuration?: Configurati
             // verify required parameter 'id' is not null or undefined
             assertParamExists('unregisterWorker', 'id', id)
             const localVarPath = `/api/workers/{id}`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+                .replace('{id}', encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -245,8 +240,8 @@ export const WorkersApiAxiosParamCreator = function (configuration?: Configurati
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -267,7 +262,7 @@ export const WorkersApiAxiosParamCreator = function (configuration?: Configurati
             // verify required parameter 'id' is not null or undefined
             assertParamExists('updateWorkerHeartbeat', 'id', id)
             const localVarPath = `/api/workers/{id}/heartbeat`
-                .replace(`{${"id"}}`, encodeURIComponent(String(id)));
+                .replace('{id}', encodeURIComponent(String(id)));
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
             let baseOptions;
@@ -286,8 +281,8 @@ export const WorkersApiAxiosParamCreator = function (configuration?: Configurati
             // http bearer authentication required
             await setBearerAuthToObject(localVarHeaderParameter, configuration)
 
+            localVarHeaderParameter['Accept'] = 'application/json';
 
-    
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
@@ -302,7 +297,6 @@ export const WorkersApiAxiosParamCreator = function (configuration?: Configurati
 
 /**
  * WorkersApi - functional programming interface
- * @export
  */
 export const WorkersApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = WorkersApiAxiosParamCreator(configuration)
@@ -392,7 +386,6 @@ export const WorkersApiFp = function(configuration?: Configuration) {
 
 /**
  * WorkersApi - factory interface
- * @export
  */
 export const WorkersApiFactory = function (configuration?: Configuration, basePath?: string, axios?: AxiosInstance) {
     const localVarFp = WorkersApiFp(configuration)
@@ -464,9 +457,6 @@ export const WorkersApiFactory = function (configuration?: Configuration, basePa
 
 /**
  * WorkersApi - object-oriented interface
- * @export
- * @class WorkersApi
- * @extends {BaseAPI}
  */
 export class WorkersApi extends BaseAPI {
     /**
@@ -476,7 +466,6 @@ export class WorkersApi extends BaseAPI {
      * @param {ClaimWorkRequest} claimWorkRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkersApi
      */
     public claimWork(id: string, claimWorkRequest: ClaimWorkRequest, options?: RawAxiosRequestConfig) {
         return WorkersApiFp(this.configuration).claimWork(id, claimWorkRequest, options).then((request) => request(this.axios, this.basePath));
@@ -490,7 +479,6 @@ export class WorkersApi extends BaseAPI {
      * @param {CompleteWorkRequest} completeWorkRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkersApi
      */
     public completeWork(id: string, itemId: string, completeWorkRequest: CompleteWorkRequest, options?: RawAxiosRequestConfig) {
         return WorkersApiFp(this.configuration).completeWork(id, itemId, completeWorkRequest, options).then((request) => request(this.axios, this.basePath));
@@ -501,7 +489,6 @@ export class WorkersApi extends BaseAPI {
      * @summary List all workers
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkersApi
      */
     public listWorkers(options?: RawAxiosRequestConfig) {
         return WorkersApiFp(this.configuration).listWorkers(options).then((request) => request(this.axios, this.basePath));
@@ -513,7 +500,6 @@ export class WorkersApi extends BaseAPI {
      * @param {RegisterWorkerRequest} registerWorkerRequest 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkersApi
      */
     public registerWorker(registerWorkerRequest: RegisterWorkerRequest, options?: RawAxiosRequestConfig) {
         return WorkersApiFp(this.configuration).registerWorker(registerWorkerRequest, options).then((request) => request(this.axios, this.basePath));
@@ -525,7 +511,6 @@ export class WorkersApi extends BaseAPI {
      * @param {string} id 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkersApi
      */
     public unregisterWorker(id: string, options?: RawAxiosRequestConfig) {
         return WorkersApiFp(this.configuration).unregisterWorker(id, options).then((request) => request(this.axios, this.basePath));
@@ -537,7 +522,6 @@ export class WorkersApi extends BaseAPI {
      * @param {string} id 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
-     * @memberof WorkersApi
      */
     public updateWorkerHeartbeat(id: string, options?: RawAxiosRequestConfig) {
         return WorkersApiFp(this.configuration).updateWorkerHeartbeat(id, options).then((request) => request(this.axios, this.basePath));

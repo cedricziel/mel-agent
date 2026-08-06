@@ -23,5 +23,6 @@
     "generateAliasAsModel": false,
     "packageUrl": "https://github.com/cedricziel/mel-agent/tree/main/packages/api-client",
     "packageAuthor": "MEL Agent Team"
-  }
+  },
+  "templateDir": "templates/typescript-axios"
 }

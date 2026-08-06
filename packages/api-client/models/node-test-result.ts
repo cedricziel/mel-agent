@@ -14,41 +14,11 @@
 
 
 
-/**
- * 
- * @export
- * @interface NodeTestResult
- */
 export interface NodeTestResult {
-    /**
-     * 
-     * @type {boolean}
-     * @memberof NodeTestResult
-     */
     'success'?: boolean;
-    /**
-     * 
-     * @type {{ [key: string]: any; }}
-     * @memberof NodeTestResult
-     */
     'output'?: { [key: string]: any; };
-    /**
-     * 
-     * @type {string}
-     * @memberof NodeTestResult
-     */
     'error'?: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof NodeTestResult
-     */
     'execution_time'?: number;
-    /**
-     * 
-     * @type {Array<string>}
-     * @memberof NodeTestResult
-     */
     'logs'?: Array<string>;
 }
 

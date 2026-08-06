@@ -17,29 +17,12 @@
 // @ts-ignore
 import type { NodePosition } from './node-position';
 
-/**
- * 
- * @export
- * @interface UpdateWorkflowNodeRequest
- */
 export interface UpdateWorkflowNodeRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof UpdateWorkflowNodeRequest
-     */
     'name'?: string;
     /**
      * Node configuration containing node-specific parameters and settings
-     * @type {{ [key: string]: any; }}
-     * @memberof UpdateWorkflowNodeRequest
      */
     'config'?: { [key: string]: any; };
-    /**
-     * 
-     * @type {NodePosition}
-     * @memberof UpdateWorkflowNodeRequest
-     */
     'position'?: NodePosition;
 }
 

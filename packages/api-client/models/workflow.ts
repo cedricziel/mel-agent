@@ -17,47 +17,12 @@
 // @ts-ignore
 import type { WorkflowDefinition } from './workflow-definition';
 
-/**
- * 
- * @export
- * @interface Workflow
- */
 export interface Workflow {
-    /**
-     * 
-     * @type {string}
-     * @memberof Workflow
-     */
     'id': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Workflow
-     */
     'name': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Workflow
-     */
     'description'?: string;
-    /**
-     * 
-     * @type {WorkflowDefinition}
-     * @memberof Workflow
-     */
     'definition'?: WorkflowDefinition;
-    /**
-     * 
-     * @type {string}
-     * @memberof Workflow
-     */
     'created_at': string;
-    /**
-     * 
-     * @type {string}
-     * @memberof Workflow
-     */
     'updated_at': string;
 }
 

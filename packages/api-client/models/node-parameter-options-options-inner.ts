@@ -14,29 +14,9 @@
 
 
 
-/**
- * 
- * @export
- * @interface NodeParameterOptionsOptionsInner
- */
 export interface NodeParameterOptionsOptionsInner {
-    /**
-     * 
-     * @type {string}
-     * @memberof NodeParameterOptionsOptionsInner
-     */
     'value'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof NodeParameterOptionsOptionsInner
-     */
     'label'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof NodeParameterOptionsOptionsInner
-     */
     'description'?: string;
 }
 
