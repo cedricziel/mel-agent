@@ -306,7 +306,11 @@ export function useWorkflowState(workflowId, enableAutoPersistence = true) {
       await workflowClient.autoLayout(workflowId);
       // Reload nodes to get updated positions
       const newNodes = await workflowClient.getNodes(workflowId);
-      setNodes(newNodes.map((node) => workflowClient.toReactFlowNode(node)));
+      setNodes(
+        newNodes.map((node, index) =>
+          workflowClient.toReactFlowNode(node, index)
+        )
+      );
     } catch (err) {
       console.error('Auto-layout failed:', err);
       setError(err.message || 'Auto-layout failed');
