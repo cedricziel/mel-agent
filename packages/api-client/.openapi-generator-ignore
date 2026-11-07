@@ -28,3 +28,12 @@
 # version that requires a NEW runtime dependency will not add it here —
 # check the generator's changelog when bumping openapitools.json.
 package.json
+
+# tsconfig.json / tsconfig.esm.json are maintained by hand for TypeScript 7
+# compatibility: TS 7 removed moduleResolution "node" (node10, error TS5108).
+# The CJS build uses node16/node16 and the ESM build esnext/bundler (esnext
+# cannot inherit node16 resolution, TS5110). The generator's templates still
+# emit "node", which breaks tsc 7 — re-enable generation here once the
+# templates are updated.
+tsconfig.json
+tsconfig.esm.json
