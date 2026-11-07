@@ -193,6 +193,9 @@ jobs:
       - name: Install dependencies (needed for preview)
         run: pnpm install
 
+      - name: Install Cypress binary
+        run: pnpm --filter agentsaas-web exec cypress install
+
       - name: Start backend server
         run: |
           ./server server &
