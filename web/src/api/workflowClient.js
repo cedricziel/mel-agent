@@ -84,17 +84,18 @@ class WorkflowClient {
   }
 
   // Data format transformation utilities
-  toReactFlowNode(apiNode) {
+  // Maps the generated WorkflowNode contract ({ id, name, type, config }) to a
+  // React Flow node. The contract carries no canvas position, so nodes without
+  // one are laid out in a row by index.
+  toReactFlowNode(apiNode, index = 0) {
+    const config = apiNode.config || {};
     return {
-      id: apiNode.node_id,
-      type: apiNode.node_type,
-      position: {
-        x: apiNode.position_x || 0,
-        y: apiNode.position_y || 0,
-      },
+      id: apiNode.id,
+      type: apiNode.type,
+      position: apiNode.position || { x: 100 + index * 150, y: 100 },
       data: {
-        ...apiNode.config,
-        label: apiNode.config?.label || apiNode.node_type,
+        ...config,
+        label: config.label || apiNode.name || apiNode.type,
       },
     };
   }
@@ -113,13 +114,15 @@ class WorkflowClient {
     };
   }
 
+  // Maps the generated WorkflowEdge contract ({ id, source, target,
+  // sourceOutput, targetInput }) to a React Flow edge.
   toReactFlowEdge(apiEdge) {
     return {
-      id: apiEdge.edge_id,
-      source: apiEdge.source_node_id,
-      target: apiEdge.target_node_id,
-      sourceHandle: apiEdge.source_handle || null,
-      targetHandle: apiEdge.target_handle || null,
+      id: apiEdge.id,
+      source: apiEdge.source,
+      target: apiEdge.target,
+      sourceHandle: apiEdge.sourceOutput || null,
+      targetHandle: apiEdge.targetInput || null,
       type: 'default',
     };
   }
@@ -144,7 +147,7 @@ class WorkflowClient {
 
     return {
       workflow,
-      nodes: nodes.map((node) => this.toReactFlowNode(node)),
+      nodes: nodes.map((node, index) => this.toReactFlowNode(node, index)),
       edges: edges.map((edge) => this.toReactFlowEdge(edge)),
     };
   }

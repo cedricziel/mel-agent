@@ -1,24 +1,11 @@
 describe('Configuration Node Click Functionality', () => {
   beforeEach(() => {
     // Mock all the required API endpoints with proper structure
+    // Node definitions include the config nodes (openai_model, local_memory, ...).
+    // The builder looks up each node's definition by type to open its modal, so
+    // without them clicking a config node cannot open anything.
     cy.intercept('GET', '/api/node-types', {
-      statusCode: 200,
-      body: [
-        // Backend action nodes
-        {
-          type: 'agent',
-          label: 'Agent',
-          category: 'Core',
-          description: 'AI agent node'
-        },
-        {
-          type: 'http_request',
-          label: 'HTTP Request',
-          category: 'Actions',
-          description: 'Make HTTP requests'
-        }
-        // Note: Config nodes come from frontend fallback until backend is updated
-      ]
+      fixture: 'node-types.json'
     }).as('getNodeTypes')
 
     cy.intercept('GET', '/api/triggers', {
@@ -38,41 +25,42 @@ describe('Configuration Node Click Functionality', () => {
       body: { id: 'test-agent-id', name: 'Test Agent' }
     }).as('getWorkflowMeta')
 
+    // Shape matches the generated WorkflowNode contract: { id, name, type, config }
     cy.intercept('GET', '/api/workflows/test-agent-id/nodes', {
       statusCode: 200,
       body: [
         {
           id: 'config-node-1',
+          name: 'OpenAI',
           type: 'openai_model',
-          data: { 
-            label: 'OpenAI', 
+          config: {
+            label: 'OpenAI',
             nodeTypeLabel: 'OpenAI Model',
             model: 'gpt-4',
             temperature: 0.7,
             maxTokens: 1000
-          },
-          position: { x: 100, y: 100 }
+          }
         },
         {
-          id: 'config-node-2', 
+          id: 'config-node-2',
+          name: 'Memory',
           type: 'local_memory',
-          data: { 
-            label: 'Memory', 
+          config: {
+            label: 'Memory',
             nodeTypeLabel: 'Local Memory',
             maxMessages: 100,
             enableSummarization: true
-          },
-          position: { x: 250, y: 100 }
+          }
         },
         {
           id: 'config-node-3',
-          type: 'workflow_tools', 
-          data: { 
-            label: 'Tools', 
+          name: 'Tools',
+          type: 'workflow_tools',
+          config: {
+            label: 'Tools',
             nodeTypeLabel: 'Tools',
             enabledTools: []
-          },
-          position: { x: 400, y: 100 }
+          }
         }
       ]
     }).as('getWorkflowNodes')
