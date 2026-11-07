@@ -122,6 +122,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      # Explicit binary install, as the Frontend job does. The Cypress action
+      # runs with install: false, so nothing else fetches the binary.
+      - name: Install Cypress binary
+        run: pnpm --filter agentsaas-web exec cypress install
+
       # Simplified: let Cypress action handle build → start → test
       - name: Run Cypress E2E tests
         uses: cypress-io/github-action@v7

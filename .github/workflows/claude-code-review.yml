@@ -6,6 +6,9 @@ on:
 
 jobs:
   claude-review:
+    # Dependabot PRs are skipped: the action rejects non-human actors and
+    # Dependabot runs have no ANTHROPIC_API_KEY, so the job always failed there.
+    if: github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
