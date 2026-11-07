@@ -168,5 +168,3 @@ models/workflow-step.ts
 models/workflow-version-list.ts
 models/workflow-version.ts
 models/workflow.ts
-tsconfig.esm.json
-tsconfig.json
